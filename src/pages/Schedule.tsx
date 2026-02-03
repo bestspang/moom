@@ -85,25 +85,25 @@ const Schedule = () => {
             <StatCard
               title={t('schedule.classes')}
               value={stats?.classesCount || 0}
-              comparison={{ value: 5, label: t('dashboard.comparedToYesterday') }}
+              comparison={{ value: stats?.classesCountDiff || 0, label: t('dashboard.comparedToYesterday') }}
               color="teal"
             />
             <StatCard
               title={t('schedule.personalTraining')}
               value={stats?.ptCount || 0}
-              comparison={{ value: -10 }}
+              comparison={{ value: stats?.ptCountDiff || 0 }}
               color="orange"
             />
             <StatCard
               title={t('schedule.avgCapacity')}
               value={`${stats?.avgCapacity || 0}%`}
-              comparison={{ value: 8 }}
+              comparison={{ value: stats?.avgCapacityDiff || 0 }}
               color="blue"
             />
             <StatCard
               title={t('schedule.cancellations')}
               value={stats?.cancellations || 0}
-              comparison={{ value: -50 }}
+              comparison={{ value: stats?.cancellationsDiff || 0 }}
               color="gray"
             />
           </>

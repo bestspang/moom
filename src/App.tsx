@@ -31,6 +31,7 @@ import WorkoutList from "./pages/WorkoutList";
 import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
+import MembersAtRisk from "./pages/reports/MembersAtRisk";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import SettingsGeneral from "./pages/settings/SettingsGeneral";
@@ -89,7 +90,8 @@ const App = () => (
                 <Route path="workout-list" element={<WorkoutList />} />
                 <Route path="transfer-slip" element={<TransferSlips />} />
                 <Route path="finance" element={<Finance />} />
-                <Route path="report/*" element={<Reports />} />
+                <Route path="report" element={<Reports />} />
+                <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="setting" element={<Settings />}>

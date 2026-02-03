@@ -16,6 +16,10 @@ export type ScheduleStats = {
   ptCount: number;
   avgCapacity: number;
   cancellations: number;
+  classesCountDiff: number;
+  ptCountDiff: number;
+  avgCapacityDiff: number;
+  cancellationsDiff: number;
 };
 
 export function useScheduleByDate(date: Date) {
@@ -44,11 +48,13 @@ export function useScheduleByDate(date: Date) {
 
 export function useScheduleStats(date: Date) {
   const dateStr = format(date, 'yyyy-MM-dd');
+  const yesterdayStr = format(new Date(date.getTime() - 86400000), 'yyyy-MM-dd');
 
   return useQuery({
     queryKey: ['schedule-stats', dateStr],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get today's schedule
+      const { data: todayData, error: todayError } = await supabase
         .from('schedule')
         .select(`
           *,
@@ -56,15 +62,34 @@ export function useScheduleStats(date: Date) {
         `)
         .eq('scheduled_date', dateStr);
 
-      if (error) throw error;
+      if (todayError) throw todayError;
 
-      const schedules = data || [];
-      const classesCount = schedules.filter(s => s.class?.type === 'class').length;
-      const ptCount = schedules.filter(s => s.class?.type === 'pt').length;
-      const cancellations = schedules.filter(s => s.status === 'cancelled').length;
+      // Get yesterday's schedule for comparison
+      const { data: yesterdayData, error: yesterdayError } = await supabase
+        .from('schedule')
+        .select(`
+          *,
+          class:classes(type)
+        `)
+        .eq('scheduled_date', yesterdayStr);
 
-      // Calculate average capacity
-      const scheduledClasses = schedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
+      if (yesterdayError) throw yesterdayError;
+
+      const todaySchedules = todayData || [];
+      const yesterdaySchedules = yesterdayData || [];
+
+      // Today's stats
+      const classesCount = todaySchedules.filter(s => s.class?.type === 'class').length;
+      const ptCount = todaySchedules.filter(s => s.class?.type === 'pt').length;
+      const cancellations = todaySchedules.filter(s => s.status === 'cancelled').length;
+
+      // Yesterday's stats for comparison
+      const yesterdayClassesCount = yesterdaySchedules.filter(s => s.class?.type === 'class').length;
+      const yesterdayPtCount = yesterdaySchedules.filter(s => s.class?.type === 'pt').length;
+      const yesterdayCancellations = yesterdaySchedules.filter(s => s.status === 'cancelled').length;
+
+      // Calculate average capacity for today
+      const scheduledClasses = todaySchedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
       const avgCapacity = scheduledClasses.length > 0
         ? Math.round(
             scheduledClasses.reduce((sum, s) => sum + ((s.checked_in || 0) / (s.capacity || 1)) * 100, 0) /
@@ -72,11 +97,41 @@ export function useScheduleStats(date: Date) {
           )
         : 0;
 
+      // Calculate yesterday's average capacity
+      const yesterdayScheduledClasses = yesterdaySchedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
+      const yesterdayAvgCapacity = yesterdayScheduledClasses.length > 0
+        ? Math.round(
+            yesterdayScheduledClasses.reduce((sum, s) => sum + ((s.checked_in || 0) / (s.capacity || 1)) * 100, 0) /
+              yesterdayScheduledClasses.length
+          )
+        : 0;
+
+      // Calculate differences
+      const classesCountDiff = yesterdayClassesCount > 0
+        ? Math.round(((classesCount - yesterdayClassesCount) / yesterdayClassesCount) * 100)
+        : classesCount > 0 ? 100 : 0;
+
+      const ptCountDiff = yesterdayPtCount > 0
+        ? Math.round(((ptCount - yesterdayPtCount) / yesterdayPtCount) * 100)
+        : ptCount > 0 ? 100 : 0;
+
+      const avgCapacityDiff = yesterdayAvgCapacity > 0
+        ? avgCapacity - yesterdayAvgCapacity
+        : 0;
+
+      const cancellationsDiff = yesterdayCancellations > 0
+        ? Math.round(((cancellations - yesterdayCancellations) / yesterdayCancellations) * 100)
+        : cancellations > 0 ? 100 : 0;
+
       return {
         classesCount,
         ptCount,
         avgCapacity,
         cancellations,
+        classesCountDiff,
+        ptCountDiff,
+        avgCapacityDiff,
+        cancellationsDiff,
       } as ScheduleStats;
     },
   });
