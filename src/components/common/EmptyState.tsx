@@ -1,21 +1,46 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Users, Calendar, Package, DollarSign, Bell, FileText, Dumbbell, MapPin, ClipboardList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+type EmptyStateVariant = 'default' | 'members' | 'schedule' | 'packages' | 'finance' | 'notifications' | 'notes' | 'workouts' | 'locations' | 'activity';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
+  variant?: EmptyStateVariant;
   message: string;
   description?: string;
   action?: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
   className?: string;
 }
 
+const variantIcons: Record<EmptyStateVariant, React.ReactNode> = {
+  default: null,
+  members: <Users className="h-16 w-16" />,
+  schedule: <Calendar className="h-16 w-16" />,
+  packages: <Package className="h-16 w-16" />,
+  finance: <DollarSign className="h-16 w-16" />,
+  notifications: <Bell className="h-16 w-16" />,
+  notes: <FileText className="h-16 w-16" />,
+  workouts: <Dumbbell className="h-16 w-16" />,
+  locations: <MapPin className="h-16 w-16" />,
+  activity: <ClipboardList className="h-16 w-16" />,
+};
+
 export const EmptyState = ({
   icon,
+  variant = 'default',
   message,
   description,
   action,
+  actionLabel,
+  onAction,
   className,
 }: EmptyStateProps) => {
+  const displayIcon = icon || variantIcons[variant];
+
   return (
     <div
       className={cn(
@@ -23,33 +48,21 @@ export const EmptyState = ({
         className
       )}
     >
-      {icon && (
-        <div className="mb-4 text-muted-foreground opacity-50">{icon}</div>
+      {displayIcon && (
+        <div className="mb-4 text-muted-foreground/40">
+          {displayIcon}
+        </div>
       )}
-      <div className="mb-4">
-        {/* Yoga pose illustration placeholder */}
-        <svg
-          width="120"
-          height="120"
-          viewBox="0 0 120 120"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-muted-foreground/30"
-        >
-          <circle cx="60" cy="30" r="12" fill="currentColor" />
-          <path
-            d="M60 45 L60 70 M45 55 L75 55 M60 70 L45 95 M60 70 L75 95"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
-      <p className="text-muted-foreground font-medium">{message}</p>
+      <p className="text-muted-foreground font-medium text-lg">{message}</p>
       {description && (
-        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+        <p className="text-sm text-muted-foreground/70 mt-1 max-w-sm">{description}</p>
       )}
       {action && <div className="mt-4">{action}</div>}
+      {!action && actionLabel && onAction && (
+        <Button onClick={onAction} className="mt-4">
+          {actionLabel}
+        </Button>
+      )}
     </div>
   );
 };

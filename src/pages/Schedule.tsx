@@ -72,7 +72,7 @@ const Schedule = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {statsLoading ? (
           <>
             <Skeleton className="h-24" />
@@ -110,30 +110,36 @@ const Schedule = () => {
         )}
       </div>
 
-      {/* Trainer Filter Pills */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Button
-          variant={selectedTrainerId === null ? 'outline' : 'ghost'}
-          className="rounded-full"
-          onClick={() => setSelectedTrainerId(null)}
-        >
-          {t('schedule.allTrainers')}
-        </Button>
-        {trainers.map((trainer) => (
-          <Button
-            key={trainer.id}
-            variant={selectedTrainerId === trainer.id ? 'outline' : 'ghost'}
-            className="rounded-full flex items-center gap-2"
-            onClick={() => setSelectedTrainerId(trainer.id)}
-          >
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">
-                {trainer.first_name?.[0]}{trainer.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            {trainer.first_name} {trainer.last_name}
-          </Button>
-        ))}
+      {/* Trainer Filter Pills - with horizontal scroll on mobile */}
+      <div className="relative mb-6">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex gap-2 pb-2 min-w-max">
+            <Button
+              variant={selectedTrainerId === null ? 'default' : 'ghost'}
+              className="rounded-full shrink-0"
+              onClick={() => setSelectedTrainerId(null)}
+            >
+              {t('schedule.allTrainers')}
+            </Button>
+            {trainers.map((trainer) => (
+              <Button
+                key={trainer.id}
+                variant={selectedTrainerId === trainer.id ? 'default' : 'ghost'}
+                className="rounded-full flex items-center gap-2 shrink-0"
+                onClick={() => setSelectedTrainerId(trainer.id)}
+              >
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="text-xs">
+                    {trainer.first_name?.[0]}{trainer.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                {trainer.first_name} {trainer.last_name}
+              </Button>
+            ))}
+          </div>
+        </div>
+        {/* Mobile scroll indicator */}
+        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
       </div>
 
       {/* Schedule Table */}
