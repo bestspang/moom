@@ -451,6 +451,11 @@ export default {
       taxInvoice: 'Tax invoice',
       taxInvoiceDesc: 'Company information for tax invoice generation.',
       
+      // Empty state
+      noLocations: 'No locations configured',
+      noLocationsDesc: 'Please add at least one location before configuring payment methods.',
+      addLocation: 'Add Location',
+      
       // Theme section
       appearance: 'Appearance',
       themeColor: 'Theme color',

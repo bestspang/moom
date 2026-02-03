@@ -451,6 +451,11 @@ export default {
       taxInvoice: 'ใบกำกับภาษี',
       taxInvoiceDesc: 'ข้อมูลบริษัทสำหรับออกใบกำกับภาษี',
       
+      // Empty state
+      noLocations: 'ยังไม่มีสาขา',
+      noLocationsDesc: 'กรุณาเพิ่มสาขาก่อนตั้งค่าวิธีการชำระเงิน',
+      addLocation: 'เพิ่มสาขา',
+      
       // Theme section
       appearance: 'รูปลักษณ์',
       themeColor: 'สีธีม',

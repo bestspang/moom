@@ -30,24 +30,29 @@ const SettingsContracts = () => {
   return (
     <Card>
       <CardContent className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-primary">{t('settings.memberContracts.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('settings.memberContracts.description')}</p>
+        <div>
+          <h3 className="text-lg font-semibold">{t('settings.memberContracts.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{t('settings.memberContracts.description')}</p>
+        </div>
         
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center gap-3">
+        <div className="py-3 border-b">
+          <div className="flex items-start gap-3">
             <Switch 
               checked={allowSigning}
               onCheckedChange={(checked) => handleToggle('allow_signing', checked)}
+              className="mt-0.5 shrink-0"
             />
-            <span className="text-sm font-medium">{t('settings.memberContracts.allowSigning')}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium">{t('settings.memberContracts.allowSigning')}</span>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t('settings.memberContracts.signingDescription')}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground ml-12">
-            {t('settings.memberContracts.signingDescription')}
-          </p>
         </div>
         
-        <div className="pt-4">
-          <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+        <div className="pt-2">
+          <Button variant="outline">
             {t('settings.memberContracts.setupContracts')}
           </Button>
         </div>
