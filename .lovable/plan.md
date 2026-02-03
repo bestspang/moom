@@ -1,53 +1,63 @@
 
-# แผนการพัฒนาหน้า Room Layouts ให้ตรงกับตัวอย่าง
+# แผนการอัพเดทหน้า ตั้งค่า > ทั่วไป
 
-## สรุปสิ่งที่ต้องเพิ่ม
+## สรุปการเปลี่ยนแปลง
 
-จากภาพตัวอย่าง พบว่าต้องเพิ่มฟีเจอร์ดังนี้:
+จากภาพตัวอย่าง หน้า Settings > General ต้องมีโครงสร้างใหม่ดังนี้:
 
-### 1. Database Changes
-ตาราง `rooms` ปัจจุบันมี: `id`, `name`, `categories[]`, `location_id`, `max_capacity`, `status`
+### 1. Layout Structure
+**ปัจจุบัน**: Card แบบธรรมดาเรียงต่อกัน
+**ใหม่**: แบ่งเป็น 2 columns
+- **ซ้าย**: Sidebar menu (วิธีการชำระเงิน, สีธีม, เขตเวลา, ท่าออกกำลังกาย, ยิมเช็คอิน)
+- **ขวา**: Content area ตาม menu ที่เลือก
 
-**ต้องเพิ่ม columns:**
-| Column | Type | Description |
-|--------|------|-------------|
-| `name_th` | `text` | ชื่อห้อง (TH) - optional |
-| `layout_type` | `enum('open', 'fixed')` | รูปแบบห้อง: เปิดโล่ง / ตำแหน่งคงที่ |
+### 2. เนื้อหาแต่ละ Section
 
-### 2. Room List Page Enhancements
+#### A. วิธีการชำระเงิน (Payment Methods)
+- คำอธิบาย: "วิธีการชำระเงินสามารถเปิดใช้และปิดใช้ได้ ขึ้นอยู่กับเวลาที่ผิดตลับเลือกรับหรือเลือกไม่รับ"
+- **โอนผ่านบัญชีธนาคาร**: 
+  - Collapsible accordion
+  - Toggle per location (Muang Roi Et)
+  - ปุ่ม "ระบุบัญชีธนาคาร" (orange outline)
+- **Credit card (Stripe)**:
+  - Collapsible accordion
+  - Fee info: 3.65% + 10 บาท ในประเทศ, 4.75% + 10 บาท ต่างประเทศ
+  - Toggle per location
+  - ปุ่ม "ตั้งค่า Stripe" (orange outline)
+- **QR PromptPay**:
+  - Collapsible accordion
+  - Fee info: 1.65% + ฿10 per refund
+  - Toggle per location
+  - ปุ่ม "ตั้งค่า Stripe"
+- **ใบกำกับภาษี (Tax Invoice)**:
+  - Collapsible section
+  - ข้อมูลบริษัท per location
+  - Edit icon
 
-**Current → Target:**
-- [x] Search bar
-- [x] Create room button
-- [x] Status tabs (Open/Closed)
-- [ ] **เพิ่ม** คอลัมน์ "รูปแบบ" (Layout type) - แสดง "เปิดโล่ง" หรือ "ตำแหน่งคงที่"
-- [ ] **เพิ่ม** Total count header "ทั้งหมด X ห้อง"
-- [ ] **เพิ่ม** Pagination display
-- [ ] **เพิ่ม** Category filter dropdown
-- [ ] **เพิ่ม** Selectable rows (checkboxes)
+#### B. สีธีม (Theme Color)
+- หัวข้อ: "เลือกสี"
+- **สีเริ่มต้น**: Purple theme card (selected by default)
+- **สีธีม ๆ**: Grid of color cards:
+  - Orange, Red, Yellow (Orange selected in screenshot)
+  - Tan, Olive, Green
+  - Lime, Blue, Teal, Gray
+- Each card shows: Header bar + 3 accent swatches
 
-### 3. Create Room Form (New)
+#### C. เขตเวลา (Timezone)
+- หัวข้อ: "เลือกเขตเวลา"
+- Display: "Asia/Bangkok (GMT +07:00)" + edit icon
 
-สร้างหน้า/dialog สำหรับสร้างห้องใหม่ตามตัวอย่าง:
+#### D. ท่าออกกำลังกาย (Workout)
+- หัวข้อ: "ท่าออกกำลังกาย"
+- Toggle: "รายการท่าออกกำลังกาย"
+- Description: "เมื่อใช้รายการท่าออกกำลังกาย เพื่อให้สมาชิกสามารถบันทึกการออกกำลังกายผ่านแอป Gymmo ได้ หากต้องการบันทึกกิจกรรมออกกำลังกาย ให้ไปที่: Gymmo app → Profile → My Workout"
 
-**Section: ข้อมูล (Information)**
-- ชื่อห้อง (EN)* - required
-- ชื่อห้อง (TH) - optional
-- สาขา* - Location dropdown (required)
-
-**Section: สิทธิ์เข้าถึง (Access)**
-- หมวดหมู่คลาสที่ใช้งานห้องนี้ได้*
-  - Radio: ทุกหมวดหมู่คลาส (All) | ระบุหมวดหมู่คลาส (Specific)
-
-**Section: รูปแบบห้อง (Room Layout)**
-- รูปแบบห้อง*
-  - Radio: พื้นที่แบบเปิดโล่ง (Open) | พื้นที่แบบตำแหน่งคงที่ (Fixed)
-- ความจุสูงสุด* - number input
-
-**Footer:**
-- Helper text: "โปรดดำเนินการสร้างห้อง"
-- ละทิ้ง (Discard) - link style
-- บันทึก (Save) - orange button
+#### E. ยิมเช็คอิน (Gym Check-in)
+- หัวข้อ: "ยิมเช็คอิน"
+- Toggle: "เปิดใช้งานยิมเช็คอิน" 
+- Description about QR code check-in
+- **ระบุช่วงเวลาให้สมาชิกเช็คอินยิม***: 
+  - "เวลาใดก็ได้" + edit icon
 
 ---
 
@@ -55,165 +65,142 @@
 
 | File | Action | Description |
 |------|--------|-------------|
-| `supabase/migrations/xxx_add_room_fields.sql` | Create | Add name_th, layout_type columns + enum |
-| `src/components/rooms/CreateRoomDialog.tsx` | Create | Form dialog component |
-| `src/pages/Rooms.tsx` | Modify | Add layout column, pagination, filter, checkbox |
-| `src/hooks/useRooms.ts` | Modify | Add category filter parameter |
-| `src/i18n/locales/en.ts` | Modify | Add room-related i18n keys |
+| `src/pages/settings/SettingsGeneral.tsx` | **Major Rewrite** | New layout with sidebar + sections |
+| `src/i18n/locales/en.ts` | Modify | Add new i18n keys |
 | `src/i18n/locales/th.ts` | Modify | Add Thai translations |
 
 ---
 
-## Implementation Steps
+## Implementation Details
 
-### Step 1: Database Migration
-```sql
--- Add layout_type enum
-CREATE TYPE room_layout_type AS ENUM ('open', 'fixed');
+### Step 1: Update i18n Locales
 
--- Add new columns to rooms table
-ALTER TABLE rooms 
-  ADD COLUMN name_th TEXT,
-  ADD COLUMN layout_type room_layout_type DEFAULT 'open';
-```
+เพิ่ม keys ใหม่ใน `settings.general`:
 
-### Step 2: Update i18n Locales
-
-**English:**
 ```typescript
-rooms: {
-  // ... existing
-  totalRooms: 'Total {count} rooms',
-  layoutType: 'Layout',
-  openSpace: 'Open space',
-  fixedPositions: 'Fixed positions',
-  create: {
-    title: 'Create room',
-    information: 'Information',
-    roomNameEn: 'Room name (EN)',
-    roomNameTh: 'Room name (TH)',
-    roomNamePlaceholder: 'Enter room name',
-    location: 'Location',
-    selectLocation: 'Select location',
-    access: 'Access',
-    categoriesCanUse: 'Class categories that can use this room',
-    allCategories: 'All class categories',
-    specificCategories: 'Specific class categories',
-    roomLayout: 'Room layout',
-    openSpaceDesc: 'Open space area',
-    fixedPositionsDesc: 'Fixed positions area',
-    maxCapacity: 'Maximum capacity',
-    maxCapacityPlaceholder: 'Enter maximum capacity',
-    helperText: 'Please complete room creation',
-    discard: 'Discard',
-  },
+settings: {
+  general: {
+    // ... existing
+    // Payment section
+    paymentDescription: 'Payment methods can be enabled and disabled...',
+    bankTransferDesc: 'Bank account information will be displayed...',
+    specifyBankAccount: 'Specify bank account',
+    setupStripe: 'Setup Stripe',
+    stripeFeeDesc: 'Payment via credit card through Stripe...',
+    promptPayDesc: 'PromptPay payment supports bank transfer...',
+    
+    // Tax Invoice
+    taxInvoice: 'Tax invoice',
+    taxInvoiceInfo: 'Tax invoice information...',
+    
+    // Theme
+    selectColor: 'Select color',
+    defaultColor: 'Default',
+    otherColors: 'Other colors',
+    
+    // Timezone
+    selectTimezone: 'Select timezone',
+    
+    // Workout
+    workoutDesc: 'When using workout list, members can log...',
+    
+    // Gym Check-in
+    enableGymCheckin: 'Enable gym check-in',
+    gymCheckinDesc: 'Allow members to check-in via QR code...',
+    specifyCheckinTime: 'Specify check-in time for members',
+    anytime: 'Anytime',
+  }
 }
 ```
 
-**Thai:**
-```typescript
-rooms: {
-  // ... existing
-  totalRooms: 'ทั้งหมด {count} ห้อง',
-  layoutType: 'รูปแบบ',
-  openSpace: 'เปิดโล่ง',
-  fixedPositions: 'ตำแหน่งคงที่',
-  create: {
-    title: 'สร้างห้อง',
-    information: 'ข้อมูล',
-    roomNameEn: 'ชื่อห้อง (EN)',
-    roomNameTh: 'ชื่อห้อง (TH)',
-    roomNamePlaceholder: 'ระบุชื่อห้อง',
-    location: 'สาขา',
-    selectLocation: 'เลือกสาขา',
-    access: 'สิทธิ์เข้าถึง',
-    categoriesCanUse: 'หมวดหมู่คลาสที่ใช้งานห้องนี้ได้',
-    allCategories: 'ทุกหมวดหมู่คลาส',
-    specificCategories: 'ระบุหมวดหมู่คลาส',
-    roomLayout: 'รูปแบบห้อง',
-    openSpaceDesc: 'พื้นที่แบบเปิดโล่ง',
-    fixedPositionsDesc: 'พื้นที่แบบตำแหน่งคงที่',
-    maxCapacity: 'ความจุสูงสุด',
-    maxCapacityPlaceholder: 'ระบุความจุสูงสุด',
-    helperText: 'โปรดดำเนินการสร้างห้อง',
-    discard: 'ละทิ้ง',
-  },
-}
+### Step 2: Rewrite SettingsGeneral.tsx
+
+**New Structure:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ┌─────────────┐ ┌────────────────────────────────────┐   │
+│ │ วิธีการชำระเงิน│ │ วิธีการชำระเงิน                      │   │
+│ │ สีธีม        │ │ [description text]                │   │
+│ │ เขตเวลา      │ │                                   │   │
+│ │ ท่าออกกำลังกาย│ │ ▼ โอนผ่านบัญชีธนาคาร              │   │
+│ │ ยิมเช็คอิน    │ │   [toggle] Muang Roi Et [button] │   │
+│ │             │ │                                   │   │
+│ │             │ │ ▼ Credit card (Stripe)            │   │
+│ │             │ │   [description]                   │   │
+│ │             │ │   [toggle] Muang Roi Et [button] │   │
+│ │             │ │                                   │   │
+│ │             │ │ ▼ QR PromptPay                    │   │
+│ │             │ │   ...                             │   │
+│ └─────────────┘ └────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### Step 3: Create CreateRoomDialog Component
+**Components to use:**
+- `useState` for active section
+- `Accordion` from Radix UI for collapsible payment sections
+- Radio card layout for theme colors
+- Grid layout for theme color cards
 
-สร้าง `src/components/rooms/CreateRoomDialog.tsx`:
-- Form with sections: ข้อมูล, สิทธิ์เข้าถึง, รูปแบบห้อง
-- Radio card styling for category and layout selection
-- Zod validation with useMemo for i18n
-- Integration with useCreateRoom mutation
+### Step 3: Theme Color Cards
 
-### Step 4: Update Rooms.tsx
+Each card structure:
+```
+┌─────────────────────────────┐
+│ ████████████████████████████│ ← Header bar (main color)
+│                             │
+│ ██    ██    ██              │ ← 3 accent swatches
+└─────────────────────────────┘
+```
 
-**Changes:**
-1. Add `layoutType` column to table
-2. Add total count display in header
-3. Add pagination support
-4. Add category filter dropdown
-5. Enable selectable rows
-6. Connect "Create room" button to dialog
+Color themes to support:
+1. Purple (default) - #9b87f5
+2. Magenta - #D946EF
+3. Red - #ea384c
+4. Orange - #FF9500 (app primary)
+5. Tan - #C4A77D
+6. Olive - #9B8E5E
+7. Green - #22C55E
+8. Lime - #84CC16
+9. Blue - #0EA5E9
+10. Teal - #14B8A6
+11. Gray - #6B7280
 
-### Step 5: Update useRooms Hook
+---
 
-- Add `categoryFilter` parameter to query
-- Update query to filter by category if specified
+## UI/UX Notes
+
+### Sidebar Menu Styling
+- Active item: Orange text + orange left border
+- Inactive: Gray text
+- Hover: Slight background highlight
+
+### Accordion Styling
+- Chevron icon for expand/collapse
+- Orange heading text
+- Smooth animation
+
+### Theme Card Styling
+- Selected: Orange border ring
+- Unselected: Light border
+- Clickable with hover effect
 
 ---
 
 ## Technical Notes
 
-### Radio Card Styling (ตาม Screenshot)
+### State Management
 ```typescript
-<div 
-  className={cn(
-    "flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all",
-    selected 
-      ? "border-primary bg-primary/5" 
-      : "border-border hover:border-primary/50"
-  )}
->
-  <RadioGroupItem value={value} />
-  <span>{label}</span>
-</div>
+const [activeSection, setActiveSection] = useState<'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin'>('payment');
 ```
 
-### Form Structure
-```text
-┌─────────────────────────────────────────┐
-│ ← รูปแบบห้อง > สร้างห้อง                    │
-├─────────────────────────────────────────┤
-│ สร้างห้อง                                  │
-│                                          │
-│ ข้อมูล (orange heading)                    │
-│ ┌───────────────┐ ┌───────────────┐      │
-│ │ ชื่อห้อง (EN)* │ │ ชื่อห้อง (TH) │      │
-│ └───────────────┘ └───────────────┘      │
-│ ┌─────────────────────┐                  │
-│ │ สาขา*               ▾│                  │
-│ └─────────────────────┘                  │
-│                                          │
-│ สิทธิ์เข้าถึง (orange heading)              │
-│ หมวดหมู่คลาสที่ใช้งานห้องนี้ได้*             │
-│ ┌─────────────────┐ ┌─────────────────┐  │
-│ │ ● ทุกหมวดหมู่คลาส │ │ ○ ระบุหมวดหมู่คลาส │  │
-│ └─────────────────┘ └─────────────────┘  │
-│                                          │
-│ รูปแบบห้อง (orange heading)                │
-│ ┌─────────────────┐ ┌─────────────────┐  │
-│ │ ● พื้นที่แบบเปิดโล่ง │ │ ○ พื้นที่แบบตำแหน่งคงที่│  │
-│ └─────────────────┘ └─────────────────┘  │
-│ ┌─────────────────────┐                  │
-│ │ ความจุสูงสุด*        │                  │
-│ └─────────────────────┘                  │
-├─────────────────────────────────────────┤
-│ โปรดดำเนินการสร้างห้อง   [ละทิ้ง] [บันทึก]   │
-└─────────────────────────────────────────┘
+### Theme Colors Data Structure
+```typescript
+const themeColors = [
+  { id: 'purple', main: '#9b87f5', accents: ['#6E59A5', '#8B5CF6', '#C4B5FD'] },
+  { id: 'orange', main: '#FF9500', accents: ['#C27500', '#FF9500', '#FFB84D'] },
+  // ...
+];
 ```
 
 ---
@@ -222,10 +209,19 @@ rooms: {
 
 | Task | Time |
 |------|------|
-| Database migration | 10 min |
-| i18n updates | 15 min |
-| CreateRoomDialog component | 45 min |
-| Rooms.tsx enhancements | 30 min |
-| useRooms hook update | 10 min |
-| Testing | 20 min |
-| **Total** | ~2 hours |
+| i18n updates | 20 min |
+| SettingsGeneral.tsx rewrite | 1.5 hours |
+| Theme color cards | 30 min |
+| Accordion styling | 20 min |
+| Testing | 30 min |
+| **Total** | ~3 hours |
+
+---
+
+## Success Criteria
+1. Sidebar menu แสดง 5 sections และเปลี่ยน content ตามที่เลือก
+2. Payment methods มี accordion แบบ collapsible
+3. Theme colors แสดง cards แทน circles
+4. Timezone แสดง "Asia/Bangkok (GMT +07:00)" พร้อม edit icon
+5. Gym check-in มี toggle และ time configuration
+6. รองรับ i18n EN/TH ครบถ้วน
