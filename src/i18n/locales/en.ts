@@ -478,35 +478,84 @@ export default {
       set: 'Set',
     },
     class: {
-      booking: 'Booking',
-      checkIn: 'Check-in',
-      waitlisting: 'Waitlisting',
-      cancellations: 'Cancellations',
-      noShow: 'No-show',
-      bookingAdvance: 'Specify the period of time in advance that members can book a class',
-      bookingBefore: 'Specify the period of time that members can make a booking before a class begins',
-      maxSpots: 'Specify the maximum number of spots a member can book per class',
-      daysBeforeClass: 'Days before class begins',
-      minsBeforeClass: 'Mins before class begins',
-      onlySpot: 'Only 1 Spot',
+      // Sidebar
+      booking: 'Class Booking',
+      checkin: 'Check-in',
+      waitlist: 'Waitlist',
+      cancellation: 'Cancellation',
+      noshow: 'No-show',
+      
+      // Booking section
+      bookingAdvanceDesc: 'Specify the period of time in advance that members can start booking a class',
+      bookingLastDesc: 'Specify the last period of time that members can book a class in advance',
+      maxSpotsDesc: 'Specify the maximum number of spots a member can book per class',
+      daysBeforeClass: '{n} days before class begins',
+      minsBeforeClass: '{n} mins before class begins',
+      hoursBeforeClass: '{n} hour before class begins',
+      minsAfterClass: '{n} mins after class begins',
+      seatsOnly: '{n} seat only',
+      
+      // Check-in section
+      checkinBeforeDesc: 'Specify the period of time members can check-in with QR code before class starts',
+      checkinAfterDesc: 'Specify the latest time members can check-in with QR code after class starts',
+      
+      // Waitlist section
+      waitlistCapacityDesc: 'Default capacity for waitlist',
+      sameAsRoomCapacity: 'Same as selected room capacity',
+      waitlistPromoteDesc: 'Latest time members can be automatically promoted from waitlist to available booking',
+      
+      // Cancellation section
+      cancellationPenaltyDesc: 'Time period when penalty will apply for booking cancellations',
+      lateCancelDeadlineDesc: 'Latest time members can cancel a booking before penalty period applies',
+      unlimitedCancelTitle: 'Cancellation for unlimited package bookings',
+      unlimitedCancelDesc: 'Maximum number of late cancellations for unlimited package bookings before automatic suspension',
+      sessionCancelTitle: 'Cancellation for session package bookings',
+      sessionCancelDesc: 'Maximum number of late cancellations for session package bookings before automatic suspension',
+      sessionRefundDesc: 'Session refund for late cancellations on session package bookings',
+      none: 'None',
+      noRefund: 'No session refund',
+      
+      // No-show section
+      noshowPenaltyTitle: 'Penalty for no-show with unlimited package',
+      noshowPenaltyDesc: 'Maximum no-shows for unlimited package bookings before automatic suspension',
+      noshowLimit: '{n} times in {days} days, auto-suspend for {suspend} days',
     },
     client: {
-      injuredMembers: 'Injured members',
-      suspendedMembers: 'Suspended members',
-      onHoldMembers: 'On hold members',
-      allowAllBookings: 'Allow all bookings for injured members',
-      bookOnMobile: 'Book on MOOM CLUB mobile app',
-      bookOnConsole: 'Book on MOOM CLUB Console',
+      // Sidebar
+      injuredMembers: 'Injured Members',
+      suspendedMembers: 'Suspended Members',
+      pausedMembers: 'Paused Members',
+      
+      // Injured section
+      injuredDesc: 'Configure whether injured members are allowed to book classes',
+      allowAllInjured: 'Allow all bookings for injured members',
+      bookOnGymmoApp: 'Book on Gymmo mobile app',
+      bookOnGymmoAppDesc: 'Injured members can book classes on Gymmo mobile app',
+      bookOnGymmoConsole: 'Book on Gymmo Console',
+      bookOnGymmoConsoleDesc: 'Allow staff to book classes for injured members on Gymmo Console',
+      
+      // Suspended section
+      suspendedDesc: 'Configure whether suspended members are allowed to book classes',
+      allowAllSuspended: 'Allow all bookings for suspended members',
+      suspendedBookOnAppDesc: 'Suspended members can book classes on Gymmo mobile app',
+      suspendedBookOnConsoleDesc: 'Allow staff to book classes for suspended members on Gymmo Console',
+      
+      // Paused section
+      pausedDesc: 'Configure whether members can reactivate paused packages',
+      allowReactivate: 'Members can reactivate paused packages on Gymmo mobile app',
+      pausedReactivateDesc: 'Members can reactivate paused packages on Gymmo mobile app without contacting the gym. Once reactivated, members can continue booking classes.',
     },
     package: {
-      expiration: 'Expiration',
-      expirationConditions: 'Set the conditions for activating the package to start its expiration countdown',
+      expirationTitle: 'Expiration Date',
+      expirationDesc: 'Set the conditions for package activation to start the expiration countdown',
       whenBooking: 'When booking a class',
     },
     memberContracts: {
-      allowSigning: 'Allow members to sign contracts in the Member APP',
-      signingDescription: 'When enabled, members will be notified to sign the contract in the Member App.',
-      setupContracts: 'Setup member contracts',
+      title: 'Member Contracts',
+      description: 'Member contracts can be enabled for members to sign via the app, or disabled based on your settings.',
+      allowSigning: 'Allow members to sign contracts via the member application',
+      signingDescription: 'When enabled, members will be notified to sign contracts via the member application.',
+      setupContracts: 'Setup Member Contracts',
     },
   },
 
