@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSettings, useUpdateSetting, getSettingValue } from '@/hooks/useSettings';
-import { cn } from '@/lib/utils';
+import { SettingsLayout } from '@/components/settings';
 
 type ClientSection = 'injured' | 'suspended' | 'paused';
 
@@ -15,7 +13,7 @@ const SettingsClient = () => {
   const updateSetting = useUpdateSetting();
   const [activeSection, setActiveSection] = useState<ClientSection>('injured');
 
-  const menuItems: { id: ClientSection; label: string }[] = [
+  const menuItems = [
     { id: 'injured', label: t('settings.client.injuredMembers') },
     { id: 'suspended', label: t('settings.client.suspendedMembers') },
     { id: 'paused', label: t('settings.client.pausedMembers') },
@@ -27,14 +25,10 @@ const SettingsClient = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex gap-8">
-            <Skeleton className="h-32 w-48" />
-            <Skeleton className="h-48 flex-1" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col md:flex-row gap-6">
+        <Skeleton className="h-12 md:h-32 w-full md:w-52" />
+        <Skeleton className="h-48 flex-1" />
+      </div>
     );
   }
 
@@ -49,7 +43,7 @@ const SettingsClient = () => {
   
   const pausedAllowReactivate = getSettingValue(settings, 'paused_allow_reactivate', true);
 
-  // Reusable toggle component
+  // Toggle component with flex layout for proper alignment
   const ToggleItem = ({ 
     label, 
     description,
@@ -61,23 +55,28 @@ const SettingsClient = () => {
     checked: boolean; 
     onCheckedChange: (checked: boolean) => void;
   }) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-3">
-        <Switch checked={checked} onCheckedChange={onCheckedChange} />
-        <span className="text-sm font-medium">{label}</span>
+    <div className="py-3 border-b last:border-b-0">
+      <div className="flex items-start gap-3">
+        <Switch 
+          checked={checked} 
+          onCheckedChange={onCheckedChange}
+          className="mt-0.5 shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium">{label}</span>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
       </div>
-      {description && (
-        <p className="text-sm text-muted-foreground ml-12">{description}</p>
-      )}
     </div>
   );
 
   const renderInjuredSection = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-primary">{t('settings.client.injuredMembers')}</h3>
-      <p className="text-sm text-muted-foreground">{t('settings.client.injuredDesc')}</p>
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground pb-2">{t('settings.client.injuredDesc')}</p>
       
-      <div className="space-y-4">
+      <div>
         <ToggleItem
           label={t('settings.client.allowAllInjured')}
           checked={injuredAllowAll}
@@ -102,11 +101,10 @@ const SettingsClient = () => {
   );
 
   const renderSuspendedSection = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-primary">{t('settings.client.suspendedMembers')}</h3>
-      <p className="text-sm text-muted-foreground">{t('settings.client.suspendedDesc')}</p>
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground pb-2">{t('settings.client.suspendedDesc')}</p>
       
-      <div className="space-y-4">
+      <div>
         <ToggleItem
           label={t('settings.client.allowAllSuspended')}
           checked={suspendedAllowAll}
@@ -131,11 +129,10 @@ const SettingsClient = () => {
   );
 
   const renderPausedSection = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-primary">{t('settings.client.pausedMembers')}</h3>
-      <p className="text-sm text-muted-foreground">{t('settings.client.pausedDesc')}</p>
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground pb-2">{t('settings.client.pausedDesc')}</p>
       
-      <div className="space-y-4">
+      <div>
         <ToggleItem
           label={t('settings.client.allowReactivate')}
           description={t('settings.client.pausedReactivateDesc')}
@@ -160,37 +157,14 @@ const SettingsClient = () => {
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <nav className="w-56 shrink-0">
-            <ul className="space-y-1">
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveSection(item.id)}
-                    className={cn(
-                      'w-full text-left px-3 py-2 text-sm rounded-md transition-colors',
-                      activeSection === item.id
-                        ? 'text-primary font-medium border-l-2 border-primary bg-primary/5'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            {renderContent()}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <SettingsLayout
+      items={menuItems}
+      activeId={activeSection}
+      onSelect={(id) => setActiveSection(id as ClientSection)}
+      withCard={true}
+    >
+      {renderContent()}
+    </SettingsLayout>
   );
 };
 
