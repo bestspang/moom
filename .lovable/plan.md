@@ -1,312 +1,195 @@
 
 
-# MOOM CLUB v0.0.1 - Continuation Plan
+# Phase 3 & 4: Activity Log, Announcements & Notifications
 
-## Current State Summary
+## Overview
 
-**Completed:**
-- Security Remediation (21 findings addressed)
-- Phase 1: Core Entity CRUD (Packages, Classes, Staff, Roles, Locations, Rooms, Leads, Promotions, Finance)
-- Phase 2: Schedule & Lobby (useSchedule.ts, useLobby.ts, ScheduleClassDialog, CheckInDialog)
-- Database hooks created and connected
-- i18n EN/TH support
+This implementation batch covers three modules that enable system-wide logging, communication, and user notifications.
 
-**Remaining Work (6 Phases):**
+**Current State:**
+- All three pages exist with basic layouts and empty states
+- Database tables exist: `activity_log`, `announcements`, `notifications`
+- Header has notification dropdown placeholder (hardcoded to 0)
 
----
-
-## Phase 2: Schedule & Lobby (Core Daily Operations)
-
-### 2.1 Schedule Module
-
-**New Files:**
-- `src/hooks/useSchedule.ts`
-- `src/components/schedule/ScheduleClassDialog.tsx`
-
-**Modifications:**
-- `src/pages/Schedule.tsx`
-
-**Implementation:**
-
-```text
-useSchedule.ts hook:
-- useScheduleByDate(date) - Fetch schedule with joins to classes, trainers, rooms, locations
-- useScheduleStats(date) - Calculate stats (classes count, PT count, avg capacity, cancellations)
-- useTrainers() - Fetch trainers for filter
-- useCreateSchedule() - Create new scheduled class
-- useUpdateSchedule() - Update schedule
-- useDeleteSchedule() - Cancel/delete schedule
-```
-
-**Schedule Page Updates:**
-- Connect date picker to fetch schedule for selected date
-- Display real stats from database calculations
-- Trainer filter pills from staff table (role=trainer)
-- Data table with schedule entries showing class, trainer, room, location, availability, QR
-- "Schedule" button opens ScheduleClassDialog
-
-**ScheduleClassDialog Form Fields:**
-- Class selection (dropdown from classes table)
-- Date selection
-- Start time / End time
-- Trainer assignment (dropdown)
-- Room assignment (dropdown)
-- Location (dropdown)
-- Capacity override (optional)
-
-### 2.2 Lobby/Check-in Module
-
-**New Files:**
-- `src/hooks/useLobby.ts`
-- `src/components/lobby/CheckInDialog.tsx`
-
-**Modifications:**
-- `src/pages/Lobby.tsx`
-
-**Implementation:**
-
-```text
-useLobby.ts hook:
-- useCheckIns(date, search) - Fetch member_attendance for date with member joins
-- useCreateCheckIn() - Record new check-in
-```
-
-**Lobby Page Updates:**
-- Connect to member_attendance table
-- Search by member name
-- Display: Time, Name, Package used, Usage (sessions), Location, Checked in status
-- "Check In" button opens dialog
-
-**CheckInDialog:**
-- Member search/selection (typeahead from members table)
-- Package selection (from member's active packages)
-- Location selection
-- Auto-generate check-in timestamp
+**Deliverables:**
+- 3 new React Query hooks
+- 1 new dialog component (CreateAnnouncementDialog)
+- 4 page/component updates
+- Full CRUD functionality with i18n support
 
 ---
 
-## Phase 3: Activity Log & Announcements
+## Phase 3.1: Activity Log Module
 
-### 3.1 Activity Log
-
-**New Files:**
-- `src/hooks/useActivityLog.ts`
-
-**Modifications:**
-- `src/pages/ActivityLog.tsx`
-
-**Implementation:**
+### New File: `src/hooks/useActivityLog.ts`
 
 ```text
-useActivityLog.ts hook:
-- useActivityLogs(dateRange) - Fetch activity_log with staff/member joins
+Hook functions:
+- useActivityLogs(startDate, endDate) - Fetch activity_log with staff/member joins
 - Filter by date range
 ```
 
-**Page Updates:**
-- Connect date range picker
-- Display table: Date & time, Event type, Activity description, Staff name
-- Show old/new values for changes (JSON parsing)
+**Implementation Details:**
+- Query `activity_log` table with joins to `staff` and `members`
+- Date range filtering using `gte` and `lte` on `created_at`
+- Parse JSON `old_value` and `new_value` for display
+- Order by `created_at` descending
 
-### 3.2 Announcements
+### Modify: `src/pages/ActivityLog.tsx`
 
-**New Files:**
-- `src/hooks/useAnnouncements.ts`
-- `src/components/announcements/CreateAnnouncementDialog.tsx`
+**Updates:**
+- Connect to `useActivityLogs` hook
+- Date range picker controls the query
+- DataTable with columns:
+  - Date & time (formatted)
+  - Event type (badge)
+  - Activity description
+  - Staff name
+- Loading skeleton while fetching
+- Empty state when no records
 
-**Modifications:**
-- `src/pages/Announcements.tsx`
+**Table Format:**
+| Date & Time | Event | Activity | Staff |
+|-------------|-------|----------|-------|
+| 3 Feb 2026, 14:30 | Member profile | Changed phone from 081... to 082... | John Smith |
 
-**Implementation:**
+---
+
+## Phase 3.2: Announcements Module
+
+### New File: `src/hooks/useAnnouncements.ts`
 
 ```text
-useAnnouncements.ts hook:
+Hook functions:
 - useAnnouncements(status, search) - Fetch announcements
-- useAnnouncementStats() - Status counts
-- useCreateAnnouncement() - Create new
-- useUpdateAnnouncement() - Update
+- useAnnouncementStats() - Count by status (active/scheduled/completed)
+- useCreateAnnouncement() - Create new announcement
+- useUpdateAnnouncement() - Update existing
+- useDeleteAnnouncement() - Delete announcement
 ```
 
-**CreateAnnouncementDialog:**
-- Message (textarea)
-- Publish date (datetime picker)
-- End date (datetime picker)
-- Status (active/scheduled/completed)
+### New File: `src/components/announcements/CreateAnnouncementDialog.tsx`
+
+**Form Fields (Zod validated):**
+- Message (textarea, required)
+- Publish date (datetime picker, required)
+- End date (datetime picker, required)
+- Status (select: active/scheduled/completed)
+
+### Modify: `src/pages/Announcements.tsx`
+
+**Updates:**
+- Connect to `useAnnouncements` hook
+- Status tabs with real counts from `useAnnouncementStats()`
+- Search functionality (debounced)
+- DataTable with columns:
+  - Publishing date
+  - Ending on date
+  - Message (truncated)
+- "Create" button opens dialog
+- Loading skeleton
+- Empty state
 
 ---
 
 ## Phase 4: Notifications System
 
-**New Files:**
-- `src/hooks/useNotifications.ts`
-
-**Modifications:**
-- `src/pages/Notifications.tsx`
-- `src/components/layout/Header.tsx`
-
-**Implementation:**
+### New File: `src/hooks/useNotifications.ts`
 
 ```text
-useNotifications.ts hook:
-- useNotifications(status, type) - Fetch notifications for current user
+Hook functions:
+- useNotifications(status?, type?) - Fetch notifications for current user
 - useUnreadCount() - Count unread for header badge
-- useMarkAsRead(id) - Mark single notification read
+- useMarkAsRead(id) - Mark single notification as read
 - useMarkAllRead() - Mark all as read
+- useDeleteNotification(id) - Remove notification
 ```
 
-**Notifications Page Updates:**
-- Date filter
-- Status filter (read/unread)
-- Type filter checkboxes
-- List of notifications with avatar, title, message, timestamp
-- Mark as read functionality
+### Modify: `src/pages/Notifications.tsx`
 
-**Header Enhancement:**
-- Connect unreadNotifications prop to real count
-- Show recent notifications in dropdown
-- "View all" links to /notifications page
+**Updates:**
+- Connect to `useNotifications` hook
+- Date filter (single date picker)
+- Status filter: All / Read / Unread
+- Type filter checkboxes (booking, cancellation, payment, etc.)
+- Notification list with:
+  - Avatar (based on type)
+  - Title (bold)
+  - Message
+  - Timestamp (relative: "2 hours ago")
+  - Read/unread indicator (dot)
+- Click to mark as read
+- "Mark all read" button
 
----
+### Modify: `src/components/layout/Header.tsx`
 
-## Phase 5: Settings Persistence
-
-**New Files:**
-- `src/hooks/useSettings.ts`
-
-**Modifications:**
-- `src/pages/settings/SettingsGeneral.tsx`
-- `src/pages/settings/SettingsClass.tsx`
-- `src/pages/settings/SettingsClient.tsx`
-- `src/pages/settings/SettingsPackage.tsx`
-- `src/pages/settings/SettingsContracts.tsx`
-
-**Implementation:**
-
-```text
-useSettings.ts hook:
-- useSettings(section) - Fetch settings by section
-- useUpdateSetting(section, key, value) - Update setting
-- useSaveSettings(section, data) - Save multiple settings
-```
-
-**Settings Table Structure:**
-- section: 'general' | 'class' | 'client' | 'package' | 'contracts'
-- key: setting name
-- value: JSON value
-
-**General Settings:**
-- Payment methods (per location toggles)
-- Theme color selection
-- Workout toggle
-- Gym check-in configurations
-
-**Class Settings:**
-- Booking period (days before class)
-- Booking cutoff (mins before class)
-- Max spots per member
-- Waitlisting settings
-- Cancellation settings
-- No-show settings
+**Updates:**
+- Import and use `useUnreadCount()` hook
+- Replace hardcoded `unreadNotifications` prop
+- Notification dropdown shows recent notifications
+- "View all" links to `/notifications`
+- Click notification marks as read
 
 ---
 
-## Phase 6: Member Details Enhancement
+## File Summary
 
-**New Files:**
-- `src/hooks/useMemberDetails.ts`
-
-**Modifications:**
-- `src/pages/MemberDetails.tsx`
-
-**Implementation:**
-
-```text
-useMemberDetails.ts hook:
-- useMember(id) - Fetch member by ID
-- useMemberPackages(memberId) - Fetch member_packages with package joins
-- useMemberAttendance(memberId) - Fetch member_attendance history
-- useMemberBilling(memberId) - Fetch member_billing with transaction joins
-- useMemberNotes(memberId) - Fetch member_notes
-- useMemberInjuries(memberId) - Fetch member_injuries
-- useMemberSuspensions(memberId) - Fetch member_suspensions
-- useMemberContracts(memberId) - Fetch member_contracts
-- useCreateNote(), useCreateBilling(), etc.
-```
-
-**Tab Updates:**
-1. **Home** - Account details from member record
-2. **Profile** - Editable form connected to updateMember
-3. **Attendance** - Table from member_attendance
-4. **Packages** - Table from member_packages with status sub-tabs
-5. **Billing** - Table from member_billing + Add billing dialog
-6. **Injuries** - Table from member_injuries
-7. **Notes** - List from member_notes + Add note
-8. **Suspensions** - Table from member_suspensions
-9. **Contract** - Documents from member_contracts
+| Action | File | Description |
+|--------|------|-------------|
+| CREATE | `src/hooks/useActivityLog.ts` | Activity log queries |
+| CREATE | `src/hooks/useAnnouncements.ts` | Announcements CRUD |
+| CREATE | `src/hooks/useNotifications.ts` | Notifications queries |
+| CREATE | `src/components/announcements/CreateAnnouncementDialog.tsx` | Form dialog |
+| MODIFY | `src/pages/ActivityLog.tsx` | Connect to database |
+| MODIFY | `src/pages/Announcements.tsx` | Connect to database |
+| MODIFY | `src/pages/Notifications.tsx` | Connect to database |
+| MODIFY | `src/components/layout/Header.tsx` | Real notification count |
+| UPDATE | `.lovable/plan.md` | Mark phases complete |
 
 ---
 
-## Phase 7: Reports with Charts (Optional for v0.0.1)
+## Database Tables Used
 
-**New Files:**
-- `src/pages/reports/MembersAtRisk.tsx`
-- `src/pages/reports/ActiveMembers.tsx`
-- `src/pages/reports/PackageSales.tsx`
-- `src/pages/reports/ClassCapacity.tsx`
-- `src/hooks/useReports.ts`
+**activity_log:**
+- id, event_type, activity, old_value (JSON), new_value (JSON)
+- staff_id (FK to staff), member_id (FK to members)
+- created_at
 
-**Implementation:**
-- Pie chart for risk levels using Recharts
-- Line charts for trends
-- Risk calculation logic:
-  - High: ≤30 days OR ≤33% AND ≤3 sessions remaining
-  - Medium: ≤60 days OR ≤60% AND ≤15 sessions remaining
-  - Low: ≥61 days AND ≥61% AND ≥16 sessions remaining
-- Export to CSV functionality
+**announcements:**
+- id, message, publish_date, end_date
+- status (enum: active, scheduled, completed)
+- created_by (FK to staff)
 
----
-
-## Implementation Order
-
-| Priority | Module | Files | Effort |
-|----------|--------|-------|--------|
-| 1 | Schedule & Lobby | 6 files | High |
-| 2 | Notifications | 3 files | Medium |
-| 3 | Activity Log & Announcements | 5 files | Medium |
-| 4 | Member Details Tabs | 2 files | High |
-| 5 | Settings Persistence | 6 files | Medium |
-| 6 | Reports (Optional) | 5 files | High |
+**notifications:**
+- id, title, message, type (enum), is_read
+- user_id (FK to auth.users)
+- related_entity_id, related_entity_type
 
 ---
 
-## Quality Checklist (Per Module)
+## Quality Checklist
 
-- [ ] Database connection with React Query
+For each module:
+- [ ] React Query hooks with proper cache invalidation
 - [ ] Loading skeletons
 - [ ] Empty state display
 - [ ] Error handling with toast
-- [ ] Search functionality (debounced)
+- [ ] Search/filter functionality
 - [ ] Status tabs with real counts
-- [ ] Create dialog with Zod validation
 - [ ] i18n for all text
 - [ ] Responsive design
 
 ---
 
-## First Implementation Batch
+## Implementation Order
 
-Starting with **Phase 2: Schedule & Lobby** as these are core daily operations:
-
-1. Create `useSchedule.ts` hook
-2. Create `useLobby.ts` hook
-3. Update `Schedule.tsx` with database connection
-4. Update `Lobby.tsx` with database connection
-5. Create `ScheduleClassDialog.tsx`
-6. Create `CheckInDialog.tsx`
-
-This provides:
-- Real-time class scheduling
-- Trainer assignment
-- Member check-in tracking
-- Daily operations visibility
+1. Create `useActivityLog.ts` hook
+2. Update `ActivityLog.tsx` page
+3. Create `useAnnouncements.ts` hook
+4. Create `CreateAnnouncementDialog.tsx`
+5. Update `Announcements.tsx` page
+6. Create `useNotifications.ts` hook
+7. Update `Notifications.tsx` page
+8. Update `Header.tsx` with real notification count
+9. Update plan.md
 
