@@ -23,6 +23,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Rocket,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -130,6 +131,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       ],
     },
     { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator' },
+    { label: t('nav.comingSoon'), path: '/coming-soon', icon: Rocket, minLevel: 'level_2_operator' },
     { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager' },
   ];
 
