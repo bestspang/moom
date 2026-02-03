@@ -9,6 +9,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateLocale } from '@/lib/formatters';
 import type { DateRange } from 'react-day-picker';
 
 interface DateRangePickerProps {
@@ -24,6 +26,9 @@ export const DateRangePicker = ({
   onChange,
   className,
 }: DateRangePickerProps) => {
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
+
   const [range, setRange] = React.useState<DateRange | undefined>({
     from: startDate,
     to: endDate,
@@ -49,14 +54,14 @@ export const DateRangePicker = ({
             {range?.from ? (
               range.to ? (
                 <>
-                  {format(range.from, 'd MMM yyyy').toUpperCase()} -{' '}
-                  {format(range.to, 'd MMM yyyy').toUpperCase()}
+                  {format(range.from, 'd MMM yyyy', { locale }).toUpperCase()} -{' '}
+                  {format(range.to, 'd MMM yyyy', { locale }).toUpperCase()}
                 </>
               ) : (
-                format(range.from, 'd MMM yyyy').toUpperCase()
+                format(range.from, 'd MMM yyyy', { locale }).toUpperCase()
               )
             ) : (
-              'Pick a date range'
+              t('dateTime.pickDateRange')
             )}
           </Button>
         </PopoverTrigger>
@@ -68,6 +73,8 @@ export const DateRangePicker = ({
             selected={range}
             onSelect={handleSelect}
             numberOfMonths={2}
+            locale={locale}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>

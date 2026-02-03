@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,19 +27,17 @@ import {
 
 type Member = Database['public']['Tables']['members']['Row'];
 
-const memberSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  nickname: z.string().max(50).optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().max(20).optional(),
-  dateOfBirth: z.string().optional(),
-  gender: z.enum(['male', 'female', 'other']).optional(),
-  address: z.string().max(500).optional(),
-  status: z.enum(['active', 'suspended', 'on_hold', 'inactive']),
-});
-
-type MemberFormData = z.infer<typeof memberSchema>;
+type MemberFormData = {
+  firstName: string;
+  lastName: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  address?: string;
+  status: 'active' | 'suspended' | 'on_hold' | 'inactive';
+};
 
 interface EditMemberDialogProps {
   open: boolean;
@@ -55,6 +53,19 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
   const { t } = useLanguage();
   const { toast } = useToast();
   const updateMember = useUpdateMember();
+
+  // Memoize schema for i18n support
+  const memberSchema = useMemo(() => z.object({
+    firstName: z.string().min(1, t('validation.firstNameRequired')).max(100),
+    lastName: z.string().min(1, t('validation.lastNameRequired')).max(100),
+    nickname: z.string().max(50).optional(),
+    email: z.string().email(t('validation.invalidEmail')).optional().or(z.literal('')),
+    phone: z.string().max(20).optional(),
+    dateOfBirth: z.string().optional(),
+    gender: z.enum(['male', 'female', 'other']).optional(),
+    address: z.string().max(500).optional(),
+    status: z.enum(['active', 'suspended', 'on_hold', 'inactive']),
+  }), [t]);
 
   const {
     register,
@@ -154,7 +165,7 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="nickname">Nickname</Label>
+            <Label htmlFor="nickname">{t('form.nickname')}</Label>
             <Input id="nickname" {...register('nickname')} />
           </div>
 
@@ -178,7 +189,7 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Label htmlFor="dateOfBirth">{t('form.dateOfBirth')}</Label>
               <Input
                 id="dateOfBirth"
                 type="date"
@@ -187,18 +198,18 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">{t('form.gender')}</Label>
               <Select
                 defaultValue={member?.gender || undefined}
                 onValueChange={(value) => setValue('gender', value as any)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
+                  <SelectValue placeholder={t('form.selectGender')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="male">{t('form.male')}</SelectItem>
+                  <SelectItem value="female">{t('form.female')}</SelectItem>
+                  <SelectItem value="other">{t('form.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -223,7 +234,7 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address">{t('form.address')}</Label>
             <Input id="address" {...register('address')} />
           </div>
 

@@ -194,6 +194,9 @@ export default {
       discard: 'ยกเลิก',
       saveAsDraft: 'บันทึกเป็นแบบร่าง',
       createPackage: 'สร้างแพ็คเกจ',
+      packageNamePlaceholder: 'ชื่อแพ็คเกจ',
+      descriptionPlaceholder: 'คำอธิบายแพ็คเกจ...',
+      descriptionThPlaceholder: 'คำอธิบายแพ็คเกจ...',
       completeRequired: 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมดเพื่อสร้างแพ็คเกจ',
     },
   },
@@ -466,6 +469,16 @@ export default {
     today: 'วันนี้',
     yesterday: 'เมื่อวาน',
     tomorrow: 'พรุ่งนี้',
+    pickDate: 'เลือกวันที่',
+    pickDateRange: 'เลือกช่วงวันที่',
+  },
+
+  // Time relative
+  time: {
+    justNow: 'เมื่อสักครู่',
+    minutesAgo: '{n} นาทีที่แล้ว',
+    hoursAgo: '{n} ชม.ที่แล้ว',
+    daysAgo: '{n} วันที่แล้ว',
   },
 
   // Validation
@@ -475,6 +488,13 @@ export default {
     invalidPhone: 'กรุณากรอกเบอร์โทรที่ถูกต้อง',
     firstNameRequired: 'กรุณากรอกชื่อจริง',
     lastNameRequired: 'กรุณากรอกนามสกุล',
+    passwordMinLength: 'รหัสผ่านต้องมีอย่างน้อย {n} ตัวอักษร',
+    passwordUppercase: 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว',
+    passwordLowercase: 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว',
+    passwordNumber: 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว',
+    passwordSpecial: 'รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว',
+    passwordsNotMatch: 'รหัสผ่านไม่ตรงกัน',
+    confirmPassword: 'กรุณายืนยันรหัสผ่าน',
   },
 
   // Auth

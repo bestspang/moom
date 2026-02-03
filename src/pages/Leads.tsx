@@ -4,7 +4,7 @@ import { PageHeader, SearchBar, DataTable, StatusBadge, EmptyState, type Column 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/formatters';
+import { getInitials, getDateLocale } from '@/lib/formatters';
 import { useLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
@@ -12,7 +12,8 @@ import type { Tables } from '@/integrations/supabase/types';
 type Lead = Tables<'leads'>;
 
 const Leads = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
 
   const { data: leads, isLoading } = useLeads(search);
@@ -58,12 +59,12 @@ const Leads = () => {
     { 
       key: 'lastContacted', 
       header: t('leads.lastContacted'), 
-      cell: (row) => row.last_contacted ? format(new Date(row.last_contacted), 'd MMM yyyy') : '-' 
+      cell: (row) => row.last_contacted ? format(new Date(row.last_contacted), 'd MMM yyyy', { locale }) : '-' 
     },
     { 
       key: 'lastAttended', 
       header: t('leads.lastAttended'), 
-      cell: (row) => row.last_attended ? format(new Date(row.last_attended), 'd MMM yyyy') : '-' 
+      cell: (row) => row.last_attended ? format(new Date(row.last_attended), 'd MMM yyyy', { locale }) : '-' 
     },
   ];
 

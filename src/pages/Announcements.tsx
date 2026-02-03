@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Trash2 } from 'lucide-react';
+import { getDateLocale } from '@/lib/formatters';
 import {
   Table,
   TableBody,
@@ -36,7 +37,8 @@ import type { Database } from '@/integrations/supabase/types';
 type AnnouncementStatus = Database['public']['Enums']['announcement_status'];
 
 const Announcements = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('active');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -119,12 +121,12 @@ const Announcements = () => {
                 <TableRow key={announcement.id}>
                   <TableCell className="whitespace-nowrap">
                     {announcement.publish_date
-                      ? format(new Date(announcement.publish_date), 'd MMM yyyy')
+                      ? format(new Date(announcement.publish_date), 'd MMM yyyy', { locale })
                       : '-'}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {announcement.end_date
-                      ? format(new Date(announcement.end_date), 'd MMM yyyy')
+                      ? format(new Date(announcement.end_date), 'd MMM yyyy', { locale })
                       : '-'}
                   </TableCell>
                   <TableCell className="max-w-md">

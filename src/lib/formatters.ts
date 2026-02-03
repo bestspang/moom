@@ -1,24 +1,34 @@
 import { format, parseISO } from 'date-fns';
+import { th, enUS } from 'date-fns/locale';
 
 // Bangkok timezone offset (GMT+7)
 const BANGKOK_OFFSET = 7 * 60; // minutes
 
 /**
+ * Get date-fns locale based on language
+ */
+export function getDateLocale(language: string = 'en') {
+  return language === 'th' ? th : enUS;
+}
+
+/**
  * Format date in Bangkok timezone
  * Format: "D MMM YYYY" (e.g., "3 FEB 2026")
  */
-export function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string, language: string = 'en'): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'd MMM yyyy').toUpperCase();
+  const locale = getDateLocale(language);
+  return format(d, 'd MMM yyyy', { locale }).toUpperCase();
 }
 
 /**
  * Format date with day of week
  * Format: "DAY, D MMM YYYY" (e.g., "TUE, 3 FEB 2026")
  */
-export function formatDateWithDay(date: Date | string): string {
+export function formatDateWithDay(date: Date | string, language: string = 'en'): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'EEE, d MMM yyyy').toUpperCase();
+  const locale = getDateLocale(language);
+  return format(d, 'EEE, d MMM yyyy', { locale }).toUpperCase();
 }
 
 /**
@@ -106,32 +116,46 @@ export function formatPercentage(value: number, decimals = 0): string {
 
 /**
  * Format relative time (e.g., "2 hours ago")
+ * Supports i18n via translation function
  */
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(
+  date: Date | string,
+  language: string = 'en',
+  t?: (key: string, options?: { n: number }) => string
+): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - d.getTime()) / 1000);
   
   if (diffInSeconds < 60) {
-    return 'just now';
+    return t ? t('time.justNow') : (language === 'th' ? 'เมื่อสักครู่' : 'just now');
   }
   
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) {
-    return `${diffInMinutes}m ago`;
+    if (t) {
+      return t('time.minutesAgo', { n: diffInMinutes }).replace('{n}', String(diffInMinutes));
+    }
+    return language === 'th' ? `${diffInMinutes} นาทีที่แล้ว` : `${diffInMinutes}m ago`;
   }
   
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
+    if (t) {
+      return t('time.hoursAgo', { n: diffInHours }).replace('{n}', String(diffInHours));
+    }
+    return language === 'th' ? `${diffInHours} ชม.ที่แล้ว` : `${diffInHours}h ago`;
   }
   
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) {
-    return `${diffInDays}d ago`;
+    if (t) {
+      return t('time.daysAgo', { n: diffInDays }).replace('{n}', String(diffInDays));
+    }
+    return language === 'th' ? `${diffInDays} วันที่แล้ว` : `${diffInDays}d ago`;
   }
   
-  return formatDate(d);
+  return formatDate(d, language);
 }
 
 /**

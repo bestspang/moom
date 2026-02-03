@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,23 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-const signupSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string().min(8, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-type SignupFormData = z.infer<typeof signupSchema>;
+type SignupFormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
 
 const Signup = () => {
   const { t } = useLanguage();
@@ -38,6 +28,23 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Memoize schema for i18n support
+  const signupSchema = useMemo(() => z.object({
+    firstName: z.string().min(1, t('validation.firstNameRequired')).max(50),
+    lastName: z.string().min(1, t('validation.lastNameRequired')).max(50),
+    email: z.string().email(t('validation.invalidEmail')),
+    password: z.string()
+      .min(8, t('validation.passwordMinLength').replace('{n}', '8'))
+      .regex(/[A-Z]/, t('validation.passwordUppercase'))
+      .regex(/[a-z]/, t('validation.passwordLowercase'))
+      .regex(/[0-9]/, t('validation.passwordNumber'))
+      .regex(/[^A-Za-z0-9]/, t('validation.passwordSpecial')),
+    confirmPassword: z.string().min(8, t('validation.confirmPassword')),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('validation.passwordsNotMatch'),
+    path: ['confirmPassword'],
+  }), [t]);
 
   const {
     register,

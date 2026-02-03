@@ -9,6 +9,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateLocale } from '@/lib/formatters';
 
 interface DatePickerProps {
   date: Date;
@@ -23,6 +25,9 @@ export const DatePicker = ({
   showNavigation = true,
   className,
 }: DatePickerProps) => {
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
+
   const goToPreviousDay = () => {
     const prevDay = new Date(date);
     prevDay.setDate(prevDay.getDate() - 1);
@@ -53,7 +58,7 @@ export const DatePicker = ({
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? format(date, 'EEE, d MMM yyyy').toUpperCase() : 'Pick a date'}
+            {date ? format(date, 'EEE, d MMM yyyy', { locale }).toUpperCase() : t('dateTime.pickDate')}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -62,6 +67,8 @@ export const DatePicker = ({
             selected={date}
             onSelect={(d) => d && onChange(d)}
             initialFocus
+            locale={locale}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>

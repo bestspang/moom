@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, type Column } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { useFinanceTransactions, useFinanceStats } from '@/hooks/useFinance';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -35,7 +35,7 @@ const Finance = () => {
     { 
       key: 'dateTime', 
       header: t('finance.dateTime'), 
-      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm')
+      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
     },
     { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
     { key: 'orderName', header: t('finance.orderName'), cell: (row) => row.order_name },

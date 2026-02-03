@@ -176,7 +176,7 @@ const CreatePackage = () => {
                   <Input
                     value={formData.nameEn}
                     onChange={(e) => handleInputChange('nameEn', e.target.value)}
-                    placeholder="Package name"
+                    placeholder={t('packages.create.packageNamePlaceholder')}
                   />
                 </div>
                 <div>
@@ -432,7 +432,7 @@ const CreatePackage = () => {
                   value={formData.descriptionEn}
                   onChange={(e) => handleInputChange('descriptionEn', e.target.value)}
                   maxLength={250}
-                  placeholder="Package description..."
+                  placeholder={t('packages.create.descriptionPlaceholder')}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {formData.descriptionEn.length}/250

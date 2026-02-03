@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClasses, useClassStats } from '@/hooks/useClasses';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 
 const Classes = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
@@ -51,7 +53,7 @@ const Classes = () => {
     { 
       key: 'dateModified', 
       header: t('classes.dateModified'), 
-      cell: (row) => row.updated_at ? format(new Date(row.updated_at), 'd MMM yyyy') : '-'
+      cell: (row) => row.updated_at ? format(new Date(row.updated_at), 'd MMM yyyy', { locale }) : '-'
     },
   ];
 

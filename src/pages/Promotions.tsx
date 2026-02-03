@@ -5,7 +5,7 @@ import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column,
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePromotions, usePromotionStats } from '@/hooks/usePromotions';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
@@ -13,7 +13,8 @@ import type { Tables } from '@/integrations/supabase/types';
 type Promotion = Tables<'promotions'>;
 
 const Promotions = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
 
@@ -71,12 +72,12 @@ const Promotions = () => {
     { 
       key: 'startDate', 
       header: t('promotions.startedOn'), 
-      cell: (row) => row.start_date ? format(new Date(row.start_date), 'd MMM yyyy') : '-'
+      cell: (row) => row.start_date ? format(new Date(row.start_date), 'd MMM yyyy', { locale }) : '-'
     },
     { 
       key: 'endDate', 
       header: t('promotions.endingOn'), 
-      cell: (row) => row.end_date ? format(new Date(row.end_date), 'd MMM yyyy') : '-'
+      cell: (row) => row.end_date ? format(new Date(row.end_date), 'd MMM yyyy', { locale }) : '-'
     },
   ];
 

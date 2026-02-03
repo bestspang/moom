@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, DateRangePicker, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTransferSlips, useTransferSlipStats } from '@/hooks/useFinance';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 const TransferSlips = () => {
@@ -42,7 +42,7 @@ const TransferSlips = () => {
     { 
       key: 'dateTime', 
       header: t('finance.dateTime'), 
-      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm')
+      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
     },
     { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
     { 
