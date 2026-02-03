@@ -114,7 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Note: Staff and user_roles records are now created automatically
+      // via database trigger (handle_new_user) for security
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -126,37 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
-      if (error) {
-        return { error };
-      }
-
-      // If user was created, create staff record and assign default role
-      if (data.user) {
-        // Create staff record
-        const { error: staffError } = await supabase.from('staff').insert({
-          user_id: data.user.id,
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          status: 'pending',
-        });
-
-        if (staffError) {
-          console.error('Error creating staff record:', staffError);
-        }
-
-        // Assign default role (front_desk)
-        const { error: roleError } = await supabase.from('user_roles').insert({
-          user_id: data.user.id,
-          role: 'front_desk',
-        });
-
-        if (roleError) {
-          console.error('Error assigning role:', roleError);
-        }
-      }
-
-      return { error: null };
+      return { error };
     } catch (error) {
       return { error: error as Error };
     }
