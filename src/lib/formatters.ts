@@ -143,3 +143,10 @@ export function daysBetween(date1: Date | string, date2: Date | string): number 
   const diffInTime = Math.abs(d2.getTime() - d1.getTime());
   return Math.ceil(diffInTime / (1000 * 60 * 60 * 24));
 }
+
+/**
+ * Format date for database (YYYY-MM-DD)
+ */
+export function formatDateForDB(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}

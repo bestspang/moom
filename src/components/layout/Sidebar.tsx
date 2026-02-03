@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -32,6 +33,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import type { Database } from '@/integrations/supabase/types';
+
+type AccessLevel = Database['public']['Enums']['access_level'];
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,15 +46,25 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
+  minLevel?: AccessLevel;
 }
 
 interface NavGroup {
   label: string;
   items: NavItem[];
+  minLevel?: AccessLevel;
 }
+
+const accessLevelOrder: Record<AccessLevel, number> = {
+  level_1_minimum: 1,
+  level_2_operator: 2,
+  level_3_manager: 3,
+  level_4_master: 4,
+};
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { t } = useLanguage();
+  const { accessLevel } = useAuth();
   const location = useLocation();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['class', 'client', 'package', 'yourGym', 'finance']);
 
@@ -60,11 +74,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
+  // Check if user has minimum access level
+  const hasAccess = (minLevel?: AccessLevel) => {
+    if (!minLevel) return true;
+    if (!accessLevel) return false;
+    return accessLevelOrder[accessLevel] >= accessLevelOrder[minLevel];
+  };
+
   const navItems: (NavItem | NavGroup)[] = [
     { label: t('nav.dashboard'), path: '/', icon: Home },
     { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen },
     {
       label: t('nav.class'),
+      minLevel: 'level_2_operator',
       items: [
         { label: t('nav.schedule'), path: '/calendar', icon: Calendar },
         { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid },
@@ -81,6 +103,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.package'),
+      minLevel: 'level_2_operator',
       items: [
         { label: t('nav.packages'), path: '/package', icon: Tag },
         { label: t('nav.promotions'), path: '/promotion', icon: Gift },
@@ -88,9 +111,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.yourGym'),
+      minLevel: 'level_3_manager',
       items: [
         { label: t('nav.staff'), path: '/admin', icon: UserCheck },
-        { label: t('nav.roles'), path: '/roles', icon: Shield },
+        { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master' },
         { label: t('nav.locations'), path: '/location', icon: MapPin },
         { label: t('nav.activityLog'), path: '/activity-log', icon: FileText },
         { label: t('nav.announcements'), path: '/announcement', icon: Megaphone },
@@ -99,13 +123,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.finance'),
+      minLevel: 'level_3_manager',
       items: [
         { label: t('nav.transferSlips'), path: '/transfer-slip', icon: Receipt },
         { label: t('nav.finance'), path: '/finance', icon: DollarSign },
       ],
     },
-    { label: t('nav.reports'), path: '/report/member', icon: BarChart3 },
-    { label: t('nav.settings'), path: '/setting/general', icon: Settings },
+    { label: t('nav.reports'), path: '/report/member', icon: BarChart3, minLevel: 'level_2_operator' },
+    { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager' },
   ];
 
   const isNavItem = (item: NavItem | NavGroup): item is NavItem => {
@@ -118,6 +143,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const renderNavItem = (item: NavItem) => {
+    if (!hasAccess(item.minLevel)) return null;
+    
     const Icon = item.icon;
     const isActive = isActiveRoute(item.path);
 
@@ -140,8 +167,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const renderNavGroup = (group: NavGroup, groupKey: string) => {
+    if (!hasAccess(group.minLevel)) return null;
+    
+    // Filter items by access level
+    const visibleItems = group.items.filter((item) => hasAccess(item.minLevel));
+    if (visibleItems.length === 0) return null;
+    
     const isOpen = openGroups.includes(groupKey);
-    const hasActiveChild = group.items.some((item) => isActiveRoute(item.path));
+    const hasActiveChild = visibleItems.some((item) => isActiveRoute(item.path));
 
     return (
       <Collapsible
@@ -165,7 +198,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           )}
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-4 space-y-1 mt-1">
-          {group.items.map(renderNavItem)}
+          {visibleItems.map(renderNavItem)}
         </CollapsibleContent>
       </Collapsible>
     );
@@ -196,10 +229,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 return renderNavItem(item);
               } else {
                 const groupKey = item.label.toLowerCase().replace(/\s+/g, '');
+                const rendered = renderNavGroup(item, groupKey);
+                if (!rendered) return null;
                 return (
                   <div key={groupKey}>
                     {index > 0 && <div className="my-3 border-t border-sidebar-border" />}
-                    {renderNavGroup(item, groupKey)}
+                    {rendered}
                   </div>
                 );
               }
