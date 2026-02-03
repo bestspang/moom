@@ -428,22 +428,54 @@ export default {
       memberContracts: 'สัญญาสมาชิก',
     },
     general: {
-      payment: 'การชำระเงิน',
+      // Sidebar menu
+      payment: 'วิธีการชำระเงิน',
+      themeColorMenu: 'สีธีม',
+      timezoneMenu: 'เขตเวลา',
+      workoutMenu: 'ท่าออกกำลังกาย',
+      gymCheckinMenu: 'ยิมเช็คอิน',
+      
+      // Payment section
       paymentMethods: 'วิธีการชำระเงิน',
-      bankTransfer: 'โอนเงินผ่านธนาคาร',
+      paymentDescription: 'วิธีการชำระเงินสามารถเปิดใช้และปิดใช้ได้ ขึ้นอยู่กับความต้องการของคุณ',
+      bankTransfer: 'โอนผ่านบัญชีธนาคาร',
+      bankTransferDesc: 'ข้อมูลบัญชีธนาคารจะแสดงเมื่อสมาชิกทำการซื้อผ่านแอพสมาชิก',
+      specifyBankAccount: 'ระบุบัญชีธนาคาร',
       creditCard: 'บัตรเครดิต (Stripe)',
+      creditCardDesc: 'ชำระเงินผ่านบัตรเครดิตผ่าน Stripe ในประเทศ: 3.65% + ฿10 ต่อธุรกรรม ต่างประเทศ: 4.75% + ฿10 ต่อธุรกรรม',
+      setupStripe: 'ตั้งค่า Stripe',
       qrPromptPay: 'QR พร้อมเพย์',
-      stripeFee: '3.65% + 10 บาท ในประเทศ',
+      qrPromptPayDesc: 'ชำระเงินผ่าน QR Code พร้อมเพย์ผ่าน Stripe ค่าธรรมเนียม: 1.65% + ฿10 ต่อการคืนเงิน',
+      stripeFee: '3.65% + 10 บาท ในประเทศ, 4.75% + 10 บาท ต่างประเทศ',
       promptPayFee: '1.65% + ฿10 ต่อการคืนเงิน',
-      set: 'ตั้งค่า',
+      taxInvoice: 'ใบกำกับภาษี',
+      taxInvoiceDesc: 'ข้อมูลบริษัทสำหรับออกใบกำกับภาษี',
+      
+      // Theme section
       appearance: 'รูปลักษณ์',
       themeColor: 'สีธีม',
+      selectColor: 'เลือกสี',
+      defaultColor: 'สีเริ่มต้น',
+      otherColors: 'สีธีมอื่นๆ',
+      
+      // Timezone section
       timezone: 'เขตเวลา',
-      workout: 'ออกกำลังกาย',
-      workoutList: 'รายการออกกำลังกาย',
-      enableWorkoutLogging: 'เปิดใช้งานการบันทึกออกกำลังกายผ่านแอพ MOOM CLUB',
-      gymCheckin: 'เช็คอินยิม',
+      selectTimezone: 'เลือกเขตเวลา',
+      
+      // Workout section
+      workout: 'ท่าออกกำลังกาย',
+      workoutList: 'รายการท่าออกกำลังกาย',
+      enableWorkoutLogging: 'เปิดใช้งานการบันทึกออกกำลังกายผ่านแอพ Gymmo',
+      workoutDesc: 'เมื่อใช้รายการท่าออกกำลังกาย เพื่อให้สมาชิกสามารถบันทึกการออกกำลังกายผ่านแอพ Gymmo ได้ หากต้องการบันทึกกิจกรรมออกกำลังกาย ให้ไปที่: Gymmo app → Profile → My Workout',
+      
+      // Gym check-in section
+      gymCheckin: 'ยิมเช็คอิน',
+      enableGymCheckin: 'เปิดใช้งานยิมเช็คอิน',
+      gymCheckinDesc: 'อนุญาตให้สมาชิกเช็คอินผ่าน QR Code ที่ทางเข้ายิม',
+      specifyCheckinTime: 'ระบุช่วงเวลาให้สมาชิกเช็คอินยิม',
+      anytime: 'เวลาใดก็ได้',
       checkinConfigurations: 'การตั้งค่าเช็คอิน',
+      set: 'ตั้งค่า',
     },
     class: {
       booking: 'การจอง',
