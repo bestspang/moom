@@ -43,10 +43,21 @@
    - Added aria-labels to icon buttons (menu, notifications, user avatar)
    - Added aria-hidden to decorative icons
 
-### Phase 4: Low (ทำทีหลังได้) - Enhancement
-- [ ] Dashboard cards navigation
-- [ ] Skeleton loader sizing
-- [ ] Settings tab semantics
+### ✅ Phase 4: Low (COMPLETED)
+1. ✅ Dashboard cards navigation
+   - Added "View All" links to High Risk, Hot Leads, Upcoming Birthdays cards
+   - Made individual items clickable with hover states
+   - Navigate to member details or filtered lists
+2. ✅ Skeleton loader sizing
+   - Created dedicated skeleton components matching real content dimensions
+   - MemberListSkeleton for avatar + text layouts
+   - StatCardSkeleton for stat cards
+   - TableRowSkeleton for table rows
+3. ✅ Settings tab semantics
+   - Replaced Button-based navigation with proper NavLink tabs
+   - Added ARIA roles (tablist, tab, tabpanel)
+   - Added keyboard navigation support
+   - Added smooth transition animations
 
 ---
 
