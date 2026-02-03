@@ -194,6 +194,9 @@ export default {
       discard: 'Discard',
       saveAsDraft: 'Save as draft',
       createPackage: 'Create package',
+      packageNamePlaceholder: 'Package name',
+      descriptionPlaceholder: 'Package description...',
+      descriptionThPlaceholder: 'คำอธิบายแพ็คเกจ...',
       completeRequired: 'Please complete all required fields to create this package.',
     },
   },
@@ -466,6 +469,16 @@ export default {
     today: 'Today',
     yesterday: 'Yesterday',
     tomorrow: 'Tomorrow',
+    pickDate: 'Pick a date',
+    pickDateRange: 'Pick a date range',
+  },
+
+  // Time relative
+  time: {
+    justNow: 'just now',
+    minutesAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
+    daysAgo: '{n}d ago',
   },
 
   // Validation
@@ -475,6 +488,13 @@ export default {
     invalidPhone: 'Please enter a valid phone number',
     firstNameRequired: 'First name is required',
     lastNameRequired: 'Last name is required',
+    passwordMinLength: 'Password must be at least {n} characters',
+    passwordUppercase: 'Password must contain at least one uppercase letter',
+    passwordLowercase: 'Password must contain at least one lowercase letter',
+    passwordNumber: 'Password must contain at least one number',
+    passwordSpecial: 'Password must contain at least one special character',
+    passwordsNotMatch: 'Passwords do not match',
+    confirmPassword: 'Please confirm your password',
   },
 
   // Auth

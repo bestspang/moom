@@ -39,7 +39,7 @@ const Lobby = () => {
         if (!row.member_package) return '-';
         const remaining = row.member_package.sessions_remaining;
         const used = row.member_package.sessions_used || 0;
-        return remaining !== null ? `${used}/${used + remaining}` : 'Unlimited';
+        return remaining !== null ? `${used}/${used + remaining}` : t('packages.unlimited');
       },
     },
     {

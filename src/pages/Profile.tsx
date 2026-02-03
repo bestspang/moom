@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/common';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -13,10 +15,13 @@ const Profile = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
+  const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
 
   const getUserInitials = () => {
-    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
-      return `${user.user_metadata.first_name.charAt(0)}${user.user_metadata.last_name.charAt(0)}`.toUpperCase();
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     }
     if (user?.email) {
       return user.email.substring(0, 2).toUpperCase();
@@ -24,11 +29,31 @@ const Profile = () => {
     return 'U';
   };
 
-  const handleSave = () => {
-    toast({
-      title: t('common.success'),
-      description: t('profile.profileUpdated'),
-    });
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: t('common.error'),
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: t('common.success'),
+          description: t('profile.profileUpdated'),
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,7 +78,7 @@ const Profile = () => {
               </Avatar>
               <div>
                 <p className="font-medium">
-                  {user?.user_metadata?.first_name} {user?.user_metadata?.last_name}
+                  {firstName} {lastName}
                 </p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
@@ -65,14 +90,16 @@ const Profile = () => {
                 <Label htmlFor="firstName">{t('auth.firstName')}</Label>
                 <Input 
                   id="firstName" 
-                  defaultValue={user?.user_metadata?.first_name || ''} 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">{t('auth.lastName')}</Label>
                 <Input 
                   id="lastName" 
-                  defaultValue={user?.user_metadata?.last_name || ''} 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                 />
               </div>
             </div>
@@ -89,7 +116,10 @@ const Profile = () => {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={handleSave}>{t('common.save')}</Button>
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('common.save')}
+              </Button>
             </div>
           </CardContent>
         </Card>

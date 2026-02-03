@@ -5,6 +5,7 @@ import { useActivityLogs, formatValueChange } from '@/hooks/useActivityLog';
 import { PageHeader, DateRangePicker, EmptyState } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getDateLocale } from '@/lib/formatters';
 import {
   Table,
   TableBody,
@@ -15,7 +16,8 @@ import {
 } from '@/components/ui/table';
 
 const ActivityLog = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({
     start: new Date(),
     end: new Date(),
@@ -77,7 +79,7 @@ const ActivityLog = () => {
                 <TableRow key={log.id}>
                   <TableCell className="whitespace-nowrap">
                     {log.created_at
-                      ? format(new Date(log.created_at), 'd MMM yyyy, HH:mm')
+                      ? format(new Date(log.created_at), 'd MMM yyyy, HH:mm', { locale })
                       : '-'}
                   </TableCell>
                   <TableCell>
