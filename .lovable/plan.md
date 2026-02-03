@@ -111,12 +111,31 @@ This implementation batch covers three modules that enable system-wide logging, 
 
 ---
 
-## Next Phase: Settings Persistence (Phase 5)
+## Phase 5: Settings Persistence ✅ COMPLETED
+
+### New File: `src/hooks/useSettings.ts` ✅
+
+- useSettings(section) - Fetch settings by section as key-value object
+- useUpdateSetting() - Upsert single setting with toast feedback
+- useSaveSettings() - Bulk upsert multiple settings
+- getSettingValue() - Type-safe helper with default values
+
+### Modified Files ✅
+
+- `src/pages/settings/SettingsGeneral.tsx` - Payment methods, theme color, workout toggle
+- `src/pages/settings/SettingsClass.tsx` - Booking advance days, booking cutoff, max spots
+- `src/pages/settings/SettingsClient.tsx` - Injured member booking permissions
+- `src/pages/settings/SettingsPackage.tsx` - Expiration on booking toggle
+- `src/pages/settings/SettingsContracts.tsx` - Allow signing toggle
+
+### Database Changes ✅
+
+- Added unique constraint on (section, key) for upsert functionality
+
+---
+
+## Next Phase: Member Details Enhancement (Phase 6)
 
 Files to create/modify:
-- `src/hooks/useSettings.ts`
-- `src/pages/settings/SettingsGeneral.tsx`
-- `src/pages/settings/SettingsClass.tsx`
-- `src/pages/settings/SettingsClient.tsx`
-- `src/pages/settings/SettingsPackage.tsx`
-- `src/pages/settings/SettingsContracts.tsx`
+- `src/hooks/useMemberDetails.ts`
+- `src/pages/MemberDetails.tsx`
