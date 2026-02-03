@@ -3,106 +3,82 @@ import { Copy } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { formatDate } from '@/lib/formatters';
+import { Skeleton } from '@/components/ui/skeleton';
+import { usePromotions, usePromotionStats } from '@/hooks/usePromotions';
+import { formatCurrency } from '@/lib/formatters';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Promotion {
-  id: string;
-  name: string;
-  type: 'discount' | 'promo_code';
-  promoCode: string | null;
-  discount: string;
-  startedOn: Date;
-  endingOn: Date;
-  status: string;
-}
+type Promotion = Tables<'promotions'>;
 
 const Promotions = () => {
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
 
-  // Sample data
-  const promotions: Promotion[] = [
-    {
-      id: '1',
-      name: 'New Year Sale',
-      type: 'promo_code',
-      promoCode: 'NEWYEAR2026',
-      discount: '20%',
-      startedOn: new Date('2026-01-01'),
-      endingOn: new Date('2026-01-31'),
-      status: 'active',
-    },
-    {
-      id: '2',
-      name: 'First Time Discount',
-      type: 'discount',
-      promoCode: null,
-      discount: '10%',
-      startedOn: new Date('2026-01-01'),
-      endingOn: new Date('2026-12-31'),
-      status: 'active',
-    },
-  ];
+  const { data: promotions, isLoading } = usePromotions(activeTab, search);
+  const { data: stats } = usePromotionStats();
 
   const statusTabs: StatusTab[] = [
-    { key: 'active', label: t('common.active'), count: 3, color: 'teal' },
-    { key: 'scheduled', label: t('packages.scheduled'), count: 0 },
-    { key: 'drafts', label: t('packages.drafts'), count: 0 },
-    { key: 'archive', label: t('packages.archive'), count: 0, color: 'gray' },
+    { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
+    { key: 'scheduled', label: t('packages.scheduled'), count: stats?.scheduled || 0 },
+    { key: 'drafts', label: t('packages.drafts'), count: stats?.drafts || 0 },
+    { key: 'archive', label: t('packages.archive'), count: stats?.archive || 0, color: 'gray' },
   ];
+
+  const copyPromoCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Promo code copied!');
+  };
+
+  const getDiscountDisplay = (promo: Promotion) => {
+    if (promo.discount_type === 'percentage') {
+      return `${promo.discount_value}%`;
+    }
+    return formatCurrency(Number(promo.discount_value));
+  };
 
   const columns: Column<Promotion>[] = [
     { key: 'name', header: t('lobby.name'), cell: (row) => row.name },
-    {
-      key: 'type',
-      header: t('packages.type'),
+    { 
+      key: 'type', 
+      header: t('packages.type'), 
       cell: (row) => (
         <StatusBadge variant={row.type === 'promo_code' ? 'pending' : 'default'}>
           {row.type === 'promo_code' ? 'Promo code' : 'Discount'}
         </StatusBadge>
-      ),
+      )
     },
-    {
-      key: 'promoCode',
-      header: t('promotions.promoCode'),
-      cell: (row) =>
-        row.promoCode ? (
-          <div className="flex items-center gap-2">
-            <code className="bg-muted px-2 py-1 rounded text-sm">{row.promoCode}</code>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => navigator.clipboard.writeText(row.promoCode!)}
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
-          </div>
-        ) : (
-          '-'
-        ),
+    { 
+      key: 'promoCode', 
+      header: t('promotions.promoCode'), 
+      cell: (row) => row.promo_code ? (
+        <div className="flex items-center gap-2">
+          <code className="bg-muted px-2 py-1 rounded text-sm">{row.promo_code}</code>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => copyPromoCode(row.promo_code!)}
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : '-'
     },
-    { key: 'discount', header: t('promotions.discount'), cell: (row) => row.discount },
-    {
-      key: 'startedOn',
-      header: t('promotions.startedOn'),
-      cell: (row) => formatDate(row.startedOn),
+    { key: 'discount', header: t('promotions.discount'), cell: (row) => getDiscountDisplay(row) },
+    { 
+      key: 'startDate', 
+      header: t('promotions.startedOn'), 
+      cell: (row) => row.start_date ? format(new Date(row.start_date), 'd MMM yyyy') : '-'
     },
-    {
-      key: 'endingOn',
-      header: t('promotions.endingOn'),
-      cell: (row) => formatDate(row.endingOn),
+    { 
+      key: 'endDate', 
+      header: t('promotions.endingOn'), 
+      cell: (row) => row.end_date ? format(new Date(row.end_date), 'd MMM yyyy') : '-'
     },
   ];
-
-  const filteredPromotions = promotions.filter((promo) => {
-    if (activeTab !== 'all' && promo.status !== activeTab) return false;
-    if (search) {
-      return promo.name.toLowerCase().includes(search.toLowerCase());
-    }
-    return true;
-  });
 
   return (
     <div>
@@ -127,11 +103,20 @@ const Promotions = () => {
 
       <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <DataTable
-        columns={columns}
-        data={filteredPromotions}
-        rowKey={(row) => row.id}
-      />
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={promotions || []}
+          rowKey={(row) => row.id}
+          emptyMessage={t('common.noData')}
+        />
+      )}
     </div>
   );
 };
