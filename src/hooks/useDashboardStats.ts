@@ -90,21 +90,62 @@ export const useHighRiskMembers = () => {
   return useQuery({
     queryKey: ['high-risk-members'],
     queryFn: async (): Promise<RiskMember[]> => {
+      // Get high-risk members with their nearest expiring package
       const { data, error } = await supabase
         .from('members')
-        .select('id, first_name, last_name, phone')
+        .select(`
+          id, 
+          first_name, 
+          last_name, 
+          phone,
+          member_packages!inner (
+            expiry_date,
+            status
+          )
+        `)
         .eq('risk_level', 'high')
         .eq('status', 'active')
+        .eq('member_packages.status', 'active')
         .limit(5);
 
       if (error) throw error;
 
-      return (data || []).map((member) => ({
-        id: member.id,
-        name: `${member.first_name} ${member.last_name}`,
-        phone: member.phone || '-',
-        expiryDate: 'Soon', // Would need to join with member_packages for actual date
-      }));
+      const today = new Date();
+
+      return (data || []).map((member) => {
+        // Find nearest expiry date from member's packages
+        const packages = member.member_packages as Array<{ expiry_date: string | null; status: string }>;
+        let nearestExpiry: Date | null = null;
+
+        packages.forEach((pkg) => {
+          if (pkg.expiry_date) {
+            const expiryDate = new Date(pkg.expiry_date);
+            if (!nearestExpiry || expiryDate < nearestExpiry) {
+              nearestExpiry = expiryDate;
+            }
+          }
+        });
+
+        // Calculate days until expiry
+        let expiryText = '-';
+        if (nearestExpiry) {
+          const daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 0) {
+            expiryText = 'Expired';
+          } else if (daysLeft === 1) {
+            expiryText = '1 day';
+          } else {
+            expiryText = `${daysLeft} days`;
+          }
+        }
+
+        return {
+          id: member.id,
+          name: `${member.first_name} ${member.last_name}`,
+          phone: member.phone || '-',
+          expiryDate: expiryText,
+        };
+      });
     },
   });
 };
