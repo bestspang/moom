@@ -7,6 +7,12 @@ type Room = Tables<'rooms'>;
 type RoomInsert = TablesInsert<'rooms'>;
 type RoomUpdate = TablesUpdate<'rooms'>;
 
+// Extended type for room insert with new fields (until types are regenerated)
+interface RoomInsertExtended extends Omit<RoomInsert, 'layout_type'> {
+  name_th?: string | null;
+  layout_type?: 'open' | 'fixed';
+}
+
 export const useRooms = (status?: string, search?: string) => {
   return useQuery({
     queryKey: ['rooms', status, search],
@@ -84,10 +90,10 @@ export const useCreateRoom = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: RoomInsert) => {
+    mutationFn: async (data: RoomInsertExtended) => {
       const { data: newRoom, error } = await supabase
         .from('rooms')
-        .insert(data)
+        .insert(data as any)
         .select()
         .single();
       

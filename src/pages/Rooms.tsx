@@ -3,25 +3,44 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { useRooms, useRoomStats } from '@/hooks/useRooms';
+import { CreateRoomDialog } from '@/components/rooms/CreateRoomDialog';
 
 const Rooms = () => {
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: rooms, isLoading } = useRooms(activeTab, search);
   const { data: stats } = useRoomStats();
+
+  const totalRooms = (stats?.open || 0) + (stats?.closed || 0);
 
   const statusTabs: StatusTab[] = [
     { key: 'open', label: t('rooms.open'), count: stats?.open || 0, color: 'teal' }, 
     { key: 'closed', label: t('rooms.closed'), count: stats?.closed || 0 }
   ];
 
+  const getLayoutLabel = (layoutType: string | null) => {
+    if (layoutType === 'fixed') return t('rooms.fixedPositions');
+    return t('rooms.openSpace');
+  };
+
   const columns: Column<any>[] = [
     { key: 'name', header: t('rooms.roomName'), cell: (row) => row.name },
     { key: 'location', header: t('lobby.location'), cell: (row) => row.location?.name || '-' },
-    { key: 'categories', header: t('rooms.categoriesAvailability'), cell: (row) => row.categories?.join(', ') || 'All' },
+    { key: 'categories', header: t('rooms.categoriesAvailability'), cell: (row) => {
+      const cats = row.categories;
+      if (!cats || cats.length === 0) return t('rooms.create.allCategories');
+      return cats.join(', ');
+    }},
+    { key: 'layoutType', header: t('rooms.layoutType'), cell: (row) => (
+      <Badge variant="secondary" className="font-normal">
+        {getLayoutLabel(row.layout_type)}
+      </Badge>
+    )},
     { key: 'maxCapacity', header: t('rooms.maxCapacity'), cell: (row) => row.max_capacity || 20 },
   ];
 
@@ -31,7 +50,10 @@ const Rooms = () => {
         title={t('rooms.title')} 
         breadcrumbs={[{ label: t('nav.class') }, { label: t('rooms.title') }]} 
         actions={
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button 
+            className="bg-primary hover:bg-primary-hover"
+            onClick={() => setCreateDialogOpen(true)}
+          >
             {t('rooms.createRoom')}
           </Button>
         } 
@@ -44,7 +66,13 @@ const Rooms = () => {
         className="max-w-md mb-6" 
       />
       
-      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
+      {/* Total count header */}
+      <div className="flex items-center justify-between mb-4">
+        <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
+        <span className="text-sm text-muted-foreground">
+          {t('rooms.totalRooms').replace('{count}', String(totalRooms))}
+        </span>
+      </div>
       
       {isLoading ? (
         <div className="space-y-3">
@@ -60,6 +88,11 @@ const Rooms = () => {
           emptyMessage={t('common.noData')}
         />
       )}
+
+      <CreateRoomDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+      />
     </div>
   );
 };

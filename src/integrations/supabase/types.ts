@@ -885,9 +885,11 @@ export type Database = {
           categories: string[] | null
           created_at: string | null
           id: string
+          layout_type: Database["public"]["Enums"]["room_layout_type"] | null
           location_id: string | null
           max_capacity: number | null
           name: string
+          name_th: string | null
           status: Database["public"]["Enums"]["room_status"] | null
           updated_at: string | null
         }
@@ -895,9 +897,11 @@ export type Database = {
           categories?: string[] | null
           created_at?: string | null
           id?: string
+          layout_type?: Database["public"]["Enums"]["room_layout_type"] | null
           location_id?: string | null
           max_capacity?: number | null
           name: string
+          name_th?: string | null
           status?: Database["public"]["Enums"]["room_status"] | null
           updated_at?: string | null
         }
@@ -905,9 +909,11 @@ export type Database = {
           categories?: string[] | null
           created_at?: string | null
           id?: string
+          layout_type?: Database["public"]["Enums"]["room_layout_type"] | null
           location_id?: string | null
           max_capacity?: number | null
           name?: string
+          name_th?: string | null
           status?: Database["public"]["Enums"]["room_status"] | null
           updated_at?: string | null
         }
@@ -1300,6 +1306,7 @@ export type Database = {
       promotion_status: "active" | "scheduled" | "drafts" | "archive"
       promotion_type: "discount" | "promo_code"
       risk_level: "high" | "medium" | "low"
+      room_layout_type: "open" | "fixed"
       room_status: "open" | "closed"
       schedule_status: "scheduled" | "cancelled" | "completed"
       staff_status: "active" | "pending" | "terminated"
@@ -1465,6 +1472,7 @@ export const Constants = {
       promotion_status: ["active", "scheduled", "drafts", "archive"],
       promotion_type: ["discount", "promo_code"],
       risk_level: ["high", "medium", "low"],
+      room_layout_type: ["open", "fixed"],
       room_status: ["open", "closed"],
       schedule_status: ["scheduled", "cancelled", "completed"],
       staff_status: ["active", "pending", "terminated"],
