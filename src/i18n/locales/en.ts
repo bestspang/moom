@@ -27,6 +27,8 @@ export default {
     version: 'Version',
     termsAndConditions: 'Terms and Conditions',
     privacyPolicy: 'Privacy Policy',
+    success: 'Success',
+    error: 'Error',
   },
 
   // Navigation
@@ -100,6 +102,9 @@ export default {
     mostAttendedCategory: 'Most attended category',
     amountSpent: 'Amount spent since joined',
     daysUntilExpiry: 'Days until all packages expire',
+    memberCreated: 'Member created successfully',
+    memberUpdated: 'Member updated successfully',
+    editMember: 'Edit Member',
     tabs: {
       home: 'Home',
       profile: 'Profile',
@@ -460,5 +465,29 @@ export default {
     required: 'This field is required',
     invalidEmail: 'Please enter a valid email address',
     invalidPhone: 'Please enter a valid phone number',
+  },
+
+  // Auth
+  auth: {
+    login: 'Login',
+    signUp: 'Sign Up',
+    logout: 'Logout',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    rememberMe: 'Remember me',
+    forgotPassword: 'Forgot password?',
+    loginDescription: 'Sign in to your account to continue',
+    signupDescription: 'Create an account to get started',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    loginFailed: 'Login failed',
+    signupFailed: 'Sign up failed',
+    loginSuccess: 'Welcome back!',
+    welcomeBack: 'You have been logged in successfully.',
+    signupSuccess: 'Account created!',
+    checkEmail: 'Please check your email to verify your account.',
   },
 };

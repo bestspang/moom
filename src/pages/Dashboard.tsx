@@ -8,45 +8,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/common';
-
-interface ScheduleItem {
-  id: string;
-  time: string;
-  className: string;
-  trainer: string;
-  location: string;
-  room: string;
-  availability: string;
-  checkedIn: number;
-}
-
-interface RiskMember {
-  id: string;
-  name: string;
-  phone: string;
-  expiryDate: string;
-}
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  useDashboardStats,
+  useHighRiskMembers,
+  useHotLeads,
+  useUpcomingBirthdays,
+  useScheduleByDate,
+  type ScheduleItem,
+} from '@/hooks/useDashboardStats';
 
 const Dashboard = () => {
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('classes');
 
-  // Sample data
-  const scheduleData: ScheduleItem[] = [];
-  
-  const highRiskMembers: RiskMember[] = [
-    { id: '1', name: 'Somchai Prasert', phone: '081-234-5678', expiryDate: '10 FEB 2026' },
-    { id: '2', name: 'Pranee Kanjana', phone: '089-876-5432', expiryDate: '15 FEB 2026' },
-  ];
-
-  const hotLeads = [
-    { id: '1', name: 'Wichai Pong', status: 'interested' },
-  ];
-
-  const upcomingBirthdays = [
-    { id: '1', name: 'Nattapong Suwanna', date: '5 FEB' },
-  ];
+  // Fetch real data
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: highRiskMembers = [], isLoading: riskLoading } = useHighRiskMembers();
+  const { data: hotLeads = [], isLoading: leadsLoading } = useHotLeads();
+  const { data: upcomingBirthdays = [], isLoading: birthdaysLoading } = useUpcomingBirthdays();
+  const { data: scheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
 
   const scheduleColumns: Column<ScheduleItem>[] = [
     { key: 'time', header: t('schedule.time'), cell: (row) => row.time },
@@ -67,6 +49,11 @@ const Dashboard = () => {
     },
   ];
 
+  // Calculate comparison
+  const checkinComparison = stats
+    ? stats.checkinsToday - stats.checkinsYesterday
+    : 0;
+
   return (
     <div>
       <PageHeader title={t('dashboard.title')} />
@@ -76,31 +63,45 @@ const Dashboard = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard
-              title={t('dashboard.allCheckinsToday')}
-              value={45}
-              subtitle="MOOM CLUB Main"
-              color="teal"
-              comparison={{ value: -5, label: t('dashboard.comparedToYesterday') }}
-            />
-            <StatCard
-              title={t('dashboard.currentlyInClass')}
-              value={12}
-              subtitle="attendees"
-              color="orange"
-            />
-            <StatCard
-              title={t('dashboard.classesScheduledToday')}
-              value={8}
-              color="blue"
-              action={
-                <Link to="/calendar">
-                  <Button variant="link" className="text-primary p-0 h-auto">
-                    {t('dashboard.goToSchedule')} →
-                  </Button>
-                </Link>
-              }
-            />
+            {statsLoading ? (
+              <>
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  title={t('dashboard.allCheckinsToday')}
+                  value={stats?.checkinsToday || 0}
+                  subtitle="MOOM CLUB Main"
+                  color="teal"
+                  comparison={
+                    checkinComparison !== 0
+                      ? { value: checkinComparison, label: t('dashboard.comparedToYesterday') }
+                      : undefined
+                  }
+                />
+                <StatCard
+                  title={t('dashboard.currentlyInClass')}
+                  value={stats?.currentlyInClass || 0}
+                  subtitle="attendees"
+                  color="orange"
+                />
+                <StatCard
+                  title={t('dashboard.classesScheduledToday')}
+                  value={stats?.classesToday || 0}
+                  color="blue"
+                  action={
+                    <Link to="/calendar">
+                      <Button variant="link" className="text-primary p-0 h-auto">
+                        {t('dashboard.goToSchedule')} →
+                      </Button>
+                    </Link>
+                  }
+                />
+              </>
+            )}
           </div>
 
           {/* Tabs and Schedule */}
@@ -119,12 +120,20 @@ const Dashboard = () => {
             <CardContent>
               <Tabs value={activeTab}>
                 <TabsContent value="classes" className="mt-0">
-                  <DataTable
-                    columns={scheduleColumns}
-                    data={scheduleData}
-                    rowKey={(row) => row.id}
-                    emptyMessage={t('common.noData')}
-                  />
+                  {scheduleLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-10" />
+                      <Skeleton className="h-10" />
+                      <Skeleton className="h-10" />
+                    </div>
+                  ) : (
+                    <DataTable
+                      columns={scheduleColumns}
+                      data={scheduleData}
+                      rowKey={(row) => row.id}
+                      emptyMessage={t('common.noData')}
+                    />
+                  )}
                 </TabsContent>
                 <TabsContent value="gym" className="mt-0">
                   <EmptyState message={t('common.noData')} />
@@ -144,7 +153,12 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {highRiskMembers.length > 0 ? (
+              {riskLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-10" />
+                  <Skeleton className="h-10" />
+                </div>
+              ) : highRiskMembers.length > 0 ? (
                 <div className="space-y-3">
                   {highRiskMembers.map((member) => (
                     <div key={member.id} className="flex items-center gap-3">
@@ -175,7 +189,11 @@ const Dashboard = () => {
               <CardTitle className="text-base">{t('dashboard.hotLeads')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {hotLeads.length > 0 ? (
+              {leadsLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-10" />
+                </div>
+              ) : hotLeads.length > 0 ? (
                 <div className="space-y-3">
                   {hotLeads.map((lead) => (
                     <div key={lead.id} className="flex items-center gap-3">
@@ -205,7 +223,11 @@ const Dashboard = () => {
               <CardTitle className="text-base">{t('dashboard.upcomingBirthdays')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {upcomingBirthdays.length > 0 ? (
+              {birthdaysLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-10" />
+                </div>
+              ) : upcomingBirthdays.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingBirthdays.map((member) => (
                     <div key={member.id} className="flex items-center gap-3">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Phone, Bell, ChevronDown, Menu, LogOut, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -18,6 +20,42 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
+  const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  // Get user initials from email or metadata
+  const getUserInitials = () => {
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name.charAt(0)}${user.user_metadata.last_name.charAt(0)}`.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserName = () => {
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`;
+    }
+    return user?.email || 'User';
+  };
+
+  const getRoleLabel = () => {
+    if (!role) return '';
+    const roleLabels: Record<string, string> = {
+      owner: 'Owner',
+      admin: 'Admin',
+      trainer: 'Trainer',
+      front_desk: 'Front Desk',
+    };
+    return roleLabels[role] || role;
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
@@ -111,7 +149,7 @@ export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) =
               <Avatar className="h-8 w-8">
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  KS
+                  {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -121,11 +159,14 @@ export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) =
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    KS
+                    {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-medium text-sm">Admin User</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{getUserName()}</p>
+                  {role && (
+                    <p className="text-xs text-muted-foreground">{getRoleLabel()}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -133,7 +174,10 @@ export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) =
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-primary cursor-pointer">
+            <DropdownMenuItem 
+              className="text-primary cursor-pointer"
+              onClick={handleLogout}
+            >
               <LogOut className="h-4 w-4 mr-2" />
               {t('profile.logout')}
             </DropdownMenuItem>

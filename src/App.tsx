@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout";
 import "@/i18n";
 
@@ -37,53 +39,66 @@ import SettingsClient from "./pages/settings/SettingsClient";
 import SettingsPackage from "./pages/settings/SettingsPackage";
 import SettingsContracts from "./pages/settings/SettingsContracts";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Auth/Login";
+import Signup from "./pages/Auth/Signup";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/lobby" element={<Lobby />} />
-              <Route path="/members" element={<Members />} />
-              <Route path="/members/:id/detail" element={<MemberDetails />} />
-              <Route path="/leads" element={<Leads />} />
-              <Route path="/package" element={<Packages />} />
-              <Route path="/package/create" element={<CreatePackage />} />
-              <Route path="/promotion" element={<Promotions />} />
-              <Route path="/calendar" element={<Schedule />} />
-              <Route path="/room" element={<Rooms />} />
-              <Route path="/class" element={<Classes />} />
-              <Route path="/class-category" element={<ClassCategories />} />
-              <Route path="/admin" element={<Staff />} />
-              <Route path="/roles" element={<Roles />} />
-              <Route path="/location" element={<Locations />} />
-              <Route path="/activity-log" element={<ActivityLog />} />
-              <Route path="/announcement" element={<Announcements />} />
-              <Route path="/workout-list" element={<WorkoutList />} />
-              <Route path="/transfer-slip" element={<TransferSlips />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/report/*" element={<Reports />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/setting" element={<Settings />}>
-                <Route path="general" element={<SettingsGeneral />} />
-                <Route path="class-management" element={<SettingsClass />} />
-                <Route path="client-management" element={<SettingsClient />} />
-                <Route path="setting-package" element={<SettingsPackage />} />
-                <Route path="member-contracts" element={<SettingsContracts />} />
+    <AuthProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Protected routes */}
+              <Route element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/lobby" element={<Lobby />} />
+                <Route path="/members" element={<Members />} />
+                <Route path="/members/:id/detail" element={<MemberDetails />} />
+                <Route path="/leads" element={<Leads />} />
+                <Route path="/package" element={<Packages />} />
+                <Route path="/package/create" element={<CreatePackage />} />
+                <Route path="/promotion" element={<Promotions />} />
+                <Route path="/calendar" element={<Schedule />} />
+                <Route path="/room" element={<Rooms />} />
+                <Route path="/class" element={<Classes />} />
+                <Route path="/class-category" element={<ClassCategories />} />
+                <Route path="/admin" element={<Staff />} />
+                <Route path="/roles" element={<Roles />} />
+                <Route path="/location" element={<Locations />} />
+                <Route path="/activity-log" element={<ActivityLog />} />
+                <Route path="/announcement" element={<Announcements />} />
+                <Route path="/workout-list" element={<WorkoutList />} />
+                <Route path="/transfer-slip" element={<TransferSlips />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/report/*" element={<Reports />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/setting" element={<Settings />}>
+                  <Route path="general" element={<SettingsGeneral />} />
+                  <Route path="class-management" element={<SettingsClass />} />
+                  <Route path="client-management" element={<SettingsClient />} />
+                  <Route path="setting-package" element={<SettingsPackage />} />
+                  <Route path="member-contracts" element={<SettingsContracts />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </LanguageProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </LanguageProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
