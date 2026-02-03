@@ -344,6 +344,10 @@ export default {
     refundsGiven: 'คืนเงิน',
     orderName: 'ชื่อคำสั่งซื้อ',
     receipt: 'ใบเสร็จ',
+    dateTime: 'วันที่และเวลา',
+    transactionNo: 'เลขที่รายการ',
+    soldTo: 'ขายให้',
+    amount: 'จำนวนเงิน',
   },
 
   // Reports
@@ -449,8 +453,12 @@ export default {
 
   // User Profile
   profile: {
+    title: 'โปรไฟล์',
     editProfile: 'แก้ไขโปรไฟล์',
     logout: 'ออกจากระบบ',
+    accountInfo: 'ข้อมูลบัญชี',
+    profileUpdated: 'อัปเดตโปรไฟล์สำเร็จ',
+    emailCannotChange: 'ไม่สามารถเปลี่ยนอีเมลได้',
   },
 
   // Date/Time
@@ -465,6 +473,8 @@ export default {
     required: 'กรุณากรอกข้อมูล',
     invalidEmail: 'กรุณากรอกอีเมลที่ถูกต้อง',
     invalidPhone: 'กรุณากรอกเบอร์โทรที่ถูกต้อง',
+    firstNameRequired: 'กรุณากรอกชื่อจริง',
+    lastNameRequired: 'กรุณากรอกนามสกุล',
   },
 
   // Auth
@@ -479,6 +489,12 @@ export default {
     lastName: 'นามสกุล',
     rememberMe: 'จดจำฉัน',
     forgotPassword: 'ลืมรหัสผ่าน?',
+    forgotPasswordTitle: 'ลืมรหัสผ่าน',
+    forgotPasswordDescription: 'กรอกอีเมลของคุณ แล้วเราจะส่งลิงก์รีเซ็ตให้',
+    sendResetLink: 'ส่งลิงก์รีเซ็ต',
+    backToLogin: 'กลับไปเข้าสู่ระบบ',
+    resetEmailSent: 'ส่งอีเมลรีเซ็ตแล้ว! ตรวจสอบกล่องข้อความของคุณ',
+    checkEmailForReset: 'เราส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว กรุณาตรวจสอบกล่องข้อความและทำตามคำแนะนำ',
     loginDescription: 'เข้าสู่ระบบเพื่อดำเนินการต่อ',
     signupDescription: 'สร้างบัญชีเพื่อเริ่มต้นใช้งาน',
     noAccount: 'ยังไม่มีบัญชี?',
@@ -489,5 +505,37 @@ export default {
     welcomeBack: 'เข้าสู่ระบบสำเร็จแล้ว',
     signupSuccess: 'สร้างบัญชีสำเร็จ!',
     checkEmail: 'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีของคุณ',
+  },
+
+  // Members form fields
+  form: {
+    nickname: 'ชื่อเล่น',
+    dateOfBirth: 'วันเกิด',
+    gender: 'เพศ',
+    address: 'ที่อยู่',
+    selectGender: 'เลือกเพศ',
+    male: 'ชาย',
+    female: 'หญิง',
+    other: 'อื่นๆ',
+    requiredFieldsNote: '* ข้อมูลที่จำเป็น',
+  },
+
+  // Dashboard
+  dashboardExtra: {
+    attendees: 'ผู้เข้าร่วม',
+    mainLocation: 'MOOM CLUB สาขาหลัก',
+  },
+
+  // Error pages
+  errors: {
+    pageNotFound: 'ไม่พบหน้านี้',
+    pageNotFoundDescription: 'ขออภัย! หน้าที่คุณกำลังมองหาไม่มีอยู่',
+    returnHome: 'กลับหน้าหลัก',
+  },
+
+  // Reports
+  reportsExtra: {
+    comingSoon: 'เร็วๆ นี้',
+    comingSoonDescription: 'รายงานนี้กำลังพัฒนาอยู่',
   },
 };

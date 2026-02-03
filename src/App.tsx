@@ -41,6 +41,8 @@ import SettingsContracts from "./pages/settings/SettingsContracts";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,7 @@ const App = () => (
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               
               {/* Protected routes - wrap with ProtectedRoute which handles auth check before rendering MainLayout */}
               <Route 
@@ -88,6 +91,7 @@ const App = () => (
                 <Route path="finance" element={<Finance />} />
                 <Route path="report/*" element={<Reports />} />
                 <Route path="notifications" element={<Notifications />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="setting" element={<Settings />}>
                   <Route path="general" element={<SettingsGeneral />} />
                   <Route path="class-management" element={<SettingsClass />} />

@@ -344,6 +344,10 @@ export default {
     refundsGiven: 'Refunds given',
     orderName: 'Order name',
     receipt: 'Receipt',
+    dateTime: 'Date & time',
+    transactionNo: 'Transaction no.',
+    soldTo: 'Sold to',
+    amount: 'Amount',
   },
 
   // Reports
@@ -449,8 +453,12 @@ export default {
 
   // User Profile
   profile: {
+    title: 'Profile',
     editProfile: 'Edit profile',
     logout: 'Logout',
+    accountInfo: 'Account information',
+    profileUpdated: 'Profile updated successfully',
+    emailCannotChange: 'Email cannot be changed',
   },
 
   // Date/Time
@@ -465,6 +473,8 @@ export default {
     required: 'This field is required',
     invalidEmail: 'Please enter a valid email address',
     invalidPhone: 'Please enter a valid phone number',
+    firstNameRequired: 'First name is required',
+    lastNameRequired: 'Last name is required',
   },
 
   // Auth
@@ -479,6 +489,12 @@ export default {
     lastName: 'Last Name',
     rememberMe: 'Remember me',
     forgotPassword: 'Forgot password?',
+    forgotPasswordTitle: 'Forgot password',
+    forgotPasswordDescription: 'Enter your email and we\'ll send you a reset link',
+    sendResetLink: 'Send reset link',
+    backToLogin: 'Back to login',
+    resetEmailSent: 'Reset email sent! Check your inbox.',
+    checkEmailForReset: 'We sent a password reset link to your email. Please check your inbox and follow the instructions.',
     loginDescription: 'Sign in to your account to continue',
     signupDescription: 'Create an account to get started',
     noAccount: "Don't have an account?",
@@ -489,5 +505,37 @@ export default {
     welcomeBack: 'You have been logged in successfully.',
     signupSuccess: 'Account created!',
     checkEmail: 'Please check your email to verify your account.',
+  },
+
+  // Members form fields
+  form: {
+    nickname: 'Nickname',
+    dateOfBirth: 'Date of Birth',
+    gender: 'Gender',
+    address: 'Address',
+    selectGender: 'Select gender',
+    male: 'Male',
+    female: 'Female',
+    other: 'Other',
+    requiredFieldsNote: '* Required fields',
+  },
+
+  // Dashboard
+  dashboardExtra: {
+    attendees: 'attendees',
+    mainLocation: 'MOOM CLUB Main',
+  },
+
+  // Error pages
+  errors: {
+    pageNotFound: 'Page not found',
+    pageNotFoundDescription: 'Oops! The page you\'re looking for doesn\'t exist.',
+    returnHome: 'Return to home',
+  },
+
+  // Reports
+  reportsExtra: {
+    comingSoon: 'Coming soon',
+    comingSoonDescription: 'This report is under development',
   },
 };

@@ -1,12 +1,20 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, EmptyState } from '@/components/common';
+import { PageHeader } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const Reports = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
+
+  const handleReportClick = () => {
+    toast({
+      title: t('reportsExtra.comingSoon'),
+      description: t('reportsExtra.comingSoonDescription'),
+    });
+  };
 
   const memberReports = [
     { title: t('reports.activeMembersOverTime'), description: 'Track active member trends' },
@@ -28,7 +36,10 @@ const Reports = () => {
   ];
 
   const ReportCard = ({ title, description }: { title: string; description: string }) => (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer" 
+      onClick={handleReportClick}
+    >
       <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
       <CardContent><p className="text-sm text-muted-foreground">{description}</p></CardContent>
     </Card>
