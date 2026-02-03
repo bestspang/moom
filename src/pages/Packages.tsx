@@ -4,73 +4,28 @@ import { Download, Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/formatters';
+import { usePackages, usePackageStats } from '@/hooks/usePackages';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Package {
-  id: string;
-  name: string;
-  type: 'unlimited' | 'session' | 'pt';
-  term: number;
-  sessions: number | null;
-  price: number;
-  categories: string;
-  access: string;
-  isPopular: boolean;
-  status: string;
-}
+type Package = Tables<'packages'>;
 
 const Packages = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-  // Sample data
-  const packages: Package[] = [
-    {
-      id: '1',
-      name: '1 Month Unlimited',
-      type: 'unlimited',
-      term: 30,
-      sessions: null,
-      price: 2500,
-      categories: 'All',
-      access: 'Both',
-      isPopular: true,
-      status: 'on_sale',
-    },
-    {
-      id: '2',
-      name: '10 Sessions',
-      type: 'session',
-      term: 60,
-      sessions: 10,
-      price: 3500,
-      categories: 'Group Class',
-      access: 'Class only',
-      isPopular: false,
-      status: 'on_sale',
-    },
-    {
-      id: '3',
-      name: 'PT 5 Sessions',
-      type: 'pt',
-      term: 90,
-      sessions: 5,
-      price: 7500,
-      categories: 'Personal Training',
-      access: 'Class only',
-      isPopular: true,
-      status: 'on_sale',
-    },
-  ];
+  const { data: packages, isLoading } = usePackages(activeTab, search);
+  const { data: stats } = usePackageStats();
 
   const statusTabs: StatusTab[] = [
-    { key: 'on_sale', label: t('packages.onSale'), count: 22, color: 'teal' },
-    { key: 'scheduled', label: t('packages.scheduled'), count: 0 },
-    { key: 'drafts', label: t('packages.drafts'), count: 4, color: 'gray' },
-    { key: 'archive', label: t('packages.archive'), count: 1, color: 'gray' },
+    { key: 'on_sale', label: t('packages.onSale'), count: stats?.on_sale || 0, color: 'teal' },
+    { key: 'scheduled', label: t('packages.scheduled'), count: stats?.scheduled || 0 },
+    { key: 'drafts', label: t('packages.drafts'), count: stats?.drafts || 0, color: 'gray' },
+    { key: 'archive', label: t('packages.archive'), count: stats?.archive || 0, color: 'gray' },
   ];
 
   const getTypeLabel = (type: string) => {
@@ -82,8 +37,21 @@ const Packages = () => {
     }
   };
 
+  const getUsageTypeLabel = (usageType: string | null) => {
+    switch (usageType) {
+      case 'class_only': return t('packages.create.classOnly');
+      case 'gym_checkin_only': return t('packages.create.gymCheckinOnly');
+      case 'both': return t('packages.create.both');
+      default: return usageType || '-';
+    }
+  };
+
   const columns: Column<Package>[] = [
-    { key: 'name', header: t('lobby.name'), cell: (row) => row.name },
+    { 
+      key: 'name', 
+      header: t('lobby.name'), 
+      cell: (row) => language === 'th' && row.name_th ? row.name_th : row.name_en 
+    },
     {
       key: 'type',
       header: t('packages.type'),
@@ -93,32 +61,32 @@ const Packages = () => {
         </StatusBadge>
       ),
     },
-    { key: 'term', header: t('packages.term'), cell: (row) => row.term },
+    { key: 'term', header: t('packages.term'), cell: (row) => row.term_days },
     { key: 'sessions', header: t('packages.sessions'), cell: (row) => row.sessions || '-' },
     {
       key: 'price',
       header: t('packages.priceInclVat'),
       cell: (row) => formatCurrency(row.price),
     },
-    { key: 'categories', header: t('packages.categories'), cell: (row) => row.categories },
-    { key: 'access', header: t('packages.access'), cell: (row) => row.access },
+    { 
+      key: 'categories', 
+      header: t('packages.categories'), 
+      cell: (row) => row.all_categories ? 'All' : (row.categories?.join(', ') || '-')
+    },
+    { 
+      key: 'access', 
+      header: t('packages.access'), 
+      cell: (row) => getUsageTypeLabel(row.usage_type)
+    },
     {
       key: 'popular',
       header: t('packages.popular'),
       cell: (row) =>
-        row.isPopular ? (
+        row.is_popular ? (
           <Star className="h-4 w-4 fill-warning text-warning" />
         ) : null,
     },
   ];
-
-  const filteredPackages = packages.filter((pkg) => {
-    if (activeTab !== 'all' && pkg.status !== activeTab) return false;
-    if (search) {
-      return pkg.name.toLowerCase().includes(search.toLowerCase());
-    }
-    return true;
-  });
 
   const handleSelectRow = (id: string) => {
     setSelectedRows((prev) =>
@@ -127,10 +95,11 @@ const Packages = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedRows.length === filteredPackages.length) {
+    if (!packages) return;
+    if (selectedRows.length === packages.length) {
       setSelectedRows([]);
     } else {
-      setSelectedRows(filteredPackages.map((p) => p.id));
+      setSelectedRows(packages.map((p) => p.id));
     }
   };
 
@@ -166,15 +135,24 @@ const Packages = () => {
 
       <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <DataTable
-        columns={columns}
-        data={filteredPackages}
-        selectable
-        selectedRows={selectedRows}
-        onSelectRow={handleSelectRow}
-        onSelectAll={handleSelectAll}
-        rowKey={(row) => row.id}
-      />
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={packages || []}
+          selectable
+          selectedRows={selectedRows}
+          onSelectRow={handleSelectRow}
+          onSelectAll={handleSelectAll}
+          rowKey={(row) => row.id}
+          emptyMessage={t('common.noData')}
+        />
+      )}
     </div>
   );
 };

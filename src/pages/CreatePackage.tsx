@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Infinity, Timer, User } from 'lucide-react';
+import { ArrowLeft, Infinity, Timer, User, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useCreatePackage } from '@/hooks/usePackages';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 type PackageType = 'unlimited' | 'session' | 'pt';
 
 const CreatePackage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const createPackage = useCreatePackage();
 
   const [packageType, setPackageType] = useState<PackageType>('unlimited');
   const [formData, setFormData] = useState({
@@ -63,6 +66,50 @@ const CreatePackage = () => {
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const mapUsageType = (usageType: string): 'class_only' | 'gym_checkin_only' | 'both' => {
+    switch (usageType) {
+      case 'class_only': return 'class_only';
+      case 'gym_only': return 'gym_checkin_only';
+      case 'both': return 'both';
+      default: return 'both';
+    }
+  };
+
+  const handleSubmit = async (status: 'drafts' | 'on_sale') => {
+    if (!formData.nameEn || !formData.price || !formData.duration || !formData.expiration) {
+      return;
+    }
+
+    const packageData: TablesInsert<'packages'> = {
+      name_en: formData.nameEn,
+      name_th: formData.nameTh || null,
+      type: packageType,
+      price: parseFloat(formData.price),
+      term_days: parseInt(formData.duration),
+      expiration_days: parseInt(formData.expiration),
+      sessions: packageType !== 'unlimited' && formData.sessions ? parseInt(formData.sessions) : null,
+      recurring_payment: formData.recurringPayment,
+      infinite_quantity: formData.quantityType === 'infinite',
+      quantity: formData.quantityType === 'specific' && formData.quantity ? parseInt(formData.quantity) : null,
+      infinite_purchase_limit: formData.purchaseLimitType === 'infinite',
+      user_purchase_limit: formData.purchaseLimitType === 'specific' && formData.purchaseLimit ? parseInt(formData.purchaseLimit) : null,
+      usage_type: mapUsageType(formData.usageType),
+      all_categories: formData.categoryType === 'all',
+      any_day_any_time: formData.accessType === 'any',
+      description_en: formData.descriptionEn || null,
+      description_th: formData.descriptionTh || null,
+      status: status,
+    };
+
+    createPackage.mutate(packageData, {
+      onSuccess: () => {
+        navigate('/package');
+      },
+    });
+  };
+
+  const isFormValid = formData.nameEn && formData.price && formData.duration && formData.expiration;
 
   return (
     <div>
@@ -416,8 +463,20 @@ const CreatePackage = () => {
                 <Button variant="link" onClick={() => navigate('/package')}>
                   {t('packages.create.discard')}
                 </Button>
-                <Button variant="outline">{t('packages.create.saveAsDraft')}</Button>
-                <Button className="bg-primary hover:bg-primary-hover">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleSubmit('drafts')}
+                  disabled={!isFormValid || createPackage.isPending}
+                >
+                  {createPackage.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {t('packages.create.saveAsDraft')}
+                </Button>
+                <Button 
+                  className="bg-primary hover:bg-primary-hover"
+                  onClick={() => handleSubmit('on_sale')}
+                  disabled={!isFormValid || createPackage.isPending}
+                >
+                  {createPackage.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t('packages.create.createPackage')}
                 </Button>
               </div>
