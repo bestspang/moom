@@ -15,10 +15,19 @@
 5. ✅ Fix Edit Profile navigation in Header
 6. ✅ Remove dead Terms/Privacy links from Sidebar
 
-### Phase 2: High (สำคัญ) - UX Issues
-- [ ] ปรับปรุง EmptyState ให้มี context-aware icon และ CTA
-- [ ] แก้ไข form validation messages เป็น i18n
-- [ ] ปรับปรุง mobile responsiveness (DataTable, Dialogs)
+### ✅ Phase 2: High (COMPLETED)
+1. ✅ ปรับปรุง EmptyState ให้มี context-aware icon และ CTA
+   - Added variant prop for context icons (members, schedule, packages, finance, etc.)
+   - Added actionLabel/onAction props for optional CTA button
+2. ✅ แก้ไข form validation messages เป็น i18n
+   - CreateMemberDialog: uses useMemo schema with translated messages
+   - ScheduleClassDialog: uses useMemo schema with translated messages
+3. ✅ ปรับปรุง mobile responsiveness
+   - DataTable: horizontal scroll with gradient indicator on mobile
+   - StatCards: 2-column grid on mobile (was 1-column)
+   - Trainer filter pills: horizontal scroll with gradient indicator
+   - CreateMemberDialog: uses Drawer on mobile
+   - ScheduleClassDialog: uses Drawer on mobile
 
 ### Phase 3: Medium (ปานกลาง) - Polish
 - [ ] ปรับปรุง color contrast

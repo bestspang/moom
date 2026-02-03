@@ -43,6 +43,7 @@ interface DataTableProps<T> {
   rowKey: (row: T) => string;
   isLoading?: boolean;
   emptyMessage?: string;
+  emptyVariant?: 'default' | 'members' | 'schedule' | 'packages' | 'finance' | 'notifications' | 'notes' | 'workouts' | 'locations' | 'activity';
 }
 
 export function DataTable<T>({
@@ -58,6 +59,7 @@ export function DataTable<T>({
   rowKey,
   isLoading = false,
   emptyMessage,
+  emptyVariant = 'default',
 }: DataTableProps<T>) {
   const { t } = useLanguage();
   const allSelected = data.length > 0 && selectedRows.length === data.length;
@@ -71,7 +73,7 @@ export function DataTable<T>({
   }
 
   if (data.length === 0) {
-    return <EmptyState message={emptyMessage || t('common.noData')} />;
+    return <EmptyState message={emptyMessage || t('common.noData')} variant={emptyVariant} />;
   }
 
   const totalPages = pagination
@@ -80,66 +82,75 @@ export function DataTable<T>({
 
   return (
     <div>
-      <div className="rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-table-header hover:bg-table-header">
-              {selectable && (
-                <TableHead className="w-12 text-table-header-foreground">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={onSelectAll}
-                  />
-                </TableHead>
-              )}
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={cn(
-                    'text-table-header-foreground font-semibold',
-                    column.className
-                  )}
-                >
-                  {column.header}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((row) => {
-              const id = rowKey(row);
-              const isSelected = selectedRows.includes(id);
+      {/* Mobile scroll hint */}
+      <div className="relative">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-muted/30 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="min-w-[600px] md:min-w-0">
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-table-header hover:bg-table-header">
+                    {selectable && (
+                      <TableHead className="w-12 text-table-header-foreground">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={onSelectAll}
+                        />
+                      </TableHead>
+                    )}
+                    {columns.map((column) => (
+                      <TableHead
+                        key={column.key}
+                        className={cn(
+                          'text-table-header-foreground font-semibold whitespace-nowrap',
+                          column.className
+                        )}
+                      >
+                        {column.header}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((row) => {
+                    const id = rowKey(row);
+                    const isSelected = selectedRows.includes(id);
 
-              return (
-                <TableRow
-                  key={id}
-                  className={cn(
-                    onRowClick && 'cursor-pointer',
-                    isSelected && 'bg-accent'
-                  )}
-                  onClick={() => onRowClick?.(row)}
-                >
-                  {selectable && (
-                    <TableCell
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-12"
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => onSelectRow?.(id)}
-                      />
-                    </TableCell>
-                  )}
-                  {columns.map((column) => (
-                    <TableCell key={column.key} className={column.className}>
-                      {column.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    return (
+                      <TableRow
+                        key={id}
+                        className={cn(
+                          onRowClick && 'cursor-pointer',
+                          isSelected && 'bg-accent'
+                        )}
+                        onClick={() => onRowClick?.(row)}
+                      >
+                        {selectable && (
+                          <TableCell
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-12"
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => onSelectRow?.(id)}
+                            />
+                          </TableCell>
+                        )}
+                        {columns.map((column) => (
+                          <TableCell key={column.key} className={cn('whitespace-nowrap', column.className)}>
+                            {column.cell(row)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+        {/* Mobile scroll indicator gradient */}
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
       </div>
 
       {/* Pagination */}
