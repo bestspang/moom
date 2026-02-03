@@ -7,6 +7,7 @@
 **Completed:**
 - Security Remediation (21 findings addressed)
 - Phase 1: Core Entity CRUD (Packages, Classes, Staff, Roles, Locations, Rooms, Leads, Promotions, Finance)
+- Phase 2: Schedule & Lobby (useSchedule.ts, useLobby.ts, ScheduleClassDialog, CheckInDialog)
 - Database hooks created and connected
 - i18n EN/TH support
 
