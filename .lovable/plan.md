@@ -1,238 +1,369 @@
 
-# UX/UI Review: หน้าตั้งค่า (Settings)
+# แผนอัพเดทหน้ารายงาน (Reports)
 
-## Executive Summary
+## สรุปการเปลี่ยนแปลง
 
-หลังจากตรวจสอบอย่างละเอียดแล้ว พบปัญหา UX/UI จำนวน **23 จุด** แบ่งเป็น Critical 5 จุด, Major 9 จุด, Minor 9 จุด
-
----
-
-## Critical Issues (ต้องแก้ทันที)
-
-### 1. Mobile Responsive ไม่รองรับ
-**ปัญหา**: Layout เป็น `flex gap-6` ไม่มี responsive breakpoint - บนมือถือ sidebar จะบีบ content จนใช้งานไม่ได้
-```
-Desktop: [Sidebar | Content] ← ใช้งานได้
-Mobile:  [Sid|Content]       ← ใช้งานไม่ได้!
-```
-
-**แนะนำ**: 
-- Mobile: เปลี่ยน sidebar เป็น dropdown หรือ horizontal tabs
-- Tablet: ใช้ collapsible sidebar
-
-### 2. ปุ่มแก้ไข (Pencil Icon) ไม่ทำงาน
-**ปัญหา**: ทุกหน้ามีปุ่ม ✏️ แต่กดแล้วไม่เกิดอะไร - ทำให้ user สับสน
-**แนะนำ**: 
-- เพิ่ม Edit Dialog สำหรับแต่ละ setting
-- หรือเปลี่ยนเป็น inline edit ถ้าค่าเรียบง่าย
-
-### 3. Theme Color ไม่แสดงชื่อสี
-**ปัญหา**: User ไม่รู้ว่าแต่ละสีชื่ออะไร (Color blind user จะใช้งานไม่ได้เลย)
-```
-Current:  [🟣] [🟠] [🔴] [🟡]  ← ไม่มีชื่อ
-Expected: [🟣 Purple] [🟠 Orange] [🔴 Red]  ← มีชื่อ
-```
-
-### 4. ไม่มี Empty State เมื่อไม่มี Location
-**ปัญหา**: ถ้าไม่มี location ใน database, section Payment จะว่างเปล่า ไม่มีคำอธิบาย
-**แนะนำ**: แสดง "กรุณาเพิ่มสาขาก่อนตั้งค่าการชำระเงิน" + link ไปหน้า Locations
-
-### 5. Layout Structure ไม่ Consistent
-**ปัญหา**:
-| Page | Card Wrapper | Sidebar Width | Gap |
-|------|--------------|---------------|-----|
-| General | ❌ ไม่มี | w-48 | gap-6 |
-| Class | ✅ มี | w-48 | gap-8 |
-| Client | ✅ มี | w-56 | gap-8 |
-| Package | ✅ มี | - | - |
-| Contracts | ✅ มี | - | - |
-
-**แนะนำ**: ใช้ Card wrapper และ sidebar width เดียวกันทุกหน้า
+จากภาพตัวอย่าง หน้า Reports ต้องเปลี่ยน layout และเพิ่ม report detail pages ใหม่
 
 ---
 
-## Major Issues (ควรแก้ไข)
+## 1. Reports Index Page (หน้าหลัก)
 
-### 6. Heading ซ้ำซ้อน
-**ปัญหา**: กด "การจองคลาส" ใน sidebar → แสดง heading "การจองคลาส" อีกที = ซ้ำซ้อน!
+### ปัจจุบัน vs ใหม่
+
+| ปัจจุบัน | ใหม่ |
+|---------|-----|
+| Grid cards 4 columns | List format แนวตั้ง |
+| Card with title + description | Title (สีส้ม) + description + button |
+| Click card to navigate | Button "ดูรายงานฉบับเต็ม" หรือ "ส่งออกรายงาน" |
+
+### Layout ใหม่
 ```
-[Sidebar]          [Content]
-├─ การจองคลาส ←    ┌─ การจองคลาส  ← ซ้ำ!
-├─ การเช็คอิน      │  กำหนดระยะเวลา...
+┌─────────────────────────────────────────────────────────────────┐
+│ รายงาน                                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ [สมาชิก] [คลาส] [แพ็กเกจ]                                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ จำนวนสมาชิกที่มีการใช้งานอยู่ (รวมยอดทั้งหมดที่ผ่านมา)           │
+│ แสดงจำนวนสมาชิกที่มีการใช้งานฟิตเนสนี้ (รวมยอดทั้งหมดที่ผ่านมา)     │ [ดูรายงานฉบับเต็ม] │
+│                                                                 │
+│ สมาชิกกลุ่มเสี่ยง                                                 │
+│ แสดงจำนวนสมาชิกที่เสี่ยงตามจำนวนครั้งที่เหลือและวันหมดอายุของแพ็กเกจ │ [ดูรายงานฉบับเต็ม] │
+│                                                                 │
+│ การใช้งานแพ็กเกจของสมาชิก                                        │
+│ แสดงภาพรวมการใช้งานแพ็กเกจของสมาชิกภายในช่วงเวลาที่เลือก           │ [ส่งออกรายงาน] │
+│                                                                 │
+│ แพ็กเกจสมาชิกที่มีความเสี่ยง                                       │
+│ แสดงแพ็กเกจที่มีความเสี่ยงของสมาชิก โดยพิจารณาจากจำนวนคงเหลือและวันหมดอายุ │ [ส่งออกรายงาน] │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
-**แนะนำ**: ลบ heading ใน content ออก หรือเปลี่ยนเป็น description แทน
-
-### 7. Description ยาวเกินไป
-**ปัญหา**: บางข้อความยาวมาก เช่น:
-> "ระยะเวลาที่ช้าที่สุดที่สมาชิกสามารถเลื่อนจากรายชื่อผู้รอเรียกไปเป็นการจองที่ว่างโดยอัตโนมัติได้"
-
-**แนะนำ**: 
-- แยกเป็น Label สั้นๆ + Tooltip หรือ Help icon สำหรับคำอธิบายยาว
-- ตัวอย่าง: `"เลื่อนจาก Waitlist อัตโนมัติ" ⓘ`
-
-### 8. Visual Hierarchy - ใช้สี Primary มากเกินไป
-**ปัญหา**: แทบทุกอย่างเป็นสีส้ม ทำให้ไม่มี hierarchy
-- Sidebar active = สีส้ม
-- Accordion header = สีส้ม
-- Section heading = สีส้ม
-- Button = สีส้ม
-
-**แนะนำ**: 
-- Sidebar active: ใช้ `bg-muted` แทน `text-primary`
-- Accordion header: ใช้ `font-semibold text-foreground` แทน `text-primary`
-- เหลือเฉพาะ Button เป็น primary
-
-### 9. Setting Value ดูเหมือน Disabled
-**ปัญหา**: ค่า setting ใช้ `text-muted-foreground` ซึ่งดูเหมือนปิดใช้งาน
-```
-กำหนดระยะเวลา...*
-   3 วัน ก่อนเริ่มคลาส  ← สีจาง ดูเหมือน disabled
-```
-**แนะนำ**: ใช้ `text-foreground` และเพิ่ม hover effect ชี้ว่าแก้ไขได้
-
-### 10. Accordion ไม่แสดงสถานะ Enable/Disable
-**ปัญหา**: "โอนผ่านบัญชีธนาคาร" เปิดหรือปิดอยู่ ดูจาก accordion ไม่รู้
-**แนะนำ**: เพิ่ม Badge หรือ indicator บน accordion header
-```
-▼ โอนผ่านบัญชีธนาคาร [เปิดใช้งาน]
-```
-
-### 11. Toggle Description Indent ไม่แน่นอน
-**ปัญหา**: ใช้ `ml-12` เพื่อ indent description ใต้ toggle - ถ้า Switch size เปลี่ยน จะ misalign
-**แนะนำ**: ใช้ flex layout แทน fixed margin
-
-### 12. Theme Grid ไม่ Responsive
-**ปัญหา**: `grid-cols-4` จะแคบมากบน tablet/mobile
-**แนะนำ**: ใช้ `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`
-
-### 13. Tab Navigation Overflow บน Mobile
-**ปัญหา**: 5 tabs ใช้ `flex-wrap` แต่บน mobile อาจดู crowded
-**แนะนำ**: บน mobile ใช้ horizontal scroll หรือ dropdown
-
-### 14. ไม่มี Animation เมื่อเปลี่ยน Section
-**ปัญหา**: เปลี่ยน sidebar item แล้ว content เปลี่ยนทันทีไม่มี transition
-**แนะนำ**: เพิ่ม `animate-in fade-in-0` เมื่อเปลี่ยน activeSection
 
 ---
 
-## Minor Issues (ปรับปรุงได้)
+## 2. Report Detail Pages (ต้องสร้างใหม่)
 
-### 15. Accessibility - Theme Cards ไม่มี aria-label
-**แนะนำ**: เพิ่ม `aria-label={color.label}` และ `role="radio"`
+### A. จำนวนสมาชิกที่มีการใช้งานอยู่ (Active Members Over Time)
+**Route**: `/report/member/active-members`
 
-### 16. Accessibility - Sidebar ไม่มี aria-current
-**แนะนำ**: เพิ่ม `aria-current={isActive ? 'page' : undefined}`
+**Components:**
+- Filters: วันที่, อายุ, เพศ, สาขา
+- Stats Cards:
+  - สมาชิกที่มีการใช้งานมากที่สุดในหนึ่งวัน
+  - สมาชิกที่มีการใช้งานน้อยที่สุดในหนึ่งวัน
+  - จำนวนสมาชิกที่มีการใช้งานโดยเฉลี่ยต่อวัน
+  - จำนวนสมาชิกใหม่ที่มีการใช้งานโดยเฉลี่ยต่อวัน
+- Chart: Bar chart แสดง active members ตาม date
+- Table: วันที่, จำนวนสมาชิกที่มีการใช้งานอยู่, สาขา, อายุ, เพศ
 
-### 17. i18n Interpolation ใช้ .replace() 
-**ปัญหา**: `t('key').replace('{n}', value)` ไม่ robust
-**แนะนำ**: ใช้ i18next interpolation: `t('key', { n: value })`
+### B. สมาชิกกลุ่มเสี่ยง (Members At Risk) - ปรับปรุง
+**Route**: `/report/member/members-at-risk` (มีอยู่แล้ว)
 
-### 18. SettingsPackage ดู Empty
-**ปัญหา**: มีแค่ 1 setting ทำให้หน้าดูว่างเปล่า
-**แนะนำ**: พิจารณารวมเข้ากับ tab อื่น หรือเพิ่ม related settings
+**ปรับปรุง:**
+- เปลี่ยน Pie Chart เป็น Donut Chart ขนาดใหญ่ขึ้น
+- ปรับ layout stat cards ด้านขวา
+- ปรับ filter buttons ด้านล่าง chart
+- ปรับ table columns ให้ตรงกับภาพ
 
-### 19. Button "ตั้งค่าสัญญาสมาชิก" ไม่มี onClick
-**แนะนำ**: เพิ่ม action หรือ disabled state พร้อม tooltip
+### C. ความจุของคลาสตามชั่วโมงของวัน (Class Capacity by Hour)
+**Route**: `/report/class/capacity-by-hour`
 
-### 20. SubsectionTitle ใช้ border-b สร้าง Visual Noise
-**แนะนำ**: ลบ border หรือใช้ spacing แทน
+**Components:**
+- Filters: วันที่, เทรนเนอร์, สาขา
+- Stats Cards:
+  - ความจุของคลาสโดยเฉลี่ย
+  - คลาสที่มีการจอง
+  - จำนวนคลาสโดยเฉลี่ยต่อวัน
+  - วันและเวลาที่มีความจุคลาสสูงสุด
+- Heatmap: ตารางแสดงความจุตามวัน (อาทิตย์-เสาร์) x ชั่วโมง (12AM-11PM)
 
-### 21. Required Asterisk ไม่ Consistent
-**ปัญหา**: บาง setting มี `*` บางอันไม่มี
-**แนะนำ**: ถ้าทุกอันจำเป็น ก็ไม่ต้องใส่ `*` เลย
+### D. ความจุของคลาส (Class Capacity Over Time)
+**Route**: `/report/class/capacity-over-time`
 
-### 22. Pencil Icon Size เล็กเกินไป
-**ปัญหา**: `h-4 w-4` อาจกดยากบน touch device
-**แนะนำ**: ใช้ `h-5 w-5` หรือเพิ่ม padding ให้ touch target 44x44px
+**Components:**
+- Filters: วันที่, เทรนเนอร์, สาขา
+- Stats Cards:
+  - ความจุของคลาสโดยเฉลี่ย
+  - คลาสที่มีการจอง
+  - จำนวนคลาสโดยเฉลี่ยต่อวัน
+- Chart: Line chart แสดง capacity % และจำนวนคลาส
+- Table: วันที่, เทรนเนอร์, สาขา, คลาสที่มีการจองเวลาไว้, ความจุของคลาสโดยเฉลี่ย
 
-### 23. Card Padding ไม่ Consistent
-**ปัญหา**: `p-6` บ้าง `space-y-4` บ้าง
-**แนะนำ**: ใช้ design token เดียวกันทุกหน้า
+### E. การขายแพ็กเกจ (Package Sales)
+**Route**: `/report/package/sales`
+
+**Components:**
+- Filters: วันที่, ประเภทแพ็กเกจ, หมวดหมู่
+- Stats Cards:
+  - จำนวนหน่วยสูงสุดที่ขายได้จากแพ็กเกจ
+  - จำนวนหน่วยต่ำสุดที่ขายได้จากแพ็กเกจ
+  - รายได้สูงสุดที่เกิดจากการขายแพ็กเกจ
+  - รายได้ต่ำสุดที่เกิดจากการขายแพ็กเกจ
+- Chart: Double horizontal bar chart (จำนวนหน่วย | รายได้)
+- Table: ชื่อแพ็กเกจ, ประเภทแพ็กเกจ, หมวดหมู่, จำนวนหน่วยที่ขายแล้ว, รายได้ (฿)
+
+### F. ยอดขายแพ็กเกจ (Package Sales Over Time)
+**Route**: `/report/package/sales-over-time`
+
+**Components:**
+- Filters: วันที่, แพ็กเกจ, ประเภทแพ็กเกจ, หมวดหมู่
+- Stats Cards:
+  - จำนวนรวมของแพ็กเกจที่ขายได้
+  - ยอดขายแพ็กเกจโดยเฉลี่ยต่อวัน
+  - รายได้
+  - รายได้เฉลี่ยต่อวัน
+- Toggle: วัน | สัปดาห์ | เดือน | ปี
+- Chart: Combo chart (bar = จำนวน, line = รายได้)
+- Table: วันที่, แพ็กเกจ, ประเภทแพ็กเกจ, หมวดหมู่, จำนวนหน่วยที่ขายแล้ว, รายได้ (บาท)
 
 ---
 
-## Implementation Priority
+## 3. Files to Create/Modify
 
-### Phase 1 - Critical Fixes (Day 1-2)
-1. Add Mobile Responsive layout (sidebar → tabs/dropdown)
-2. Unify layout structure (Card wrapper + consistent widths)
-3. Add color labels to theme cards
-4. Add empty state for no locations
+### New Files
+| File | Description |
+|------|-------------|
+| `src/pages/reports/ActiveMembers.tsx` | Active members over time report |
+| `src/pages/reports/ClassCapacityByHour.tsx` | Class capacity by hour heatmap |
+| `src/pages/reports/ClassCapacityOverTime.tsx` | Class capacity over time |
+| `src/pages/reports/PackageSales.tsx` | Package sales comparison |
+| `src/pages/reports/PackageSalesOverTime.tsx` | Package sales trend |
+| `src/components/reports/ReportFilters.tsx` | Reusable filter component |
+| `src/components/reports/StatCard.tsx` | Report stat card with info icon |
+| `src/components/reports/ManageDropdown.tsx` | จัดการ dropdown button |
 
-### Phase 2 - Major Improvements (Day 3-5)
-5. Remove redundant headings
-6. Shorten descriptions + add tooltips
-7. Reduce primary color usage
-8. Fix setting value visibility
-9. Add accordion status indicator
-10. Add section change animation
-
-### Phase 3 - Polish (Day 6-7)
-11. Fix accessibility issues
-12. Implement edit dialogs
-13. Fix minor visual inconsistencies
-14. Test all responsive breakpoints
+### Modified Files
+| File | Description |
+|------|-------------|
+| `src/pages/Reports.tsx` | เปลี่ยนเป็น list format |
+| `src/pages/reports/MembersAtRisk.tsx` | ปรับ layout ให้ตรงกับภาพ |
+| `src/hooks/useReports.ts` | เพิ่ม hooks สำหรับ reports ใหม่ |
+| `src/i18n/locales/en.ts` | เพิ่ม i18n keys |
+| `src/i18n/locales/th.ts` | เพิ่ม Thai translations |
+| `src/App.tsx` | เพิ่ม routes |
 
 ---
 
-## Technical Implementation Notes
+## 4. New i18n Keys
 
-### Mobile Responsive Pattern
 ```typescript
-// Use useIsMobile hook
-const isMobile = useIsMobile();
-
-// Mobile: Show dropdown selector
-// Desktop: Show sidebar
-{isMobile ? (
-  <Select value={activeSection} onValueChange={setActiveSection}>
-    {menuItems.map(item => (
-      <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
-    ))}
-  </Select>
-) : (
-  <nav className="w-48 shrink-0">...</nav>
-)}
-```
-
-### Consistent Sidebar Component
-```typescript
-// Extract to shared component
-const SettingsSidebar = ({ items, activeId, onSelect }) => (
-  <nav className="w-52 shrink-0" role="navigation">
-    <ul className="space-y-1">
-      {items.map(item => (
-        <li key={item.id}>
-          <button
-            onClick={() => onSelect(item.id)}
-            aria-current={activeId === item.id ? 'page' : undefined}
-            className={cn(
-              'w-full text-left px-3 py-2 text-sm rounded-md transition-all',
-              activeId === item.id
-                ? 'bg-muted text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            {item.label}
-          </button>
-        </li>
-      ))}
-    </ul>
-  </nav>
-);
+reports: {
+  // ... existing keys
+  
+  // New titles (Thai)
+  activeMembersTitle: 'จำนวนสมาชิกที่มีการใช้งานอยู่ (รวมยอดทั้งหมดที่ผ่านมา)',
+  activeMembersDesc: 'แสดงจำนวนสมาชิกที่มีการใช้งานฟิตเนสนี้ (รวมยอดทั้งหมดที่ผ่านมา)',
+  membersAtRiskDesc: 'แสดงจำนวนสมาชิกที่เสี่ยงตามจำนวนครั้งที่เหลือและวันหมดอายุของแพ็กเกจ',
+  packageUsageDesc: 'แสดงภาพรวมการใช้งานแพ็กเกจของสมาชิกภายในช่วงเวลาที่เลือก',
+  packageAtRiskDesc: 'แสดงแพ็กเกจที่มีความเสี่ยงของสมาชิก โดยพิจารณาจากจำนวนคงเหลือและวันหมดอายุ',
+  
+  classCapacityByHourTitle: 'ความจุของคลาสตามชั่วโมงของวัน',
+  classCapacityByHourDesc: 'แสดงความจุของคลาสของฟิตเนสนี้ทุกชั่วโมงของวัน',
+  classCapacityTitle: 'ความจุของคลาส (รวมยอดทั้งหมดที่ผ่านมา)',
+  classCapacityDesc: 'แสดงความจุของคลาสของฟิตเนสนี้ (รวมยอดทั้งหมดที่ผ่านมา)',
+  classCategoryPopularityDesc: 'แสดงการจัดอันดับหมวดหมู่คลาสตามความจุของคลาส',
+  classPopularityDesc: 'แสดงการจัดอันดับคลาสตามจำนวนผู้เข้าคลาส หรือความจุของคลาส',
+  
+  packageSalesTitle: 'การขายแพ็กเกจ',
+  packageSalesDesc: 'แสดงการเปรียบเทียบยอดขายแพ็กเกจของฟิตเนสนี้ตามจำนวนหน่วยที่ขายและรายได้',
+  packageSalesOverTimeTitle: 'ยอดขายแพ็กเกจ (รวมยอดทั้งหมดที่ผ่านมา)',
+  packageSalesOverTimeDesc: 'แสดงยอดขายแพ็กเกจของฟิตเนสนี้ทั้งหมดตามจำนวนหน่วยที่ขายและรายได้ (รวมยอดทั้งหมดที่ผ่านมา)',
+  
+  // Buttons
+  viewFullReport: 'ดูรายงานฉบับเต็ม',
+  exportReport: 'ส่งออกรายงาน',
+  manage: 'จัดการ',
+  
+  // Filters
+  dateRange: 'วันที่',
+  trainer: 'เทรนเนอร์',
+  allTrainers: 'เทรนเนอร์ทั้งหมด',
+  allLocations: 'สาขาทั้งหมด',
+  allPackages: 'แพ็กเกจทั้งหมด',
+  allTypes: 'ประเภทแพ็กเกจทั้งหมด',
+  allCategories: 'หมวดหมู่ทั้งหมด',
+  age: 'อายุ',
+  allAges: 'ทุกอายุ',
+  gender: 'เพศ',
+  allGenders: 'ทุกเพศ',
+  
+  // Stats
+  mostActiveDay: 'สมาชิกที่มีการใช้งานมากที่สุดในหนึ่งวัน',
+  leastActiveDay: 'สมาชิกที่มีการใช้งานน้อยที่สุดในหนึ่งวัน',
+  avgActivePerDay: 'จำนวนสมาชิกที่มีการใช้งานโดยเฉลี่ยต่อวัน',
+  newActivePerDay: 'จำนวนสมาชิกใหม่ที่มีการใช้งานโดยเฉลี่ยต่อวัน',
+  avgCapacity: 'ความจุของคลาสโดยเฉลี่ย',
+  classesWithBookings: 'คลาสที่มีการจอง',
+  avgClassesPerDay: 'จำนวนคลาสโดยเฉลี่ยต่อวัน',
+  peakCapacityTime: 'วันและเวลาที่มีความจุคลาสสูงสุด',
+  totalPackagesSold: 'จำนวนรวมของแพ็กเกจที่ขายได้',
+  avgPackagesPerDay: 'ยอดขายแพ็กเกจโดยเฉลี่ยต่อวัน',
+  revenue: 'รายได้',
+  avgRevenuePerDay: 'รายได้เฉลี่ยต่อวัน',
+  maxUnitsSold: 'จำนวนหน่วยสูงสุดที่ขายได้จากแพ็กเกจ',
+  minUnitsSold: 'จำนวนหน่วยต่ำสุดที่ขายได้จากแพ็กเกจ',
+  maxRevenue: 'รายได้สูงสุดที่เกิดจากการขายแพ็กเกจ',
+  minRevenue: 'รายได้ต่ำสุดที่เกิดจากการขายแพ็กเกจ',
+  
+  // Table columns
+  date: 'วันที่',
+  activeMembers: 'จำนวนสมาชิกที่มีการใช้งานอยู่',
+  classesBooked: 'คลาสที่มีการจองเวลาไว้',
+  unitsSold: 'จำนวนหน่วยที่ขายแล้ว',
+  
+  // Time period toggle
+  day: 'วัน',
+  week: 'สัปดาห์',
+  month: 'เดือน',
+  year: 'ปี',
+  
+  // Updated timestamp
+  updatedAt: 'อัปเดตเมื่อ',
+}
 ```
 
 ---
 
-## Summary Score
+## 5. Component Patterns
 
-| Category | Current | Target |
-|----------|---------|--------|
-| Visual Consistency | 6/10 | 9/10 |
-| Mobile Experience | 3/10 | 9/10 |
-| Accessibility | 5/10 | 8/10 |
-| Content Clarity | 6/10 | 9/10 |
-| Functionality | 4/10 | 8/10 |
-| **Overall** | **4.8/10** | **8.6/10** |
+### ReportItem Component (Reports Index)
+```typescript
+interface ReportItemProps {
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonVariant: 'view' | 'export';
+  onClick: () => void;
+}
 
-การแก้ไขตาม plan นี้จะยกระดับคุณภาพ UX/UI ของหน้าตั้งค่าจาก "ใช้งานได้" เป็น "ใช้งานง่ายและน่าใช้"
+<div className="py-4 border-b last:border-0">
+  <h3 className="text-primary font-medium mb-1">{title}</h3>
+  <div className="flex justify-between items-start gap-4">
+    <p className="text-sm text-muted-foreground flex-1">{description}</p>
+    <Button variant="outline" className="shrink-0 border-primary text-primary">
+      {buttonVariant === 'export' && <Download className="h-4 w-4 mr-2" />}
+      {buttonText}
+    </Button>
+  </div>
+</div>
+```
+
+### Report Detail Page Layout
+```typescript
+<div>
+  {/* Breadcrumb + Back */}
+  <div className="flex items-center gap-2 text-sm mb-4">
+    <Button variant="ghost" size="icon" onClick={() => navigate('/report')}>
+      <ArrowLeft className="h-4 w-4" />
+    </Button>
+    <span className="text-muted-foreground">รายงาน</span>
+    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    <span>{reportTitle}</span>
+  </div>
+  
+  {/* Title + Timestamp + Manage */}
+  <div className="flex justify-between items-start mb-6">
+    <div>
+      <h1 className="text-xl font-semibold">{reportTitle}</h1>
+      <p className="text-sm text-muted-foreground">
+        🔄 อัปเดตเมื่อ {format(new Date(), 'd MMM yyyy, HH:mm')} (Bangkok GMT +07:00)
+      </p>
+    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="border-primary text-primary">
+          <FileText className="h-4 w-4 mr-2" />
+          จัดการ
+          <ChevronDown className="h-4 w-4 ml-2" />
+        </Button>
+      </DropdownMenuTrigger>
+      {/* ... menu items */}
+    </DropdownMenu>
+  </div>
+  
+  {/* Filters */}
+  <ReportFilters filters={...} onChange={...} />
+  
+  {/* Stats Cards */}
+  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <StatCard title={...} value={...} subtitle={...} color={...} />
+    {/* ... */}
+  </div>
+  
+  {/* Chart + Table */}
+</div>
+```
+
+### StatCard for Reports
+```typescript
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  color?: 'default' | 'primary' | 'success' | 'warning' | 'purple';
+  info?: string;
+  trend?: { value: number; isPositive: boolean };
+}
+
+<Card className={cn('border-t-4', colorClasses[color])}>
+  <CardContent className="pt-4">
+    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+      {title}
+      {info && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger><Info className="h-3 w-3" /></TooltipTrigger>
+            <TooltipContent>{info}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+    <div className={cn('text-2xl font-bold', textColorClasses[color])}>
+      {value}
+    </div>
+    {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+    {trend && (
+      <div className={cn('text-xs mt-1', trend.isPositive ? 'text-green-500' : 'text-red-500')}>
+        {trend.isPositive ? '▲' : '▼'} {trend.value}% เทียบกับระยะเวลาก่อนหน้า
+      </div>
+    )}
+  </CardContent>
+</Card>
+```
+
+---
+
+## 6. Estimated Effort
+
+| Task | Time |
+|------|------|
+| Reports Index page (list format) | 30 min |
+| Active Members report page | 1.5 hours |
+| Update Members At Risk page | 1 hour |
+| Class Capacity by Hour (heatmap) | 2 hours |
+| Class Capacity Over Time | 1.5 hours |
+| Package Sales page | 1.5 hours |
+| Package Sales Over Time | 1.5 hours |
+| Shared components | 1 hour |
+| i18n updates | 30 min |
+| Routes + hooks | 30 min |
+| Testing | 1 hour |
+| **Total** | ~12 hours |
+
+---
+
+## 7. Success Criteria
+
+1. ✅ หน้า Reports หลักแสดงเป็น list format ตามภาพ
+2. ✅ ปุ่ม "ดูรายงานฉบับเต็ม" นำไปหน้า report detail ที่ถูกต้อง
+3. ✅ ปุ่ม "ส่งออกรายงาน" export เป็น CSV
+4. ✅ Report detail pages มี:
+   - Breadcrumb + Back button
+   - Title + timestamp + "จัดการ" dropdown
+   - Filters (date range, dropdown selects)
+   - Stats cards with info icons
+   - Charts (bar, line, heatmap)
+   - Data table with pagination
+5. ✅ Mobile responsive ทุกหน้า
+6. ✅ รองรับ i18n EN/TH ครบถ้วน
