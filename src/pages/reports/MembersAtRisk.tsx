@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, DataTable, EmptyState, type Column } from '@/components/common';
+import { DataTable, EmptyState, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { useMembersAtRiskStats, type MemberAtRisk, type RiskLevel } from '@/hooks/useReports';
+import { ReportPageLayout, ReportStatCard } from '@/components/reports';
 import { cn } from '@/lib/utils';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 
 const MembersAtRiskPage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState<RiskLevel | 'all'>('all');
 
@@ -26,7 +27,7 @@ const MembersAtRiskPage = () => {
     ? members
     : members.filter((m) => m.riskLevel === selectedFilter);
 
-  // Pie chart data
+  // Pie chart data - donut style
   const chartData = stats ? [
     { name: t('reports.riskLevels.high'), value: stats.highRisk.count, color: 'hsl(var(--danger))' },
     { name: t('reports.riskLevels.medium'), value: stats.mediumRisk.count, color: 'hsl(var(--warning))' },
@@ -76,7 +77,7 @@ const MembersAtRiskPage = () => {
           row.expiresIn <= 7 && 'text-danger font-medium',
           row.expiresIn <= 30 && row.expiresIn > 7 && 'text-warning font-medium'
         )}>
-          {row.expiresIn} {t('packages.create.daysAfterActivation').split(' ')[0].toLowerCase()}
+          {row.expiresIn} {language === 'th' ? 'วัน' : 'days'}
         </span>
       ),
     },
@@ -87,168 +88,125 @@ const MembersAtRiskPage = () => {
     },
   ];
 
-  const riskDefinitions = [
-    {
-      level: 'high' as const,
-      label: t('reports.riskLevels.high'),
-      percent: stats?.highRisk.percent || 0,
-      count: stats?.highRisk.count || 0,
-      criteria: '≤30 days or ≤33% and ≤3 remaining sessions',
-      color: 'bg-danger',
-      textColor: 'text-danger',
-    },
-    {
-      level: 'medium' as const,
-      label: t('reports.riskLevels.medium'),
-      percent: stats?.mediumRisk.percent || 0,
-      count: stats?.mediumRisk.count || 0,
-      criteria: '≤60 days or ≤60% and ≤15 remaining sessions',
-      color: 'bg-warning',
-      textColor: 'text-warning',
-    },
-    {
-      level: 'low' as const,
-      label: t('reports.riskLevels.low'),
-      percent: stats?.lowRisk.percent || 0,
-      count: stats?.lowRisk.count || 0,
-      criteria: '≥61 days and ≥61% and ≥16 remaining sessions',
-      color: 'bg-accent-teal',
-      textColor: 'text-accent-teal',
-    },
+  const filterButtons = [
+    { key: 'all' as const, label: t('common.all'), count: stats?.total || 0 },
+    { key: 'high' as const, label: t('reports.riskLevels.high'), count: stats?.highRisk.count || 0, color: 'danger' },
+    { key: 'medium' as const, label: t('reports.riskLevels.medium'), count: stats?.mediumRisk.count || 0, color: 'warning' },
+    { key: 'low' as const, label: t('reports.riskLevels.low'), count: stats?.lowRisk.count || 0, color: 'teal' },
   ];
 
-  return (
-    <div>
-      <PageHeader
-        title={t('reports.membersAtRisk')}
-        breadcrumbs={[
-          { label: t('nav.reports'), href: '/report' },
-          { label: t('reports.membersAtRisk') },
-        ]}
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/report')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('common.back')}
-            </Button>
-            <Button variant="outline">{t('reports.manage')}</Button>
-            <Button variant="outline">{t('common.export')}</Button>
-          </div>
-        }
-      />
+  const handleExportCSV = () => {
+    const csvColumns: CsvColumn<MemberAtRisk>[] = [
+      { key: 'name', header: t('members.title'), accessor: (r) => r.name },
+      { key: 'packageName', header: t('reports.atRiskPackage'), accessor: (r) => r.packageName },
+      { key: 'packageType', header: t('packages.type'), accessor: (r) => r.packageType },
+      { key: 'usage', header: t('lobby.usage'), accessor: (r) => r.usage },
+      { key: 'expiresIn', header: t('reports.expiresIn'), accessor: (r) => r.expiresIn },
+      { key: 'phone', header: t('leads.contactNumber'), accessor: (r) => r.phone },
+      { key: 'riskLevel', header: t('reports.riskLevel'), accessor: (r) => r.riskLevel },
+    ];
+    const date = new Date().toISOString().split('T')[0];
+    exportToCsv(filteredMembers, csvColumns, `members-at-risk-${date}`);
+  };
 
+  return (
+    <ReportPageLayout
+      title={t('reports.membersAtRisk')}
+      onExportCSV={handleExportCSV}
+    >
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <Skeleton className="h-64 lg:col-span-1" />
-          <Skeleton className="h-64 lg:col-span-2" />
+          <Skeleton className="h-72 lg:col-span-1" />
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Pie Chart */}
+          {/* Donut Chart */}
           <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-base">{t('reports.membersAtRisk')}</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={240}>
                   <PieChart>
                     <Pie
                       data={chartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={40}
-                      outerRadius={80}
+                      innerRadius={60}
+                      outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
                     >
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[240px] flex items-center justify-center text-muted-foreground">
                   {t('common.noData')}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Risk Level Definitions */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Risk Level Criteria</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-3 font-medium">Level</th>
-                      <th className="text-left py-2 px-3 font-medium">%</th>
-                      <th className="text-left py-2 px-3 font-medium">Count</th>
-                      <th className="text-left py-2 px-3 font-medium">Criteria</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {riskDefinitions.map((def) => (
-                      <tr key={def.level} className="border-b last:border-0">
-                        <td className="py-2 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className={cn('w-3 h-3 rounded-full', def.color)} />
-                            <span className={def.textColor}>{def.label}</span>
-                          </div>
-                        </td>
-                        <td className="py-2 px-3">{def.percent}%</td>
-                        <td className="py-2 px-3">{def.count}</td>
-                        <td className="py-2 px-3 text-muted-foreground">{def.criteria}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Stats Cards */}
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <ReportStatCard
+              title={t('reports.riskLevels.high')}
+              value={stats?.highRisk.count || 0}
+              subtitle={`${stats?.highRisk.percent || 0}%`}
+              color="danger"
+              info={t('reports.highRiskInfo')}
+            />
+            <ReportStatCard
+              title={t('reports.riskLevels.medium')}
+              value={stats?.mediumRisk.count || 0}
+              subtitle={`${stats?.mediumRisk.percent || 0}%`}
+              color="warning"
+              info={t('reports.mediumRiskInfo')}
+            />
+            <ReportStatCard
+              title={t('reports.riskLevels.low')}
+              value={stats?.lowRisk.count || 0}
+              subtitle={`${stats?.lowRisk.percent || 0}%`}
+              color="teal"
+              info={t('reports.lowRiskInfo')}
+            />
+          </div>
         </div>
       )}
 
       {/* Filter Buttons */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <Button
-          variant={selectedFilter === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedFilter('all')}
-        >
-          {t('common.all')} ({stats?.total || 0})
-        </Button>
-        <Button
-          variant={selectedFilter === 'high' ? 'default' : 'outline'}
-          size="sm"
-          className={selectedFilter === 'high' ? 'bg-danger hover:bg-danger/90' : 'text-danger border-danger'}
-          onClick={() => setSelectedFilter('high')}
-        >
-          {t('reports.riskLevels.high')} ({stats?.highRisk.count || 0})
-        </Button>
-        <Button
-          variant={selectedFilter === 'medium' ? 'default' : 'outline'}
-          size="sm"
-          className={selectedFilter === 'medium' ? 'bg-warning hover:bg-warning/90 text-warning-foreground' : 'text-warning border-warning'}
-          onClick={() => setSelectedFilter('medium')}
-        >
-          {t('reports.riskLevels.medium')} ({stats?.mediumRisk.count || 0})
-        </Button>
-        <Button
-          variant={selectedFilter === 'low' ? 'default' : 'outline'}
-          size="sm"
-          className={selectedFilter === 'low' ? 'bg-accent-teal hover:bg-accent-teal/90 text-white' : 'text-accent-teal border-accent-teal'}
-          onClick={() => setSelectedFilter('low')}
-        >
-          {t('reports.riskLevels.low')} ({stats?.lowRisk.count || 0})
-        </Button>
+        {filterButtons.map((btn) => {
+          const isActive = selectedFilter === btn.key;
+          const colorClasses = {
+            danger: isActive ? 'bg-danger hover:bg-danger/90 text-white' : 'text-danger border-danger hover:bg-danger/10',
+            warning: isActive ? 'bg-warning hover:bg-warning/90 text-warning-foreground' : 'text-warning border-warning hover:bg-warning/10',
+            teal: isActive ? 'bg-accent-teal hover:bg-accent-teal/90 text-white' : 'text-accent-teal border-accent-teal hover:bg-accent-teal/10',
+          };
+
+          return (
+            <Button
+              key={btn.key}
+              variant={isActive && btn.key === 'all' ? 'default' : 'outline'}
+              size="sm"
+              className={btn.color ? colorClasses[btn.color as keyof typeof colorClasses] : ''}
+              onClick={() => setSelectedFilter(btn.key)}
+            >
+              {btn.label} ({btn.count})
+            </Button>
+          );
+        })}
       </div>
 
       {/* Members Table */}
@@ -268,7 +226,7 @@ const MembersAtRiskPage = () => {
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
         />
       )}
-    </div>
+    </ReportPageLayout>
   );
 };
 

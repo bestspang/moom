@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format, eachDayOfInterval, startOfWeek, startOfMonth, startOfYear, getDay, getHours } from 'date-fns';
 
 export type RiskLevel = 'high' | 'medium' | 'low';
 
@@ -56,7 +56,6 @@ function calculateRiskLevel(
   sessionsRemaining: number | null,
   totalSessions: number | null
 ): RiskLevel {
-  // For unlimited packages, only check days
   if (totalSessions === null || totalSessions === 0) {
     if (daysLeft <= 30) return 'high';
     if (daysLeft <= 60) return 'medium';
@@ -67,12 +66,10 @@ function calculateRiskLevel(
     ? (sessionsRemaining / totalSessions) * 100 
     : 100;
 
-  // High risk: ≤30 days OR (≤33% usage AND ≤3 remaining)
   if (daysLeft <= 30 || (usagePercent <= 33 && (sessionsRemaining || 0) <= 3)) {
     return 'high';
   }
 
-  // Medium risk: ≤60 days OR (≤60% usage AND ≤15 remaining)
   if (daysLeft <= 60 || (usagePercent <= 60 && (sessionsRemaining || 0) <= 15)) {
     return 'medium';
   }
@@ -84,7 +81,6 @@ export function useMembersAtRiskStats() {
   return useQuery({
     queryKey: ['members-at-risk-stats'],
     queryFn: async (): Promise<{ stats: RiskStats; members: MemberAtRisk[] }> => {
-      // Get all active member packages with member and package info
       const { data, error } = await supabase
         .from('member_packages')
         .select(`
@@ -119,7 +115,6 @@ export function useMembersAtRiskStats() {
       let mediumCount = 0;
       let lowCount = 0;
 
-      // Type assertion for the joined data
       const packages = data as unknown as PackageWithMember[];
 
       packages.forEach((pkg) => {
@@ -128,7 +123,6 @@ export function useMembersAtRiskStats() {
         const expiryDate = new Date(pkg.expiry_date);
         const daysLeft = differenceInDays(expiryDate, today);
 
-        // Skip already expired packages
         if (daysLeft < 0) return;
 
         const totalSessions = pkg.packages.sessions;
@@ -142,7 +136,6 @@ export function useMembersAtRiskStats() {
         else if (riskLevel === 'medium') mediumCount++;
         else lowCount++;
 
-        // Calculate usage string
         let usage = '-';
         if (totalSessions && totalSessions > 0) {
           const used = pkg.sessions_used || 0;
@@ -183,5 +176,332 @@ export function useMembersAtRiskStats() {
         members,
       };
     },
+  });
+}
+
+// Active Members Hook
+interface ActiveMembersFilters {
+  location: string;
+  age: string;
+  gender: string;
+}
+
+interface ActiveMemberRow {
+  date: string;
+  activeMembers: number;
+  location: string;
+  ageGroup: string;
+  gender: string;
+}
+
+interface ActiveMembersStats {
+  mostActiveDay: number;
+  mostActiveDayDate: string;
+  leastActiveDay: number;
+  leastActiveDayDate: string;
+  avgActivePerDay: number;
+  newActivePerDay: number;
+}
+
+export function useActiveMembers(
+  dateRange: { start?: Date; end?: Date },
+  filters: ActiveMembersFilters
+) {
+  return useQuery({
+    queryKey: ['active-members', dateRange, filters],
+    queryFn: async () => {
+      // For demo purposes, generate mock data
+      const days = dateRange.start && dateRange.end
+        ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
+        : [];
+
+      const chartData = days.map((day) => ({
+        date: format(day, 'd MMM'),
+        activeMembers: Math.floor(Math.random() * 50) + 20,
+      }));
+
+      const activeCounts = chartData.map((d) => d.activeMembers);
+      const maxActive = Math.max(...activeCounts);
+      const minActive = Math.min(...activeCounts);
+
+      const stats: ActiveMembersStats = {
+        mostActiveDay: maxActive,
+        mostActiveDayDate: chartData.find((d) => d.activeMembers === maxActive)?.date || '-',
+        leastActiveDay: minActive,
+        leastActiveDayDate: chartData.find((d) => d.activeMembers === minActive)?.date || '-',
+        avgActivePerDay: Math.round(activeCounts.reduce((a, b) => a + b, 0) / activeCounts.length) || 0,
+        newActivePerDay: Math.floor(Math.random() * 5) + 1,
+      };
+
+      const tableData: ActiveMemberRow[] = chartData.slice(0, 10).map((d) => ({
+        date: d.date,
+        activeMembers: d.activeMembers,
+        location: 'Main Branch',
+        ageGroup: '26-35',
+        gender: 'Mixed',
+      }));
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// Class Capacity by Hour Hook
+interface ClassCapacityByHourFilters {
+  trainer: string;
+  location: string;
+}
+
+interface HeatmapCell {
+  day: number;
+  hour: number;
+  capacity: number;
+}
+
+interface ClassCapacityByHourStats {
+  avgCapacity: number;
+  classesWithBookings: number;
+  avgClassesPerDay: number;
+  peakCapacityTime: string;
+}
+
+export function useClassCapacityByHour(
+  dateRange: { start?: Date; end?: Date },
+  filters: ClassCapacityByHourFilters
+) {
+  return useQuery({
+    queryKey: ['class-capacity-by-hour', dateRange, filters],
+    queryFn: async () => {
+      // Generate mock heatmap data
+      const heatmapData: HeatmapCell[] = [];
+      for (let day = 0; day < 7; day++) {
+        for (let hour = 0; hour < 24; hour++) {
+          // Simulate higher capacity during typical gym hours
+          let capacity = 0;
+          if (hour >= 6 && hour <= 21) {
+            if (hour >= 17 && hour <= 20) {
+              capacity = Math.floor(Math.random() * 40) + 60; // Peak hours
+            } else if (hour >= 9 && hour <= 11) {
+              capacity = Math.floor(Math.random() * 30) + 40; // Morning
+            } else {
+              capacity = Math.floor(Math.random() * 30) + 10;
+            }
+          }
+          heatmapData.push({ day, hour, capacity });
+        }
+      }
+
+      const stats: ClassCapacityByHourStats = {
+        avgCapacity: 67,
+        classesWithBookings: 245,
+        avgClassesPerDay: 12,
+        peakCapacityTime: 'Tue 18:00',
+      };
+
+      return { stats, heatmapData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// Class Capacity Over Time Hook
+interface ClassCapacityOverTimeFilters {
+  trainer: string;
+  location: string;
+}
+
+interface ClassCapacityRow {
+  date: string;
+  trainer: string;
+  location: string;
+  classesBooked: number;
+  avgCapacity: number;
+}
+
+interface ClassCapacityOverTimeStats {
+  avgCapacity: number;
+  classesWithBookings: number;
+  avgClassesPerDay: number;
+}
+
+export function useClassCapacityOverTime(
+  dateRange: { start?: Date; end?: Date },
+  filters: ClassCapacityOverTimeFilters
+) {
+  return useQuery({
+    queryKey: ['class-capacity-over-time', dateRange, filters],
+    queryFn: async () => {
+      const days = dateRange.start && dateRange.end
+        ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
+        : [];
+
+      const chartData = days.map((day) => ({
+        date: format(day, 'd MMM'),
+        capacity: Math.floor(Math.random() * 40) + 50,
+        classes: Math.floor(Math.random() * 10) + 5,
+      }));
+
+      const stats: ClassCapacityOverTimeStats = {
+        avgCapacity: 72,
+        classesWithBookings: 189,
+        avgClassesPerDay: 8,
+      };
+
+      const tableData: ClassCapacityRow[] = chartData.slice(0, 10).map((d) => ({
+        date: d.date,
+        trainer: 'All Trainers',
+        location: 'Main Branch',
+        classesBooked: d.classes,
+        avgCapacity: d.capacity,
+      }));
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// Package Sales Hook
+interface PackageSalesFilters {
+  packageType: string;
+  category: string;
+}
+
+interface PackageSaleRow {
+  packageName: string;
+  packageType: string;
+  category: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+interface PackageSalesStats {
+  maxUnitsSold: number;
+  maxUnitsSoldPackage: string;
+  minUnitsSold: number;
+  minUnitsSoldPackage: string;
+  maxRevenue: number;
+  maxRevenuePackage: string;
+  minRevenue: number;
+  minRevenuePackage: string;
+}
+
+export function usePackageSales(
+  dateRange: { start?: Date; end?: Date },
+  filters: PackageSalesFilters
+) {
+  return useQuery({
+    queryKey: ['package-sales', dateRange, filters],
+    queryFn: async () => {
+      // Mock package sales data
+      const packageNames = [
+        { name: 'Monthly Unlimited', type: 'unlimited', category: 'All Classes' },
+        { name: '10 Session Pack', type: 'session', category: 'Group Classes' },
+        { name: 'PT 5 Sessions', type: 'pt', category: 'Personal Training' },
+        { name: 'Quarterly Pass', type: 'unlimited', category: 'All Classes' },
+        { name: '20 Session Pack', type: 'session', category: 'All Classes' },
+      ];
+
+      const tableData: PackageSaleRow[] = packageNames.map((pkg) => ({
+        packageName: pkg.name,
+        packageType: pkg.type,
+        category: pkg.category,
+        unitsSold: Math.floor(Math.random() * 50) + 10,
+        revenue: Math.floor(Math.random() * 100000) + 10000,
+      }));
+
+      const chartData = tableData.map((d) => ({
+        name: d.packageName,
+        units: d.unitsSold,
+        revenue: Math.round(d.revenue / 1000), // Scale for chart
+      }));
+
+      const sortedByUnits = [...tableData].sort((a, b) => b.unitsSold - a.unitsSold);
+      const sortedByRevenue = [...tableData].sort((a, b) => b.revenue - a.revenue);
+
+      const stats: PackageSalesStats = {
+        maxUnitsSold: sortedByUnits[0]?.unitsSold || 0,
+        maxUnitsSoldPackage: sortedByUnits[0]?.packageName || '-',
+        minUnitsSold: sortedByUnits[sortedByUnits.length - 1]?.unitsSold || 0,
+        minUnitsSoldPackage: sortedByUnits[sortedByUnits.length - 1]?.packageName || '-',
+        maxRevenue: sortedByRevenue[0]?.revenue || 0,
+        maxRevenuePackage: sortedByRevenue[0]?.packageName || '-',
+        minRevenue: sortedByRevenue[sortedByRevenue.length - 1]?.revenue || 0,
+        minRevenuePackage: sortedByRevenue[sortedByRevenue.length - 1]?.packageName || '-',
+      };
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// Package Sales Over Time Hook
+interface PackageSalesOverTimeFilters {
+  package: string;
+  packageType: string;
+  category: string;
+}
+
+interface PackageSaleTimeRow {
+  date: string;
+  packageName: string;
+  packageType: string;
+  category: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+interface PackageSalesOverTimeStats {
+  totalPackagesSold: number;
+  avgPackagesPerDay: number;
+  revenue: number;
+  avgRevenuePerDay: number;
+}
+
+export function usePackageSalesOverTime(
+  dateRange: { start?: Date; end?: Date },
+  filters: PackageSalesOverTimeFilters,
+  timePeriod: 'day' | 'week' | 'month' | 'year'
+) {
+  return useQuery({
+    queryKey: ['package-sales-over-time', dateRange, filters, timePeriod],
+    queryFn: async () => {
+      const days = dateRange.start && dateRange.end
+        ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
+        : [];
+
+      const chartData = days.map((day) => {
+        const units = Math.floor(Math.random() * 10) + 1;
+        return {
+          date: format(day, 'd MMM'),
+          units,
+          revenue: units * (Math.floor(Math.random() * 3000) + 2000),
+        };
+      });
+
+      const totalUnits = chartData.reduce((sum, d) => sum + d.units, 0);
+      const totalRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
+
+      const stats: PackageSalesOverTimeStats = {
+        totalPackagesSold: totalUnits,
+        avgPackagesPerDay: Math.round(totalUnits / (chartData.length || 1)),
+        revenue: totalRevenue,
+        avgRevenuePerDay: Math.round(totalRevenue / (chartData.length || 1)),
+      };
+
+      const tableData: PackageSaleTimeRow[] = chartData.slice(0, 10).map((d) => ({
+        date: d.date,
+        packageName: 'Various',
+        packageType: 'Mixed',
+        category: 'All',
+        unitsSold: d.units,
+        revenue: d.revenue,
+      }));
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
   });
 }

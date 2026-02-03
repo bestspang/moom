@@ -32,6 +32,11 @@ import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
+import ActiveMembers from "./pages/reports/ActiveMembers";
+import ClassCapacityByHour from "./pages/reports/ClassCapacityByHour";
+import ClassCapacityOverTime from "./pages/reports/ClassCapacityOverTime";
+import PackageSales from "./pages/reports/PackageSales";
+import PackageSalesOverTime from "./pages/reports/PackageSalesOverTime";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import SettingsGeneral from "./pages/settings/SettingsGeneral";
@@ -92,6 +97,11 @@ const App = () => (
                 <Route path="finance" element={<Finance />} />
                 <Route path="report" element={<Reports />} />
                 <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
+                <Route path="report/member/active-members" element={<ActiveMembers />} />
+                <Route path="report/class/capacity-by-hour" element={<ClassCapacityByHour />} />
+                <Route path="report/class/capacity-over-time" element={<ClassCapacityOverTime />} />
+                <Route path="report/package/sales" element={<PackageSales />} />
+                <Route path="report/package/sales-over-time" element={<PackageSalesOverTime />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="setting" element={<Settings />}>
