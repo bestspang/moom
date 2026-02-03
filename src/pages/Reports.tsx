@@ -3,8 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+interface ReportItemProps {
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonVariant: 'view' | 'export';
+  onClick: () => void;
+}
+
+const ReportItem = ({ title, description, buttonText, buttonVariant, onClick }: ReportItemProps) => (
+  <div className="py-4 border-b last:border-0">
+    <h3 className="text-primary font-medium mb-1">{title}</h3>
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+      <p className="text-sm text-muted-foreground flex-1">{description}</p>
+      <Button
+        variant="outline"
+        className="shrink-0 border-primary text-primary hover:bg-primary/10 w-full sm:w-auto"
+        onClick={onClick}
+      >
+        {buttonVariant === 'export' && <Download className="h-4 w-4 mr-2" />}
+        {buttonText}
+      </Button>
+    </div>
+  </div>
+);
 
 const Reports = () => {
   const { t } = useLanguage();
@@ -18,52 +44,135 @@ const Reports = () => {
     });
   };
 
-  const handleMembersAtRisk = () => {
-    navigate('/report/member/members-at-risk');
-  };
-
   const memberReports = [
-    { title: t('reports.activeMembersOverTime'), description: 'Track active member trends', onClick: handleComingSoon },
-    { title: t('reports.membersAtRisk'), description: 'View at-risk members by package expiry', onClick: handleMembersAtRisk },
-    { title: t('reports.membersPackageUsage'), description: 'Analyze package usage patterns', onClick: handleComingSoon },
-    { title: t('reports.membersPackageAtRisk'), description: 'Monitor at-risk packages', onClick: handleComingSoon },
+    {
+      title: t('reports.activeMembersTitle'),
+      description: t('reports.activeMembersDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/member/active-members'),
+    },
+    {
+      title: t('reports.membersAtRisk'),
+      description: t('reports.membersAtRiskDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/member/members-at-risk'),
+    },
+    {
+      title: t('reports.membersPackageUsage'),
+      description: t('reports.packageUsageDesc'),
+      buttonText: t('reports.exportReport'),
+      buttonVariant: 'export' as const,
+      onClick: handleComingSoon,
+    },
+    {
+      title: t('reports.membersPackageAtRisk'),
+      description: t('reports.packageAtRiskDesc'),
+      buttonText: t('reports.exportReport'),
+      buttonVariant: 'export' as const,
+      onClick: handleComingSoon,
+    },
   ];
 
   const classReports = [
-    { title: t('reports.classCapacityByHour'), description: 'View capacity by time of day', onClick: handleComingSoon },
-    { title: t('reports.classCapacityOverTime'), description: 'Track capacity trends', onClick: handleComingSoon },
-    { title: t('reports.classCategoryPopularity'), description: 'Category rankings', onClick: handleComingSoon },
-    { title: t('reports.classPopularity'), description: 'Class attendance rankings', onClick: handleComingSoon },
+    {
+      title: t('reports.classCapacityByHourTitle'),
+      description: t('reports.classCapacityByHourDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/class/capacity-by-hour'),
+    },
+    {
+      title: t('reports.classCapacityTitle'),
+      description: t('reports.classCapacityDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/class/capacity-over-time'),
+    },
+    {
+      title: t('reports.classCategoryPopularity'),
+      description: t('reports.classCategoryPopularityDesc'),
+      buttonText: t('reports.exportReport'),
+      buttonVariant: 'export' as const,
+      onClick: handleComingSoon,
+    },
+    {
+      title: t('reports.classPopularity'),
+      description: t('reports.classPopularityDesc'),
+      buttonText: t('reports.exportReport'),
+      buttonVariant: 'export' as const,
+      onClick: handleComingSoon,
+    },
   ];
 
   const packageReports = [
-    { title: t('reports.packageSales'), description: 'Compare package sales', onClick: handleComingSoon },
-    { title: t('reports.packageSalesOverTime'), description: 'Sales trend analysis', onClick: handleComingSoon },
+    {
+      title: t('reports.packageSalesTitle'),
+      description: t('reports.packageSalesDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/package/sales'),
+    },
+    {
+      title: t('reports.packageSalesOverTimeTitle'),
+      description: t('reports.packageSalesOverTimeDesc'),
+      buttonText: t('reports.viewFullReport'),
+      buttonVariant: 'view' as const,
+      onClick: () => navigate('/report/package/sales-over-time'),
+    },
   ];
-
-  const ReportCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
-    <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer" 
-      onClick={onClick}
-    >
-      <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
-      <CardContent><p className="text-sm text-muted-foreground">{description}</p></CardContent>
-    </Card>
-  );
 
   return (
     <div>
       <PageHeader title={t('reports.title')} breadcrumbs={[{ label: t('reports.title') }]} />
       <Tabs defaultValue="member">
-        <TabsList><TabsTrigger value="member">{t('reports.member')}</TabsTrigger><TabsTrigger value="class">{t('reports.class')}</TabsTrigger><TabsTrigger value="package">{t('reports.package')}</TabsTrigger></TabsList>
-        <TabsContent value="member" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">{memberReports.map((r) => <ReportCard key={r.title} title={r.title} description={r.description} onClick={r.onClick} />)}</div>
+        <TabsList className="mb-6">
+          <TabsTrigger value="member">{t('reports.member')}</TabsTrigger>
+          <TabsTrigger value="class">{t('reports.class')}</TabsTrigger>
+          <TabsTrigger value="package">{t('reports.package')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="member">
+          <div className="divide-y">
+            {memberReports.map((r) => (
+              <ReportItem
+                key={r.title}
+                title={r.title}
+                description={r.description}
+                buttonText={r.buttonText}
+                buttonVariant={r.buttonVariant}
+                onClick={r.onClick}
+              />
+            ))}
+          </div>
         </TabsContent>
-        <TabsContent value="class" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">{classReports.map((r) => <ReportCard key={r.title} title={r.title} description={r.description} onClick={r.onClick} />)}</div>
+        <TabsContent value="class">
+          <div className="divide-y">
+            {classReports.map((r) => (
+              <ReportItem
+                key={r.title}
+                title={r.title}
+                description={r.description}
+                buttonText={r.buttonText}
+                buttonVariant={r.buttonVariant}
+                onClick={r.onClick}
+              />
+            ))}
+          </div>
         </TabsContent>
-        <TabsContent value="package" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{packageReports.map((r) => <ReportCard key={r.title} title={r.title} description={r.description} onClick={r.onClick} />)}</div>
+        <TabsContent value="package">
+          <div className="divide-y">
+            {packageReports.map((r) => (
+              <ReportItem
+                key={r.title}
+                title={r.title}
+                description={r.description}
+                buttonText={r.buttonText}
+                buttonVariant={r.buttonVariant}
+                onClick={r.onClick}
+              />
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
