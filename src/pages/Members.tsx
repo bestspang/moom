@@ -77,8 +77,8 @@ const Members = () => {
         </div>
       ),
     },
-    { key: 'nickname', header: 'Nickname', cell: (row) => row.nickname || '-' },
-    { key: 'memberId', header: 'ID', cell: (row) => row.member_id },
+    { key: 'nickname', header: t('form.nickname'), cell: (row) => row.nickname || '-' },
+    { key: 'memberId', header: t('locations.id'), cell: (row) => row.member_id },
     { key: 'phone', header: t('leads.contactNumber'), cell: (row) => row.phone || '-' },
     { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
     {

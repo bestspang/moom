@@ -244,12 +244,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Footer */}
           <div className="p-4 border-t border-sidebar-border mt-4">
             <div className="space-y-2 text-xs text-muted-foreground">
-              <a href="#" className="block hover:text-primary">
-                {t('common.termsAndConditions')}
-              </a>
-              <a href="#" className="block hover:text-primary">
-                {t('common.privacyPolicy')}
-              </a>
               <p className="pt-2">© 2026 MOOM CLUB | {t('common.version')} 0.0.1</p>
             </div>
           </div>

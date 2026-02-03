@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, QrCode } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -38,15 +38,6 @@ const Dashboard = () => {
     { key: 'room', header: t('schedule.room'), cell: (row) => row.room },
     { key: 'availability', header: t('schedule.availability'), cell: (row) => row.availability },
     { key: 'checkedIn', header: t('lobby.checkedIn'), cell: (row) => row.checkedIn },
-    {
-      key: 'qr',
-      header: t('schedule.qr'),
-      cell: () => (
-        <Button variant="ghost" size="icon">
-          <QrCode className="h-4 w-4" />
-        </Button>
-      ),
-    },
   ];
 
   // Calculate comparison
@@ -74,7 +65,7 @@ const Dashboard = () => {
                 <StatCard
                   title={t('dashboard.allCheckinsToday')}
                   value={stats?.checkinsToday || 0}
-                  subtitle="MOOM CLUB Main"
+                  subtitle={t('dashboardExtra.mainLocation')}
                   color="teal"
                   comparison={
                     checkinComparison !== 0
@@ -85,7 +76,7 @@ const Dashboard = () => {
                 <StatCard
                   title={t('dashboard.currentlyInClass')}
                   value={stats?.currentlyInClass || 0}
-                  subtitle="attendees"
+                  subtitle={t('dashboardExtra.attendees')}
                   color="orange"
                 />
                 <StatCard

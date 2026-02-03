@@ -139,7 +139,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="nickname">Nickname</Label>
+            <Label htmlFor="nickname">{t('form.nickname')}</Label>
             <Input id="nickname" {...register('nickname')} />
           </div>
 
@@ -163,7 +163,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Label htmlFor="dateOfBirth">{t('form.dateOfBirth')}</Label>
               <Input
                 id="dateOfBirth"
                 type="date"
@@ -172,24 +172,24 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">{t('form.gender')}</Label>
               <Select
                 onValueChange={(value) => setValue('gender', value as any)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
+                  <SelectValue placeholder={t('form.selectGender')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="male">{t('form.male')}</SelectItem>
+                  <SelectItem value="female">{t('form.female')}</SelectItem>
+                  <SelectItem value="other">{t('form.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address">{t('form.address')}</Label>
             <Input id="address" {...register('address')} />
           </div>
 

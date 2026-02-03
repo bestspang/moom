@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { QrCode } from 'lucide-react';
-import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -54,15 +52,6 @@ const Schedule = () => {
       key: 'availability',
       header: t('schedule.availability'),
       cell: (row) => `${row.checked_in || 0}/${row.capacity || 0}`,
-    },
-    {
-      key: 'qr',
-      header: t('schedule.qr'),
-      cell: (row) => (
-        <Button variant="ghost" size="sm">
-          <QrCode className="h-4 w-4" />
-        </Button>
-      ),
     },
   ];
 
