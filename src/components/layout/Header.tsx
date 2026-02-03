@@ -77,8 +77,9 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
           size="icon"
           onClick={onMenuToggle}
           className="lg:hidden"
+          aria-label="Toggle menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5" aria-hidden="true" />
         </Button>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -105,10 +106,18 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative"
+              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                <span 
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center"
+                  aria-hidden="true"
+                >
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -194,9 +203,14 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
         {/* User avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              aria-label="User menu"
+            >
               <Avatar className="h-8 w-8">
-                <AvatarImage src="" />
+                <AvatarImage src="" alt="" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                   {getUserInitials()}
                 </AvatarFallback>
