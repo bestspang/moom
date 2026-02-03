@@ -1,119 +1,311 @@
-# Security Remediation Plan for MOOM CLUB - COMPLETED ✅
 
-## Overview
-This plan addressed 21 security findings including 9 critical vulnerabilities that exposed customer personal data, financial records, and health information to unauthorized access.
 
-## Phase 1: CRITICAL - Fix Public Data Exposure ✅ COMPLETED
+# MOOM CLUB v0.0.1 - Continuation Plan
 
-### 1.1 Updated RLS Policies for Sensitive Tables ✅
+## Current State Summary
 
-All sensitive tables now use proper RBAC checks with `has_min_access_level()`:
+**Completed:**
+- Security Remediation (21 findings addressed)
+- Phase 1: Core Entity CRUD (Packages, Classes, Staff, Roles, Locations, Rooms, Leads, Promotions, Finance)
+- Database hooks created and connected
+- i18n EN/TH support
 
-| Table | Old Policy | New Policy | Access Level |
-|-------|------------|------------|--------------|
-| `members` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
-| `staff` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
-| `leads` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
-| `member_billing` | `level_2_operator` | `has_min_access_level(auth.uid(), 'level_3_manager')` | Level 3+ |
-| `transactions` | `level_2_operator` | `has_min_access_level(auth.uid(), 'level_3_manager')` | Level 3+ |
-| `member_contracts` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
-| `member_injuries` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
-| `member_notes` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
-| `member_suspensions` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
-| `member_attendance` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
-| `member_packages` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
-
-### 1.2 Fixed INSERT Policies ✅
-
-All INSERT policies now require proper authentication:
-- `activity_log` - Requires Level 1+
-- `member_attendance` - Requires Level 1+
-- `member_notes` - Requires Level 1+
-- `notifications` - Requires service_role OR Level 2+
+**Remaining Work (6 Phases):**
 
 ---
 
-## Phase 2: HIGH - Fix Authentication Flow ✅ COMPLETED
+## Phase 2: Schedule & Lobby (Core Daily Operations)
 
-### 2.1 Server-Side User Provisioning ✅
+### 2.1 Schedule Module
 
-Created database trigger `handle_new_user()` that automatically:
-- Creates `staff` record with `pending` status
-- Assigns `front_desk` role (Level 1) by default
+**New Files:**
+- `src/hooks/useSchedule.ts`
+- `src/components/schedule/ScheduleClassDialog.tsx`
 
-### 2.2 Removed Client-Side Inserts ✅
+**Modifications:**
+- `src/pages/Schedule.tsx`
 
-Updated `AuthContext.tsx` to remove vulnerable client-side staff/role inserts. User provisioning now handled securely server-side via trigger.
+**Implementation:**
 
----
+```text
+useSchedule.ts hook:
+- useScheduleByDate(date) - Fetch schedule with joins to classes, trainers, rooms, locations
+- useScheduleStats(date) - Calculate stats (classes count, PT count, avg capacity, cancellations)
+- useTrainers() - Fetch trainers for filter
+- useCreateSchedule() - Create new scheduled class
+- useUpdateSchedule() - Update schedule
+- useDeleteSchedule() - Cancel/delete schedule
+```
 
-## Phase 3: MEDIUM - Strengthen Authentication ✅ COMPLETED
+**Schedule Page Updates:**
+- Connect date picker to fetch schedule for selected date
+- Display real stats from database calculations
+- Trainer filter pills from staff table (role=trainer)
+- Data table with schedule entries showing class, trainer, room, location, availability, QR
+- "Schedule" button opens ScheduleClassDialog
 
-### 3.1 Strengthened Password Policy ✅
+**ScheduleClassDialog Form Fields:**
+- Class selection (dropdown from classes table)
+- Date selection
+- Start time / End time
+- Trainer assignment (dropdown)
+- Room assignment (dropdown)
+- Location (dropdown)
+- Capacity override (optional)
 
-Updated `Signup.tsx` validation schema:
-- Minimum 8 characters (was 6)
-- Requires uppercase letter
-- Requires lowercase letter  
-- Requires number
-- Requires special character
+### 2.2 Lobby/Check-in Module
 
-### 3.2 Fixed Function Search Paths ✅
+**New Files:**
+- `src/hooks/useLobby.ts`
+- `src/components/lobby/CheckInDialog.tsx`
 
-Updated all custom database functions with explicit `SET search_path = public`:
-- `has_min_access_level()`
-- `has_role()`
-- `get_user_access_level()`
-- `handle_new_user()`
+**Modifications:**
+- `src/pages/Lobby.tsx`
 
-### 3.3 Leaked Password Protection ⚠️ REQUIRES MANUAL ACTION
+**Implementation:**
 
-This setting cannot be enabled via SQL. To enable:
-1. Go to Lovable Cloud Settings
-2. Navigate to Security section
-3. Enable "Leaked Password Protection"
+```text
+useLobby.ts hook:
+- useCheckIns(date, search) - Fetch member_attendance for date with member joins
+- useCreateCheckIn() - Record new check-in
+```
 
----
+**Lobby Page Updates:**
+- Connect to member_attendance table
+- Search by member name
+- Display: Time, Name, Package used, Usage (sessions), Location, Checked in status
+- "Check In" button opens dialog
 
-## Phase 4: LOW - Tighten Access Controls ✅ COMPLETED
-
-All access levels now follow RBAC hierarchy:
-- **Level 1 (Minimum)**: Front desk - Basic member operations
-- **Level 2 (Operator)**: Trainers, Sales - Lead/contract/injury access
-- **Level 3 (Manager)**: Admin - Financial data access
-- **Level 4 (Master)**: Owner - Full access + role management
-
----
-
-## Summary of Changes
-
-### Database Migrations
-- Dropped 15+ overly permissive RLS policies
-- Created 15+ secure RBAC-based policies
-- Created `handle_new_user()` trigger for user provisioning
-- Updated 4 functions with explicit search paths
-
-### Code Changes
-- `src/contexts/AuthContext.tsx` - Removed client-side staff/role inserts
-- `src/pages/Auth/Signup.tsx` - Strengthened password validation
-
----
-
-## Remaining Items
-
-| Issue | Status | Action Required |
-|-------|--------|-----------------|
-| Leaked Password Protection | ⚠️ | Enable manually in Lovable Cloud settings |
-| Function Search Path (internal) | ℹ️ | Supabase internal functions - cannot modify |
+**CheckInDialog:**
+- Member search/selection (typeahead from members table)
+- Package selection (from member's active packages)
+- Location selection
+- Auto-generate check-in timestamp
 
 ---
 
-## Verification Checklist
+## Phase 3: Activity Log & Announcements
 
-- [x] Unauthenticated users cannot access any data
-- [x] Authenticated users with roles can access appropriate data
-- [x] Financial data restricted to managers only
-- [x] Medical/injury data restricted to operators+
-- [x] Signup creates staff and role records automatically
-- [x] Password requires complexity (8+ chars, uppercase, number, special)
-- [ ] Leaked password protection enabled (manual step)
+### 3.1 Activity Log
+
+**New Files:**
+- `src/hooks/useActivityLog.ts`
+
+**Modifications:**
+- `src/pages/ActivityLog.tsx`
+
+**Implementation:**
+
+```text
+useActivityLog.ts hook:
+- useActivityLogs(dateRange) - Fetch activity_log with staff/member joins
+- Filter by date range
+```
+
+**Page Updates:**
+- Connect date range picker
+- Display table: Date & time, Event type, Activity description, Staff name
+- Show old/new values for changes (JSON parsing)
+
+### 3.2 Announcements
+
+**New Files:**
+- `src/hooks/useAnnouncements.ts`
+- `src/components/announcements/CreateAnnouncementDialog.tsx`
+
+**Modifications:**
+- `src/pages/Announcements.tsx`
+
+**Implementation:**
+
+```text
+useAnnouncements.ts hook:
+- useAnnouncements(status, search) - Fetch announcements
+- useAnnouncementStats() - Status counts
+- useCreateAnnouncement() - Create new
+- useUpdateAnnouncement() - Update
+```
+
+**CreateAnnouncementDialog:**
+- Message (textarea)
+- Publish date (datetime picker)
+- End date (datetime picker)
+- Status (active/scheduled/completed)
+
+---
+
+## Phase 4: Notifications System
+
+**New Files:**
+- `src/hooks/useNotifications.ts`
+
+**Modifications:**
+- `src/pages/Notifications.tsx`
+- `src/components/layout/Header.tsx`
+
+**Implementation:**
+
+```text
+useNotifications.ts hook:
+- useNotifications(status, type) - Fetch notifications for current user
+- useUnreadCount() - Count unread for header badge
+- useMarkAsRead(id) - Mark single notification read
+- useMarkAllRead() - Mark all as read
+```
+
+**Notifications Page Updates:**
+- Date filter
+- Status filter (read/unread)
+- Type filter checkboxes
+- List of notifications with avatar, title, message, timestamp
+- Mark as read functionality
+
+**Header Enhancement:**
+- Connect unreadNotifications prop to real count
+- Show recent notifications in dropdown
+- "View all" links to /notifications page
+
+---
+
+## Phase 5: Settings Persistence
+
+**New Files:**
+- `src/hooks/useSettings.ts`
+
+**Modifications:**
+- `src/pages/settings/SettingsGeneral.tsx`
+- `src/pages/settings/SettingsClass.tsx`
+- `src/pages/settings/SettingsClient.tsx`
+- `src/pages/settings/SettingsPackage.tsx`
+- `src/pages/settings/SettingsContracts.tsx`
+
+**Implementation:**
+
+```text
+useSettings.ts hook:
+- useSettings(section) - Fetch settings by section
+- useUpdateSetting(section, key, value) - Update setting
+- useSaveSettings(section, data) - Save multiple settings
+```
+
+**Settings Table Structure:**
+- section: 'general' | 'class' | 'client' | 'package' | 'contracts'
+- key: setting name
+- value: JSON value
+
+**General Settings:**
+- Payment methods (per location toggles)
+- Theme color selection
+- Workout toggle
+- Gym check-in configurations
+
+**Class Settings:**
+- Booking period (days before class)
+- Booking cutoff (mins before class)
+- Max spots per member
+- Waitlisting settings
+- Cancellation settings
+- No-show settings
+
+---
+
+## Phase 6: Member Details Enhancement
+
+**New Files:**
+- `src/hooks/useMemberDetails.ts`
+
+**Modifications:**
+- `src/pages/MemberDetails.tsx`
+
+**Implementation:**
+
+```text
+useMemberDetails.ts hook:
+- useMember(id) - Fetch member by ID
+- useMemberPackages(memberId) - Fetch member_packages with package joins
+- useMemberAttendance(memberId) - Fetch member_attendance history
+- useMemberBilling(memberId) - Fetch member_billing with transaction joins
+- useMemberNotes(memberId) - Fetch member_notes
+- useMemberInjuries(memberId) - Fetch member_injuries
+- useMemberSuspensions(memberId) - Fetch member_suspensions
+- useMemberContracts(memberId) - Fetch member_contracts
+- useCreateNote(), useCreateBilling(), etc.
+```
+
+**Tab Updates:**
+1. **Home** - Account details from member record
+2. **Profile** - Editable form connected to updateMember
+3. **Attendance** - Table from member_attendance
+4. **Packages** - Table from member_packages with status sub-tabs
+5. **Billing** - Table from member_billing + Add billing dialog
+6. **Injuries** - Table from member_injuries
+7. **Notes** - List from member_notes + Add note
+8. **Suspensions** - Table from member_suspensions
+9. **Contract** - Documents from member_contracts
+
+---
+
+## Phase 7: Reports with Charts (Optional for v0.0.1)
+
+**New Files:**
+- `src/pages/reports/MembersAtRisk.tsx`
+- `src/pages/reports/ActiveMembers.tsx`
+- `src/pages/reports/PackageSales.tsx`
+- `src/pages/reports/ClassCapacity.tsx`
+- `src/hooks/useReports.ts`
+
+**Implementation:**
+- Pie chart for risk levels using Recharts
+- Line charts for trends
+- Risk calculation logic:
+  - High: ≤30 days OR ≤33% AND ≤3 sessions remaining
+  - Medium: ≤60 days OR ≤60% AND ≤15 sessions remaining
+  - Low: ≥61 days AND ≥61% AND ≥16 sessions remaining
+- Export to CSV functionality
+
+---
+
+## Implementation Order
+
+| Priority | Module | Files | Effort |
+|----------|--------|-------|--------|
+| 1 | Schedule & Lobby | 6 files | High |
+| 2 | Notifications | 3 files | Medium |
+| 3 | Activity Log & Announcements | 5 files | Medium |
+| 4 | Member Details Tabs | 2 files | High |
+| 5 | Settings Persistence | 6 files | Medium |
+| 6 | Reports (Optional) | 5 files | High |
+
+---
+
+## Quality Checklist (Per Module)
+
+- [ ] Database connection with React Query
+- [ ] Loading skeletons
+- [ ] Empty state display
+- [ ] Error handling with toast
+- [ ] Search functionality (debounced)
+- [ ] Status tabs with real counts
+- [ ] Create dialog with Zod validation
+- [ ] i18n for all text
+- [ ] Responsive design
+
+---
+
+## First Implementation Batch
+
+Starting with **Phase 2: Schedule & Lobby** as these are core daily operations:
+
+1. Create `useSchedule.ts` hook
+2. Create `useLobby.ts` hook
+3. Update `Schedule.tsx` with database connection
+4. Update `Lobby.tsx` with database connection
+5. Create `ScheduleClassDialog.tsx`
+6. Create `CheckInDialog.tsx`
+
+This provides:
+- Real-time class scheduling
+- Trainer assignment
+- Member check-in tracking
+- Daily operations visibility
+
