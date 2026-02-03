@@ -1,200 +1,119 @@
-
-
-# Security Remediation Plan for MOOM CLUB
+# Security Remediation Plan for MOOM CLUB - COMPLETED ✅
 
 ## Overview
-This plan addresses 21 security findings including 9 critical vulnerabilities that expose customer personal data, financial records, and health information to unauthorized access.
+This plan addressed 21 security findings including 9 critical vulnerabilities that exposed customer personal data, financial records, and health information to unauthorized access.
 
-## Phase 1: CRITICAL - Fix Public Data Exposure (Immediate)
+## Phase 1: CRITICAL - Fix Public Data Exposure ✅ COMPLETED
 
-### 1.1 Update RLS Policies for Sensitive Tables
+### 1.1 Updated RLS Policies for Sensitive Tables ✅
 
-Replace `USING (true)` SELECT policies with proper authentication checks:
+All sensitive tables now use proper RBAC checks with `has_min_access_level()`:
 
-**Tables to fix:**
-- `members` - Customer PII
-- `staff` - Employee data  
-- `leads` - Sales pipeline
-- `member_billing` - Financial records
-- `transactions` - Payment data
-- `member_contracts` - Legal documents
-- `member_injuries` - Health info
-- `member_notes` - Private notes
-- `member_suspensions` - Disciplinary records
+| Table | Old Policy | New Policy | Access Level |
+|-------|------------|------------|--------------|
+| `members` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
+| `staff` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
+| `leads` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
+| `member_billing` | `level_2_operator` | `has_min_access_level(auth.uid(), 'level_3_manager')` | Level 3+ |
+| `transactions` | `level_2_operator` | `has_min_access_level(auth.uid(), 'level_3_manager')` | Level 3+ |
+| `member_contracts` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
+| `member_injuries` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
+| `member_notes` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
+| `member_suspensions` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_2_operator')` | Level 2+ |
+| `member_attendance` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
+| `member_packages` | `USING (true)` | `has_min_access_level(auth.uid(), 'level_1_minimum')` | Level 1+ |
 
-**New policy pattern:**
-```sql
--- Replace "USING (true)" with authentication check
-DROP POLICY IF EXISTS "Staff can read members" ON members;
-CREATE POLICY "Authenticated staff can read members" ON members
-  FOR SELECT
-  USING (auth.role() = 'authenticated');
+### 1.2 Fixed INSERT Policies ✅
 
--- Or for stricter access:
-CREATE POLICY "Operators can read members" ON members
-  FOR SELECT
-  USING (has_min_access_level(auth.uid(), 'level_1_minimum'));
-```
-
-### 1.2 Fix INSERT Policies
-
-Replace `WITH CHECK (true)` with proper access checks:
-
-**Tables to fix:**
-- `activity_log` - System can insert → restrict to service role
-- `member_attendance` - Staff can record → require min access level
-- `member_notes` - All staff can manage → require staff verification
-- `notifications` - System can insert → restrict to service role
-
-**Example fix:**
-```sql
-DROP POLICY IF EXISTS "Staff can record attendance" ON member_attendance;
-CREATE POLICY "Staff can record attendance" ON member_attendance
-  FOR INSERT
-  WITH CHECK (has_min_access_level(auth.uid(), 'level_1_minimum'));
-```
+All INSERT policies now require proper authentication:
+- `activity_log` - Requires Level 1+
+- `member_attendance` - Requires Level 1+
+- `member_notes` - Requires Level 1+
+- `notifications` - Requires service_role OR Level 2+
 
 ---
 
-## Phase 2: HIGH - Fix Authentication Flow
+## Phase 2: HIGH - Fix Authentication Flow ✅ COMPLETED
 
-### 2.1 Server-Side User Provisioning
+### 2.1 Server-Side User Provisioning ✅
 
-Create an edge function to handle signup instead of client-side inserts:
+Created database trigger `handle_new_user()` that automatically:
+- Creates `staff` record with `pending` status
+- Assigns `front_desk` role (Level 1) by default
 
-**File: `supabase/functions/create-user-profile/index.ts`**
+### 2.2 Removed Client-Side Inserts ✅
 
-```typescript
-// Edge function to create staff and user_roles records
-// Called after successful signup via database trigger or webhook
-// Uses service role to bypass RLS
-```
-
-### 2.2 Database Trigger for User Creation
-
-```sql
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  -- Create staff record
-  INSERT INTO public.staff (user_id, email, first_name, last_name, status)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-    'pending'
-  );
-  
-  -- Create default role
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'front_desk');
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
-```
+Updated `AuthContext.tsx` to remove vulnerable client-side staff/role inserts. User provisioning now handled securely server-side via trigger.
 
 ---
 
-## Phase 3: MEDIUM - Strengthen Authentication
+## Phase 3: MEDIUM - Strengthen Authentication ✅ COMPLETED
 
-### 3.1 Enable Leaked Password Protection
+### 3.1 Strengthened Password Policy ✅
 
-Update Supabase Auth settings to enable HaveIBeenPwned check.
+Updated `Signup.tsx` validation schema:
+- Minimum 8 characters (was 6)
+- Requires uppercase letter
+- Requires lowercase letter  
+- Requires number
+- Requires special character
 
-### 3.2 Strengthen Password Policy
+### 3.2 Fixed Function Search Paths ✅
 
-Update signup validation schema:
-```typescript
-const signupSchema = z.object({
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain uppercase letter')
-    .regex(/[0-9]/, 'Must contain number')
-    .regex(/[^A-Za-z0-9]/, 'Must contain special character'),
-});
-```
+Updated all custom database functions with explicit `SET search_path = public`:
+- `has_min_access_level()`
+- `has_role()`
+- `get_user_access_level()`
+- `handle_new_user()`
 
-### 3.3 Fix Function Search Paths
+### 3.3 Leaked Password Protection ⚠️ REQUIRES MANUAL ACTION
 
-Update all database functions to set explicit search_path:
-```sql
-CREATE OR REPLACE FUNCTION has_min_access_level(...)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public  -- Add this line
-AS $$
-...
-$$;
-```
+This setting cannot be enabled via SQL. To enable:
+1. Go to Lovable Cloud Settings
+2. Navigate to Security section
+3. Enable "Leaked Password Protection"
 
 ---
 
-## Phase 4: LOW - Tighten Access Controls
+## Phase 4: LOW - Tighten Access Controls ✅ COMPLETED
 
-### 4.1 Restrict Activity Log Access
-```sql
-DROP POLICY IF EXISTS "Operators can read activity log" ON activity_log;
-CREATE POLICY "Managers can read activity log" ON activity_log
-  FOR SELECT
-  USING (has_min_access_level(auth.uid(), 'level_3_manager'));
-```
-
-### 4.2 Restrict Member Packages
-```sql
-DROP POLICY IF EXISTS "All can read member packages" ON member_packages;
-CREATE POLICY "Authenticated staff can read member packages" ON member_packages
-  FOR SELECT
-  USING (auth.role() = 'authenticated');
-```
+All access levels now follow RBAC hierarchy:
+- **Level 1 (Minimum)**: Front desk - Basic member operations
+- **Level 2 (Operator)**: Trainers, Sales - Lead/contract/injury access
+- **Level 3 (Manager)**: Admin - Financial data access
+- **Level 4 (Master)**: Owner - Full access + role management
 
 ---
 
-## Implementation Order
+## Summary of Changes
 
-1. **Immediate (Today)**: Phase 1.1 - Fix SELECT policies on sensitive tables
-2. **Urgent (This Week)**: Phase 1.2 + Phase 2 - Fix INSERT policies + auth flow
-3. **Soon (Next Week)**: Phase 3 - Password hardening + leaked password protection
-4. **Follow-up**: Phase 4 - Fine-tune access controls
+### Database Migrations
+- Dropped 15+ overly permissive RLS policies
+- Created 15+ secure RBAC-based policies
+- Created `handle_new_user()` trigger for user provisioning
+- Updated 4 functions with explicit search paths
 
----
-
-## SQL Migration Summary
-
-The complete migration will:
-1. Drop 15+ overly permissive RLS policies
-2. Create 15+ secure replacement policies
-3. Create database trigger for user provisioning
-4. Fix function search paths
+### Code Changes
+- `src/contexts/AuthContext.tsx` - Removed client-side staff/role inserts
+- `src/pages/Auth/Signup.tsx` - Strengthened password validation
 
 ---
 
-## Verification Steps
+## Remaining Items
 
-After implementation:
-1. Test unauthenticated access is denied (should get 401/403)
-2. Test authenticated staff can read appropriate data
-3. Test RBAC levels work correctly
-4. Verify signup creates staff/role records automatically
-5. Confirm no console errors in application
+| Issue | Status | Action Required |
+|-------|--------|-----------------|
+| Leaked Password Protection | ⚠️ | Enable manually in Lovable Cloud settings |
+| Function Search Path (internal) | ℹ️ | Supabase internal functions - cannot modify |
 
 ---
 
-## Files to Modify
+## Verification Checklist
 
-| File | Changes |
-|------|---------|
-| Database migration | 30+ policy changes |
-| `src/contexts/AuthContext.tsx` | Remove client-side staff/role inserts |
-| `src/pages/Auth/Signup.tsx` | Update password validation |
-| New edge function | User provisioning (optional) |
-
+- [x] Unauthenticated users cannot access any data
+- [x] Authenticated users with roles can access appropriate data
+- [x] Financial data restricted to managers only
+- [x] Medical/injury data restricted to operators+
+- [x] Signup creates staff and role records automatically
+- [x] Password requires complexity (8+ chars, uppercase, number, special)
+- [ ] Leaked password protection enabled (manual step)
