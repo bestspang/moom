@@ -2,95 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* MOOM CLUB Design System v0.0.1 */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
+    /* Primary Colors */
+    --primary: 32 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 32 100% 45%;
+    
+    /* Accent Colors */
+    --accent-teal: 168 75% 43%;
+    --accent-teal-light: 168 70% 95%;
+    --accent-teal-foreground: 0 0% 100%;
+    
+    /* Semantic Colors */
+    --destructive: 0 72% 71%;
+    --destructive-light: 0 100% 95%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --warning: 45 100% 51%;
+    --warning-light: 45 100% 95%;
+    --warning-foreground: 0 0% 20%;
+    
+    --success: 168 75% 43%;
+    --success-light: 168 70% 95%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Background Colors */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 0 0% 20%;
+    
+    --sidebar-background: 36 33% 94%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-border: 36 20% 88%;
+    --sidebar-accent: 36 33% 90%;
+    --sidebar-accent-foreground: 0 0% 20%;
+    --sidebar-primary: 32 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-ring: 32 100% 50%;
+    
+    --content-background: 0 0% 100%;
+    
+    /* Card */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 0 0% 20%;
+    
+    /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --popover-foreground: 0 0% 20%;
+    
+    /* Secondary */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 0 0% 20%;
+    
+    /* Muted */
+    --muted: 210 20% 96%;
+    --muted-foreground: 0 0% 40%;
+    
+    /* Accent (general) */
+    --accent: 210 20% 96%;
+    --accent-foreground: 0 0% 20%;
+    
+    /* Table */
+    --table-header: 0 0% 10%;
+    --table-header-foreground: 0 0% 100%;
+    
+    /* Text Colors */
+    --text-dark: 0 0% 20%;
+    --text-medium: 0 0% 40%;
+    --text-light: 0 0% 60%;
+    
+    /* Border */
+    --border: 0 0% 88%;
+    --border-light: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 32 100% 50%;
+    
+    /* Radius */
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
+    --primary: 32 100% 50%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 32 100% 50%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 32 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 32 100% 50%;
   }
 }
 
@@ -100,6 +126,76 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Sarabun', system-ui, -apple-system, sans-serif;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Badge variants */
+  .badge-new {
+    @apply bg-accent-teal text-white;
+  }
+  
+  .badge-pending {
+    @apply bg-primary text-white;
+  }
+  
+  .badge-paid {
+    @apply bg-accent-teal text-white;
+  }
+  
+  .badge-high-risk {
+    @apply bg-destructive text-white;
+  }
+  
+  .badge-medium-risk {
+    @apply bg-warning text-warning-foreground;
+  }
+  
+  .badge-low-risk {
+    @apply bg-accent-teal text-white;
+  }
+
+  /* Status colors */
+  .status-active {
+    @apply text-accent-teal;
+  }
+  
+  .status-suspended {
+    @apply text-warning;
+  }
+  
+  .status-inactive {
+    @apply text-muted-foreground;
+  }
+
+  /* Table utilities */
+  .table-header-dark {
+    @apply bg-table-header text-table-header-foreground;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
