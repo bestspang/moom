@@ -1,186 +1,199 @@
 
-# Phase 5: Final Polish - Remaining UX/UI Issues
+# Phase 6: Complete Remaining Features - MOOM CLUB v0.0.1
 
-## สรุป Issues ที่พบ
+## Current Status Summary
+- **Pages**: 28/28 implemented
+- **Database**: All 25 tables established with RLS
+- **i18n**: EN/TH complete (Phase 5 done)
+- **UX/UI Polish**: Complete (animations, accessibility, mobile)
 
-### 1. "Remember Me" Checkbox (Login.tsx)
-**ปัญหา**: Checkbox แสดงผลแต่ไม่ทำงานจริง
-**แนวทาง**: ลบออกเนื่องจาก Supabase auth จัดการ session persistence อยู่แล้ว (default คือ 1 week) - การมี checkbox ที่ไม่ทำงานสร้างความสับสน
+---
 
-### 2. Login & Signup Validation Messages (ไม่ใช้ i18n)
-**ปัญหา**: Error messages เป็น English เท่านั้น
+## Remaining Work (4 Items)
+
+### 1. Reports Section - Members at Risk Page
+**Location**: `/report/member/members-at-risk`
+
+**Current State**: Report cards show "Coming Soon" toast
+
+**Required Implementation**:
+- Create `src/pages/reports/MembersAtRisk.tsx`
+- Add route to App.tsx
+- Components needed:
+  - Pie chart (High 55% vs Low 45%)
+  - Risk level definition cards
+  - Filter buttons (High/Medium/Low risk)
+  - Member table with columns: Avatar+Name, At-risk package, Type, Usage, Expires In, Contact
+
+**Risk Level Criteria** (per spec):
+| Level | Criteria |
+|-------|----------|
+| High | ≤30 days OR ≤33% AND ≤3 remaining sessions |
+| Medium | ≤60 days OR ≤60% AND ≤15 remaining sessions |
+| Low | ≥61 days AND ≥61% AND ≥16 remaining sessions |
+
+---
+
+### 2. Schedule Stats - Real Comparison Calculations
+**File**: `src/pages/Schedule.tsx` (lines 85-109)
+
+**Current State**: Hardcoded comparison values (+5, -10, +8, -50)
+
+**Required Fix**:
 ```typescript
-// Login.tsx - hardcoded
-'Please enter a valid email address'
-'Password must be at least 6 characters'
+// Current (hardcoded)
+comparison={{ value: 5, label: t('dashboard.comparedToYesterday') }}
 
-// Signup.tsx - hardcoded (7 messages)
-'First name is required'
-'Password must contain at least one uppercase letter'
-// etc.
+// Should be (calculated)
+comparison={{ 
+  value: stats?.classesCountDiff || 0, 
+  label: t('dashboard.comparedToYesterday') 
+}}
 ```
-**แนวทาง**: ใช้ `useMemo` pattern เหมือน CreateMemberDialog
 
-### 3. Date Localization - เดือนแสดงเป็น English เท่านั้น
-**ปัญหา**: ทุกหน้าใช้ `format(date, 'd MMM yyyy')` ทำให้แสดง "3 FEB 2026" แม้เลือกภาษาไทย
-**Files ที่ได้รับผลกระทบ**:
-- `DatePicker.tsx`
-- `DateRangePicker.tsx`
-- `formatters.ts`
-- `Lobby.tsx`, `Finance.tsx`, `TransferSlips.tsx`
-- `Promotions.tsx`, `Classes.tsx`, `ActivityLog.tsx`
-- `Announcements.tsx`, `Leads.tsx`
+**Changes needed**:
+- Update `useScheduleStats` hook to fetch yesterday's data
+- Calculate actual differences for all 4 stats
 
-**แนวทาง**: 
-1. สร้าง `getDateLocale()` helper ใน `formatters.ts`
-2. ใช้ `date-fns/locale` (th, enUS)
-3. แก้ทุก format call ให้รับ locale
+---
 
-### 4. Hardcoded Text ใน Date Pickers
-| File | Text | แนวทาง |
-|------|------|--------|
-| DatePicker.tsx | "Pick a date" | ใช้ t('common.pickDate') |
-| DateRangePicker.tsx | "Pick a date range" | ใช้ t('common.pickDateRange') |
+### 3. Dashboard High Risk Members - Actual Expiry Dates
+**File**: `src/hooks/useDashboardStats.ts` (line 106)
 
-### 5. formatRelativeTime - Hardcoded English
-**ปัญหา**: "just now", "5m ago", "2h ago", "3d ago" ไม่มี i18n
-**แนวทาง**: เพิ่ม parameter `language` และใช้ i18n keys
+**Current State**: `expiryDate: 'Soon'` is hardcoded
 
-### 6. Lobby.tsx - "Unlimited" Hardcoded
-**Line 42**: `return remaining !== null ? ... : 'Unlimited'`
-**แนวทาง**: ใช้ `t('packages.unlimited')`
+**Required Fix**:
+- Join with `member_packages` table
+- Get actual nearest expiry date per member
+- Format as "X days" or actual date
 
-### 7. EditMemberDialog.tsx - หลาย hardcoded strings
-| Line | Text | แนวทาง |
-|------|------|--------|
-| 157 | "Nickname" | t('form.nickname') |
-| 181 | "Date of Birth" | t('form.dateOfBirth') |
-| 190 | "Gender" | t('form.gender') |
-| 196 | "Select..." | t('form.selectGender') |
-| 199-201 | "Male/Female/Other" | t('form.male/female/other') |
-| 226 | "Address" | t('form.address') |
-| 31-39 | Validation messages | useMemo pattern |
+---
 
-### 8. Profile.tsx - Save ไม่ทำงานจริง
-**ปัญหา**: `handleSave()` แค่แสดง toast ไม่ได้ update ข้อมูลไป Supabase
-**แนวทาง**: Implement actual profile update using Supabase `auth.updateUser()`
+### 4. Reports Navigation - Make Report Cards Functional
+**File**: `src/pages/Reports.tsx`
 
-### 9. CreatePackage.tsx - Hardcoded Placeholders
-| Line | Text | แนวทาง |
-|------|------|--------|
-| 179 | "Package name" | t('packages.create.packageNamePlaceholder') |
-| 435 | "Package description..." | t('packages.create.descriptionPlaceholder') |
+**Current State**: All cards show toast "Coming Soon"
+
+**Required Changes**:
+- "Members at Risk" card → Navigate to `/report/member/members-at-risk`
+- Other cards → Keep toast (future development)
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Update i18n Locales
-เพิ่ม keys ใหม่ใน `en.ts` และ `th.ts`:
+### Step 1: Create Reports Hook
+**File**: `src/hooks/useReports.ts`
 ```typescript
-common: {
-  pickDate: 'Pick a date' / 'เลือกวันที่',
-  pickDateRange: 'Pick a date range' / 'เลือกช่วงวันที่',
-},
-time: {
-  justNow: 'just now' / 'เมื่อสักครู่',
-  minutesAgo: '{n}m ago' / '{n} นาทีก่อน',
-  hoursAgo: '{n}h ago' / '{n} ชม.ก่อน',
-  daysAgo: '{n}d ago' / '{n} วันก่อน',
-},
-validation: {
-  // Add all validation messages for Login & Signup
+export function useMembersAtRiskStats() {
+  // Calculate risk levels based on member_packages data
+  // Return: { highRisk, mediumRisk, lowRisk, members }
 }
 ```
 
-### Step 2: Update formatters.ts
-```typescript
-import { th, enUS } from 'date-fns/locale';
+### Step 2: Create Members at Risk Page
+**File**: `src/pages/reports/MembersAtRisk.tsx`
+- Back button navigation
+- Pie chart using recharts
+- Risk level definition cards
+- Filter buttons with counts
+- DataTable with member list
 
-export function getDateLocale(language: string) {
-  return language === 'th' ? th : enUS;
-}
+### Step 3: Update Schedule Stats Hook
+**File**: `src/hooks/useSchedule.ts`
+- Add `useScheduleStatsWithComparison` function
+- Query both current and previous day
+- Return diff values
 
-export function formatDate(date, language = 'en') {
-  const locale = getDateLocale(language);
-  return format(d, 'd MMM yyyy', { locale }).toUpperCase();
-}
+### Step 4: Fix Dashboard High Risk Members
+**File**: `src/hooks/useDashboardStats.ts`
+- Update `useHighRiskMembers` query
+- Join member_packages for expiry_date
+- Calculate days until expiry
 
-export function formatRelativeTime(date, language = 'en', t) {
-  // Use t() for relative time strings
-}
-```
+### Step 5: Update Reports Page Navigation
+**File**: `src/pages/Reports.tsx`
+- Replace toast with navigation for implemented reports
+- Keep toast for "Coming Soon" reports
 
-### Step 3: Update Date Components
-- DatePicker.tsx - รับ language prop, ใช้ locale
-- DateRangePicker.tsx - รับ language prop, ใช้ locale
-- ทุกหน้าที่ใช้ format() ต้องส่ง locale
-
-### Step 4: Update Login/Signup/EditMemberDialog
-- ใช้ useMemo สำหรับ schema validation
-- ลบ "Remember me" checkbox จาก Login
-
-### Step 5: Implement Profile Update
-```typescript
-const handleSave = async () => {
-  const { error } = await supabase.auth.updateUser({
-    data: { first_name: firstName, last_name: lastName }
-  });
-  // Handle success/error
-};
-```
-
-### Step 6: Update Lobby.tsx & CreatePackage.tsx
-- แก้ hardcoded strings ให้ใช้ t()
+### Step 6: Update Routes
+**File**: `src/App.tsx`
+- Add route: `/report/member/members-at-risk`
 
 ---
 
-## Files to Modify
+## Files to Create/Modify
 
-| File | Changes |
-|------|---------|
-| `src/i18n/locales/en.ts` | เพิ่ม ~20 keys ใหม่ |
-| `src/i18n/locales/th.ts` | เพิ่ม ~20 keys ใหม่ (Thai translations) |
-| `src/lib/formatters.ts` | เพิ่ม locale support, update functions |
-| `src/components/common/DatePicker.tsx` | locale support + i18n |
-| `src/components/common/DateRangePicker.tsx` | locale support + i18n |
-| `src/pages/Auth/Login.tsx` | ลบ remember me, i18n validation |
-| `src/pages/Auth/Signup.tsx` | i18n validation (useMemo) |
-| `src/pages/Profile.tsx` | Implement actual save |
-| `src/pages/Lobby.tsx` | i18n "Unlimited" |
-| `src/components/members/EditMemberDialog.tsx` | i18n labels + validation |
-| `src/pages/CreatePackage.tsx` | i18n placeholders |
-| `src/pages/Finance.tsx` | locale in date format |
-| `src/pages/TransferSlips.tsx` | locale in date format |
-| `src/pages/Promotions.tsx` | locale in date format |
-| `src/pages/Classes.tsx` | locale in date format |
-| `src/pages/ActivityLog.tsx` | locale in date format |
-| `src/pages/Announcements.tsx` | locale in date format |
-| `src/pages/Leads.tsx` | locale in date format |
+| File | Action | Changes |
+|------|--------|---------|
+| `src/pages/reports/MembersAtRisk.tsx` | Create | New page with chart + table |
+| `src/hooks/useReports.ts` | Create | Risk calculation hooks |
+| `src/hooks/useSchedule.ts` | Modify | Add comparison calculations |
+| `src/hooks/useDashboardStats.ts` | Modify | Fix expiry date query |
+| `src/pages/Reports.tsx` | Modify | Add navigation to implemented reports |
+| `src/pages/Schedule.tsx` | Modify | Use real comparison values |
+| `src/App.tsx` | Modify | Add report route |
+| `src/i18n/locales/en.ts` | Modify | Add report-related keys |
+| `src/i18n/locales/th.ts` | Modify | Add Thai translations |
 
-**Total: ~18 files**
-
----
-
-## Priority Order
-1. **High**: Login/Signup validation i18n (user-facing error messages)
-2. **High**: Date localization (ทุกหน้าได้รับผลกระทบ)
-3. **Medium**: Profile save functionality
-4. **Medium**: EditMemberDialog i18n
-5. **Low**: Remove remember me checkbox
-6. **Low**: CreatePackage placeholders
+**Total**: 9 files (2 new, 7 modified)
 
 ---
 
 ## Estimated Effort
 | Task | Time |
 |------|------|
-| i18n locales update | 30 min |
-| formatters.ts locale support | 30 min |
-| DatePicker/DateRangePicker | 30 min |
-| Login/Signup validation | 45 min |
-| Profile save implementation | 30 min |
-| EditMemberDialog i18n | 30 min |
-| Other pages date format | 45 min |
-| Testing | 30 min |
-| **Total** | ~4-5 hours |
+| Reports hook + Members at Risk page | 1.5h |
+| Schedule stats comparison | 30min |
+| Dashboard expiry dates fix | 30min |
+| i18n updates | 15min |
+| Testing | 30min |
+| **Total** | ~3 hours |
+
+---
+
+## Technical Notes
+
+### Pie Chart Implementation (recharts)
+```typescript
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+
+const COLORS = ['#FF6B6B', '#1ABFA8']; // High risk, Low risk
+
+<ResponsiveContainer width="100%" height={200}>
+  <PieChart>
+    <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%">
+      {data.map((_, index) => (
+        <Cell key={index} fill={COLORS[index]} />
+      ))}
+    </Pie>
+  </PieChart>
+</ResponsiveContainer>
+```
+
+### Risk Level Calculation Logic
+```typescript
+function calculateRiskLevel(pkg: MemberPackage): RiskLevel {
+  const daysLeft = differenceInDays(pkg.expiry_date, new Date());
+  const usagePercent = pkg.sessions_remaining 
+    ? (pkg.sessions_remaining / pkg.package.sessions) * 100 
+    : 100;
+  
+  if (daysLeft <= 30 || (usagePercent <= 33 && pkg.sessions_remaining <= 3)) {
+    return 'high';
+  }
+  if (daysLeft <= 60 || (usagePercent <= 60 && pkg.sessions_remaining <= 15)) {
+    return 'medium';
+  }
+  return 'low';
+}
+```
+
+---
+
+## Success Criteria
+1. Members at Risk page displays pie chart with accurate percentages
+2. Schedule page shows real comparison vs yesterday
+3. Dashboard high risk members show actual expiry dates
+4. "Members at Risk" report card navigates to detail page
+5. All i18n keys work in both EN/TH
