@@ -428,22 +428,54 @@ export default {
       memberContracts: 'Member contracts',
     },
     general: {
-      payment: 'Payment',
+      // Sidebar menu
+      payment: 'Payment methods',
+      themeColorMenu: 'Theme color',
+      timezoneMenu: 'Timezone',
+      workoutMenu: 'Workout',
+      gymCheckinMenu: 'Gym check-in',
+      
+      // Payment section
       paymentMethods: 'Payment methods',
+      paymentDescription: 'Payment methods can be enabled and disabled depending on your preference.',
       bankTransfer: 'Bank transfer',
+      bankTransferDesc: 'Bank account information will be displayed when members make purchases through the Member App.',
+      specifyBankAccount: 'Specify bank account',
       creditCard: 'Credit card (Stripe)',
+      creditCardDesc: 'Payments via credit card through Stripe. Domestic: 3.65% + ฿10 per transaction. International: 4.75% + ฿10 per transaction.',
+      setupStripe: 'Setup Stripe',
       qrPromptPay: 'QR PromptPay',
-      stripeFee: '3.65% + 10 THB domestic',
+      qrPromptPayDesc: 'PromptPay payments via QR code through Stripe. Fee: 1.65% + ฿10 per refund.',
+      stripeFee: '3.65% + 10 THB domestic, 4.75% + 10 THB international',
       promptPayFee: '1.65% + ฿10 per refund',
-      set: 'Set',
+      taxInvoice: 'Tax invoice',
+      taxInvoiceDesc: 'Company information for tax invoice generation.',
+      
+      // Theme section
       appearance: 'Appearance',
       themeColor: 'Theme color',
+      selectColor: 'Select color',
+      defaultColor: 'Default',
+      otherColors: 'Other colors',
+      
+      // Timezone section
       timezone: 'Timezone',
+      selectTimezone: 'Select timezone',
+      
+      // Workout section
       workout: 'Workout',
       workoutList: 'Workout list',
-      enableWorkoutLogging: 'Enable workout logging via MOOM CLUB app',
+      enableWorkoutLogging: 'Enable workout logging via Gymmo app',
+      workoutDesc: 'When using workout list, members can log their exercises through the Gymmo app. To log workout activities, go to: Gymmo app → Profile → My Workout',
+      
+      // Gym check-in section
       gymCheckin: 'Gym check-in',
+      enableGymCheckin: 'Enable gym check-in',
+      gymCheckinDesc: 'Allow members to check-in via QR code at the gym entrance.',
+      specifyCheckinTime: 'Specify check-in time for members',
+      anytime: 'Anytime',
       checkinConfigurations: 'Check-in configurations',
+      set: 'Set',
     },
     class: {
       booking: 'Booking',
