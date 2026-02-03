@@ -57,35 +57,38 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               
-              {/* Protected routes */}
-              <Route element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/lobby" element={<Lobby />} />
-                <Route path="/members" element={<Members />} />
-                <Route path="/members/:id/detail" element={<MemberDetails />} />
-                <Route path="/leads" element={<Leads />} />
-                <Route path="/package" element={<Packages />} />
-                <Route path="/package/create" element={<CreatePackage />} />
-                <Route path="/promotion" element={<Promotions />} />
-                <Route path="/calendar" element={<Schedule />} />
-                <Route path="/room" element={<Rooms />} />
-                <Route path="/class" element={<Classes />} />
-                <Route path="/class-category" element={<ClassCategories />} />
-                <Route path="/admin" element={<Staff />} />
-                <Route path="/roles" element={<Roles />} />
-                <Route path="/location" element={<Locations />} />
-                <Route path="/activity-log" element={<ActivityLog />} />
-                <Route path="/announcement" element={<Announcements />} />
-                <Route path="/workout-list" element={<WorkoutList />} />
-                <Route path="/transfer-slip" element={<TransferSlips />} />
-                <Route path="/finance" element={<Finance />} />
-                <Route path="/report/*" element={<Reports />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/setting" element={<Settings />}>
+              {/* Protected routes - wrap with ProtectedRoute which handles auth check before rendering MainLayout */}
+              <Route 
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="lobby" element={<Lobby />} />
+                <Route path="members" element={<Members />} />
+                <Route path="members/:id/detail" element={<MemberDetails />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="package" element={<Packages />} />
+                <Route path="package/create" element={<CreatePackage />} />
+                <Route path="promotion" element={<Promotions />} />
+                <Route path="calendar" element={<Schedule />} />
+                <Route path="room" element={<Rooms />} />
+                <Route path="class" element={<Classes />} />
+                <Route path="class-category" element={<ClassCategories />} />
+                <Route path="admin" element={<Staff />} />
+                <Route path="roles" element={<Roles />} />
+                <Route path="location" element={<Locations />} />
+                <Route path="activity-log" element={<ActivityLog />} />
+                <Route path="announcement" element={<Announcements />} />
+                <Route path="workout-list" element={<WorkoutList />} />
+                <Route path="transfer-slip" element={<TransferSlips />} />
+                <Route path="finance" element={<Finance />} />
+                <Route path="report/*" element={<Reports />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="setting" element={<Settings />}>
                   <Route path="general" element={<SettingsGeneral />} />
                   <Route path="class-management" element={<SettingsClass />} />
                   <Route path="client-management" element={<SettingsClient />} />
