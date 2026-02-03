@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, type Column } from '@/components/common';
@@ -18,8 +18,45 @@ import {
   type ScheduleItem,
 } from '@/hooks/useDashboardStats';
 
+// Skeleton component for member list items
+const MemberListSkeleton = () => (
+  <div className="flex items-center gap-3">
+    <Skeleton className="h-8 w-8 rounded-full" />
+    <div className="flex-1 space-y-1.5">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-3 w-16" />
+    </div>
+    <Skeleton className="h-3 w-12" />
+  </div>
+);
+
+// Skeleton component for stat cards
+const StatCardSkeleton = () => (
+  <Card className="shadow-card">
+    <div className="p-4 space-y-2">
+      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-8 w-16" />
+      <Skeleton className="h-3 w-20" />
+    </div>
+  </Card>
+);
+
+// Skeleton component for table rows
+const TableRowSkeleton = () => (
+  <div className="flex items-center gap-4 py-3 border-b border-border">
+    <Skeleton className="h-4 w-16" />
+    <Skeleton className="h-4 w-24" />
+    <Skeleton className="h-4 w-20" />
+    <Skeleton className="h-4 w-16" />
+    <Skeleton className="h-4 w-14" />
+    <Skeleton className="h-4 w-12" />
+    <Skeleton className="h-4 w-10" />
+  </div>
+);
+
 const Dashboard = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('classes');
 
@@ -56,9 +93,9 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {statsLoading ? (
               <>
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
               </>
             ) : (
               <>
@@ -112,10 +149,10 @@ const Dashboard = () => {
               <Tabs value={activeTab}>
                 <TabsContent value="classes" className="mt-0">
                   {scheduleLoading ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-10" />
-                      <Skeleton className="h-10" />
-                      <Skeleton className="h-10" />
+                    <div className="space-y-0">
+                      <TableRowSkeleton />
+                      <TableRowSkeleton />
+                      <TableRowSkeleton />
                     </div>
                   ) : (
                     <DataTable
@@ -139,20 +176,34 @@ const Dashboard = () => {
           {/* High risk members */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <StatusBadge variant="high-risk">{t('dashboard.highRiskMembers')}</StatusBadge>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <StatusBadge variant="high-risk">{t('dashboard.highRiskMembers')}</StatusBadge>
+                </CardTitle>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-primary p-0 h-auto text-xs"
+                  onClick={() => navigate('/members?risk=high')}
+                >
+                  {t('common.viewAll')}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {riskLoading ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-10" />
-                  <Skeleton className="h-10" />
+                  <MemberListSkeleton />
+                  <MemberListSkeleton />
                 </div>
               ) : highRiskMembers.length > 0 ? (
                 <div className="space-y-3">
                   {highRiskMembers.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3">
+                    <button
+                      key={member.id}
+                      onClick={() => navigate(`/members/${member.id}`)}
+                      className="flex items-center gap-3 w-full text-left hover:bg-accent/50 rounded-md p-1 -m-1 transition-colors"
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
                           {member.name.charAt(0)}
@@ -163,7 +214,7 @@ const Dashboard = () => {
                         <p className="text-xs text-muted-foreground">{member.phone}</p>
                       </div>
                       <p className="text-xs text-destructive">{member.expiryDate}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -177,17 +228,31 @@ const Dashboard = () => {
           {/* Hot leads */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('dashboard.hotLeads')}</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">{t('dashboard.hotLeads')}</CardTitle>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-primary p-0 h-auto text-xs"
+                  onClick={() => navigate('/leads?status=interested')}
+                >
+                  {t('common.viewAll')}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {leadsLoading ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-10" />
+                  <MemberListSkeleton />
                 </div>
               ) : hotLeads.length > 0 ? (
                 <div className="space-y-3">
                   {hotLeads.map((lead) => (
-                    <div key={lead.id} className="flex items-center gap-3">
+                    <button
+                      key={lead.id}
+                      onClick={() => navigate(`/leads?id=${lead.id}`)}
+                      className="flex items-center gap-3 w-full text-left hover:bg-accent/50 rounded-md p-1 -m-1 transition-colors"
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
                           {lead.name.charAt(0)}
@@ -197,7 +262,7 @@ const Dashboard = () => {
                         <p className="text-sm font-medium truncate">{lead.name}</p>
                         <StatusBadge variant="pending">{lead.status}</StatusBadge>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -211,17 +276,31 @@ const Dashboard = () => {
           {/* Upcoming birthdays */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('dashboard.upcomingBirthdays')}</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">{t('dashboard.upcomingBirthdays')}</CardTitle>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-primary p-0 h-auto text-xs"
+                  onClick={() => navigate('/members')}
+                >
+                  {t('common.viewAll')}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {birthdaysLoading ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-10" />
+                  <MemberListSkeleton />
                 </div>
               ) : upcomingBirthdays.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingBirthdays.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3">
+                    <button
+                      key={member.id}
+                      onClick={() => navigate(`/members/${member.id}`)}
+                      className="flex items-center gap-3 w-full text-left hover:bg-accent/50 rounded-md p-1 -m-1 transition-colors"
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
                           {member.name.charAt(0)}
@@ -231,7 +310,7 @@ const Dashboard = () => {
                         <p className="text-sm font-medium truncate">{member.name}</p>
                       </div>
                       <p className="text-xs text-muted-foreground">{member.date}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (

@@ -2,17 +2,11 @@ import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader } from '@/components/common';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const Settings = () => {
   const { t } = useLanguage();
   const location = useLocation();
-  const currentTab = location.pathname.split('/').pop() || 'general';
 
   const tabs = [
     { value: 'general', label: t('settings.tabs.general'), path: '/setting/general' },
@@ -25,14 +19,44 @@ const Settings = () => {
   return (
     <div>
       <PageHeader title={t('settings.title')} breadcrumbs={[{ label: t('settings.title') }]} />
-      <div className="flex flex-wrap gap-2 mb-6">
-        {tabs.map((tab) => (
-          <NavLink key={tab.value} to={tab.path}>
-            <Button variant={location.pathname === tab.path ? 'default' : 'outline'} size="sm">{tab.label}</Button>
-          </NavLink>
-        ))}
+      
+      {/* Accessible tab navigation */}
+      <nav 
+        role="tablist" 
+        aria-label={t('settings.title')}
+        className="flex flex-wrap gap-1 mb-6 p-1 bg-muted rounded-lg w-fit"
+      >
+        {tabs.map((tab) => {
+          const isActive = location.pathname === tab.path;
+          return (
+            <NavLink 
+              key={tab.value} 
+              to={tab.path}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`${tab.value}-panel`}
+              className={cn(
+                'px-3 py-1.5 text-sm font-medium rounded-md transition-all',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                isActive 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              )}
+            >
+              {tab.label}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Tab panel */}
+      <div 
+        role="tabpanel"
+        id={`${location.pathname.split('/').pop()}-panel`}
+        className="animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+      >
+        <Outlet />
       </div>
-      <Outlet />
     </div>
   );
 };
