@@ -1,192 +1,264 @@
 
-# MOOM CLUB v0.0.1 - Complete Implementation Plan
+# Implementation Plan: Authentication, Data Fetching & CRUD Operations
 
-## 🎯 Overview
-A comprehensive fitness/gym management system with full backend powered by Supabase, supporting 4 user roles, bilingual interface (EN/TH), and 24+ pages with complete CRUD operations.
-
----
-
-## Phase 1: Foundation & Backend Setup
-
-### 1.1 Design System Implementation
-- Custom CSS variables for the MOOM CLUB color palette (orange #FF9500, teal #1ABFA8, etc.)
-- Typography system with Sarabun font support for Thai
-- Reusable component library: DataTable, StatusTabs, SearchBar, DateRangePicker, StatCard, Badge, Toggle, EmptyState
-- Bangkok timezone (GMT+7) and THB currency formatting
-
-### 1.2 Supabase Database Schema
-**Core Tables:**
-- `members` - Member profiles with all fields (ID, contact, status, risk level)
-- `packages` - Package definitions (Unlimited/Session/PT types)
-- `classes` - Class definitions with categories
-- `schedule` - Class schedule entries
-- `rooms` - Room configurations
-- `transactions` - Financial transactions
-- `staff` - Staff members
-- `user_roles` - RBAC role assignments (separate table for security)
-- `roles` - Role definitions (4 levels: Minimum → Master)
-- `locations` - Multi-location support
-- `leads` - Lead management
-- `promotions` - Promo codes and discounts
-- `activity_log` - Audit trail
-- `announcements` - System announcements
-- `notifications` - User notifications
-- `workouts` - CrossFit/workout tracking
-- `member_packages` - Junction table for member package ownership
-- `member_attendance` - Check-in records
-- `member_billing` - Billing history
-- `settings` - App settings (JSON storage per section)
-
-### 1.3 Authentication & RBAC
-- Supabase Auth with email/password login
-- 4-level role system: Owner, Admin, Trainer, Front desk
-- Row Level Security (RLS) policies on all tables
-- Security definer functions for role checks
-- Menu visibility based on access level
+## Overview
+This plan implements four key features:
+1. Real data fetching for Dashboard stats
+2. Members page database connection with CRUD
+3. Authentication system with role-based access
+4. Navigation and page load verification
 
 ---
 
-## Phase 2: Core Layout & Navigation
+## 1. Authentication System
 
-### 2.1 Header (Fixed Top)
-- MOOM CLUB logo with hamburger menu
-- Support button: "Support: 099-616-3666"
-- Notification bell with unread count (red dot)
-- Language switcher (EN/TH dropdown)
-- User avatar with dropdown (Edit profile, Logout)
+### 1.1 Create Auth Context
+**File: `src/contexts/AuthContext.tsx`**
+- AuthProvider component managing session state
+- Uses `onAuthStateChange` listener (set up BEFORE `getSession()`)
+- Fetches user's role from `user_roles` table after authentication
+- Provides: user, session, role, accessLevel, loading, signIn, signUp, signOut
 
-### 2.2 Sidebar (Fixed Left ~220px)
-- Collapsible menu groups with icons
-- Active state highlighting
-- Footer: "© 2026 MOOM CLUB | Version 0.0.1"
-- Terms/Privacy links
-- Responsive: collapses on tablet, drawer on mobile
+### 1.2 Login Page
+**File: `src/pages/Auth/Login.tsx`**
+- Email/password form with validation (Zod + react-hook-form)
+- "Remember me" checkbox
+- Link to signup page
+- Error handling with toast notifications
+- Redirect to dashboard on success
+- MOOM CLUB branding consistent with design system
 
-### 2.3 Main Content Area
-- Breadcrumb navigation
-- Page title with "Updated" timestamp
-- Consistent action button placement
+### 1.3 Signup Page
+**File: `src/pages/Auth/Signup.tsx`**
+- Form fields: First name, Last name, Email, Password, Confirm password
+- Form validation with Zod
+- Creates auth user, then creates staff record
+- Default role: front_desk (Level 1: Minimum)
+- Email verification required (no auto-confirm)
+- Redirects to login after signup
 
----
+### 1.4 Protected Routes
+**File: `src/components/auth/ProtectedRoute.tsx`**
+- Checks for valid session
+- Redirects to /login if unauthenticated
+- Optional minAccessLevel prop for role-based protection
+- Loading state while checking auth
 
-## Phase 3: All Pages Implementation
-
-### Dashboard (/)
-- 3 stat cards: Check-ins today, Currently in class, Classes scheduled
-- Toggle tabs: Classes | Gym check-in
-- Today's schedule table with date picker
-- Right sidebar: High risk members, Hot leads, Upcoming birthdays
-
-### Lobby (/lobby)
-- Real-time check-in monitoring
-- Date selector, search, and Check-in button
-- Table: Time, Name, Package used, Usage, Location, Status
-
-### Member Management
-- **Members List (/members)**: Searchable table with status tabs (Active/Suspended/On hold/Inactive), CSV export, pagination
-- **Member Details (/members/:id/detail)**: 9 tabs (Home, Profile, Attendance, Packages, Billing, Injuries, Notes, Suspensions, Contract), editable avatar, stat cards
-
-### Leads (/leads)
-- Lead tracking with contact status
-- Create lead form
-
-### Package Management
-- **Packages List (/package)**: All package types with status tabs
-- **Create Package (/package/create)**: Multi-step form with type selection (Unlimited/Session/PT), pricing, term settings, access rules, preview sidebar, validation
-
-### Promotions (/promotion)
-- Promo code management with discount types
-- Status tabs: Active/Scheduled/Drafts/Archive
-
-### Class Management
-- **Schedule (/calendar)**: Day view with stats, trainer filter, capacity visualization
-- **Room Layouts (/room)**: Room configuration with capacity
-- **Class List (/class)**: Class/PT definitions
-- **Categories (/class-category)**: Category management with class counts
-
-### Your Gym
-- **Staff (/admin)**: Staff management with role assignment
-- **Roles (/roles)**: RBAC configuration (4 levels)
-- **Locations (/location)**: Multi-location management
-- **Activity Log (/activity-log)**: Audit trail with date range filter
-- **Announcements (/announcement)**: System announcements
-- **Workout List (/workout-list)**: CrossFit workouts (Fran, Grace, Isabel, etc.)
-
-### Finance
-- **Transfer Slips (/transfer-slip)**: Payment verification with status tabs
-- **Finance (/finance)**: Transaction dashboard with stats (Total sales, Net income, Refunds)
-
-### Reports (/report/*)
-- **Member Reports**: Active members trend, Members at risk (pie chart), Package usage
-- **Class Reports**: Capacity by hour, Popularity rankings
-- **Package Reports**: Sales comparison, Sales over time
-
-### Notifications (/notifications)
-- Full notification center with date/status filters
-- Event types: Booking, Cancellation, Payment, Registration, Expiry
-
-### Settings (/setting/*)
-- **General**: Payment methods (Bank/Stripe/PromptPay), Appearance (theme colors), Timezone, Workout toggle, Gym check-in
-- **Class**: Booking rules, Check-in, Waitlisting, Cancellations, No-show
-- **Client**: Injured/Suspended/On hold member rules
-- **Package**: Expiration conditions
-- **Member Contracts**: E-signing toggle
+### 1.5 Update App Routing
+**File: `src/App.tsx`**
+- Add AuthProvider wrapper
+- Add login/signup routes (public)
+- Wrap MainLayout routes with ProtectedRoute
+- Add role-based route protection for sensitive pages
 
 ---
 
-## Phase 4: Internationalization (i18n)
+## 2. Dashboard Real Data Fetching
 
-- Complete EN/TH translation system
-- Language context provider
-- Date format: "D MMM YYYY" (e.g., "3 FEB 2026")
-- Time format: 24-hour
-- All UI labels, messages, and validation errors in both languages
+### 2.1 Dashboard Hooks
+**File: `src/hooks/useDashboardStats.ts`**
+- Custom hook using React Query
+- Queries:
+  - `member_attendance` for today's check-ins (filter by date)
+  - `schedule` for today's classes count
+  - `members` with `risk_level = 'high'` for high-risk members
+  - `leads` with `status = 'interested'` for hot leads
+  - `members` for upcoming birthdays (within 7 days)
 
----
+### 2.2 Dashboard Page Updates
+**File: `src/pages/Dashboard.tsx`**
+- Replace static data with useDashboardStats hook
+- Add loading states (Skeleton components)
+- Add error handling
+- Calculate comparison percentages (today vs yesterday)
+- Fetch schedule items for the selected date
 
-## Phase 5: Polish & Stability
-
-### Quality Requirements
-- Loading states on all data fetches
-- Empty state illustrations on all tables
-- Error handling with user-friendly messages
-- Form validation with Thai language support
-- Search, filter, sort, pagination working on all tables
-- Responsive design: Desktop → Tablet (collapsible sidebar) → Mobile (bottom nav, drawer)
-
-### Sample Data
-- Pre-populated workout list (CrossFit workouts)
-- Sample member IDs (M-0000001 format)
-- Sample transactions and packages
-
----
-
-## Technical Architecture
-
-**Frontend:**
-- React + TypeScript + Vite
-- Tailwind CSS with custom design tokens
-- React Router for navigation
-- React Query for data fetching
-- react-i18next for translations
-- Lucide React for icons
-
-**Backend:**
-- Supabase Database (PostgreSQL)
-- Supabase Auth
-- Row Level Security (RLS)
-- Edge Functions for complex operations
+### 2.3 Data Types
+**File: `src/types/dashboard.ts`**
+- DashboardStats interface
+- ScheduleItem interface (matching DB schema)
+- RiskMember interface
+- HotLead interface
 
 ---
 
-## Deliverables for v0.0.1
-✅ All 24+ pages fully functional
-✅ Complete CRUD operations
-✅ RBAC enforced (4 levels)
-✅ Bilingual (EN/TH)
-✅ Bangkok timezone + THB currency
-✅ Real database with sample data
-✅ CSV export functionality
-✅ Notification system
-✅ Theme customization
-✅ Member risk analytics
+## 3. Members Page Database Integration
+
+### 3.1 Members API Hooks
+**File: `src/hooks/useMembers.ts`**
+- useMembers: Fetch paginated members with filters (status, search)
+- useMember: Fetch single member by ID
+- useCreateMember: Mutation for creating members
+- useUpdateMember: Mutation for updating members
+- useMemberStats: Aggregate counts by status for tabs
+
+### 3.2 Member ID Generator
+**File: `src/lib/memberIdGenerator.ts`**
+- Function to generate next member ID (M-0000001 format)
+- Query max existing ID and increment
+
+### 3.3 Create Member Form
+**File: `src/components/members/CreateMemberDialog.tsx`**
+- Dialog/Sheet component
+- Form fields: First name*, Last name*, Nickname, Email, Phone, Date of birth, Gender, Address
+- Form validation with Zod
+- Auto-generate member_id on create
+- Submit creates member record
+- Success toast and table refresh
+
+### 3.4 Edit Member Form
+**File: `src/components/members/EditMemberDialog.tsx`**
+- Pre-populated form with existing data
+- Same validation as create
+- Update mutation on submit
+- Optimistic UI updates
+
+### 3.5 Members Page Updates
+**File: `src/pages/Members.tsx`**
+- Replace mock data with useMembers hook
+- Wire status tabs to actual counts from useMemberStats
+- Implement search with debounce
+- Add pagination controls
+- Connect Create button to CreateMemberDialog
+- Add edit action to table rows
+
+### 3.6 CSV Export
+**File: `src/lib/exportCsv.ts`**
+- Generic CSV export utility
+- Export current filtered/searched results
+- Columns: ID, Name, Nickname, Email, Phone, Status, Member Since
+
+---
+
+## 4. Header & Layout Auth Integration
+
+### 4.1 Header Updates
+**File: `src/components/layout/Header.tsx`**
+- Display actual user name/initials from auth context
+- Show user's role
+- Wire logout button to signOut function
+- Fetch unread notifications count from DB
+
+### 4.2 Sidebar Role-Based Menu
+**File: `src/components/layout/Sidebar.tsx`**
+- Filter menu items based on user's access level
+- Level 1 (Front desk): Dashboard, Lobby, Members, Leads
+- Level 2 (Operator): + Schedule, Classes, Packages
+- Level 3 (Manager): + Staff, Locations, Finance, Settings
+- Level 4 (Master): All items including Roles
+
+---
+
+## 5. Navigation Testing & Verification
+
+### 5.1 Test All Routes
+Ensure each page loads without errors:
+- Dashboard (/)
+- Lobby (/lobby)
+- Members (/members)
+- Member Details (/members/:id/detail)
+- Leads (/leads)
+- Packages (/package)
+- Create Package (/package/create)
+- Promotions (/promotion)
+- Schedule (/calendar)
+- Rooms (/room)
+- Classes (/class)
+- Class Categories (/class-category)
+- Staff (/admin)
+- Roles (/roles)
+- Locations (/location)
+- Activity Log (/activity-log)
+- Announcements (/announcement)
+- Workout List (/workout-list)
+- Transfer Slips (/transfer-slip)
+- Finance (/finance)
+- Reports (/report/*)
+- Notifications (/notifications)
+- Settings (/setting/*)
+
+### 5.2 Add Error Boundaries
+**File: `src/components/common/ErrorBoundary.tsx`**
+- Catch rendering errors
+- Display user-friendly error message
+- "Try again" button
+- Log errors for debugging
+
+---
+
+## Technical Implementation Details
+
+### Database Queries (Dashboard)
+```sql
+-- Today's check-ins
+SELECT COUNT(*) FROM member_attendance 
+WHERE DATE(check_in_time) = CURRENT_DATE;
+
+-- Classes scheduled today
+SELECT COUNT(*) FROM schedule 
+WHERE scheduled_date = CURRENT_DATE;
+
+-- High-risk members (packages expiring soon)
+SELECT * FROM members 
+WHERE risk_level = 'high' AND status = 'active';
+```
+
+### Security Considerations
+- All data fetching uses RLS policies
+- User role checked server-side via security definer functions
+- No sensitive data in localStorage (session managed by Supabase Auth)
+- Protected routes verify session before rendering
+
+### Translation Updates
+**Files: `src/i18n/locales/en.ts`, `src/i18n/locales/th.ts`**
+Add keys for:
+- auth.login, auth.signup, auth.email, auth.password
+- auth.forgotPassword, auth.rememberMe
+- members.createMember, members.editMember
+- Validation error messages
+
+---
+
+## File Structure Summary
+
+```text
+src/
+  contexts/
+    AuthContext.tsx (NEW)
+  pages/
+    Auth/
+      Login.tsx (NEW)
+      Signup.tsx (NEW)
+    Dashboard.tsx (MODIFY)
+    Members.tsx (MODIFY)
+  components/
+    auth/
+      ProtectedRoute.tsx (NEW)
+    members/
+      CreateMemberDialog.tsx (NEW)
+      EditMemberDialog.tsx (NEW)
+    common/
+      ErrorBoundary.tsx (NEW)
+    layout/
+      Header.tsx (MODIFY)
+      Sidebar.tsx (MODIFY)
+  hooks/
+    useDashboardStats.ts (NEW)
+    useMembers.ts (NEW)
+  lib/
+    memberIdGenerator.ts (NEW)
+    exportCsv.ts (NEW)
+  types/
+    dashboard.ts (NEW)
+```
+
+---
+
+## Implementation Order
+
+1. **Auth Context & Login/Signup** - Foundation for all protected features
+2. **Protected Routes** - Secure the application
+3. **Header/Sidebar Auth Integration** - Show user info, role-based menu
+4. **Dashboard Data Fetching** - Real stats from database
+5. **Members CRUD** - Full create/edit functionality
+6. **Navigation Testing** - Verify all pages work
