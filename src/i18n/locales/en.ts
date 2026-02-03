@@ -59,6 +59,221 @@ export default {
     reports: 'Reports',
     settings: 'Settings',
     notifications: 'Notifications',
+    comingSoon: 'Coming Soon',
+  },
+
+  // Roadmap
+  roadmap: {
+    title: 'Development Roadmap',
+    comingSoon: 'Coming Soon',
+    inProgress: 'In Progress',
+    completed: 'Completed',
+    planned: 'Planned',
+    preview: 'Preview',
+    heroSubtitle: 'Building the future of gym management',
+    currentlyBuilding: 'Currently Building',
+    footerNote: 'Roadmap is subject to change based on user feedback and priorities.',
+
+    // Versions
+    v001: {
+      title: 'Console Foundation',
+      description: '24+ management pages with full CRUD, RBAC, and i18n support',
+    },
+    v002: {
+      title: 'LINE Shell + Mobile MVP',
+      description: 'LIFF login, Member/Trainer apps, LINE notifications',
+    },
+    v003: {
+      title: 'Payments & Check-in',
+      description: 'PromptPay, QR check-in, usage ledger, anti-fraud',
+    },
+    v010: {
+      title: 'Retention Engine',
+      description: 'Risk automation, LINE campaigns, CRM timeline',
+    },
+
+    // Console
+    console: {
+      title: 'Admin Console',
+      description: 'Full-featured management dashboard',
+      features: {
+        dashboard: 'Dashboard with real-time stats',
+        members: 'Member management & profiles',
+        packages: 'Package & promotion management',
+        schedule: 'Class scheduling & rooms',
+        finance: 'Finance & transactions',
+        reports: 'Reports & analytics',
+      },
+    },
+
+    // Member App
+    memberApp: {
+      title: 'Member App',
+      description: 'Mobile app for members via LINE',
+      fullDescription: 'A mobile-first LIFF application that allows members to book classes, view their packages, check-in with QR codes, make payments, and sign contracts - all within LINE.',
+      keyFeatures: 'Key Features',
+      lineNote: 'This app will be accessible through LINE Official Account rich menu.',
+      comingSoonText: 'Member app is currently in development. Stay tuned!',
+      features: {
+        booking: 'Book / Cancel classes',
+        packages: 'View my packages',
+        qrCheckin: 'QR Code check-in',
+        payments: 'Payments / Upload slips',
+        contracts: 'E-sign contracts',
+      },
+      menu: {
+        schedule: 'Class Schedule',
+        scheduleDesc: 'View and book classes',
+        packages: 'My Packages',
+        packagesDesc: 'Sessions remaining',
+        checkin: 'Check-in',
+        checkinDesc: 'QR code for check-in',
+        payments: 'Payments',
+        paymentsDesc: 'Pay or upload slips',
+        contracts: 'Contracts',
+        contractsDesc: 'View and sign contracts',
+      },
+      nav: {
+        home: 'Home',
+        book: 'Book',
+        checkin: 'Check-in',
+        notifications: 'Alerts',
+        profile: 'Profile',
+      },
+      mockup: {
+        welcome: 'Welcome back!',
+      },
+    },
+
+    // Trainer App
+    trainerApp: {
+      title: 'Trainer App',
+      description: 'Mobile app for trainers via LINE',
+      fullDescription: 'A mobile-first LIFF application designed for trainers to manage their daily schedule, take attendance, log PT sessions, and view member information quickly.',
+      keyFeatures: 'Key Features',
+      lineNote: 'This app will be accessible through LINE Official Account rich menu for trainers.',
+      comingSoonText: 'Trainer app is currently in development. Stay tuned!',
+      designPrinciple: 'Design Principle',
+      designPrincipleDesc: 'Every action should be completable with minimal typing. Preset options and quick actions are prioritized.',
+      features: {
+        todaySchedule: "Today's class schedule",
+        attendance: 'Take attendance',
+        ptLog: 'Log PT sessions',
+        memberView: 'Quick member view',
+        noShow: 'Report no-shows',
+      },
+      menu: {
+        todaySchedule: "Today's Schedule",
+        todayScheduleDesc: 'Classes you teach today',
+        attendance: 'Take Attendance',
+        attendanceDesc: 'Check-in members',
+        ptLog: 'PT Session Log',
+        ptLogDesc: 'Record PT sessions',
+        memberView: 'Member Lookup',
+        memberViewDesc: 'Quick member info',
+        incidents: 'Incidents',
+        incidentsDesc: 'Report issues',
+      },
+      nav: {
+        home: 'Home',
+        schedule: 'Schedule',
+        checkin: 'Check-in',
+        alerts: 'Alerts',
+        profile: 'Profile',
+      },
+      mockup: {
+        title: 'Trainer Portal',
+        welcome: 'Good morning, Trainer!',
+        todayClasses: '5 classes today',
+        classes: 'Classes',
+        members: 'Members',
+        pt: 'PT',
+      },
+    },
+
+    // Notifications
+    notifications: {
+      title: 'Notifications',
+      description: 'LINE and in-app notification system',
+      features: {
+        bookingConfirm: 'Booking confirmations',
+        classReminder: 'Class reminders',
+        packageExpiry: 'Package expiry alerts',
+        promotions: 'News and promotions',
+      },
+    },
+
+    // Payments (v0.0.3)
+    payments: {
+      title: 'Smart Payments',
+      description: 'Integrated payment processing',
+      features: {
+        promptpay: 'PromptPay / Bank transfer',
+        slipUpload: 'Slip upload & verification',
+        autoVerify: 'Auto verification',
+        receipts: 'Digital receipts',
+      },
+    },
+
+    // QR Check-in (v0.0.3)
+    qrCheckin: {
+      title: 'QR Check-in',
+      description: 'Secure QR code check-in system',
+      features: {
+        dynamicQr: 'Dynamic QR codes',
+        antiFraud: 'Anti-fraud protection',
+        usageLedger: 'Usage ledger tracking',
+        realtime: 'Real-time validation',
+      },
+    },
+
+    // Security (v0.0.3)
+    security: {
+      title: 'Security & Compliance',
+      description: 'PDPA compliance and data protection',
+      features: {
+        pdpa: 'PDPA compliance',
+        consent: 'Consent management',
+        dataRetention: 'Data retention policies',
+        auditLog: 'Comprehensive audit logs',
+      },
+    },
+
+    // Retention (v0.1.0)
+    retention: {
+      title: 'Retention Engine',
+      description: 'Automated member retention',
+      features: {
+        riskAlert: 'At-risk member alerts',
+        oneClick: 'One-click contact',
+        autoMessage: 'Automated messages',
+        winback: 'Win-back campaigns',
+      },
+    },
+
+    // Campaigns (v0.1.0)
+    campaigns: {
+      title: 'LINE Campaigns',
+      description: 'Marketing campaigns via LINE',
+      features: {
+        birthday: 'Birthday messages',
+        renewal: 'Renewal reminders',
+        promo: 'Promotional campaigns',
+        targeting: 'Smart targeting',
+      },
+    },
+
+    // CRM (v0.1.0)
+    crm: {
+      title: 'CRM Timeline',
+      description: 'Complete member journey tracking',
+      features: {
+        timeline: 'Activity timeline',
+        interactions: 'Interaction history',
+        notes: 'Staff notes',
+        insights: 'Member insights',
+      },
+    },
   },
 
   // Dashboard

@@ -59,6 +59,221 @@ export default {
     reports: 'รายงาน',
     settings: 'ตั้งค่า',
     notifications: 'การแจ้งเตือน',
+    comingSoon: 'เร็วๆ นี้',
+  },
+
+  // Roadmap
+  roadmap: {
+    title: 'แผนพัฒนา',
+    comingSoon: 'เร็วๆ นี้',
+    inProgress: 'กำลังพัฒนา',
+    completed: 'เสร็จสิ้น',
+    planned: 'วางแผนไว้',
+    preview: 'ดูตัวอย่าง',
+    heroSubtitle: 'สร้างอนาคตของการจัดการยิม',
+    currentlyBuilding: 'กำลังพัฒนา',
+    footerNote: 'แผนพัฒนาอาจเปลี่ยนแปลงตามความคิดเห็นของผู้ใช้และลำดับความสำคัญ',
+
+    // Versions
+    v001: {
+      title: 'Console Foundation',
+      description: '24+ หน้าจัดการครบถ้วน CRUD, RBAC และ i18n',
+    },
+    v002: {
+      title: 'LINE Shell + Mobile MVP',
+      description: 'LIFF login, แอปสมาชิก/เทรนเนอร์, การแจ้งเตือน LINE',
+    },
+    v003: {
+      title: 'Payments & Check-in',
+      description: 'PromptPay, QR check-in, usage ledger, anti-fraud',
+    },
+    v010: {
+      title: 'Retention Engine',
+      description: 'ระบบอัตโนมัติสำหรับกลุ่มเสี่ยง, แคมเปญ LINE, CRM timeline',
+    },
+
+    // Console
+    console: {
+      title: 'Admin Console',
+      description: 'แดชบอร์ดจัดการครบทุกฟังก์ชัน',
+      features: {
+        dashboard: 'แดชบอร์ดสถิติแบบ real-time',
+        members: 'จัดการสมาชิกและโปรไฟล์',
+        packages: 'จัดการแพ็กเกจและโปรโมชัน',
+        schedule: 'ตารางคลาสและห้อง',
+        finance: 'การเงินและธุรกรรม',
+        reports: 'รายงานและการวิเคราะห์',
+      },
+    },
+
+    // Member App
+    memberApp: {
+      title: 'แอปสมาชิก',
+      description: 'แอปมือถือสำหรับสมาชิกผ่าน LINE',
+      fullDescription: 'แอปพลิเคชัน LIFF ที่ออกแบบมาเพื่อให้สมาชิกจองคลาส ดูแพ็กเกจ เช็คอินด้วย QR Code ชำระเงิน และเซ็นสัญญา - ทั้งหมดภายใน LINE',
+      keyFeatures: 'ฟีเจอร์หลัก',
+      lineNote: 'แอปนี้จะเข้าถึงได้ผ่าน Rich Menu ของ LINE Official Account',
+      comingSoonText: 'แอปสมาชิกกำลังอยู่ในระหว่างการพัฒนา รอติดตามนะ!',
+      features: {
+        booking: 'จองคลาส / ยกเลิกการจอง',
+        packages: 'ดูแพ็กเกจของฉัน',
+        qrCheckin: 'เช็คอินด้วย QR Code',
+        payments: 'ชำระเงิน / อัปโหลดสลิป',
+        contracts: 'เซ็นสัญญาออนไลน์',
+      },
+      menu: {
+        schedule: 'ตารางคลาส',
+        scheduleDesc: 'ดูและจองคลาส',
+        packages: 'แพ็กเกจของฉัน',
+        packagesDesc: 'เซสชันที่เหลือ',
+        checkin: 'เช็คอิน',
+        checkinDesc: 'QR Code สำหรับเช็คอิน',
+        payments: 'การชำระเงิน',
+        paymentsDesc: 'ชำระหรืออัปโหลดสลิป',
+        contracts: 'สัญญา',
+        contractsDesc: 'ดูและเซ็นสัญญา',
+      },
+      nav: {
+        home: 'หน้าแรก',
+        book: 'จอง',
+        checkin: 'เช็คอิน',
+        notifications: 'แจ้งเตือน',
+        profile: 'โปรไฟล์',
+      },
+      mockup: {
+        welcome: 'ยินดีต้อนรับกลับ!',
+      },
+    },
+
+    // Trainer App
+    trainerApp: {
+      title: 'แอปเทรนเนอร์',
+      description: 'แอปมือถือสำหรับเทรนเนอร์ผ่าน LINE',
+      fullDescription: 'แอปพลิเคชัน LIFF ที่ออกแบบมาเพื่อให้เทรนเนอร์จัดการตารางประจำวัน เช็คชื่อ บันทึก PT session และดูข้อมูลสมาชิกได้อย่างรวดเร็ว',
+      keyFeatures: 'ฟีเจอร์หลัก',
+      lineNote: 'แอปนี้จะเข้าถึงได้ผ่าน Rich Menu ของ LINE Official Account สำหรับเทรนเนอร์',
+      comingSoonText: 'แอปเทรนเนอร์กำลังอยู่ในระหว่างการพัฒนา รอติดตามนะ!',
+      designPrinciple: 'หลักการออกแบบ',
+      designPrincipleDesc: 'ทุก action ต้องทำได้โดยไม่ต้องพิมพ์มาก ใช้ตัวเลือกที่เตรียมไว้และ quick actions เป็นหลัก',
+      features: {
+        todaySchedule: 'ตารางคลาสวันนี้',
+        attendance: 'เช็คชื่อผู้เข้าเรียน',
+        ptLog: 'บันทึก PT session',
+        memberView: 'ดูข้อมูลสมาชิกแบบด่วน',
+        noShow: 'รายงานผู้ไม่มาเรียน',
+      },
+      menu: {
+        todaySchedule: 'ตารางวันนี้',
+        todayScheduleDesc: 'คลาสที่คุณสอนวันนี้',
+        attendance: 'เช็คชื่อ',
+        attendanceDesc: 'เช็คอินสมาชิก',
+        ptLog: 'บันทึก PT',
+        ptLogDesc: 'บันทึก PT session',
+        memberView: 'ค้นหาสมาชิก',
+        memberViewDesc: 'ข้อมูลสมาชิกแบบด่วน',
+        incidents: 'รายงานปัญหา',
+        incidentsDesc: 'รายงานเหตุการณ์',
+      },
+      nav: {
+        home: 'หน้าแรก',
+        schedule: 'ตาราง',
+        checkin: 'เช็คอิน',
+        alerts: 'แจ้งเตือน',
+        profile: 'โปรไฟล์',
+      },
+      mockup: {
+        title: 'Trainer Portal',
+        welcome: 'สวัสดีตอนเช้า เทรนเนอร์!',
+        todayClasses: '5 คลาสวันนี้',
+        classes: 'คลาส',
+        members: 'สมาชิก',
+        pt: 'PT',
+      },
+    },
+
+    // Notifications
+    notifications: {
+      title: 'การแจ้งเตือน',
+      description: 'ระบบแจ้งเตือนผ่าน LINE และ In-app',
+      features: {
+        bookingConfirm: 'แจ้งเตือนการจองสำเร็จ',
+        classReminder: 'เตือนก่อนคลาสเริ่ม',
+        packageExpiry: 'แจ้งเตือนแพ็กเกจใกล้หมด',
+        promotions: 'ข่าวสารและโปรโมชัน',
+      },
+    },
+
+    // Payments (v0.0.3)
+    payments: {
+      title: 'Smart Payments',
+      description: 'ระบบชำระเงินแบบบูรณาการ',
+      features: {
+        promptpay: 'PromptPay / โอนเงิน',
+        slipUpload: 'อัปโหลดสลิปและตรวจสอบ',
+        autoVerify: 'ตรวจสอบอัตโนมัติ',
+        receipts: 'ใบเสร็จดิจิทัล',
+      },
+    },
+
+    // QR Check-in (v0.0.3)
+    qrCheckin: {
+      title: 'QR Check-in',
+      description: 'ระบบเช็คอิน QR Code ที่ปลอดภัย',
+      features: {
+        dynamicQr: 'QR Code แบบ dynamic',
+        antiFraud: 'ป้องกันการโกง',
+        usageLedger: 'ติดตามการใช้งาน',
+        realtime: 'ตรวจสอบแบบ real-time',
+      },
+    },
+
+    // Security (v0.0.3)
+    security: {
+      title: 'ความปลอดภัยและการปฏิบัติตามกฎหมาย',
+      description: 'ปฏิบัติตาม PDPA และปกป้องข้อมูล',
+      features: {
+        pdpa: 'ปฏิบัติตาม PDPA',
+        consent: 'จัดการความยินยอม',
+        dataRetention: 'นโยบายการเก็บข้อมูล',
+        auditLog: 'บันทึก audit ครบถ้วน',
+      },
+    },
+
+    // Retention (v0.1.0)
+    retention: {
+      title: 'Retention Engine',
+      description: 'ระบบรักษาสมาชิกอัตโนมัติ',
+      features: {
+        riskAlert: 'แจ้งเตือนสมาชิกกลุ่มเสี่ยง',
+        oneClick: 'ติดต่อด้วยคลิกเดียว',
+        autoMessage: 'ข้อความอัตโนมัติ',
+        winback: 'แคมเปญดึงลูกค้ากลับ',
+      },
+    },
+
+    // Campaigns (v0.1.0)
+    campaigns: {
+      title: 'LINE Campaigns',
+      description: 'แคมเปญการตลาดผ่าน LINE',
+      features: {
+        birthday: 'ข้อความวันเกิด',
+        renewal: 'เตือนต่ออายุ',
+        promo: 'แคมเปญโปรโมชัน',
+        targeting: 'การกำหนดเป้าหมายอัจฉริยะ',
+      },
+    },
+
+    // CRM (v0.1.0)
+    crm: {
+      title: 'CRM Timeline',
+      description: 'ติดตามเส้นทางของสมาชิกครบวงจร',
+      features: {
+        timeline: 'ไทม์ไลน์กิจกรรม',
+        interactions: 'ประวัติการติดต่อ',
+        notes: 'บันทึกจากพนักงาน',
+        insights: 'ข้อมูลเชิงลึกของสมาชิก',
+      },
+    },
   },
 
   // Dashboard

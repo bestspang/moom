@@ -49,6 +49,9 @@ import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import Profile from "./pages/Profile";
+import ComingSoon from "./pages/ComingSoon";
+import MemberAppPreview from "./pages/MemberAppPreview";
+import TrainerAppPreview from "./pages/TrainerAppPreview";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +107,9 @@ const App = () => (
                 <Route path="report/package/sales-over-time" element={<PackageSalesOverTime />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="coming-soon" element={<ComingSoon />} />
+                <Route path="member-app" element={<MemberAppPreview />} />
+                <Route path="trainer-app" element={<TrainerAppPreview />} />
                 <Route path="setting" element={<Settings />}>
                   <Route path="general" element={<SettingsGeneral />} />
                   <Route path="class-management" element={<SettingsClass />} />
