@@ -129,7 +129,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { label: t('nav.finance'), path: '/finance', icon: DollarSign },
       ],
     },
-    { label: t('nav.reports'), path: '/report/member', icon: BarChart3, minLevel: 'level_2_operator' },
+    { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator' },
     { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager' },
   ];
 
