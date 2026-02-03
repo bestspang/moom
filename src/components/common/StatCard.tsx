@@ -67,13 +67,14 @@ export const StatCard = ({
                 {getTrendIcon()}
                 <span
                   className={cn(
-                    comparison.value > 0 && 'text-accent-teal',
+                    'font-medium',
+                    comparison.value > 0 && 'text-success',
                     comparison.value < 0 && 'text-destructive',
                     comparison.value === 0 && 'text-muted-foreground'
                   )}
                 >
                   {comparison.value > 0 ? '+' : ''}
-                  {comparison.value}%
+                  {comparison.value}
                 </span>
                 {comparison.label && (
                   <span className="text-muted-foreground ml-1">

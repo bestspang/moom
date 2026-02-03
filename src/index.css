@@ -22,9 +22,9 @@
     --destructive-light: 0 100% 95%;
     --destructive-foreground: 0 0% 100%;
     
-    --warning: 45 100% 51%;
-    --warning-light: 45 100% 95%;
-    --warning-foreground: 0 0% 20%;
+    --warning: 38 92% 50%;
+    --warning-light: 38 92% 92%;
+    --warning-foreground: 38 92% 20%;
     
     --success: 168 75% 43%;
     --success-light: 168 70% 95%;
@@ -66,7 +66,7 @@
     --accent-foreground: 0 0% 20%;
     
     /* Table */
-    --table-header: 0 0% 10%;
+    --table-header: 220 13% 18%;
     --table-header-foreground: 0 0% 100%;
     
     /* Text Colors */

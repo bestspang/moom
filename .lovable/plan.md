@@ -29,10 +29,19 @@
    - CreateMemberDialog: uses Drawer on mobile
    - ScheduleClassDialog: uses Drawer on mobile
 
-### Phase 3: Medium (ปานกลาง) - Polish
-- [ ] ปรับปรุง color contrast
-- [ ] เพิ่ม loading/transition animations
-- [ ] Accessibility improvements (aria-labels, focus states)
+### ✅ Phase 3: Medium (COMPLETED)
+1. ✅ ปรับปรุง color contrast
+   - Warning badge: Changed to use bg-warning-light with darker foreground for WCAG compliance
+   - StatCard comparison text: Uses success/destructive tokens for better contrast
+   - Table header: Adjusted to slightly lighter shade (220 13% 18%)
+2. ✅ เพิ่ม loading/transition animations
+   - Page transitions: Added fade-in and slide-in-from-bottom animations
+   - Tab switching: Added animate-in fade and slide for tab content
+   - Sidebar: Increased transition duration to 300ms
+3. ✅ Accessibility improvements
+   - Added skip-to-main-content link for keyboard navigation
+   - Added aria-labels to icon buttons (menu, notifications, user avatar)
+   - Added aria-hidden to decorative icons
 
 ### Phase 4: Low (ทำทีหลังได้) - Enhancement
 - [ ] Dashboard cards navigation
