@@ -2,6 +2,7 @@ import React from 'react';
 import { Phone, Bell, ChevronDown, Menu, LogOut, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,20 +13,30 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 
 interface HeaderProps {
   onMenuToggle: () => void;
-  unreadNotifications?: number;
 }
 
-export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) => {
+export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const { data: unreadCount = 0 } = useUnreadCount();
+  const { data: recentNotifications = [] } = useRecentNotifications(5);
+  const markAsRead = useMarkAsRead();
+
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleNotificationClick = (notificationId: string, isRead: boolean | null) => {
+    if (!isRead) {
+      markAsRead.mutate(notificationId);
+    }
   };
 
   // Get user initials from email or metadata
@@ -94,9 +105,9 @@ export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) =
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              {unreadNotifications > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </Button>
@@ -105,16 +116,52 @@ export const Header = ({ onMenuToggle, unreadNotifications = 0 }: HeaderProps) =
             <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">
-                  {t('notifications.title')} ({unreadNotifications})
+                  {t('notifications.title')} ({unreadCount})
                 </span>
-                <Button variant="link" size="sm" className="text-primary p-0 h-auto">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-primary p-0 h-auto"
+                  onClick={() => navigate('/notifications')}
+                >
                   {t('common.viewAll')}
                 </Button>
               </div>
             </div>
-            <div className="p-4 text-center text-muted-foreground text-sm">
-              {t('notifications.noUnread')}
-            </div>
+            {recentNotifications.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                {t('notifications.noUnread')}
+              </div>
+            ) : (
+              <div className="max-h-[300px] overflow-y-auto">
+                {recentNotifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className={cn(
+                      'flex flex-col items-start p-3 cursor-pointer',
+                      !notification.is_read && 'bg-accent/50'
+                    )}
+                    onClick={() => handleNotificationClick(notification.id, notification.is_read)}
+                  >
+                    <p className={cn('text-sm', !notification.is_read && 'font-semibold')}>
+                      {notification.title}
+                    </p>
+                    {notification.message && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                        {notification.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {notification.created_at
+                        ? formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                          })
+                        : ''}
+                    </p>
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 

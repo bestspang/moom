@@ -9,10 +9,7 @@ export const MainLayout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        unreadNotifications={2}
-      />
+      <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
