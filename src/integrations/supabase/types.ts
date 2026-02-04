@@ -109,6 +109,134 @@ export type Database = {
           },
         ]
       }
+      checkin_qr_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          location_id: string
+          member_id: string
+          token: string
+          token_type: string | null
+          used_at: string | null
+          used_by_staff_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          location_id: string
+          member_id: string
+          token: string
+          token_type?: string | null
+          used_at?: string | null
+          used_by_staff_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          location_id?: string
+          member_id?: string
+          token?: string
+          token_type?: string | null
+          used_at?: string | null
+          used_by_staff_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_qr_tokens_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_qr_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_qr_tokens_used_by_staff_id_fkey"
+            columns: ["used_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_bookings: {
+        Row: {
+          attended_at: string | null
+          booked_at: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string | null
+          id: string
+          member_id: string
+          member_package_id: string | null
+          notes: string | null
+          schedule_id: string
+          status: Database["public"]["Enums"]["booking_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          attended_at?: string | null
+          booked_at?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string | null
+          id?: string
+          member_id: string
+          member_package_id?: string | null
+          notes?: string | null
+          schedule_id: string
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          attended_at?: string | null
+          booked_at?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          member_package_id?: string | null
+          notes?: string | null
+          schedule_id?: string
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_member_package_id_fkey"
+            columns: ["member_package_id"]
+            isOneToOne: false
+            referencedRelation: "member_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_categories: {
         Row: {
           class_count: number | null
@@ -135,6 +263,54 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      class_waitlist: {
+        Row: {
+          created_at: string | null
+          expired_at: string | null
+          id: string
+          member_id: string
+          position: number
+          promoted_at: string | null
+          schedule_id: string
+          status: Database["public"]["Enums"]["waitlist_status"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          expired_at?: string | null
+          id?: string
+          member_id: string
+          position: number
+          promoted_at?: string | null
+          schedule_id: string
+          status?: Database["public"]["Enums"]["waitlist_status"] | null
+        }
+        Update: {
+          created_at?: string | null
+          expired_at?: string | null
+          id?: string
+          member_id?: string
+          position?: number
+          promoted_at?: string | null
+          schedule_id?: string
+          status?: Database["public"]["Enums"]["waitlist_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_waitlist_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_waitlist_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedule"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       classes: {
         Row: {
@@ -183,6 +359,123 @@ export type Database = {
           },
         ]
       }
+      event_outbox: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          last_error: string | null
+          max_retries: number | null
+          payload: Json
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string | null
+          status: Database["public"]["Enums"]["event_status"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          last_error?: string | null
+          max_retries?: number | null
+          payload?: Json
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: Database["public"]["Enums"]["event_status"] | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          max_retries?: number | null
+          payload?: Json
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: Database["public"]["Enums"]["event_status"] | null
+        }
+        Relationships: []
+      }
+      feature_flag_assignments: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          flag_id: string
+          id: string
+          location_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          flag_id: string
+          id?: string
+          location_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          flag_id?: string
+          id?: string
+          location_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_assignments_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_assignments_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          id: string
+          key: string
+          name: string
+          scope: Database["public"]["Enums"]["flag_scope"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          key: string
+          name: string
+          scope?: Database["public"]["Enums"]["flag_scope"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          key?: string
+          name?: string
+          scope?: Database["public"]["Enums"]["flag_scope"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string | null
@@ -230,6 +523,106 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      line_message_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          line_user_id: string
+          member_id: string | null
+          message_type: string
+          payload: Json | null
+          retry_count: number | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["message_status"] | null
+          template_key: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          line_user_id: string
+          member_id?: string | null
+          message_type: string
+          payload?: Json | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status"] | null
+          template_key?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          line_user_id?: string
+          member_id?: string | null
+          message_type?: string
+          payload?: Json | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status"] | null
+          template_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_message_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      line_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_login_at: string | null
+          line_display_name: string | null
+          line_id_token: string | null
+          line_picture_url: string | null
+          line_user_id: string
+          linked_at: string | null
+          member_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          line_display_name?: string | null
+          line_id_token?: string | null
+          line_picture_url?: string | null
+          line_user_id: string
+          linked_at?: string | null
+          member_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          line_display_name?: string | null
+          line_id_token?: string | null
+          line_picture_url?: string | null
+          line_user_id?: string
+          linked_at?: string | null
+          member_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_users_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       locations: {
         Row: {
@@ -717,6 +1110,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      package_usage_ledger: {
+        Row: {
+          balance_after: number
+          created_at: string | null
+          created_by: string | null
+          delta_sessions: number
+          id: string
+          member_package_id: string
+          note: string | null
+          reference_id: string | null
+          reference_type: string | null
+          usage_type: Database["public"]["Enums"]["usage_type_ledger"]
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string | null
+          created_by?: string | null
+          delta_sessions: number
+          id?: string
+          member_package_id: string
+          note?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          usage_type: Database["public"]["Enums"]["usage_type_ledger"]
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string | null
+          created_by?: string | null
+          delta_sessions?: number
+          id?: string
+          member_package_id?: string
+          note?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          usage_type?: Database["public"]["Enums"]["usage_type_ledger"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_usage_ledger_member_package_id_fkey"
+            columns: ["member_package_id"]
+            isOneToOne: false
+            referencedRelation: "member_packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       packages: {
         Row: {
@@ -1283,8 +1723,11 @@ export type Database = {
         | "level_4_master"
       announcement_status: "active" | "scheduled" | "completed"
       app_role: "owner" | "admin" | "trainer" | "front_desk"
+      booking_status: "booked" | "cancelled" | "attended" | "no_show"
       class_level: "all_levels" | "beginner" | "intermediate" | "advanced"
       class_type: "class" | "pt"
+      event_status: "pending" | "processing" | "done" | "failed"
+      flag_scope: "global" | "location" | "user"
       gender: "male" | "female" | "other"
       lead_status:
         | "new"
@@ -1294,6 +1737,7 @@ export type Database = {
         | "converted"
       location_status: "open" | "closed"
       member_status: "active" | "suspended" | "on_hold" | "inactive"
+      message_status: "pending" | "sent" | "failed"
       notification_type:
         | "booking_confirmed"
         | "class_cancellation"
@@ -1312,6 +1756,8 @@ export type Database = {
       staff_status: "active" | "pending" | "terminated"
       transaction_status: "paid" | "pending" | "voided" | "needs_review"
       usage_type: "class_only" | "gym_checkin_only" | "both"
+      usage_type_ledger: "checkin" | "booking" | "pt_session" | "adjustment"
+      waitlist_status: "waiting" | "promoted" | "expired" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1447,8 +1893,11 @@ export const Constants = {
       ],
       announcement_status: ["active", "scheduled", "completed"],
       app_role: ["owner", "admin", "trainer", "front_desk"],
+      booking_status: ["booked", "cancelled", "attended", "no_show"],
       class_level: ["all_levels", "beginner", "intermediate", "advanced"],
       class_type: ["class", "pt"],
+      event_status: ["pending", "processing", "done", "failed"],
+      flag_scope: ["global", "location", "user"],
       gender: ["male", "female", "other"],
       lead_status: [
         "new",
@@ -1459,6 +1908,7 @@ export const Constants = {
       ],
       location_status: ["open", "closed"],
       member_status: ["active", "suspended", "on_hold", "inactive"],
+      message_status: ["pending", "sent", "failed"],
       notification_type: [
         "booking_confirmed",
         "class_cancellation",
@@ -1478,6 +1928,8 @@ export const Constants = {
       staff_status: ["active", "pending", "terminated"],
       transaction_status: ["paid", "pending", "voided", "needs_review"],
       usage_type: ["class_only", "gym_checkin_only", "both"],
+      usage_type_ledger: ["checkin", "booking", "pt_session", "adjustment"],
+      waitlist_status: ["waiting", "promoted", "expired", "cancelled"],
     },
   },
 } as const
