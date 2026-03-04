@@ -385,6 +385,10 @@ export default {
     manage: 'Manage',
     recentPackage: 'Recent Package',
     lastAttended: 'Last Attended',
+    engagement: 'Engagement',
+    engagementHigh: 'High',
+    engagementMedium: 'Medium',
+    engagementLow: 'Low',
     addInjury: 'Add injury',
     markRecovered: 'Mark recovered',
     activeInjury: 'Active',
@@ -1702,5 +1706,21 @@ export default {
     people: 'People',
     quickActions: 'Quick Actions',
     goTo: 'Go to',
+  },
+
+  // Daily Briefing
+  dailyBriefing: {
+    title: 'Daily Briefing',
+    loading: 'Generating briefing...',
+    error: 'Could not load briefing. Try refreshing.',
+  },
+
+  // Revenue Forecast
+  revenueForecast: {
+    title: 'Revenue Forecast',
+    lastMonth: 'Last month',
+    thisMonth: 'This month',
+    nextMonth: 'Next month',
+    projected: 'est.',
   },
 };
