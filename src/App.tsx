@@ -19,6 +19,7 @@ import Packages from "./pages/Packages";
 import CreatePackage from "./pages/CreatePackage";
 import PackageDetails from "./pages/PackageDetails";
 import Promotions from "./pages/Promotions";
+import PromotionDetails from "./pages/PromotionDetails";
 import Schedule from "./pages/Schedule";
 import Rooms from "./pages/Rooms";
 import Classes from "./pages/Classes";
@@ -97,6 +98,7 @@ const App = () => (
                 <Route path="package/create" element={<CreatePackage />} />
                 <Route path="package/:id" element={<PackageDetails />} />
                 <Route path="promotion" element={<Promotions />} />
+                <Route path="promotion/:id" element={<PromotionDetails />} />
                 <Route path="calendar" element={<Schedule />} />
                 <Route path="room" element={<Rooms />} />
                 <Route path="class" element={<Classes />} />
