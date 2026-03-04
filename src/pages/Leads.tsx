@@ -6,9 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getDateLocale } from '@/lib/formatters';
 import { useLeads } from '@/hooks/useLeads';
+import { useLocations } from '@/hooks/useLocations';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
 import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
+import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import type { MemberWizardFormData } from '@/components/members/wizard/types';
 import {
@@ -17,8 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Upload, Download, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportLeads } from '@/lib/exportCsv';
 
 type Lead = Tables<'leads'>;
 
@@ -28,14 +31,20 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [convertLead, setConvertLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useLeads(search, statusFilter);
-
-  // When filtering by status, we use the full dataset for tab counts but filter for display
+  const { data: locations } = useLocations();
   const { data: allLeads } = useLeads(search);
   const displayLeads = leads || [];
+
+  const locationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    locations?.forEach(l => map.set(l.id, l.name));
+    return map;
+  }, [locations]);
 
   const tabsWithCounts: StatusTab[] = useMemo(() => {
     const all = allLeads || [];
@@ -69,6 +78,15 @@ const Leads = () => {
     setConvertDialogOpen(true);
   };
 
+  const handleExport = () => {
+    if (!displayLeads.length) {
+      toast.info(t('common.noData'));
+      return;
+    }
+    exportLeads(displayLeads as any);
+    toast.success(t('leads.exportSuccess'));
+  };
+
   const convertInitialData: Partial<MemberWizardFormData> | undefined = convertLead
     ? {
         firstName: convertLead.first_name,
@@ -78,7 +96,7 @@ const Leads = () => {
         email: convertLead.email || '',
         gender: (convertLead.gender as 'male' | 'female' | 'other') || undefined,
         dateOfBirth: convertLead.date_of_birth || '',
-        address: convertLead.address || '',
+        address: (convertLead as any).address_1 || convertLead.address || '',
         source: convertLead.source || '',
         notes: convertLead.notes || '',
       }
@@ -109,6 +127,12 @@ const Leads = () => {
           {row.status?.replace('_', ' ') || 'new'}
         </StatusBadge>
       ),
+    },
+    { key: 'source', header: t('leads.source'), cell: (row) => row.source ? t(`leads.sourceOptions.${row.source}` as any) || row.source : '-' },
+    {
+      key: 'location',
+      header: t('lobby.location'),
+      cell: (row) => row.register_location_id ? locationMap.get(row.register_location_id) || '-' : '-',
     },
     { key: 'timesContacted', header: t('leads.timesContacted'), cell: (row) => row.times_contacted || 0 },
     { 
@@ -151,9 +175,29 @@ const Leads = () => {
         title={t('leads.title')}
         breadcrumbs={[{ label: t('nav.client') }, { label: t('leads.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateDialogOpen(true)}>
-            {t('leads.createLead')}
-          </Button>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t('common.manage')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t('leads.importCsv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('leads.exportCsv')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateDialogOpen(true)}>
+              {t('leads.createLead')}
+            </Button>
+          </div>
         }
       />
 
@@ -184,6 +228,7 @@ const Leads = () => {
       )}
 
       <CreateLeadDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <ImportLeadsDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
 
       <CreateMemberDialog
         open={convertDialogOpen}

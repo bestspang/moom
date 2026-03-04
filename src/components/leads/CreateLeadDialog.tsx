@@ -5,12 +5,15 @@ import { z } from 'zod';
 import {
   personProfileSchema,
   personContactSchema,
-  personAddressSchema,
+  emergencyContactSchema,
+  medicalInfoSchema,
+  consentInfoSchema,
 } from '@/lib/personSchemas';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCreateLead } from '@/hooks/useLeads';
 import { useLocations } from '@/hooks/useLocations';
+import { usePackages } from '@/hooks/usePackages';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -29,6 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Drawer,
@@ -48,6 +57,18 @@ interface CreateLeadDialogProps {
 
 const SOURCE_OPTIONS = ['walk_in', 'referral', 'social_media', 'website', 'other'] as const;
 
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
+  <Collapsible defaultOpen={defaultOpen}>
+    <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium text-foreground hover:text-primary transition-colors group">
+      {title}
+      <ChevronDown className="h-4 w-4 text-muted-foreground group-data-[state=open]:rotate-180 transition-transform" />
+    </CollapsibleTrigger>
+    <CollapsibleContent className="space-y-4 pt-2">
+      {children}
+    </CollapsibleContent>
+  </Collapsible>
+);
+
 export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
   open,
   onOpenChange,
@@ -55,15 +76,26 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
   const { t } = useLanguage();
   const createLead = useCreateLead();
   const { data: locations } = useLocations();
+  const { data: packages } = usePackages();
   const isMobile = useIsMobile();
 
   const leadSchema = useMemo(() => personProfileSchema(t)
     .merge(personContactSchema(t))
-    .merge(personAddressSchema())
+    .merge(emergencyContactSchema())
+    .merge(medicalInfoSchema())
+    .merge(consentInfoSchema())
     .merge(z.object({
       source: z.string().optional(),
       registerLocationId: z.string().optional(),
-      notes: z.string().max(2000).optional(),
+      notes: z.string().max(2000).optional().or(z.literal('')),
+      internalNotes: z.string().max(2000).optional().or(z.literal('')),
+      address1: z.string().max(500).optional().or(z.literal('')),
+      address2: z.string().max(500).optional().or(z.literal('')),
+      subdistrict: z.string().max(100).optional().or(z.literal('')),
+      district: z.string().max(100).optional().or(z.literal('')),
+      province: z.string().max(100).optional().or(z.literal('')),
+      postalCode: z.string().max(10).optional().or(z.literal('')),
+      packageInterestId: z.string().optional(),
     }))
     .refine(
       (data) => (data.phone && data.phone.trim().length > 0) || (data.email && data.email.trim().length > 0),
@@ -81,9 +113,15 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
     formState: { errors },
   } = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
+    defaultValues: {
+      hasMedicalConditions: false,
+      allowPhysicalContact: false,
+    },
   });
 
   const formValues = watch();
+  const hasMedical = watch('hasMedicalConditions');
+  const allowContact = watch('allowPhysicalContact');
 
   // Save draft on change
   useEffect(() => {
@@ -104,7 +142,7 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
         if (saved) {
           const draft = JSON.parse(saved) as LeadFormData;
           Object.entries(draft).forEach(([key, value]) => {
-            if (value) setValue(key as any, value);
+            if (value !== undefined && value !== null) setValue(key as any, value);
           });
           toast.info(t('leads.draftRestored'));
         }
@@ -129,9 +167,23 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
         date_of_birth: data.dateOfBirth || null,
         source: data.source || null,
         register_location_id: data.registerLocationId || null,
-        address: data.address || null,
         notes: data.notes || null,
-      });
+        address_1: data.address1 || null,
+        address_2: data.address2 || null,
+        subdistrict: data.subdistrict || null,
+        district: data.district || null,
+        province: data.province || null,
+        postal_code: data.postalCode || null,
+        emergency_first_name: data.emergencyContactName || null,
+        emergency_phone: data.emergencyContactPhone || null,
+        emergency_relationship: data.emergencyRelationship || null,
+        has_medical_conditions: data.hasMedicalConditions || false,
+        medical_notes: data.medicalNotes || null,
+        allow_physical_contact: data.allowPhysicalContact || false,
+        physical_contact_notes: data.physicalContactNotes || null,
+        internal_notes: data.internalNotes || null,
+        package_interest_id: data.packageInterestId || null,
+      } as any);
 
       localStorage.removeItem(DRAFT_KEY);
       onOpenChange(false);
@@ -145,51 +197,41 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <p className="text-xs text-muted-foreground mb-4">{t('form.requiredFieldsNote')}</p>
 
-      {/* Name */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="lead-firstName">{t('auth.firstName')} *</Label>
-          <Input
-            id="lead-firstName"
-            {...register('firstName')}
-            className={errors.firstName ? 'border-destructive' : ''}
-          />
-          {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+      {/* Profile — always open */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="lead-firstName">{t('auth.firstName')} *</Label>
+            <Input id="lead-firstName" {...register('firstName')} className={errors.firstName ? 'border-destructive' : ''} />
+            {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lead-lastName">{t('auth.lastName')}</Label>
+            <Input id="lead-lastName" {...register('lastName')} />
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lead-lastName">{t('auth.lastName')}</Label>
-          <Input id="lead-lastName" {...register('lastName')} />
+          <Label htmlFor="lead-nickname">{t('form.nickname')}</Label>
+          <Input id="lead-nickname" {...register('nickname')} />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="lead-nickname">{t('form.nickname')}</Label>
-        <Input id="lead-nickname" {...register('nickname')} />
-      </div>
-
-      {/* Contact */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="lead-phone">{t('leads.contactNumber')} *</Label>
-          <Input
-            id="lead-phone"
-            {...register('phone')}
-            className={errors.phone ? 'border-destructive' : ''}
-          />
-          {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+      {/* Contact — always open */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="lead-phone">{t('leads.contactNumber')} *</Label>
+            <Input id="lead-phone" {...register('phone')} className={errors.phone ? 'border-destructive' : ''} />
+            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lead-email">{t('leads.email')}</Label>
+            <Input id="lead-email" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lead-email">{t('leads.email')}</Label>
-          <Input
-            id="lead-email"
-            type="email"
-            {...register('email')}
-            className={errors.email ? 'border-destructive' : ''}
-          />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-        </div>
+        <p className="text-xs text-muted-foreground -mt-2">{t('leads.phoneOrEmailRequired')}</p>
       </div>
-      <p className="text-xs text-muted-foreground -mt-2">{t('leads.phoneOrEmailRequired')}</p>
 
       {/* Gender & DOB */}
       <div className="grid grid-cols-2 gap-4">
@@ -199,10 +241,8 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
         </div>
         <div className="space-y-2">
           <Label>{t('form.gender')}</Label>
-          <Select onValueChange={(value) => setValue('gender', value as any)}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('form.selectGender')} />
-            </SelectTrigger>
+          <Select onValueChange={(value) => setValue('gender', value as any)} value={formValues.gender || undefined}>
+            <SelectTrigger><SelectValue placeholder={t('form.selectGender')} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="male">{t('form.male')}</SelectItem>
               <SelectItem value="female">{t('form.female')}</SelectItem>
@@ -216,10 +256,8 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>{t('leads.source')}</Label>
-          <Select onValueChange={(value) => setValue('source', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('leads.selectSource')} />
-            </SelectTrigger>
+          <Select onValueChange={(value) => setValue('source', value)} value={formValues.source || undefined}>
+            <SelectTrigger><SelectValue placeholder={t('leads.selectSource')} /></SelectTrigger>
             <SelectContent>
               {SOURCE_OPTIONS.map((s) => (
                 <SelectItem key={s} value={s}>{t(`leads.sourceOptions.${s}`)}</SelectItem>
@@ -228,11 +266,9 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>{t('lobby.location')}</Label>
-          <Select onValueChange={(value) => setValue('registerLocationId', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('leads.selectLocation')} />
-            </SelectTrigger>
+          <Label>{t('lobby.location')} *</Label>
+          <Select onValueChange={(value) => setValue('registerLocationId', value)} value={formValues.registerLocationId || undefined}>
+            <SelectTrigger><SelectValue placeholder={t('leads.selectLocation')} /></SelectTrigger>
             <SelectContent>
               {locations?.map((loc) => (
                 <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
@@ -242,27 +278,116 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
         </div>
       </div>
 
-      {/* Address */}
-      <div className="space-y-2">
-        <Label htmlFor="lead-address">{t('form.address')}</Label>
-        <Input id="lead-address" {...register('address')} />
-      </div>
+      {/* Address — collapsible */}
+      <CollapsibleSection title={t('leads.addressSection')}>
+        <div className="space-y-2">
+          <Label>{t('leads.address1')}</Label>
+          <Input {...register('address1')} />
+        </div>
+        <div className="space-y-2">
+          <Label>{t('leads.address2')}</Label>
+          <Input {...register('address2')} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('leads.subdistrict')}</Label>
+            <Input {...register('subdistrict')} />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('leads.district')}</Label>
+            <Input {...register('district')} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('leads.province')}</Label>
+            <Input {...register('province')} />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('leads.postalCode')}</Label>
+            <Input {...register('postalCode')} />
+          </div>
+        </div>
+      </CollapsibleSection>
 
-      {/* Notes */}
-      <div className="space-y-2">
-        <Label htmlFor="lead-notes">{t('leads.notes')}</Label>
-        <Textarea id="lead-notes" {...register('notes')} rows={3} />
-      </div>
+      {/* Emergency Contact — collapsible */}
+      <CollapsibleSection title={t('leads.emergencySection')}>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('leads.emergencyName')}</Label>
+            <Input {...register('emergencyContactName')} />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('leads.emergencyPhone')}</Label>
+            <Input {...register('emergencyContactPhone')} />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>{t('leads.emergencyRelationship')}</Label>
+          <Input {...register('emergencyRelationship')} />
+        </div>
+      </CollapsibleSection>
+
+      {/* Medical — collapsible */}
+      <CollapsibleSection title={t('leads.medicalSection')}>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={hasMedical || false}
+            onCheckedChange={(v) => setValue('hasMedicalConditions', v)}
+          />
+          <Label>{t('leads.hasMedicalConditions')}</Label>
+        </div>
+        {hasMedical && (
+          <div className="space-y-2">
+            <Label>{t('leads.medicalNotes')}</Label>
+            <Textarea {...register('medicalNotes')} rows={2} />
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* Consent — collapsible */}
+      <CollapsibleSection title={t('leads.consentSection')}>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={allowContact || false}
+            onCheckedChange={(v) => setValue('allowPhysicalContact', v)}
+          />
+          <Label>{t('leads.allowPhysicalContact')}</Label>
+        </div>
+        {allowContact && (
+          <div className="space-y-2">
+            <Label>{t('leads.physicalContactNotes')}</Label>
+            <Textarea {...register('physicalContactNotes')} rows={2} />
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* Other — collapsible */}
+      <CollapsibleSection title={t('leads.otherSection')}>
+        <div className="space-y-2">
+          <Label>{t('leads.packageInterest')}</Label>
+          <Select onValueChange={(value) => setValue('packageInterestId', value)} value={formValues.packageInterestId || undefined}>
+            <SelectTrigger><SelectValue placeholder={t('leads.selectPackage')} /></SelectTrigger>
+            <SelectContent>
+              {packages?.map((pkg) => (
+                <SelectItem key={pkg.id} value={pkg.id}>{pkg.name_en}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>{t('leads.internalNotes')}</Label>
+          <Textarea {...register('internalNotes')} rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label>{t('leads.notes')}</Label>
+          <Textarea {...register('notes')} rows={2} />
+        </div>
+      </CollapsibleSection>
 
       {/* Actions */}
       <div className="flex justify-between pt-4">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={clearDraft}
-          className="text-muted-foreground"
-        >
+        <Button type="button" variant="ghost" size="sm" onClick={clearDraft} className="text-muted-foreground">
           <Trash2 className="mr-1 h-4 w-4" />
           {t('leads.discardDraft')}
         </Button>

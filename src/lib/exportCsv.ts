@@ -67,3 +67,37 @@ export function exportMembers(members: ExportableMember[]): void {
   const date = new Date().toISOString().split('T')[0];
   exportToCsv(members, columns, `members-export-${date}`);
 }
+
+// Exportable lead type
+export interface ExportableLead {
+  first_name: string;
+  last_name: string | null;
+  nickname: string | null;
+  phone: string | null;
+  email: string | null;
+  status: string | null;
+  temperature?: string | null;
+  times_contacted: number | null;
+  last_contacted: string | null;
+  last_attended: string | null;
+  source: string | null;
+}
+
+export function exportLeads(leads: ExportableLead[]): void {
+  const columns: CsvColumn<ExportableLead>[] = [
+    { key: 'first_name', header: 'First Name', accessor: (r) => r.first_name },
+    { key: 'last_name', header: 'Last Name', accessor: (r) => r.last_name },
+    { key: 'nickname', header: 'Nickname', accessor: (r) => r.nickname },
+    { key: 'phone', header: 'Phone', accessor: (r) => r.phone },
+    { key: 'email', header: 'Email', accessor: (r) => r.email },
+    { key: 'status', header: 'Status', accessor: (r) => r.status },
+    { key: 'temperature', header: 'Temperature', accessor: (r) => r.temperature ?? '' },
+    { key: 'times_contacted', header: 'Times Contacted', accessor: (r) => r.times_contacted },
+    { key: 'last_contacted', header: 'Last Contacted', accessor: (r) => r.last_contacted ? new Date(r.last_contacted).toLocaleDateString() : '' },
+    { key: 'last_attended', header: 'Last Attended', accessor: (r) => r.last_attended ? new Date(r.last_attended).toLocaleDateString() : '' },
+    { key: 'source', header: 'Source', accessor: (r) => r.source },
+  ];
+
+  const date = new Date().toISOString().split('T')[0];
+  exportToCsv(leads, columns, `leads-export-${date}`);
+}
