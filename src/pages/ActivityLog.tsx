@@ -4,6 +4,7 @@ import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useActivityLogs, formatValueChange, ALL_EVENT_TYPES } from '@/hooks/useActivityLog';
 import { PageHeader, DateRangePicker, EmptyState } from '@/components/common';
+import { SearchBar } from '@/components/common/SearchBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-const PER_PAGE = 25;
+const PER_PAGE = 50;
 
 const ActivityLog = () => {
   const { t, language } = useLanguage();
@@ -29,12 +30,14 @@ const ActivityLog = () => {
     end: new Date(),
   });
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const { data: result, isLoading } = useActivityLogs({
     startDate: dateRange.start,
     endDate: dateRange.end,
     eventTypes: selectedEventTypes,
+    search,
     page,
     perPage: PER_PAGE,
   });
@@ -83,7 +86,6 @@ const ActivityLog = () => {
   const getEventTypeLabel = (eventType: string): string => {
     const key = `activityLog.eventTypes.${eventType}`;
     const translated = t(key);
-    // Fallback to formatted event_type if no translation
     return translated !== key ? translated : eventType.replace(/_/g, ' ');
   };
 
@@ -105,6 +107,16 @@ const ActivityLog = () => {
             setDateRange(range);
             setPage(1);
           }}
+        />
+
+        <SearchBar
+          placeholder={t('common.search')}
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          className="w-64"
         />
 
         <Popover>

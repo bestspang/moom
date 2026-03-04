@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { startOfDay, endOfDay } from 'date-fns';
 
 export interface ActivityLogEntry {
@@ -27,6 +28,7 @@ export interface UseActivityLogsParams {
   startDate?: Date;
   endDate?: Date;
   eventTypes?: string[];
+  search?: string;
   page?: number;
   perPage?: number;
 }
@@ -83,11 +85,15 @@ export const useActivityLogs = ({
   startDate,
   endDate,
   eventTypes = [],
+  search = '',
   page = 1,
-  perPage = 25,
+  perPage = 50,
 }: UseActivityLogsParams = {}) => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['activity-logs', startDate?.toISOString(), endDate?.toISOString(), eventTypes, page, perPage],
+    queryKey: ['activity-logs', startDate?.toISOString(), endDate?.toISOString(), eventTypes, search, page, perPage],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('activity_log')
@@ -121,6 +127,9 @@ export const useActivityLogs = ({
       }
       if (eventTypes.length > 0) {
         query = query.in('event_type', eventTypes);
+      }
+      if (search.trim()) {
+        query = query.ilike('activity', `%${search.trim()}%`);
       }
 
       const from = (page - 1) * perPage;

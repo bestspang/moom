@@ -22,6 +22,7 @@ export type Database = {
           entity_type: string | null
           event_type: string
           id: string
+          location_id: string | null
           member_id: string | null
           new_value: Json | null
           old_value: Json | null
@@ -34,6 +35,7 @@ export type Database = {
           entity_type?: string | null
           event_type: string
           id?: string
+          location_id?: string | null
           member_id?: string | null
           new_value?: Json | null
           old_value?: Json | null
@@ -46,6 +48,7 @@ export type Database = {
           entity_type?: string | null
           event_type?: string
           id?: string
+          location_id?: string | null
           member_id?: string | null
           new_value?: Json | null
           old_value?: Json | null
