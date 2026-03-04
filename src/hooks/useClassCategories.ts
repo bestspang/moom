@@ -9,7 +9,6 @@ type ClassCategoryInsert = TablesInsert<'class_categories'>;
 type ClassCategoryUpdate = TablesUpdate<'class_categories'>;
 
 export type ClassCategoryWithCount = ClassCategory & {
-  name_th: string | null;
   computed_class_count: number;
 };
 
@@ -30,7 +29,7 @@ export const useClassCategories = (search?: string) => {
       if (error) throw error;
 
       // Map the joined count into a flat field
-      return (data as any[]).map((row) => ({
+      return (data ?? []).map((row: any) => ({
         ...row,
         computed_class_count: row.classes?.[0]?.count ?? 0,
       })) as ClassCategoryWithCount[];
@@ -106,7 +105,7 @@ export const useUpdateClassCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ClassCategoryUpdate }) => {
+    mutationFn: async ({ id, data, oldData }: { id: string; data: ClassCategoryUpdate; oldData?: Record<string, unknown> }) => {
       const { data: updated, error } = await supabase
         .from('class_categories')
         .update(data)
@@ -125,6 +124,7 @@ export const useUpdateClassCategory = () => {
         activity: `Class category "${updated.name}" updated`,
         entity_type: 'class_category',
         entity_id: variables.id,
+        old_value: variables.oldData ?? null,
         new_value: variables.data as Record<string, unknown>,
       });
       toast.success('Category updated successfully');
