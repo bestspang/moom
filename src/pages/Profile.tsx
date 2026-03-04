@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,15 +9,22 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 
 const Profile = () => {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const getUserInitials = () => {
     if (firstName && lastName) {
@@ -56,6 +63,53 @@ const Profile = () => {
     }
   };
 
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: t('profile.passwordMismatch'),
+      });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: 'Password must be at least 6 characters',
+      });
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: t('common.error'),
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: t('common.success'),
+          description: t('profile.passwordChanged'),
+        });
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } finally {
+      setIsPasswordLoading(false);
+    }
+  };
+
+  const accountCreatedAt = user?.created_at
+    ? format(new Date(user.created_at), 'd MMM yyyy', { locale: getDateLocale(language) })
+    : '-';
+
   return (
     <div>
       <PageHeader 
@@ -63,13 +117,13 @@ const Profile = () => {
         breadcrumbs={[{ label: t('profile.title') }]} 
       />
 
-      <div className="max-w-2xl">
+      <div className="max-w-2xl space-y-6">
+        {/* Account Info */}
         <Card>
           <CardHeader>
             <CardTitle>{t('profile.accountInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar Section */}
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl">
@@ -81,10 +135,12 @@ const Profile = () => {
                   {firstName} {lastName}
                 </p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('profile.accountSince')}: {accountCreatedAt}
+                </p>
               </div>
             </div>
 
-            {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">{t('auth.firstName')}</Label>
@@ -119,6 +175,64 @@ const Profile = () => {
               <Button onClick={handleSave} disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('common.save')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Language Preference */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {t('profile.languagePreference')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={language} onValueChange={(val) => setLanguage(val as 'en' | 'th')}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="th">ไทย</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Change Password */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('profile.changePassword')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">{t('profile.newPassword')}</Label>
+              <Input 
+                id="newPassword" 
+                type="password" 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">{t('profile.confirmPassword')}</Label>
+              <Input 
+                id="confirmPassword" 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button 
+                onClick={handlePasswordChange} 
+                disabled={isPasswordLoading || !newPassword || !confirmPassword}
+                variant="outline"
+              >
+                {isPasswordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('profile.changePassword')}
               </Button>
             </div>
           </CardContent>

@@ -173,7 +173,7 @@ const Schedule = () => {
           <Skeleton className="h-12 w-full" />
         </div>
       ) : filteredSchedule.length === 0 ? (
-        <EmptyState message={t('common.noData')} />
+        <EmptyState message={t('schedule.noClassesForDate')} />
       ) : (
         <DataTable
           columns={columns}

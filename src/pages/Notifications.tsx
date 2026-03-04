@@ -20,7 +20,6 @@ import { PageHeader, EmptyState } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -122,20 +121,20 @@ const Notifications = () => {
           ))}
         </div>
 
-        {/* Type filters */}
-        <div className="flex flex-wrap gap-3 items-center">
+        {/* Type filters — pill toggles */}
+        <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm text-muted-foreground">{t('common.filter')}:</span>
           {notificationTypes.map((type) => (
-            <label
+            <Button
               key={type}
-              className="flex items-center gap-2 text-sm cursor-pointer"
+              variant={typeFilters.includes(type) ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleTypeFilter(type)}
+              className="gap-1.5 h-8"
             >
-              <Checkbox
-                checked={typeFilters.includes(type)}
-                onCheckedChange={() => toggleTypeFilter(type)}
-              />
-              {getTypeLabel(type)}
-            </label>
+              {getNotificationIcon(type)}
+              <span className="text-xs">{getTypeLabel(type)}</span>
+            </Button>
           ))}
         </div>
       </div>

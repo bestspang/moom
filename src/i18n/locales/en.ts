@@ -334,6 +334,7 @@ export default {
     qrCheckin: 'Check-in QR Code',
     selectLocationFirst: 'Please select a location first',
     noPackage: 'No package / Walk-in',
+    noCheckins: 'No check-ins today',
     duplicateWarning: 'This member already checked in at this location today.',
     allowDuplicate: 'Allow anyway',
     downloadQR: 'Download',
@@ -736,6 +737,7 @@ export default {
       endTimeBeforeStart: 'End time must be after start time',
       roomNotFound: 'Room not found',
     },
+    noClassesForDate: 'No classes scheduled for this date',
   },
 
   // Rooms
@@ -773,6 +775,7 @@ export default {
       discard: 'Discard',
     },
     filterByCategory: 'Filter by category',
+    noRooms: 'No rooms created yet',
     detail: {
       backToList: 'Back to list',
     },
@@ -809,6 +812,7 @@ export default {
     bookingsThisWeek: 'Bookings this week',
     avgCapacity: 'Average capacity',
     totalBookings: 'Total bookings',
+    noClasses: 'No classes created yet',
   },
 
   // Categories
@@ -831,6 +835,7 @@ export default {
     title: 'Staff',
     searchPlaceholder: 'Search name or contact number',
     createStaff: 'Create staff',
+    noStaff: 'No staff members found',
     terminated: 'Terminated',
     contactNumber: 'Contact number',
     createSuccess: 'Staff member created successfully',
@@ -1073,6 +1078,7 @@ export default {
     soldTo: 'Sold to',
     soldAt: 'Sold at',
     amount: 'Amount',
+    noSlips: 'No transfer slips found',
   },
 
   // Finance
@@ -1098,6 +1104,7 @@ export default {
     bankTransfer: 'Bank transfer',
     creditCard: 'Credit card',
     promptpay: 'PromptPay',
+    noTransactions: 'No transactions found',
   },
 
   // Reports
@@ -1366,6 +1373,14 @@ export default {
     accountInfo: 'Account information',
     profileUpdated: 'Profile updated successfully',
     emailCannotChange: 'Email cannot be changed',
+    changePassword: 'Change password',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm new password',
+    passwordChanged: 'Password changed successfully',
+    passwordMismatch: 'Passwords do not match',
+    languagePreference: 'Language preference',
+    accountSince: 'Account created',
   },
 
   // Date/Time

@@ -72,11 +72,18 @@ const TransferSlips = () => {
     { 
       key: 'status', 
       header: t('common.status'), 
-      cell: (row) => (
-        <StatusBadge variant={getStatusVariant(row.status) as any}>
-          {row.status?.replace('_', ' ') || '-'}
-        </StatusBadge>
-      )
+      cell: (row) => {
+        const statusLabels: Record<string, string> = {
+          paid: t('transferSlips.paid'),
+          needs_review: t('transferSlips.needsReview'),
+          voided: t('transferSlips.voided'),
+        };
+        return (
+          <StatusBadge variant={getStatusVariant(row.status) as any}>
+            {statusLabels[row.status] || row.status || '-'}
+          </StatusBadge>
+        );
+      }
     },
   ];
 
@@ -114,7 +121,7 @@ const TransferSlips = () => {
           columns={columns}
           data={slips || []}
           rowKey={(row) => row.id}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('transferSlips.noSlips')}
         />
       )}
     </div>

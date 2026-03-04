@@ -861,7 +861,12 @@ const CreatePackage = () => {
                   label="Quantity"
                   value={watchAll.quantityType === 'infinite' ? 'Infinite' : watchAll.quantity || '-'}
                 />
-                <PreviewRow label="Access" value={watchAll.usageType.replace('_', ' ')} />
+                <PreviewRow label="Access" value={
+                  watchAll.usageType === 'class_only' ? t('packages.create.classOnly') :
+                  watchAll.usageType === 'gym_only' ? t('packages.create.gymCheckinOnly') :
+                  watchAll.usageType === 'both' ? t('packages.create.both') :
+                  watchAll.usageType
+                } />
 
                 <Separator />
 

@@ -149,7 +149,7 @@ const Classes = () => {
           data={classes || []}
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/class/${row.id}`)}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('classes.noClasses')}
           pagination={{ page, perPage, total }}
           onPageChange={setPage}
         />

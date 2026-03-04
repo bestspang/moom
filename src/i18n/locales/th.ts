@@ -334,6 +334,7 @@ export default {
     qrCheckin: 'QR Code เช็คอิน',
     selectLocationFirst: 'กรุณาเลือกสาขาก่อน',
     noPackage: 'ไม่มีแพ็คเกจ / Walk-in',
+    noCheckins: 'ไม่มีการเช็คอินวันนี้',
     duplicateWarning: 'สมาชิกนี้เช็คอินที่สาขานี้แล้ววันนี้',
     allowDuplicate: 'อนุญาตเช็คอินซ้ำ',
     downloadQR: 'ดาวน์โหลด',
@@ -736,6 +737,7 @@ export default {
       endTimeBeforeStart: 'เวลาสิ้นสุดต้องหลังเวลาเริ่มต้น',
       roomNotFound: 'ไม่พบห้อง',
     },
+    noClassesForDate: 'ไม่มีคลาสที่จัดไว้สำหรับวันนี้',
   },
 
   // Rooms
@@ -773,6 +775,7 @@ export default {
       discard: 'ละทิ้ง',
     },
     filterByCategory: 'กรองตามหมวดหมู่',
+    noRooms: 'ยังไม่มีห้อง',
     detail: {
       backToList: 'กลับไปรายการ',
     },
@@ -809,6 +812,7 @@ export default {
     bookingsThisWeek: 'การจองสัปดาห์นี้',
     avgCapacity: 'ความจุเฉลี่ย',
     totalBookings: 'การจองทั้งหมด',
+    noClasses: 'ยังไม่มีคลาส',
   },
 
   // Categories
@@ -831,6 +835,7 @@ export default {
     title: 'พนักงาน',
     searchPlaceholder: 'ค้นหาชื่อหรือเบอร์โทร',
     createStaff: 'สร้างพนักงาน',
+    noStaff: 'ไม่พบพนักงาน',
     terminated: 'สิ้นสุดการจ้าง',
     contactNumber: 'เบอร์โทรศัพท์',
     createSuccess: 'สร้างพนักงานสำเร็จ',
@@ -1073,6 +1078,7 @@ export default {
     soldTo: 'ขายให้',
     soldAt: 'ขายที่',
     amount: 'จำนวนเงิน',
+    noSlips: 'ไม่พบสลิปโอนเงิน',
   },
 
   // Finance
@@ -1098,6 +1104,7 @@ export default {
     bankTransfer: 'โอนเงิน',
     creditCard: 'บัตรเครดิต',
     promptpay: 'พร้อมเพย์',
+    noTransactions: 'ไม่พบรายการธุรกรรม',
   },
 
   // Reports
@@ -1366,6 +1373,14 @@ export default {
     accountInfo: 'ข้อมูลบัญชี',
     profileUpdated: 'อัปเดตโปรไฟล์สำเร็จ',
     emailCannotChange: 'ไม่สามารถเปลี่ยนอีเมลได้',
+    changePassword: 'เปลี่ยนรหัสผ่าน',
+    currentPassword: 'รหัสผ่านปัจจุบัน',
+    newPassword: 'รหัสผ่านใหม่',
+    confirmPassword: 'ยืนยันรหัสผ่านใหม่',
+    passwordChanged: 'เปลี่ยนรหัสผ่านสำเร็จ',
+    passwordMismatch: 'รหัสผ่านไม่ตรงกัน',
+    languagePreference: 'ภาษาที่ต้องการ',
+    accountSince: 'สร้างบัญชีเมื่อ',
   },
 
   // Date/Time

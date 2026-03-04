@@ -228,7 +228,11 @@ const PromotionDetails = () => {
             </div>
             <div>
               <dt className="text-muted-foreground">{t('promotions.type')}</dt>
-              <dd className="font-medium capitalize">{promo.type?.replace('_', ' ')}</dd>
+              <dd className="font-medium capitalize">{
+                promo.type === 'discount' ? t('promotions.discount') :
+                promo.type === 'promo_code' ? t('promotions.promoCode') :
+                promo.type || '-'
+              }</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{t('promotions.discount')}</dt>

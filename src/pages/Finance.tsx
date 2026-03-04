@@ -109,11 +109,19 @@ const Finance = () => {
     { 
       key: 'status', 
       header: t('common.status'), 
-      cell: (row) => (
-        <StatusBadge variant={getStatusVariant(row.status) as any}>
-          {row.status?.replace('_', ' ') || '-'}
-        </StatusBadge>
-      )
+      cell: (row) => {
+        const statusLabels: Record<string, string> = {
+          paid: t('transferSlips.paid'),
+          pending: t('common.pending'),
+          needs_review: t('transferSlips.needsReview'),
+          voided: t('transferSlips.voided'),
+        };
+        return (
+          <StatusBadge variant={getStatusVariant(row.status) as any}>
+            {statusLabels[row.status] || row.status || '-'}
+          </StatusBadge>
+        );
+      }
     },
   ];
 
@@ -205,7 +213,7 @@ const Finance = () => {
           columns={columns}
           data={paginatedData}
           rowKey={(row) => row.id}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('finance.noTransactions')}
           emptyVariant="finance"
           pagination={{
             page,
