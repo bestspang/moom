@@ -1,58 +1,76 @@
 
 
-# QR Check-in Redemption Page — Plan
+# Schedule Module Data Completion Plan
 
-## Summary
+## Current State Analysis
 
-Create a public page at `/checkin?token=...` that validates a QR token and completes the check-in. Since the QR is location-only (no member_id), the page needs member identification — either via existing auth session or a simple member lookup form.
+The Schedule module already has solid infrastructure:
+- **Schedule CRUD** with server-side validation RPC (`create_schedule_with_validation`)
+- **BookingManagementDialog** with add member, cancel booking, mark attendance, waitlist management
+- **useClassBookings** with full booking/waitlist hooks + activity logging
+- **Realtime sync** covers `schedule`, `class_bookings`, `class_waitlist`, `member_attendance`
 
-## Current State
+## Key Gaps (verified from code)
 
-- `useValidateQRToken` in `useCheckinQR.ts` already handles: token validation, marking used, creating `member_attendance` row
-- QR tokens are generated without `member_id` (location-only)
-- No `/checkin` route or page exists
-- The page must be **public** (not behind `ProtectedRoute`) since members scan from their phone
+### Gap 1: Mark Attended doesn't create cross-module records
+`useMarkAttendance` (line 202-244 in useClassBookings.ts) only updates `class_bookings.status`. It does NOT:
+- Create a `member_attendance` row (so Dashboard/Lobby/MemberDetails don't see it)
+- Create a `package_usage_ledger` entry (so session balance isn't deducted)
 
-## Changes
+### Gap 2: Schedule list shows stale `checked_in` field
+`Schedule.tsx` availability column shows `schedule.checked_in` (a static integer) rather than actual booking counts. This value is never updated by booking mutations.
 
-### 1. Create `src/pages/CheckinRedeem.tsx`
+### Gap 3: No search on schedule list
+No way to filter by class name, trainer name, or room name.
 
-Public page that:
-- Reads `token` from URL search params
-- Validates token immediately on load (check exists, not expired, not used) — read-only check first
-- Shows location name from token data
-- **Member identification**: Simple form asking for phone number or member ID to look up the member
-  - Query `members` table by phone/member_id match
-  - On match, call `useValidateQRToken` with token + memberId
-- States: loading → token info → member input → success / error
-- Success screen: checkmark animation, "You're checked in at {location}!" message
-- Error states: expired, already used, invalid, member not found
+### Gap 4: No schedule-level cancellation
+No UI/logic to cancel an entire schedule (mark status='cancelled' and cancel all bookings).
 
-### 2. Add route in `App.tsx`
+### Gap 5: No data contract doc
 
-Add `/checkin` as a public route (alongside `/login`, `/signup`):
-```
-<Route path="/checkin" element={<CheckinRedeem />} />
-```
+## Implementation Plan
 
-### 3. Add member lookup query in `useCheckinQR.ts`
+### 1. No DB migration needed
+All required tables/columns already exist: `schedule`, `class_bookings`, `class_waitlist`, `member_attendance` (with `checkin_method`, `created_by`, `schedule_id`), `package_usage_ledger`.
 
-Add `useTokenInfo(token)` — fetches token data + location name without marking as used:
-- Query `checkin_qr_tokens` joined with `locations` by token string
-- Returns token status (valid/expired/used) + location name
+### 2. Update `useMarkAttendance` to create attendance + ledger
+When marking a booking as `attended`:
+- Insert `member_attendance` row with `usage_type='class'`, `checkin_method='manual'`, `schedule_id`, `member_package_id` from the booking
+- If `member_package_id` exists and package has sessions, insert `package_usage_ledger` entry with `delta_sessions=-1`, `usage_type='booking'`, `reference_type='schedule'`
+- Invalidate additional query keys: `member-attendance`, `package-usage`, `dashboard-stats`, `check-ins`
 
-### 4. i18n keys (EN + TH)
+### 3. Compute availability from bookings instead of `checked_in`
+Update `useScheduleByDate` to also fetch booking counts per schedule. Two approaches:
+- **Chosen**: Add a lightweight parallel query that fetches `class_bookings` counts grouped by `schedule_id` for the date's schedules, then merge into the schedule data
+- This avoids N+1 and doesn't require a new RPC
 
-Keys for: page title, enter phone/member ID, check in button, success message, expired/used/invalid errors
+Update `ScheduleWithRelations` type to include `booked_count` and `attended_count`.
 
-## Files
+### 4. Add search to Schedule page
+Add a `SearchBar` component to the Schedule page that filters `filteredSchedule` client-side by class name, trainer name, or room name (data is already loaded).
 
-| Action | File |
-|--------|------|
-| Create | `src/pages/CheckinRedeem.tsx` |
-| Modify | `src/App.tsx` — add public route |
-| Modify | `src/hooks/useCheckinQR.ts` — add `useTokenInfo` query |
-| Modify | `src/i18n/locales/en.ts` + `th.ts` — add checkin keys |
+### 5. Add schedule cancellation
+Add a "Cancel Class" button in `BookingManagementDialog` that:
+- Updates `schedule.status = 'cancelled'`
+- Batch-cancels all `booked` bookings for that schedule
+- Logs `schedule_cancelled` activity
+- Closes dialog
 
-No DB migration needed — all tables and columns exist.
+### 6. Create data contract doc
+
+### 7. Add i18n keys for new UI elements
+
+## Files to modify
+
+| File | Change |
+|------|--------|
+| `src/hooks/useClassBookings.ts` | Expand `useMarkAttendance` to create `member_attendance` + `package_usage_ledger` |
+| `src/hooks/useSchedule.ts` | Add booking count aggregation to `useScheduleByDate`; add `useCancelSchedule` mutation |
+| `src/pages/Schedule.tsx` | Add search bar; update availability column to use booking counts |
+| `src/components/schedule/BookingManagementDialog.tsx` | Add cancel schedule button |
+| `src/i18n/locales/en.ts` | Add keys: `schedule.cancelClass`, `schedule.cancelClassConfirm`, `schedule.search` |
+| `src/i18n/locales/th.ts` | Same Thai keys |
+| `docs/data-contract-schedule.md` | Create data contract |
+
+No database migration. No new dependencies. No breaking changes to existing flows.
 
