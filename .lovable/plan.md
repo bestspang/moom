@@ -1,36 +1,81 @@
 
 
-# Fix: Import Error Visibility
+# Member Details Data Completion Plan
 
-## Problem
-The preview table (Step 3) and done screen (Step 5) don't clearly show which rows have errors:
+## Current State Analysis
 
-1. **Preview**: Only shows the first error per row as a tiny badge — if there are multiple errors, the rest are hidden. No summary of total errors vs valid rows.
-2. **Done screen**: Shows failed count but the error list is only available via CSV download — user can't see inline which rows failed or why.
+**What works:**
+- All 8 DB tables exist with correct schemas (members, member_attendance, member_packages, member_billing, member_notes, member_injuries, member_suspensions, member_contracts)
+- All query hooks load data correctly from DB
+- Notes tab has create mutation
+- Profile tab displays data (read-only)
+- Package filtering by status works
 
-## Plan
+**Gaps found:**
 
-### File: `src/components/members/ImportMembersDialog.tsx`
+| Area | Gap |
+|------|-----|
+| **Mutations** | Only `createNote` and `updateMember` exist. No create injury, mark recovered, create/end suspension, upload contract. None call `logActivity`. |
+| **Realtime** | `useRealtimeSync` doesn't invalidate `member-attendance`, `member-billing`, `member-injuries`, `member-notes`, `member-suspensions`, `member-contracts` |
+| **Summary cards** | `total_spent` and `most_attended_category` use static member columns instead of computing from actual billing/attendance data |
+| **Profile tab** | All fields are `readOnly` — no inline edit capability |
+| **Action buttons** | "Purchase package", "Add billing", "Add injury", "Suspend", "Upload contract" buttons are either missing or non-functional stubs |
+| **Activity logging** | Zero `logActivity` calls in any member detail mutation |
 
-**Step 3 (Preview) improvements:**
-- Add a summary banner above the table: "X rows valid, Y rows with errors" with color coding
-- Show ALL errors per row (not just `errors[0]`), each as a separate badge or as a comma-joined tooltip
-- Highlight error rows with a red background tint
-- Add an "Errors" column that shows a expandable list or tooltip with all validation issues
-- Show error/warning icon on rows with issues
-- Disable "Start Import" button if ALL rows have errors; show warning if some have errors
+## Implementation Plan
 
-**Step 5 (Done) improvements:**
-- Add an inline scrollable error list showing row number + name + reason (first 20 errors)
-- Keep the "Download errors CSV" button for full list
-- Make it clear which specific rows failed
+### 1. Add all missing mutations + activity logging to `useMemberDetails.ts`
 
-### Changes (single file edit):
+Add these mutation hooks (all with `logActivity` calls):
+- `useCreateMemberInjury` — insert into `member_injuries`
+- `useMarkInjuryRecovered` — update `is_active=false`, set `recovery_date`
+- `useCreateMemberSuspension` — insert into `member_suspensions`, update `members.status='suspended'`
+- `useEndMemberSuspension` — update `is_active=false`, set `end_date`
+- `useCreateMemberContract` — insert into `member_contracts`
+- Add `logActivity` to existing `useCreateMemberNote` and `useUpdateMember`
 
-1. Preview summary banner with valid/error counts
-2. Preview table: add red row highlighting + show all errors with tooltip
-3. Preview: warn before import if errors exist
-4. Done screen: inline error table (row, name, reason) capped at 20 rows
+Each mutation invalidates its specific query key + `['member', id]`.
 
-No other files need changes. No DB changes.
+### 2. Update realtime sync to cover member detail tables
+
+Add to `TABLE_INVALIDATION_MAP` in `useRealtimeSync.ts`:
+- `member_notes` → `['member-notes']`
+- `member_injuries` → `['member-injuries']`
+- `member_suspensions` → `['member-suspensions']`
+- `member_contracts` → `['member-contracts']`
+- `member_billing` → `['member-billing']`
+
+Also add `member-attendance` to the existing `member_attendance` entry.
+
+### 3. Compute summary cards from actual data
+
+Add a `useMemberSummaryStats` hook that computes:
+- **Amount spent**: `SUM(amount)` from `member_billing` where `member_id = X`
+- **Most attended category**: join `member_attendance` → `schedule` → `classes` → `class_categories`, group by category, pick top
+- **Days until expiry**: already computed correctly from `member_packages`
+- **Member since**: already from `member.member_since` / `created_at`
+
+### 4. Add action buttons and dialogs on each tab
+
+In `MemberDetails.tsx`, wire up existing stub buttons:
+- **Injuries tab**: Add "Add injury" button + inline form (description, date, notes)
+- **Suspensions tab**: Add "Suspend member" button + inline form (reason, start/end date)
+- **Contract tab**: Add "Upload contract" button (file input → stores URL in `member_contracts`)
+- **Profile tab**: Make fields editable with a "Save" button using `useUpdateMember`
+
+### 5. Add i18n keys for new actions
+
+Add translation keys for injury/suspension/contract action labels.
+
+## Files Summary
+
+| Action | File | Why |
+|--------|------|-----|
+| Modify | `src/hooks/useMemberDetails.ts` | Add 5 new mutation hooks + logActivity to all mutations |
+| Modify | `src/hooks/useRealtimeSync.ts` | Add member detail tables to invalidation map |
+| Modify | `src/pages/MemberDetails.tsx` | Wire action buttons, make profile editable, use computed stats |
+| Modify | `src/i18n/locales/en.ts` | Add action labels |
+| Modify | `src/i18n/locales/th.ts` | Add action labels |
+
+No DB migrations needed — all tables and columns already exist.
 
