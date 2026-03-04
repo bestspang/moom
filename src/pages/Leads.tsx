@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, DataTable, StatusBadge, EmptyState, type Column } from '@/components/common';
+import { PageHeader, SearchBar, DataTable, StatusBadge, StatusTabs, type StatusTab, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -8,6 +8,7 @@ import { getInitials, getDateLocale } from '@/lib/formatters';
 import { useLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
+import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
 
 type Lead = Tables<'leads'>;
 
@@ -15,8 +16,38 @@ const Leads = () => {
   const { t, language } = useLanguage();
   const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const { data: leads, isLoading } = useLeads(search);
+  const { data: leads, isLoading } = useLeads(search, statusFilter);
+
+  const statusTabs: StatusTab[] = useMemo(() => {
+    const allLeads = leads || [];
+    return [
+      { key: 'all', label: t('common.all'), count: allLeads.length, color: 'default' },
+      { key: 'new', label: t('leads.statusNew'), count: allLeads.filter(l => l.status === 'new').length, color: 'teal' },
+      { key: 'contacted', label: t('leads.statusContacted'), count: allLeads.filter(l => l.status === 'contacted').length, color: 'orange' },
+      { key: 'interested', label: t('leads.statusInterested'), count: allLeads.filter(l => l.status === 'interested').length, color: 'teal' },
+      { key: 'not_interested', label: t('leads.statusNotInterested'), count: allLeads.filter(l => l.status === 'not_interested').length, color: 'red' },
+      { key: 'converted', label: t('leads.statusConverted'), count: allLeads.filter(l => l.status === 'converted').length, color: 'teal' },
+    ];
+  }, [leads, t]);
+
+  // When filtering by status, we use the full dataset for tab counts but filter for display
+  const { data: allLeads } = useLeads(search);
+  const displayLeads = statusFilter === 'all' ? (leads || []) : (leads || []);
+
+  const tabsWithCounts: StatusTab[] = useMemo(() => {
+    const all = allLeads || [];
+    return [
+      { key: 'all', label: t('common.all'), count: all.length, color: 'default' },
+      { key: 'new', label: t('leads.statusNew'), count: all.filter(l => l.status === 'new').length, color: 'teal' },
+      { key: 'contacted', label: t('leads.statusContacted'), count: all.filter(l => l.status === 'contacted').length, color: 'orange' },
+      { key: 'interested', label: t('leads.statusInterested'), count: all.filter(l => l.status === 'interested').length, color: 'teal' },
+      { key: 'not_interested', label: t('leads.statusNotInterested'), count: all.filter(l => l.status === 'not_interested').length, color: 'red' },
+      { key: 'converted', label: t('leads.statusConverted'), count: all.filter(l => l.status === 'converted').length, color: 'teal' },
+    ];
+  }, [allLeads, t]);
 
   const getStatusVariant = (status: string | null) => {
     switch (status) {
@@ -74,11 +105,13 @@ const Leads = () => {
         title={t('leads.title')}
         breadcrumbs={[{ label: t('nav.client') }, { label: t('leads.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateDialogOpen(true)}>
             {t('leads.createLead')}
           </Button>
         }
       />
+
+      <StatusTabs tabs={tabsWithCounts} activeTab={statusFilter} onChange={setStatusFilter} />
 
       <div className="mb-6">
         <SearchBar
@@ -98,11 +131,13 @@ const Leads = () => {
       ) : (
         <DataTable
           columns={columns}
-          data={leads || []}
+          data={displayLeads}
           rowKey={(row) => row.id}
           emptyMessage={t('common.noData')}
         />
       )}
+
+      <CreateLeadDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
     </div>
   );
 };
