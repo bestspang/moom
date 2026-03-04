@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { CreateRoomDialog } from '@/components/rooms/CreateRoomDialog';
 
 const Rooms = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -102,6 +104,7 @@ const Rooms = () => {
           columns={columns} 
           data={rooms || []} 
           rowKey={(row) => row.id}
+          onRowClick={(row) => navigate(`/room/${row.id}`)}
           emptyMessage={t('common.noData')}
         />
       )}

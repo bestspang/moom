@@ -74,7 +74,7 @@ export const useRoomStats = () => {
 
 export const useRoom = (id: string) => {
   return useQuery({
-    queryKey: queryKeys.rooms(id),
+    queryKey: queryKeys.room(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
@@ -135,7 +135,7 @@ export const useUpdateRoom = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: RoomUpdate }) => {
+    mutationFn: async ({ id, data, oldData }: { id: string; data: RoomUpdate; oldData?: Record<string, unknown> }) => {
       const { data: updated, error } = await supabase
         .from('rooms')
         .update(data)
@@ -154,6 +154,7 @@ export const useUpdateRoom = () => {
         activity: `Room "${updated.name}" updated`,
         entity_type: 'room',
         entity_id: variables.id,
+        old_value: variables.oldData as Record<string, unknown> | undefined,
         new_value: variables.data as Record<string, unknown>,
       });
       toast.success('Room updated successfully');

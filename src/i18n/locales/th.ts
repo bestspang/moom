@@ -707,6 +707,9 @@ export default {
       discard: 'ละทิ้ง',
     },
     filterByCategory: 'กรองตามหมวดหมู่',
+    detail: {
+      backToList: 'กลับไปรายการ',
+    },
   },
 
   // Classes
