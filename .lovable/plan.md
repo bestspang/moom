@@ -1,85 +1,108 @@
 
 
-# UI Density & Font Size Reduction Plan
+# Feature Recommendations — Business-Impact Analysis
 
-## Problem
-The current UI is too spacious for a desktop admin tool. Large fonts, generous padding, and oversized components waste screen real estate, forcing users to scroll more and see less data at a glance. An admin dashboard should prioritize **information density** while maintaining readability.
+## Current State Summary
 
-## Current Issues (from screenshots + code)
+MOOM is a **gym management console** (v0.0.1 complete, v0.0.2 in progress) with:
+- Operations: Dashboard, Lobby/Check-in, Schedule, Rooms, Classes, Workouts
+- CRM: Members (with rich detail page), Leads, Packages, Promotions
+- Admin: Staff, Roles, Locations, Finance, Reports, Activity Log, Settings
+- Planned: Member LIFF App, Trainer LIFF App, LINE Push, Payments
 
-| Element | Current | Target |
-|---------|---------|--------|
-| Page title `h1` | `text-2xl font-bold` (24px) | `text-xl` (20px) |
-| Page header margin | `mb-6` | `mb-4` |
-| Main content padding | `p-4 md:p-6` | `p-3 md:p-5` |
-| Card header padding | `p-6` (24px) | `p-4` (16px) |
-| Card content padding | `p-6 pt-0` | `p-4 pt-0` |
-| Card title font | `text-2xl` | `text-lg` |
-| Table header height | `h-12` | `h-9` |
-| Table header padding | `px-4` | `px-3` |
-| Table cell padding | `p-4` | `px-3 py-2.5` |
-| StatCard value | `text-2xl font-bold` | `text-xl font-bold` |
-| StatCard padding | `p-4` | `p-3` |
-| StatusTabs button | `px-4 py-2` | `px-3 py-1.5` |
-| SearchBar input height | `h-10` | `h-9` |
-| Sidebar nav items | `gap-3 px-3 py-2` | `gap-2.5 px-3 py-1.5 text-[13px]` |
-| Sidebar width | `220px` | `200px` (+ update MainLayout `lg:pl-`) |
-| Header height | `h-16` (64px) | `h-14` (56px) + update `top-16` → `top-14` |
-| EmptyState icon | `h-16 w-16` | `h-12 w-12` |
-| EmptyState padding | `py-12` | `py-8` |
-| Body base font | browser default 16px | `text-[14px]` on body |
+## Gap Analysis (What's Missing for a Real Gym Business)
 
-## Implementation (7 files)
+After reviewing all 40+ pages and the roadmap, here are the **highest-ROI features** ranked by business impact vs implementation effort:
 
-### 1. `src/index.css` — Global base font
-Add `font-size: 14px` to `body` rule to reduce overall text size across the app.
+---
 
-### 2. `src/components/ui/card.tsx` — Tighter card spacing
-- `CardHeader`: `p-6` → `p-4`
-- `CardTitle`: `text-2xl` → `text-lg`
-- `CardContent`: `p-6 pt-0` → `p-4 pt-0`
-- `CardFooter`: `p-6 pt-0` → `p-4 pt-0`
+### Tier 1 — "This Week" (High Impact, Low Effort)
 
-### 3. `src/components/ui/table.tsx` — Denser table rows
-- `TableHead`: `h-12 px-4` → `h-9 px-3 text-xs`
-- `TableCell`: `p-4` → `px-3 py-2`
+#### 1. Command Palette (Cmd+K)
+**Why:** Power users (gym managers) navigate 40+ pages. A quick-search command palette lets them jump anywhere, search members, or trigger actions in 2 keystrokes.
+- Search members/leads by name/phone
+- Jump to any page
+- Quick actions: "Check in [member]", "Schedule class", "Create lead"
+- Implementation: Single component + keyboard listener, no DB changes
 
-### 4. `src/components/common/PageHeader.tsx` — Smaller title
-- `mb-6` → `mb-4`
-- `text-2xl font-bold` → `text-xl font-bold`
+#### 2. Daily Briefing Card (Dashboard)
+**Why:** Gym owners open the app every morning. Instead of scanning 4 stat cards + 3 sidebar cards, give them ONE card that says: "Today you have 5 classes, 2 PT sessions. 3 packages expire this week. 1 member hasn't visited in 14 days."
+- AI-generated natural language summary using existing data hooks
+- Collapsible, shown at top of Dashboard
+- Uses Lovable AI (gemini-2.5-flash) — no API key needed
+- Implementation: 1 new component + 1 edge function
 
-### 5. `src/components/common/StatCard.tsx` — Compact stat cards
-- `CardContent p-4` → `p-3`
-- Value: `text-2xl` → `text-xl`
+#### 3. Quick Check-in from Dashboard
+**Why:** The #1 daily action (check-in) requires navigating to Lobby. Add a floating "Quick Check-in" button on Dashboard that opens a member search → one-tap check-in.
+- Reuses existing `CheckInDialog` component
+- Just a FAB (floating action button) + dialog trigger
+- Implementation: ~20 lines in Dashboard.tsx
 
-### 6. `src/components/common/StatusTabs.tsx` — Smaller filter pills
-- `px-4 py-2` → `px-3 py-1.5`
+---
 
-### 7. `src/components/common/EmptyState.tsx` — Less vertical space
-- Icons: `h-16 w-16` → `h-12 w-12`
-- Container: `py-12` → `py-8`
-- Message: `text-lg` → `text-base`
+### Tier 2 — "This Month" (High Impact, Medium Effort)
 
-### 8. `src/components/layout/Header.tsx` — Shorter header
-- `h-16` → `h-14`
+#### 4. Expiring Packages Alert System
+**Why:** Revenue leaks when packages expire and nobody follows up. Auto-detect packages expiring in 7/14/30 days → show in dashboard → enable one-click "Send renewal reminder".
+- New query: `member_packages WHERE expires_at BETWEEN now AND now+30d`
+- Dashboard card with urgency tiers (red/yellow/green)
+- Action button: "Remind" (creates notification or future LINE push)
+- DB: No new tables, just a new query + UI card
 
-### 9. `src/components/layout/MainLayout.tsx` — Match header offset
-- `pt-16` → `pt-14`
+#### 5. Revenue Forecast Widget
+**Why:** Gym owners need to know "How much money am I going to make next month?" based on active packages and their renewal rates.
+- Calculate: active packages × monthly value
+- Show: This month confirmed vs next month projected
+- Visual: Simple bar chart comparing last 3 months + next month projection
+- Implementation: New report component using existing `member_packages` + `finance_transactions` data
 
-### 10. `src/components/layout/Sidebar.tsx` — Narrower + compact items
-- Width: `w-[220px]` → `w-[200px]`
-- `top-16` → `top-14`
-- Nav items: `gap-3 px-3 py-2` → `gap-2.5 px-3 py-1.5`
-- Icon: `h-5 w-5` → `h-4 w-4`
-- Group icon already `h-4 w-4` (keep)
+#### 6. Member Engagement Score
+**Why:** "Members at Risk" exists but is binary. A score (0-100) based on visit frequency, package usage rate, days since last visit, and class attendance gives actionable insight.
+- Computed field (no new table): `(visit_frequency × 0.4) + (package_usage_rate × 0.3) + (recency × 0.3)`
+- Show as a colored badge on member cards and member detail page
+- Sortable in members list
+- Implementation: Utility function + UI integration
 
-### 11. `src/components/layout/MainLayout.tsx` — Match sidebar width
-- `lg:pl-[220px]` → `lg:pl-[200px]`
+---
 
-### 12. `src/components/ui/input.tsx` — Smaller inputs
-- `h-10` → `h-9`
+### Tier 3 — "Next Quarter" (Game-Changer, Higher Effort)
 
-**Risk:** Low. All changes are CSS-only — no logic, no data flow, no DB changes. Purely visual density improvements. Every component retains its existing structure and API.
+#### 7. Automated Retention Workflows
+**Why:** The roadmap lists "retention" for v0.1.0, but a simple version can ship now: When engagement score drops below threshold → auto-create a task/notification for staff to follow up.
+- Rule engine: IF score < 30 AND no visit in 14 days → create notification
+- Edge function running on cron (daily)
+- Staff sees "Follow up with [member]" in their notification feed
 
-**Result:** ~15-20% more visible data on screen. Tables show 2-3 more rows per page. Dashboard fits more content above the fold. The app feels like a professional admin tool rather than a consumer app.
+#### 8. Walk-in Lead Capture (QR → Form)
+**Why:** A visitor walks into the gym. Staff shows them a QR code → visitor fills a quick form on their phone (name, phone, interest) → instantly appears in Leads.
+- Public form page (no auth required)
+- QR code generated per location
+- Auto-creates lead with `source: 'walk-in'`
+- Simple but powerful for converting foot traffic
+
+---
+
+## Recommended Implementation Order
+
+```text
+Priority  Feature                    Impact   Effort   Revenue Impact
+──────────────────────────────────────────────────────────────────────
+  1       Command Palette (Cmd+K)    ★★★★★   ★★☆☆☆   Productivity
+  2       Quick Check-in FAB         ★★★★☆   ★☆☆☆☆   Daily UX
+  3       Expiring Packages Alert    ★★★★★   ★★☆☆☆   Direct Revenue
+  4       Daily Briefing Card        ★★★★☆   ★★★☆☆   Owner Retention
+  5       Member Engagement Score    ★★★★☆   ★★☆☆☆   Churn Prevention
+  6       Revenue Forecast Widget    ★★★☆☆   ★★★☆☆   Business Intel
+  7       Walk-in Lead Capture QR    ★★★★☆   ★★☆☆☆   Lead Gen
+  8       Automated Retention        ★★★★★   ★★★★☆   Churn Prevention
+```
+
+## My Recommendation: Start with #1 + #2 + #3
+
+These three features together transform the daily experience:
+- **Cmd+K**: Navigate anywhere instantly (power user delight)
+- **Quick Check-in**: The #1 daily task becomes 1 tap from anywhere
+- **Expiring Packages**: Directly prevents revenue loss
+
+All three require **zero DB changes**, use existing hooks/components, and can ship in one sprint.
 
