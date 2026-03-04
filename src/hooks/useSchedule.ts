@@ -250,3 +250,72 @@ export function useDeleteSchedule() {
     },
   });
 }
+
+// Error code to i18n key mapping
+const scheduleErrorMap: Record<string, string> = {
+  room_overlap: 'schedule.error.roomOverlap',
+  room_location_mismatch: 'schedule.error.roomLocationMismatch',
+  category_mismatch: 'schedule.error.categoryMismatch',
+  end_time_before_start: 'schedule.error.endTimeBeforeStart',
+  room_not_found: 'schedule.error.roomNotFound',
+};
+
+export function useCreateScheduleValidated() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      p_scheduled_date: string;
+      p_start_time: string;
+      p_end_time: string;
+      p_class_id: string;
+      p_trainer_id?: string | null;
+      p_location_id?: string | null;
+      p_room_id?: string | null;
+      p_capacity?: number | null;
+    }) => {
+      const { data, error } = await supabase.rpc('create_schedule_with_validation', {
+        p_scheduled_date: params.p_scheduled_date,
+        p_start_time: params.p_start_time,
+        p_end_time: params.p_end_time,
+        p_class_id: params.p_class_id,
+        p_trainer_id: params.p_trainer_id ?? null,
+        p_location_id: params.p_location_id ?? null,
+        p_room_id: params.p_room_id ?? null,
+        p_capacity: params.p_capacity ?? null,
+      });
+
+      if (error) throw error;
+
+      // The RPC returns JSON — check for validation error
+      const result = data as Record<string, unknown>;
+      if (result?.error) {
+        const errorCode = result.error as string;
+        const i18nKey = scheduleErrorMap[errorCode];
+        throw new Error(i18nKey || (result.message as string) || 'Validation failed');
+      }
+
+      return result;
+    },
+    onSuccess: (_data, variables) => {
+      // Targeted invalidation for the specific date
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule(variables.p_scheduled_date) });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      toast({
+        title: 'Success',
+        description: 'Class scheduled successfully',
+      });
+    },
+    onError: (error) => {
+      // Only show non-i18n errors here; i18n errors are handled by the caller
+      if (!error.message.startsWith('schedule.error.')) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+}

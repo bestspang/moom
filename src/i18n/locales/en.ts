@@ -453,6 +453,13 @@ export default {
     markNoShow: 'No Show',
     promote: 'Promote',
     booked: 'Booked',
+    error: {
+      roomOverlap: 'This room is already booked at this time',
+      roomLocationMismatch: 'Room does not belong to the selected location',
+      categoryMismatch: 'Room does not support this class category',
+      endTimeBeforeStart: 'End time must be after start time',
+      roomNotFound: 'Room not found',
+    },
   },
 
   // Rooms
