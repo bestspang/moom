@@ -1,92 +1,85 @@
 
 
-# System-Wide Data Completeness & Hardening Plan
+# Members + Leads Data Completeness Plan
 
-## Assessment Summary
+## Detected Gaps
 
-After auditing the full codebase, DB schema, hooks, and pages — the system is in **good shape**. All major tables exist, hooks have auth guards, activity logging is present, realtime sync covers 30+ tables, and CSV import/export works for Members and Leads. The gaps are incremental — missing fields in a few spots, some missing auth guards on sub-hooks, and a few missing indexes.
+### Members DB Schema
+- Members uses `emergency_contact_name` (single) + `emergency_contact_phone` — needs split `emergency_first_name`/`emergency_last_name`/`emergency_phone` like leads/staff
+- Medical/consent stored in jsonb (`medical`, `consents`) — needs flat columns (`has_medical_conditions`, `medical_notes`, `allow_physical_contact`, `physical_contact_notes`) for consistency with leads and CSV import/export
+- Missing `line_id` column (LINE username, distinct from `line_user_id`)
 
-## What's Already Working (No Changes Needed)
+### Members List Page
+- Missing columns: `status`, `register_location_name`, `member_since` (joined_date)
+- Query (`useMembers`) doesn't join `locations` table for location name
 
-- All 44 DB tables exist with appropriate columns
-- Auth guards (`enabled: !!user`) on all major hooks (Members, Leads, Packages, Classes, Rooms, Locations, Schedule, Lobby, Finance, Announcements, Staff, Roles)
-- Realtime sync for 30+ tables via `useRealtimeSync`
-- Activity logging on all CRUD mutations
-- CSV export for Members and Leads
-- CSV import with 4-step wizard for Members and Leads
-- Stats hooks use head-count queries (no 1000-row limit issue)
-- LINE fields exist on `members`, `leads`, `line_users`
-- AI metadata fields exist (`ai_tags`, `ai_profile_summary`, `ai_risk_signals`, etc.)
-- Bilingual fields on packages, promotions, rooms, classes, announcements
+### Members Edit Dialog
+- Only saves: name, nickname, email, phone, dob, gender, address (single field), status
+- Missing: address_1/2, subdistrict, district, province, postal_code, emergency fields, medical, consent, source, package_interest, line_id
 
----
+### Members Import
+- Template only has 13 columns — needs all 26 contract columns
+- `HEADER_ALIASES` and `TARGET_FIELDS` missing: address split fields, emergency, medical flat fields, line_id, register_location_id, allow_physical_contact
+- Import doesn't write per-row activity_log entries (only bulk summary)
 
-## Actual Gaps Found
+### Members Export  
+- Only exports 10 basic columns — needs all 26 contract columns plus computed fields
 
-### GAP 1: Missing auth guard on `useStaffMember` and `useStaffPositions`
-Both hooks use `enabled: !!id` but don't check `!!user`.
-
-### GAP 2: Missing auth guard on `useDashboardStats`, `useHighRiskMembers`, `useHotLeads`, `useUpcomingBirthdays`
-Dashboard hooks have no `enabled: !!user`.
-
-### GAP 3: Members table missing `emergency_first_name`/`emergency_last_name` split
-DB has `emergency_contact_name` (single field) + `emergency_contact_phone`, but the data contract requires split first/last. However, the wizard already uses `emergencyContactName`/`emergencyContactPhone` — these map to the existing columns. No actual gap.
-
-### GAP 4: Missing DB indexes on commonly filtered columns
-- `members.status` — no index
-- `members.register_location_id` — no index  
-- `leads.status` — no index
-- `leads.register_location_id` — no index
-- `transactions.status` — no index
-- `transactions.created_at` — no index
-- `schedule.scheduled_date` — no index
-- `staff.status` — no index
-- `classes.status` — no index
-- `packages.status` — no index
-
-### GAP 5: `training_templates` missing `description` column
-The `training_templates` table only has `id, name, is_active, ai_tags, created_by, created_at, updated_at`. A description field would be useful.
-
-### GAP 6: Finance transactions lack `location` column display
-The `useFinanceTransactions` query already joins `location:locations(id, name)`, but the Finance page may not show it in all views.
-
-### GAP 7: Missing `src/types/domain.ts`
-No centralized domain types file. Types are scattered across individual hooks using Supabase generated types directly, which is actually fine — but a thin domain types file would help readability.
+### Leads Export
+- Only exports 11 columns — missing address, emergency, medical fields
 
 ---
 
 ## Implementation Plan
 
-### Step 1: DB Migration — Add missing performance indexes
-Add indexes on frequently filtered columns across 6+ tables. No column changes needed.
+### Step 1: DB Migration
+Add flat columns to `members` to match leads/staff pattern:
+- `emergency_first_name text`, `emergency_last_name text`, `emergency_phone text` (keep legacy `emergency_contact_name`/`emergency_contact_phone` for backward compat)
+- `has_medical_conditions boolean DEFAULT false`, `medical_notes text`, `allow_physical_contact boolean DEFAULT false`, `physical_contact_notes text`
+- `line_id text`
 
-### Step 2: Fix auth guards on dashboard + staff detail hooks (2 files)
-- `src/hooks/useDashboardStats.ts`: Add `enabled: !!user` to all 4 hooks
-- `src/hooks/useStaff.ts`: Add `enabled: !!user` to `useStaffMember` and `useStaffPositions`
+### Step 2: Update `useMembers` hook
+- Change `select('*')` to `select('*, register_location:locations!register_location_id(id, name)')` to join location name
 
-### Step 3: Create `src/types/domain.ts`
-Thin re-exports of Supabase types + enriched types used across pages. Not a rewrite — just a centralized import file.
+### Step 3: Update Members list page columns
+Add columns: `status` (with StatusBadge), `register_location_name`, `member_since`
 
-### Step 4: Create `docs/INTEGRATION_NOTES.md`
-Document each page's data sources, realtime subscriptions, and computed field definitions.
+### Step 4: Update EditMemberDialog
+Expand form to include all fields in collapsible sections (matching CreateMemberDialog pattern):
+- Contact: phone, email, line_id
+- Address: address_1, address_2, subdistrict, district, province, postal_code
+- Emergency: emergency_first_name, emergency_last_name, emergency_phone, emergency_relationship
+- Medical: has_medical_conditions, medical_notes
+- Consent: allow_physical_contact, physical_contact_notes
+- Other: source, package_interest_id, notes
+
+### Step 5: Update Members Import
+- Expand `HEADER_ALIASES` and `TARGET_FIELDS` to cover all 26+ contract columns
+- Update `downloadTemplate('full')` to output exact contract columns
+- Write per-row `logActivity` with `source: 'csv_import'` for create/update
+- Map new flat columns in import data builder
+
+### Step 6: Update Members Export
+- Expand `ExportableMember` and `exportMembers()` to output all contract columns + computed (`recent_package_name`, `last_attended_at`)
+
+### Step 7: Update Leads Export
+- Expand `ExportableLead` and `exportLeads()` to include address, emergency, medical, consent fields
+
+### Step 8: Update CreateMemberDialog submit
+- Write to new flat columns instead of jsonb for medical/consent/emergency
 
 ### Files to Touch
 
 | File | Change |
 |------|--------|
-| DB migration | Add ~10 performance indexes |
-| `src/hooks/useDashboardStats.ts` | Add auth guards to 4 hooks |
-| `src/hooks/useStaff.ts` | Add auth guard to `useStaffMember` and `useStaffPositions` |
-| `src/types/domain.ts` | New file — centralized domain type re-exports |
-| `docs/INTEGRATION_NOTES.md` | New file — system map + data sources doc |
+| DB migration | Add ~8 columns to `members` |
+| `src/hooks/useMembers.ts` | Join locations in query |
+| `src/pages/Members.tsx` | Add status, location, joined_date columns |
+| `src/components/members/EditMemberDialog.tsx` | Full field coverage with sections |
+| `src/components/members/ImportMembersDialog.tsx` | Full template + aliases + per-row audit |
+| `src/components/members/CreateMemberDialog.tsx` | Use flat columns for medical/emergency |
+| `src/lib/exportCsv.ts` | Full member + lead export columns |
+| `src/pages/Leads.tsx` | Export passes full lead data |
 
-### What This Plan Does NOT Do (and why)
-
-- **Does not restructure existing hooks/pages** — they already work correctly with full field coverage
-- **Does not add new DB columns** — all required fields from the data contracts already exist in the schema
-- **Does not change import/export** — already working for Members and Leads
-- **Does not change LINE/AI fields** — already present in `members`, `leads`, `line_users`, `event_outbox`
-- **Does not add a System Health page** — that was covered in the previous hardening plan and is a separate feature
-
-This is a **minimal, zero-regression** hardening pass focused on the real gaps found during audit.
+No style changes. All additive. Legacy columns preserved.
 
