@@ -1,32 +1,62 @@
 
 
-# Schedule Gaps — Status Check
+# Room Layouts Module — Gap Analysis & Implementation Plan
 
-## Already Fixed (No Changes Needed)
+## Current State (Already Working)
 
-**Gap 1: `useScheduleStats` avgCapacity** — Already uses real booking counts from `class_bookings` table (lines 122-150). Correctly computes `attended / capacity * 100`.
+- **DB table `rooms`**: Has all required columns — `name`, `name_th`, `location_id`, `layout_type` (enum: open/fixed), `max_capacity`, `categories` (text[]), `status`
+- **CreateRoomDialog**: Saves all fields (name EN/TH, location, categories, layout type, max capacity) to DB
+- **Room list page**: Shows name, location, categories, layout type, max capacity with status tabs
+- **Activity logging**: `useCreateRoom`, `useUpdateRoom`, `useDeleteRoom` all log to `activity_log`
+- **Realtime sync**: `useRealtimeSync` covers `rooms` table → invalidates `['rooms', 'room-stats']`
+- **Schedule validation RPC**: `create_schedule_with_validation` already checks room-location match AND category compatibility using `rooms.categories`
 
-**Gap 2: `useBatchMarkAttendance` cross-module writes** — Already loops through each attended booking and creates `member_attendance` rows, `package_usage_ledger` entries, and updates `sessions_remaining` (lines 334-382). Query invalidations are comprehensive.
+## Real Gaps Found
 
-## One Minor Cleanup
+### Gap 1: Search doesn't include Thai name
+`useRooms` only searches `name` via `ilike`. Should also search `name_th`.
 
-**Gap 3: `mapScheduleToItem` availability fallback** — Line 38 currently reads:
-```
-availability: `${s.booked_count ?? s.checked_in ?? 0}/${s.capacity || 0}`
-checkedIn: s.attended_count ?? s.checked_in ?? 0
-```
+### Gap 2: No category filter on room list
+The requirement asks for filtering rooms by category. Currently only status filter + text search exist.
 
-The `s.checked_in` fallback is stale data that's never updated. Since `useScheduleByDate` always populates `booked_count` and `attended_count`, the fallback should be removed for clarity:
+### Gap 3: Categories column shows "All" based on empty array, not `all_categories` flag
+The rooms table doesn't have an `all_categories` boolean column. The dialog sends `categories: []` for "all" — the list checks `cats.length === 0` to show "All". This works but is implicit. Adding a proper flag would be cleaner but the current approach works consistently. No change needed since behavior is correct.
 
-```
-availability: `${s.booked_count ?? 0}/${s.capacity || 0}`
-checkedIn: s.attended_count ?? 0
-```
+### Gap 4: No data contract doc for rooms
 
-### File to modify
+### Gap 5: `useCreateRoom` doesn't log `old_value`/`new_value` properly
+Currently logs only the activity string, not structured before/after values.
+
+## Implementation Plan
+
+### 1. Fix search to include `name_th` (useRooms.ts)
+Change `query.ilike('name', ...)` to `query.or('name.ilike.%search%,name_th.ilike.%search%')`.
+
+### 2. Add category filter to Rooms page
+- Add a category filter dropdown/select to `Rooms.tsx` using `useClassCategories()`
+- Pass selected category to `useRooms` hook
+- In `useRooms`, when category filter is set:
+  - Use `.contains('categories', [categoryName])` to find rooms with that specific category
+  - OR include rooms where categories is empty (meaning "all categories")
+  - This translates to: `query.or('categories.cs.{categoryName},categories.eq.{}')` 
+
+### 3. Enhance activity logging in mutations
+Add `new_value` with structured data to `useCreateRoom` and ensure `useUpdateRoom` captures before/after.
+
+### 4. Create `docs/data-contract-rooms.md`
+
+### 5. Add i18n keys for category filter
+
+## Files to Modify
+
 | File | Change |
 |------|--------|
-| `src/hooks/useSchedule.ts` | Remove `s.checked_in` fallback from `mapScheduleToItem` (lines 38-39) |
+| `src/hooks/useRooms.ts` | Add `name_th` to search; add category filter param |
+| `src/pages/Rooms.tsx` | Add category filter dropdown |
+| `src/lib/queryKeys.ts` | Update rooms key to include category filter |
+| `docs/data-contract-rooms.md` | Create data contract |
+| `src/i18n/locales/en.ts` | Add filter label keys |
+| `src/i18n/locales/th.ts` | Same Thai keys |
 
-This is a 2-line cosmetic fix. No behavior change since `booked_count`/`attended_count` are always set.
+No DB migration needed — all columns exist. No breaking changes. Schedule integration already works via the existing RPC.
 
