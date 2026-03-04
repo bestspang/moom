@@ -40,25 +40,17 @@ export const useStaffStats = () => {
   return useQuery({
     queryKey: ['staff-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('status');
-      
-      if (error) throw error;
-      
-      const stats = {
-        active: 0,
-        pending: 0,
-        terminated: 0,
+      const [activeRes, pendingRes, terminatedRes] = await Promise.all([
+        supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'terminated'),
+      ]);
+
+      return {
+        active: activeRes.count ?? 0,
+        pending: pendingRes.count ?? 0,
+        terminated: terminatedRes.count ?? 0,
       };
-      
-      data?.forEach((member) => {
-        if (member.status && stats.hasOwnProperty(member.status)) {
-          stats[member.status as keyof typeof stats]++;
-        }
-      });
-      
-      return stats;
     },
   });
 };
@@ -259,6 +251,64 @@ export const useDeleteStaff = () => {
     },
     onError: (error) => {
       toast.error(`Failed to delete staff member: ${error.message}`);
+    },
+  });
+};
+
+export const useAddStaffPosition = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { staff_id: string; role_id: string; scope_all_locations: boolean; location_ids: string[] }) => {
+      const { data: pos, error } = await supabase
+        .from('staff_positions')
+        .insert(data)
+        .select('*, role:roles(id, name)')
+        .single();
+      if (error) throw error;
+      return pos;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-positions', variables.staff_id] });
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast.success('Position added');
+      logActivity({
+        event_type: 'staff_position_added',
+        activity: `Position added to staff`,
+        entity_type: 'staff',
+        entity_id: variables.staff_id,
+      });
+    },
+    onError: (error) => {
+      toast.error(`Failed to add position: ${error.message}`);
+    },
+  });
+};
+
+export const useRemoveStaffPosition = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, staff_id }: { id: string; staff_id: string }) => {
+      const { error } = await supabase.from('staff_positions').delete().eq('id', id);
+      if (error) throw error;
+      return { id, staff_id };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-positions', result.staff_id] });
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast.success('Position removed');
+      logActivity({
+        event_type: 'staff_position_removed',
+        activity: `Position removed from staff`,
+        entity_type: 'staff',
+        entity_id: result.staff_id,
+      });
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove position: ${error.message}`);
     },
   });
 };

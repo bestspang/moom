@@ -36,10 +36,14 @@ const Promotions = () => {
   };
 
   const getDiscountDisplay = (promo: Promotion) => {
-    if (promo.discount_type === 'percentage') {
-      return `${promo.discount_value}%`;
+    // Prefer new schema columns, fallback to legacy
+    const mode = (promo as any).discount_mode || promo.discount_type;
+    if (mode === 'percentage') {
+      const val = (promo as any).percentage_discount ?? promo.discount_value;
+      return `${val}%`;
     }
-    return formatCurrency(Number(promo.discount_value));
+    const val = (promo as any).flat_rate_discount ?? promo.discount_value;
+    return formatCurrency(Number(val));
   };
 
   const columns: Column<Promotion>[] = [
