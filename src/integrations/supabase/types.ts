@@ -2281,6 +2281,7 @@ export type Database = {
           ai_tags: Json | null
           created_at: string | null
           created_by: string | null
+          description: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -2290,6 +2291,7 @@ export type Database = {
           ai_tags?: Json | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -2299,6 +2301,7 @@ export type Database = {
           ai_tags?: Json | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           name?: string

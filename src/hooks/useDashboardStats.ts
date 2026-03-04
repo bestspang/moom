@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDB } from '@/lib/formatters';
 import { queryKeys } from '@/lib/queryKeys';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface DashboardStats {
   checkinsToday: number;
@@ -31,8 +32,10 @@ export interface UpcomingBirthday {
 
 
 export const useDashboardStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.dashboardStats(),
+    enabled: !!user,
     queryFn: async (): Promise<DashboardStats> => {
       const today = formatDateForDB(new Date());
       const yesterday = formatDateForDB(new Date(Date.now() - 86400000));
@@ -73,8 +76,10 @@ export const useDashboardStats = () => {
 };
 
 export const useHighRiskMembers = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.highRiskMembers(),
+    enabled: !!user,
     queryFn: async (): Promise<RiskMember[]> => {
       const { data, error } = await supabase
         .from('members')
@@ -134,8 +139,10 @@ export const useHighRiskMembers = () => {
 };
 
 export const useHotLeads = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.hotLeads(),
+    enabled: !!user,
     queryFn: async (): Promise<HotLead[]> => {
       const { data, error } = await supabase
         .from('leads')
@@ -155,8 +162,10 @@ export const useHotLeads = () => {
 };
 
 export const useUpcomingBirthdays = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.upcomingBirthdays(),
+    enabled: !!user,
     queryFn: async (): Promise<UpcomingBirthday[]> => {
       const { data, error } = await supabase
         .from('members')
