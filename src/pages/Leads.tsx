@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getDateLocale } from '@/lib/formatters';
-import { useLeads } from '@/hooks/useLeads';
-import { useLocations } from '@/hooks/useLocations';
+import { useLeads, type LeadWithLocation } from '@/hooks/useLeads';
+// useLocations no longer needed - location joined in useLeads
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
 import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
@@ -23,7 +23,7 @@ import { MoreHorizontal, UserPlus, Upload, Download, Settings } from 'lucide-rea
 import { toast } from 'sonner';
 import { exportLeads } from '@/lib/exportCsv';
 
-type Lead = Tables<'leads'>;
+type Lead = LeadWithLocation;
 
 const Leads = () => {
   const { t, language } = useLanguage();
@@ -36,15 +36,8 @@ const Leads = () => {
   const [convertLead, setConvertLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useLeads(search, statusFilter);
-  const { data: locations } = useLocations();
   const { data: allLeads } = useLeads(search);
   const displayLeads = leads || [];
-
-  const locationMap = useMemo(() => {
-    const map = new Map<string, string>();
-    locations?.forEach(l => map.set(l.id, l.name));
-    return map;
-  }, [locations]);
 
   const tabsWithCounts: StatusTab[] = useMemo(() => {
     const all = allLeads || [];
@@ -132,7 +125,7 @@ const Leads = () => {
     {
       key: 'location',
       header: t('lobby.location'),
-      cell: (row) => row.register_location_id ? locationMap.get(row.register_location_id) || '-' : '-',
+      cell: (row) => row.register_location?.name || '-',
     },
     { key: 'timesContacted', header: t('leads.timesContacted'), cell: (row) => row.times_contacted || 0 },
     { 
@@ -183,7 +176,7 @@ const Leads = () => {
                   {t('common.manage')}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
                   <Upload className="mr-2 h-4 w-4" />
                   {t('leads.importCsv')}
@@ -191,6 +184,22 @@ const Leads = () => {
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="mr-2 h-4 w-4" />
                   {t('leads.exportCsv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  const headers = ['first_name','last_name','nickname','gender','date_of_birth','phone','email','address_1','address_2','subdistrict','district','province','postal_code','emergency_first_name','emergency_last_name','emergency_phone','emergency_relationship','has_medical_conditions','medical_notes','allow_physical_contact','source','status','temperature','notes','internal_notes','register_location_id'];
+                  const csv = headers.map(h => `"${h}"`).join(',') + '\n';
+                  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'leads-template.csv';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                }}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('leads.downloadTemplate')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
