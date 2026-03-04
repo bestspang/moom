@@ -444,6 +444,15 @@ export default {
     room: 'ห้อง',
     availability: 'ที่ว่าง',
     qr: 'QR',
+    manageBookings: 'จัดการการจอง',
+    addMember: 'เพิ่มสมาชิก',
+    searchMember: 'ค้นหาสมาชิก...',
+    bookings: 'การจอง',
+    waitlist: 'รอคิว',
+    markAttended: 'เข้าเรียนแล้ว',
+    markNoShow: 'ไม่มาเรียน',
+    promote: 'โปรโมท',
+    booked: 'จองแล้ว',
   },
 
   // Rooms
@@ -712,6 +721,7 @@ export default {
       client: 'ลูกค้า',
       package: 'แพ็คเกจ',
       memberContracts: 'สัญญาสมาชิก',
+      featureFlags: 'Feature Flags',
     },
     general: {
       // Sidebar menu
