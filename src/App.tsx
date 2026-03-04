@@ -20,6 +20,7 @@ import CreatePackage from "./pages/CreatePackage";
 import PackageDetails from "./pages/PackageDetails";
 import Promotions from "./pages/Promotions";
 import PromotionDetails from "./pages/PromotionDetails";
+import CreatePromotion from "./pages/CreatePromotion";
 import Schedule from "./pages/Schedule";
 import Rooms from "./pages/Rooms";
 import RoomDetails from "./pages/RoomDetails";
@@ -110,6 +111,7 @@ const App = () => (
                 <Route path="package/:id/edit" element={<CreatePackage />} />
                 <Route path="package/:id" element={<PackageDetails />} />
                 <Route path="promotion" element={<Promotions />} />
+                <Route path="promotion/create" element={<CreatePromotion />} />
                 <Route path="promotion/:id" element={<PromotionDetails />} />
                 <Route path="calendar" element={<Schedule />} />
                 <Route path="room" element={<Rooms />} />

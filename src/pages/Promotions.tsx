@@ -89,7 +89,7 @@ const Promotions = () => {
         title={t('promotions.title')}
         breadcrumbs={[{ label: t('nav.package') }, { label: t('promotions.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
             {t('promotions.createPromotion')}
           </Button>
         }

@@ -19,6 +19,8 @@ type TableName =
   | 'ai_suggestions'
   | 'packages'
   | 'promotions'
+  | 'promotion_packages'
+  | 'promotion_redemptions'
   | 'transactions'
   | 'training_templates'
   | 'workout_items'
@@ -49,6 +51,8 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   ai_suggestions: ['ai-suggestions'],
   packages: ['packages', 'package-stats', 'package-metrics'],
   promotions: ['promotions', 'promotion-stats', 'promotion-packages'],
+  promotion_packages: ['promotion-packages', 'promotions'],
+  promotion_redemptions: ['promotion-redemptions', 'promotions', 'promotion-stats'],
   transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats'],
   training_templates: ['training-templates'],
   workout_items: ['training-templates'],

@@ -25,7 +25,8 @@ const PromotionDetails = () => {
 
   const { data: promo, isLoading } = usePromotion(id!);
   const { data: linkedPackages, isLoading: pkgLoading } = usePromotionPackages(
-    promo?.applicable_packages ?? null
+    id ?? null,
+    promo?.applicable_packages ?? null,
   );
 
   if (isLoading) {

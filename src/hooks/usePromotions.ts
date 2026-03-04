@@ -34,26 +34,22 @@ export const usePromotionStats = () => {
   return useQuery({
     queryKey: ['promotion-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('promotions')
-        .select('status');
-      
-      if (error) throw error;
-      
-      const stats = {
-        active: 0,
-        scheduled: 0,
-        drafts: 0,
-        archive: 0,
-      };
-      
-      data?.forEach((promo) => {
-        if (promo.status && stats.hasOwnProperty(promo.status)) {
-          stats[promo.status as keyof typeof stats]++;
-        }
+      const statuses = ['active', 'scheduled', 'drafts', 'archive'] as const;
+      const results = await Promise.all(
+        statuses.map((status) =>
+          supabase
+            .from('promotions')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', status)
+        ),
+      );
+
+      const stats: Record<string, number> = {};
+      statuses.forEach((s, i) => {
+        if (results[i].error) throw results[i].error;
+        stats[s] = results[i].count ?? 0;
       });
-      
-      return stats;
+      return stats as { active: number; scheduled: number; drafts: number; archive: number };
     },
   });
 };
