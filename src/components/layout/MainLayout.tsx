@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { cn } from '@/lib/utils';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
@@ -19,6 +20,7 @@ export const MainLayout = () => {
       >
         Skip to main content
       </a>
+      <CommandPalette />
       <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       <Sidebar
         isOpen={sidebarOpen}
