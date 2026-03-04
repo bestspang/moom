@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Types based on database schema
 type BookingStatus = 'booked' | 'cancelled' | 'attended' | 'no_show';
@@ -36,7 +37,7 @@ interface ClassWaitlist {
 // Fetch bookings for a specific schedule
 export const useClassBookings = (scheduleId?: string) => {
   return useQuery({
-    queryKey: ['class-bookings', scheduleId],
+    queryKey: queryKeys.classBookings(scheduleId),
     queryFn: async () => {
       let query = supabase
         .from('class_bookings')
@@ -62,7 +63,7 @@ export const useClassBookings = (scheduleId?: string) => {
 // Fetch bookings for a specific member
 export const useMemberBookings = (memberId: string, status?: BookingStatus) => {
   return useQuery({
-    queryKey: ['member-bookings', memberId, status],
+    queryKey: queryKeys.memberBookings(memberId, status),
     queryFn: async () => {
       let query = supabase
         .from('class_bookings')
@@ -266,7 +267,7 @@ export const useBatchMarkAttendance = () => {
 // Fetch waitlist for a schedule
 export const useWaitlist = (scheduleId: string) => {
   return useQuery({
-    queryKey: ['class-waitlist', scheduleId],
+    queryKey: queryKeys.classWaitlist(scheduleId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_waitlist')
@@ -297,7 +298,6 @@ export const useJoinWaitlist = () => {
       scheduleId: string;
       memberId: string;
     }) => {
-      // Get current max position
       const { data: existing, error: posError } = await supabase
         .from('class_waitlist')
         .select('position')
@@ -386,7 +386,6 @@ export const usePromoteFromWaitlist = () => {
       memberId: string;
       memberPackageId?: string;
     }) => {
-      // Update waitlist status
       const { error: waitlistError } = await supabase
         .from('class_waitlist')
         .update({
@@ -397,7 +396,6 @@ export const usePromoteFromWaitlist = () => {
 
       if (waitlistError) throw waitlistError;
 
-      // Create booking
       const { data, error } = await supabase
         .from('class_bookings')
         .insert({
@@ -429,7 +427,7 @@ export const usePromoteFromWaitlist = () => {
 // Get booking count for a schedule
 export const useBookingCount = (scheduleId: string) => {
   return useQuery({
-    queryKey: ['booking-count', scheduleId],
+    queryKey: queryKeys.bookingCount(scheduleId),
     queryFn: async () => {
       const { count, error } = await supabase
         .from('class_bookings')

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberInsert = Database['public']['Tables']['members']['Insert'];
@@ -24,26 +25,23 @@ interface MemberStats {
 
 export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50 }: UseMembersParams = {}) => {
   return useQuery({
-    queryKey: ['members', { status, search, page, perPage }],
+    queryKey: queryKeys.members({ status, search, page, perPage }),
     queryFn: async () => {
       let query = supabase
         .from('members')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      // Filter by status
       if (status && status !== 'all') {
         query = query.eq('status', status);
       }
 
-      // Search filter
       if (search) {
         query = query.or(
           `first_name.ilike.%${search}%,last_name.ilike.%${search}%,nickname.ilike.%${search}%,member_id.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`
         );
       }
 
-      // Pagination
       const from = (page - 1) * perPage;
       const to = from + perPage - 1;
       query = query.range(from, to);
@@ -64,7 +62,7 @@ export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50
 
 export const useMember = (id: string) => {
   return useQuery({
-    queryKey: ['member', id],
+    queryKey: queryKeys.member(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')
@@ -81,7 +79,7 @@ export const useMember = (id: string) => {
 
 export const useMemberStats = () => {
   return useQuery({
-    queryKey: ['member-stats'],
+    queryKey: queryKeys.memberStats(),
     queryFn: async (): Promise<MemberStats> => {
       const { data, error } = await supabase
         .from('members')
@@ -194,6 +192,6 @@ export const useNextMemberId = () => {
       const nextNum = numPart + 1;
       return `M-${nextNum.toString().padStart(7, '0')}`;
     },
-    staleTime: 0, // Always refetch
+    staleTime: 0,
   });
 };

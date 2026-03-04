@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDB } from '@/lib/formatters';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface DashboardStats {
   checkinsToday: number;
@@ -42,33 +43,29 @@ export interface ScheduleItem {
 
 export const useDashboardStats = () => {
   return useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: queryKeys.dashboardStats(),
     queryFn: async (): Promise<DashboardStats> => {
       const today = formatDateForDB(new Date());
       const yesterday = formatDateForDB(new Date(Date.now() - 86400000));
 
-      // Get today's check-ins
       const { count: checkinsToday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
         .gte('check_in_time', `${today}T00:00:00`)
         .lt('check_in_time', `${today}T23:59:59`);
 
-      // Get yesterday's check-ins for comparison
       const { count: checkinsYesterday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
         .gte('check_in_time', `${yesterday}T00:00:00`)
         .lt('check_in_time', `${yesterday}T23:59:59`);
 
-      // Get today's scheduled classes
       const { count: classesToday } = await supabase
         .from('schedule')
         .select('*', { count: 'exact', head: true })
         .eq('scheduled_date', today)
         .eq('status', 'scheduled');
 
-      // Get currently in class (checked in within last 2 hours to scheduled classes)
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       const { count: currentlyInClass } = await supabase
         .from('member_attendance')
@@ -88,9 +85,8 @@ export const useDashboardStats = () => {
 
 export const useHighRiskMembers = () => {
   return useQuery({
-    queryKey: ['high-risk-members'],
+    queryKey: queryKeys.highRiskMembers(),
     queryFn: async (): Promise<RiskMember[]> => {
-      // Get high-risk members with their nearest expiring package
       const { data, error } = await supabase
         .from('members')
         .select(`
@@ -113,7 +109,6 @@ export const useHighRiskMembers = () => {
       const today = new Date();
 
       return (data || []).map((member) => {
-        // Find nearest expiry date from member's packages
         const packages = member.member_packages as Array<{ expiry_date: string | null; status: string }>;
         let nearestExpiry: Date | null = null;
 
@@ -126,7 +121,6 @@ export const useHighRiskMembers = () => {
           }
         });
 
-        // Calculate days until expiry
         let expiryText = '-';
         if (nearestExpiry) {
           const daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -152,7 +146,7 @@ export const useHighRiskMembers = () => {
 
 export const useHotLeads = () => {
   return useQuery({
-    queryKey: ['hot-leads'],
+    queryKey: queryKeys.hotLeads(),
     queryFn: async (): Promise<HotLead[]> => {
       const { data, error } = await supabase
         .from('leads')
@@ -173,9 +167,8 @@ export const useHotLeads = () => {
 
 export const useUpcomingBirthdays = () => {
   return useQuery({
-    queryKey: ['upcoming-birthdays'],
+    queryKey: queryKeys.upcomingBirthdays(),
     queryFn: async (): Promise<UpcomingBirthday[]> => {
-      // Get members with birthdays in the next 7 days
       const { data, error } = await supabase
         .from('members')
         .select('id, first_name, last_name, date_of_birth')
@@ -210,7 +203,7 @@ export const useUpcomingBirthdays = () => {
 
 export const useScheduleByDate = (date: Date) => {
   return useQuery({
-    queryKey: ['schedule', formatDateForDB(date)],
+    queryKey: queryKeys.schedule(formatDateForDB(date)),
     queryFn: async (): Promise<ScheduleItem[]> => {
       const dateStr = formatDateForDB(date);
 

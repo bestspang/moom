@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Class = Tables<'classes'>;
 type ClassInsert = TablesInsert<'classes'>;
@@ -9,7 +10,7 @@ type ClassUpdate = TablesUpdate<'classes'>;
 
 export const useClasses = (status?: string, search?: string) => {
   return useQuery({
-    queryKey: ['classes', status, search],
+    queryKey: queryKeys.classes(status, search),
     queryFn: async () => {
       let query = supabase
         .from('classes')
@@ -36,7 +37,7 @@ export const useClasses = (status?: string, search?: string) => {
 
 export const useClassStats = () => {
   return useQuery({
-    queryKey: ['class-stats'],
+    queryKey: queryKeys.classStats(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
@@ -64,7 +65,7 @@ export const useClassStats = () => {
 
 export const useClass = (id: string) => {
   return useQuery({
-    queryKey: ['classes', id],
+    queryKey: queryKeys.classes(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
@@ -122,9 +123,8 @@ export const useUpdateClass = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['classes', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['class-stats'] });
       toast.success('Class updated successfully');
     },

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Lead = Tables<'leads'>;
 type LeadInsert = TablesInsert<'leads'>;
@@ -9,7 +10,7 @@ type LeadUpdate = TablesUpdate<'leads'>;
 
 export const useLeads = (search?: string) => {
   return useQuery({
-    queryKey: ['leads', search],
+    queryKey: queryKeys.leads(search),
     queryFn: async () => {
       let query = supabase.from('leads').select('*');
       
@@ -83,7 +84,6 @@ export const useUpdateLead = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['leads', variables.id] });
       toast.success('Lead updated successfully');
     },
     onError: (error) => {
