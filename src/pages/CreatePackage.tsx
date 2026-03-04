@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Infinity, Timer, User, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useCreatePackage } from '@/hooks/usePackages';
+import { useCreatePackage, useUpdatePackage, usePackage } from '@/hooks/usePackages';
 import { useLocations } from '@/hooks/useLocations';
 import { useClassCategories } from '@/hooks/useClassCategories';
 import { toast } from 'sonner';
@@ -88,10 +88,33 @@ const defaultValues: FormValues = {
   scheduleEndAt: '',
 };
 
+const mapUsageTypeFromDb = (usageType: string | null): 'class_only' | 'gym_only' | 'both' => {
+  switch (usageType) {
+    case 'class_only': return 'class_only';
+    case 'gym_checkin_only': return 'gym_only';
+    case 'both': return 'both';
+    default: return 'both';
+  }
+};
+
+const getDistributionFromStatus = (status: string | null): 'sell_now' | 'scheduled' | 'draft' => {
+  switch (status) {
+    case 'on_sale': return 'sell_now';
+    case 'scheduled': return 'scheduled';
+    case 'drafts': return 'draft';
+    default: return 'sell_now';
+  }
+};
+
 const CreatePackage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+
   const createPackage = useCreatePackage();
+  const updatePackage = useUpdatePackage();
+  const { data: existingPackage, isLoading: isLoadingPackage } = usePackage(id || '');
   const { data: locations } = useLocations();
   const { data: classCategories } = useClassCategories();
 
@@ -103,8 +126,42 @@ const CreatePackage = () => {
   const { control, watch, reset, handleSubmit, setValue, formState: { errors } } = form;
   const watchAll = watch();
 
-  // Restore draft on mount
+  // Populate form when editing and data arrives
   useEffect(() => {
+    if (isEditMode && existingPackage) {
+      const mapped: FormValues = {
+        nameEn: existingPackage.name_en,
+        nameTh: existingPackage.name_th || '',
+        packageType: existingPackage.type as FormValues['packageType'],
+        price: String(existingPackage.price),
+        duration: String(existingPackage.term_days),
+        expiration: String(existingPackage.expiration_days),
+        sessions: existingPackage.sessions ? String(existingPackage.sessions) : '',
+        recurringPayment: existingPackage.recurring_payment ?? false,
+        quantityType: existingPackage.infinite_quantity ? 'infinite' : 'specific',
+        quantity: existingPackage.quantity ? String(existingPackage.quantity) : '',
+        purchaseLimitType: existingPackage.infinite_purchase_limit ? 'infinite' : 'specific',
+        purchaseLimit: existingPackage.user_purchase_limit ? String(existingPackage.user_purchase_limit) : '',
+        usageType: mapUsageTypeFromDb(existingPackage.usage_type),
+        categoryType: existingPackage.all_categories ? 'all' : 'specific',
+        selectedCategories: existingPackage.categories || [],
+        locationMode: existingPackage.all_locations ? 'all' : 'specific',
+        selectedLocations: existingPackage.access_locations || [],
+        accessType: existingPackage.any_day_any_time ? 'any' : 'specific',
+        accessDays: Array.isArray(existingPackage.access_days) ? (existingPackage.access_days as any[]) : [],
+        descriptionEn: existingPackage.description_en || '',
+        descriptionTh: existingPackage.description_th || '',
+        distribution: getDistributionFromStatus(existingPackage.status),
+        scheduleStartAt: existingPackage.schedule_start_at || '',
+        scheduleEndAt: existingPackage.schedule_end_at || '',
+      };
+      reset(mapped);
+    }
+  }, [isEditMode, existingPackage, reset]);
+
+  // Restore draft on mount (create mode only)
+  useEffect(() => {
+    if (isEditMode) return;
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
@@ -117,8 +174,9 @@ const CreatePackage = () => {
     }
   }, []);
 
-  // Autosave draft (debounced 1s)
+  // Autosave draft (create mode only, debounced 1s)
   useEffect(() => {
+    if (isEditMode) return;
     const timeout = setTimeout(() => {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(watchAll));
@@ -127,7 +185,7 @@ const CreatePackage = () => {
       }
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [watchAll]);
+  }, [watchAll, isEditMode]);
 
   const handleDiscard = useCallback(() => {
     localStorage.removeItem(DRAFT_KEY);
@@ -183,12 +241,20 @@ const CreatePackage = () => {
       schedule_end_at: data.distribution === 'scheduled' && data.scheduleEndAt ? data.scheduleEndAt : null,
     };
 
-    createPackage.mutate(packageData, {
-      onSuccess: () => {
-        localStorage.removeItem(DRAFT_KEY);
-        navigate('/package');
-      },
-    });
+    if (isEditMode && id) {
+      updatePackage.mutate({ id, data: packageData }, {
+        onSuccess: () => {
+          navigate(`/package/${id}`);
+        },
+      });
+    } else {
+      createPackage.mutate(packageData, {
+        onSuccess: () => {
+          localStorage.removeItem(DRAFT_KEY);
+          navigate('/package');
+        },
+      });
+    }
   };
 
   const packageTypes = [
@@ -222,23 +288,40 @@ const CreatePackage = () => {
   };
 
   const isFormValid = watchAll.nameEn && watchAll.price && watchAll.duration && watchAll.expiration;
+  const isMutating = createPackage.isPending || updatePackage.isPending;
+
+  const pageTitle = isEditMode ? t('packages.edit.title') : t('packages.create.title');
+  const packageName = isEditMode && existingPackage
+    ? (language === 'th' && existingPackage.name_th ? existingPackage.name_th : existingPackage.name_en)
+    : undefined;
+
+  if (isEditMode && isLoadingPackage) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader
-        title={t('packages.create.title')}
+        title={pageTitle}
         breadcrumbs={[
           { label: t('nav.package') },
           { label: t('packages.title'), href: '/package' },
-          { label: t('packages.create.title') },
+          ...(isEditMode && packageName ? [{ label: packageName, href: `/package/${id}` }] : []),
+          { label: pageTitle },
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleDiscard}>
-              <Trash2 className="h-4 w-4 mr-1" />
-              {t('packages.create.discardDraft')}
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/package')}>
+            {!isEditMode && (
+              <Button variant="outline" size="sm" onClick={handleDiscard}>
+                <Trash2 className="h-4 w-4 mr-1" />
+                {t('packages.create.discardDraft')}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => navigate(isEditMode ? `/package/${id}` : '/package')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('common.back')}
             </Button>
@@ -743,15 +826,15 @@ const CreatePackage = () => {
                   {t('packages.create.completeRequired')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-                  <Button variant="link" type="button" onClick={() => navigate('/package')}>
+                  <Button variant="link" type="button" onClick={() => navigate(isEditMode ? `/package/${id}` : '/package')}>
                     {t('common.cancel')}
                   </Button>
                   <Button
                     type="submit"
-                    disabled={!isFormValid || createPackage.isPending}
+                    disabled={!isFormValid || isMutating}
                   >
-                    {createPackage.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {t('packages.create.createPackage')}
+                    {isMutating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {isEditMode ? t('packages.edit.saveChanges') : t('packages.create.createPackage')}
                   </Button>
                 </div>
               </CardContent>
