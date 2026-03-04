@@ -290,6 +290,10 @@ export default {
     hotLeads: 'Hot leads',
     upcomingBirthdays: 'Upcoming birthdays',
     comparedToYesterday: 'compared to yesterday',
+    searchClasses: 'Search class, trainer, or room',
+    searchGym: 'Search name or contact number',
+    goToLobby: 'Go to Lobby',
+    checkInMethod: 'Method',
   },
 
   // Lobby
