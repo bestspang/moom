@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getInitials } from '@/lib/formatters';
 import { exportMembers, type ExportableMember } from '@/lib/exportCsv';
-import { useMembers, useMemberStats } from '@/hooks/useMembers';
+import { useMembers, useMemberStats, type MemberWithLocation } from '@/hooks/useMembers';
 import { useMembersEnrichment } from '@/hooks/useMembersEnriched';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import { EditMemberDialog } from '@/components/members/EditMemberDialog';
@@ -22,7 +22,6 @@ import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
-type Member = Database['public']['Tables']['members']['Row'];
 type MemberStatus = Database['public']['Enums']['member_status'];
 
 const Members = () => {
@@ -35,7 +34,7 @@ const Members = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberWithLocation | null>(null);
 
   const { data: membersData, isLoading: membersLoading } = useMembers({
     status: activeTab,
@@ -59,10 +58,20 @@ const Members = () => {
     { key: 'all', label: t('common.all'), count: stats?.total || 0 },
   ], [stats, t]);
 
-  const handleEdit = (e: React.MouseEvent, member: Member) => {
+  const handleEdit = (e: React.MouseEvent, member: MemberWithLocation) => {
     e.stopPropagation();
     setSelectedMember(member);
     setEditDialogOpen(true);
+  };
+
+  const getStatusVariant = (status: string | null) => {
+    switch (status) {
+      case 'active': return 'paid';
+      case 'suspended': return 'voided';
+      case 'on_hold': return 'pending';
+      case 'inactive': return 'default';
+      default: return 'default';
+    }
   };
 
   const handleExport = () => {
@@ -72,18 +81,38 @@ const Members = () => {
       first_name: m.first_name,
       last_name: m.last_name,
       nickname: m.nickname,
-      email: m.email,
+      gender: m.gender,
+      date_of_birth: m.date_of_birth,
       phone: m.phone,
+      email: m.email,
+      line_id: (m as any).line_id ?? null,
+      register_location_id: m.register_location_id,
+      register_location_name: m.register_location?.name ?? null,
       status: m.status,
       member_since: m.member_since,
-      recent_package: enrichment?.[m.id]?.recent_package ?? null,
+      address_1: m.address_1,
+      address_2: m.address_2,
+      subdistrict: m.subdistrict,
+      district: m.district,
+      province: m.province,
+      postal_code: m.postal_code,
+      emergency_first_name: (m as any).emergency_first_name ?? m.emergency_contact_name ?? null,
+      emergency_last_name: (m as any).emergency_last_name ?? null,
+      emergency_phone: (m as any).emergency_phone ?? m.emergency_contact_phone ?? null,
+      emergency_relationship: m.emergency_relationship,
+      has_medical_conditions: (m as any).has_medical_conditions ?? false,
+      medical_notes: (m as any).medical_notes ?? null,
+      allow_physical_contact: (m as any).allow_physical_contact ?? false,
+      source: m.source,
+      notes: m.notes,
+      recent_package_name: enrichment?.[m.id]?.recent_package ?? null,
       last_attended: enrichment?.[m.id]?.last_attended ?? null,
       has_contract: enrichment?.[m.id]?.has_contract ?? false,
     }));
     exportMembers(exportData);
   };
 
-  const columns: Column<Member>[] = [
+  const columns: Column<MemberWithLocation>[] = [
     {
       key: 'name',
       header: t('lobby.name'),
@@ -105,6 +134,25 @@ const Members = () => {
     { key: 'memberId', header: t('locations.id'), cell: (row) => row.member_id },
     { key: 'phone', header: t('leads.contactNumber'), cell: (row) => row.phone || '-' },
     { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
+    {
+      key: 'location',
+      header: t('lobby.location'),
+      cell: (row) => row.register_location?.name || '-',
+    },
+    {
+      key: 'status',
+      header: t('common.status'),
+      cell: (row) => (
+        <StatusBadge variant={getStatusVariant(row.status) as any}>
+          {row.status?.replace('_', ' ') || 'active'}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: 'memberSince',
+      header: t('members.joinedDate'),
+      cell: (row) => row.member_since ? format(new Date(row.member_since), 'dd MMM yyyy') : '-',
+    },
     {
       key: 'recentPackage',
       header: t('members.recentPackage'),

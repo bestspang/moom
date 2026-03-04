@@ -1357,6 +1357,7 @@ export type Database = {
           ai_profile_summary: string | null
           ai_risk_signals: Json | null
           ai_tags: Json | null
+          allow_physical_contact: boolean | null
           avatar_url: string | null
           consents: Json | null
           created_at: string | null
@@ -1365,17 +1366,23 @@ export type Database = {
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          emergency_first_name: string | null
+          emergency_last_name: string | null
+          emergency_phone: string | null
           emergency_relationship: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender"] | null
+          has_medical_conditions: boolean | null
           id: string
           is_new: boolean | null
           last_name: string
           line_display_name: string | null
+          line_id: string | null
           line_link_status: string | null
           line_picture_url: string | null
           line_user_id: string | null
           medical: Json | null
+          medical_notes: string | null
           member_id: string
           member_since: string | null
           most_attended_category: string | null
@@ -1383,6 +1390,7 @@ export type Database = {
           notes: string | null
           package_interest_id: string | null
           phone: string | null
+          physical_contact_notes: string | null
           postal_code: string | null
           province: string | null
           register_location_id: string | null
@@ -1401,6 +1409,7 @@ export type Database = {
           ai_profile_summary?: string | null
           ai_risk_signals?: Json | null
           ai_tags?: Json | null
+          allow_physical_contact?: boolean | null
           avatar_url?: string | null
           consents?: Json | null
           created_at?: string | null
@@ -1409,17 +1418,23 @@ export type Database = {
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
           emergency_relationship?: string | null
           first_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
+          has_medical_conditions?: boolean | null
           id?: string
           is_new?: boolean | null
           last_name: string
           line_display_name?: string | null
+          line_id?: string | null
           line_link_status?: string | null
           line_picture_url?: string | null
           line_user_id?: string | null
           medical?: Json | null
+          medical_notes?: string | null
           member_id: string
           member_since?: string | null
           most_attended_category?: string | null
@@ -1427,6 +1442,7 @@ export type Database = {
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          physical_contact_notes?: string | null
           postal_code?: string | null
           province?: string | null
           register_location_id?: string | null
@@ -1445,6 +1461,7 @@ export type Database = {
           ai_profile_summary?: string | null
           ai_risk_signals?: Json | null
           ai_tags?: Json | null
+          allow_physical_contact?: boolean | null
           avatar_url?: string | null
           consents?: Json | null
           created_at?: string | null
@@ -1453,17 +1470,23 @@ export type Database = {
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
           emergency_relationship?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
+          has_medical_conditions?: boolean | null
           id?: string
           is_new?: boolean | null
           last_name?: string
           line_display_name?: string | null
+          line_id?: string | null
           line_link_status?: string | null
           line_picture_url?: string | null
           line_user_id?: string | null
           medical?: Json | null
+          medical_notes?: string | null
           member_id?: string
           member_since?: string | null
           most_attended_category?: string | null
@@ -1471,6 +1494,7 @@ export type Database = {
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          physical_contact_notes?: string | null
           postal_code?: string | null
           province?: string | null
           register_location_id?: string | null
