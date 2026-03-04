@@ -1,91 +1,64 @@
 
 
-# Upgrade CreatePackage — Implementation Plan
+# Realtime Sync for Packages, Promotions & Member Purchases
 
 ## Current State
-- `CreatePackage.tsx` uses raw `useState`, no form validation, no autosave, no draft persistence
-- `packages` table has: `categories text[]`, `access_days jsonb`, `all_categories bool`, `any_day_any_time bool` — but NO `access_locations`, `schedule_start_at`, `schedule_end_at`, or AI columns
-- `package_status` enum already includes `scheduled`
-- `locations` table and `useLocations` hook exist; `useClassCategories` hook exists
 
-## Database Migration
+- `queryKeys.ts` has no entries for packages, promotions, or package metrics
+- `useRealtimeSync` subscribes to `member_packages` and `package_usage_ledger` but only invalidates `high-risk-members`/`member-bookings` — missing packages/promotions/transactions
+- Hooks use these actual query key prefixes:
+  - `packages`, `package-stats`, `package-metrics` (usePackages, usePackageStats, usePackageMetrics)
+  - `promotions`, `promotion-stats` (usePromotions, usePromotionStats)
+  - `member-packages` (useMemberDetails.useMemberPackages)
+  - `package-usage`, `package-usage-summary` (usePackageUsage)
+  - `transactions` (useFinance)
 
-Add missing columns to `packages`:
+## Plan
 
-```sql
-ALTER TABLE packages ADD COLUMN access_locations uuid[] DEFAULT '{}'::uuid[];
-ALTER TABLE packages ADD COLUMN all_locations boolean DEFAULT true;
-ALTER TABLE packages ADD COLUMN schedule_start_at timestamptz;
-ALTER TABLE packages ADD COLUMN schedule_end_at timestamptz;
-ALTER TABLE packages ADD COLUMN ai_tags jsonb DEFAULT '[]'::jsonb;
-ALTER TABLE packages ADD COLUMN ai_price_suggestion jsonb;
-ALTER TABLE packages ADD COLUMN ai_copy_suggestions jsonb;
+### 1. Extend `src/lib/queryKeys.ts`
+
+Add canonical keys:
+```
+packages: (status?, search?) => ['packages', status, search]
+package: (id) => ['packages', id]
+packageStats: () => ['package-stats']
+packageMetrics: (id) => ['package-metrics', id]
+promotions: (status?, search?) => ['promotions', status, search]
+promotion: (id) => ['promotions', id]
+promotionStats: () => ['promotion-stats']
+memberPackages: (memberId) => ['member-packages', memberId]
+packageUsage: (memberPackageId) => ['package-usage', memberPackageId]
+transactions: () => ['transactions']
 ```
 
-No join tables needed — `access_locations uuid[]` stores location IDs directly (matches existing `categories text[]` pattern). `access_days jsonb` already exists for day/time rules.
+### 2. Extend `src/hooks/useRealtimeSync.ts`
 
-## Implementation Plan
+Add tables to `TableName` union and `TABLE_INVALIDATION_MAP`:
+- `packages` → invalidate `['packages']`, `['package-stats']`, `['package-metrics']`
+- `promotions` → invalidate `['promotions']`, `['promotion-stats']`
+- `transactions` → invalidate `['transactions']`, `['package-metrics']`, `['dashboard-stats']`
 
-### 1. Refactor CreatePackage to react-hook-form + Zod
+Update existing entries:
+- `member_packages` → add `['member-packages']`, `['package-metrics']`, `['packages']`
+- `package_usage_ledger` → add `['package-usage']`, `['package-usage-summary']`, `['package-metrics']`
 
-- Define `createPackageSchema` with Zod (all current fields + new ones)
-- Replace `useState` with `useForm` + `zodResolver`
-- `watch()` feeds the preview sidebar in real-time
+Enable realtime publication for new tables via migration:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.packages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.promotions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
+```
 
-### 2. Autosave Draft
+### 3. No other changes needed
 
-- `useEffect` with debounced (1s) save of `watch()` values to `localStorage('package-create-draft')`
-- On mount, check localStorage and call `reset(draft)` if found
-- "Discard" button clears localStorage + resets form
-
-### 3. Access Locations Section
-
-- Fetch locations via `useLocations()` (already exists)
-- Radio: All locations / Specific locations
-- When specific: multi-select checkboxes for locations
-- Maps to `all_locations` bool + `access_locations uuid[]`
-
-### 4. Class Categories Selection
-
-- Already has radio for all/specific
-- When specific: fetch `useClassCategories()`, render multi-select checkboxes
-- Maps to existing `all_categories` bool + `categories text[]`
-
-### 5. Access Days & Times
-
-- Already has radio for any/specific
-- When specific: day-of-week checkboxes + start/end time inputs per selected day
-- Maps to existing `access_days jsonb` (array of `{day, start_time, end_time}`)
-
-### 6. Distribution Section
-
-- New Card with 3 radio options:
-  - "Sell now" → status = `on_sale`
-  - "Scheduled sale" → status = `scheduled`, show date pickers for `schedule_start_at` / `schedule_end_at`
-  - "Save as draft" → status = `drafts`
-- Remove old action buttons pattern, replace with single "Create Package" button that uses the selected distribution
-
-### 7. AI Assist Placeholder
-
-- Disabled Card section "AI Assist (coming soon)" with greyed-out placeholders for tags, price suggestion, copy suggestions
-- No logic wired
-
-### 8. Preview Sidebar
-
-- Enhanced with all new fields: selected locations, selected categories, access day rules, distribution status/dates
-
-### 9. i18n Keys
-
-Add keys for: access locations, specific locations, distribution, sell now, scheduled sale, schedule dates, AI assist coming soon
+- Single channel `realtime-sync` already used — just adding more tables to it
+- Cleanup on unmount already handled via `supabase.removeChannel`
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Migration | Add 7 columns to `packages` |
-| Rewrite | `src/pages/CreatePackage.tsx` — react-hook-form + all new sections |
-| Modify | `src/i18n/locales/en.ts` — new keys |
-| Modify | `src/i18n/locales/th.ts` — new keys |
-
-No new hooks needed — reuses existing `useLocations`, `useClassCategories`, `useCreatePackage`. No breaking changes to existing data.
+| Modify | `src/lib/queryKeys.ts` — add package/promotion/transaction keys |
+| Modify | `src/hooks/useRealtimeSync.ts` — add 3 tables + update 2 existing |
+| Migration | Enable realtime for packages, promotions, transactions |
 
