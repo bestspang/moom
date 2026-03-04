@@ -8,11 +8,15 @@ type Lead = Tables<'leads'>;
 type LeadInsert = TablesInsert<'leads'>;
 type LeadUpdate = TablesUpdate<'leads'>;
 
-export const useLeads = (search?: string) => {
+export const useLeads = (search?: string, status?: string) => {
   return useQuery({
-    queryKey: queryKeys.leads(search),
+    queryKey: queryKeys.leads(search, status),
     queryFn: async () => {
       let query = supabase.from('leads').select('*');
+      
+      if (status && status !== 'all') {
+        query = query.eq('status', status as Lead['status']);
+      }
       
       if (search) {
         query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,phone.ilike.%${search}%`);

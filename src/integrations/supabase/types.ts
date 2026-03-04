@@ -657,51 +657,108 @@ export type Database = {
       }
       leads: {
         Row: {
+          address: string | null
+          ai_summary: string | null
+          ai_tags: Json | null
           created_at: string | null
+          date_of_birth: string | null
           email: string | null
           first_name: string
+          followup_at: string | null
+          gender: string | null
           id: string
           last_attended: string | null
           last_contacted: string | null
           last_name: string | null
+          line_display_name: string | null
+          line_link_status: string | null
+          line_picture_url: string | null
+          line_user_id: string | null
+          next_action: string | null
+          nickname: string | null
           notes: string | null
+          package_interest_id: string | null
           phone: string | null
+          register_location_id: string | null
           source: string | null
           status: Database["public"]["Enums"]["lead_status"] | null
           times_contacted: number | null
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
+          ai_summary?: string | null
+          ai_tags?: Json | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           first_name: string
+          followup_at?: string | null
+          gender?: string | null
           id?: string
           last_attended?: string | null
           last_contacted?: string | null
           last_name?: string | null
+          line_display_name?: string | null
+          line_link_status?: string | null
+          line_picture_url?: string | null
+          line_user_id?: string | null
+          next_action?: string | null
+          nickname?: string | null
           notes?: string | null
+          package_interest_id?: string | null
           phone?: string | null
+          register_location_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           times_contacted?: number | null
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
+          ai_summary?: string | null
+          ai_tags?: Json | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           first_name?: string
+          followup_at?: string | null
+          gender?: string | null
           id?: string
           last_attended?: string | null
           last_contacted?: string | null
           last_name?: string | null
+          line_display_name?: string | null
+          line_link_status?: string | null
+          line_picture_url?: string | null
+          line_user_id?: string | null
+          next_action?: string | null
+          nickname?: string | null
           notes?: string | null
+          package_interest_id?: string | null
           phone?: string | null
+          register_location_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           times_contacted?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_package_interest_id_fkey"
+            columns: ["package_interest_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_register_location_id_fkey"
+            columns: ["register_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       line_message_log: {
         Row: {
