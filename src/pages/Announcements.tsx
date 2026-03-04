@@ -11,7 +11,7 @@ import { CreateAnnouncementDialog } from '@/components/announcements/CreateAnnou
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Smartphone, MessageCircle, MapPin } from 'lucide-react';
 import { getDateLocale } from '@/lib/formatters';
 import {
   Table,
@@ -69,6 +69,39 @@ const Announcements = () => {
     );
   };
 
+  const renderChannelBadges = (channels: { in_app?: boolean; line?: boolean } | null) => {
+    const ch = channels ?? { in_app: true, line: false };
+    return (
+      <div className="flex gap-1">
+        {ch.in_app && (
+          <Badge variant="outline" className="gap-1 text-xs">
+            <Smartphone className="h-3 w-3" />
+            {t('announcements.inApp')}
+          </Badge>
+        )}
+        {ch.line && (
+          <Badge variant="outline" className="gap-1 text-xs">
+            <MessageCircle className="h-3 w-3" />
+            {t('announcements.line')}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const renderTarget = (mode: string | null, ids: string[] | null) => {
+    if (!mode || mode === 'all') {
+      return <span className="text-sm text-muted-foreground">{t('announcements.allLocations')}</span>;
+    }
+    const count = ids?.length || 0;
+    return (
+      <Badge variant="outline" className="gap-1 text-xs">
+        <MapPin className="h-3 w-3" />
+        {count} {count === 1 ? 'location' : 'locations'}
+      </Badge>
+    );
+  };
+
   return (
     <div>
       <PageHeader
@@ -112,6 +145,8 @@ const Announcements = () => {
                 <TableHead>{t('announcements.publishDate')}</TableHead>
                 <TableHead>{t('announcements.endDate')}</TableHead>
                 <TableHead>{t('announcements.message')}</TableHead>
+                <TableHead>{t('announcements.channels')}</TableHead>
+                <TableHead>{t('announcements.targetLocations')}</TableHead>
                 <TableHead>{t('common.status')}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -131,6 +166,12 @@ const Announcements = () => {
                   </TableCell>
                   <TableCell className="max-w-md">
                     <p className="truncate">{announcement.message}</p>
+                  </TableCell>
+                  <TableCell>
+                    {renderChannelBadges(announcement.channels as unknown as { in_app?: boolean; line?: boolean } | null)}
+                  </TableCell>
+                  <TableCell>
+                    {renderTarget(announcement.target_mode, announcement.target_location_ids)}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(announcement.status)}

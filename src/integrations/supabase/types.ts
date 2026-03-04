@@ -249,6 +249,7 @@ export type Database = {
       }
       announcements: {
         Row: {
+          channels: Json | null
           created_at: string | null
           created_by: string | null
           end_date: string | null
@@ -256,9 +257,12 @@ export type Database = {
           message: string
           publish_date: string | null
           status: Database["public"]["Enums"]["announcement_status"] | null
+          target_location_ids: string[] | null
+          target_mode: string | null
           updated_at: string | null
         }
         Insert: {
+          channels?: Json | null
           created_at?: string | null
           created_by?: string | null
           end_date?: string | null
@@ -266,9 +270,12 @@ export type Database = {
           message: string
           publish_date?: string | null
           status?: Database["public"]["Enums"]["announcement_status"] | null
+          target_location_ids?: string[] | null
+          target_mode?: string | null
           updated_at?: string | null
         }
         Update: {
+          channels?: Json | null
           created_at?: string | null
           created_by?: string | null
           end_date?: string | null
@@ -276,6 +283,8 @@ export type Database = {
           message?: string
           publish_date?: string | null
           status?: Database["public"]["Enums"]["announcement_status"] | null
+          target_location_ids?: string[] | null
+          target_mode?: string | null
           updated_at?: string | null
         }
         Relationships: [
