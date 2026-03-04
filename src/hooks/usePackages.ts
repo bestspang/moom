@@ -3,14 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Package = Tables<'packages'>;
 type PackageInsert = TablesInsert<'packages'>;
 type PackageUpdate = TablesUpdate<'packages'>;
 
 export const usePackages = (status?: string, search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['packages', status, search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('packages').select('*');
       
@@ -31,8 +34,10 @@ export const usePackages = (status?: string, search?: string) => {
 };
 
 export const usePackageStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['package-stats'],
+    enabled: !!user,
     queryFn: async () => {
       const statuses = ['on_sale', 'scheduled', 'drafts', 'archive'] as const;
       const results = await Promise.all(
@@ -56,8 +61,10 @@ export const usePackageStats = () => {
 };
 
 export const usePackage = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['packages', id],
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('packages')
@@ -68,7 +75,6 @@ export const usePackage = (id: string) => {
       if (error) throw error;
       return data as Package;
     },
-    enabled: !!id,
   });
 };
 

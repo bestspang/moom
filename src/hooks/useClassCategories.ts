@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ClassCategory = Tables<'class_categories'>;
 type ClassCategoryInsert = TablesInsert<'class_categories'>;
@@ -13,8 +14,10 @@ export type ClassCategoryWithCount = ClassCategory & {
 };
 
 export const useClassCategories = (search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['class-categories', search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('class_categories')
@@ -28,7 +31,6 @@ export const useClassCategories = (search?: string) => {
 
       if (error) throw error;
 
-      // Map the joined count into a flat field
       return (data ?? []).map((row: any) => ({
         ...row,
         computed_class_count: row.classes?.[0]?.count ?? 0,
@@ -38,8 +40,10 @@ export const useClassCategories = (search?: string) => {
 };
 
 export const useClassCategory = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['class-categories', id],
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_categories')
@@ -50,13 +54,14 @@ export const useClassCategory = (id: string) => {
       if (error) throw error;
       return data as ClassCategory;
     },
-    enabled: !!id,
   });
 };
 
 export const useCategoryClasses = (categoryId: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['class-categories', categoryId, 'classes'],
+    enabled: !!user && !!categoryId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
@@ -67,7 +72,6 @@ export const useCategoryClasses = (categoryId: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!categoryId,
   });
 };
 

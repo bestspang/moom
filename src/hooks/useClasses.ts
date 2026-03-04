@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Class = Tables<'classes'>;
 type ClassInsert = TablesInsert<'classes'>;
@@ -19,8 +20,10 @@ export const useClasses = (
   page: number = 1,
   perPage: number = 50,
 ) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classes(status, search, typeFilter, categoryFilter, levelFilter, page, perPage),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('classes')
@@ -63,36 +66,39 @@ export const useClasses = (
 };
 
 export const useClassStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classStats(),
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('status');
+      const statuses = ['active', 'drafts', 'archive'] as const;
+      const [totalRes, ...statusResults] = await Promise.all([
+        supabase.from('classes').select('id', { count: 'exact', head: true }),
+        ...statuses.map((s) =>
+          supabase.from('classes').select('id', { count: 'exact', head: true }).eq('status', s)
+        ),
+      ]);
 
-      if (error) throw error;
+      if (totalRes.error) throw totalRes.error;
+      for (const r of statusResults) {
+        if (r.error) throw r.error;
+      }
 
-      const stats = {
-        all: data?.length || 0,
-        active: 0,
-        drafts: 0,
-        archive: 0,
+      return {
+        all: totalRes.count ?? 0,
+        active: statusResults[0].count ?? 0,
+        drafts: statusResults[1].count ?? 0,
+        archive: statusResults[2].count ?? 0,
       };
-
-      data?.forEach((cls) => {
-        if (cls.status === 'active') stats.active++;
-        else if (cls.status === 'drafts') stats.drafts++;
-        else if (cls.status === 'archive') stats.archive++;
-      });
-
-      return stats;
     },
   });
 };
 
 export const useClass = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classDetail(id),
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
@@ -106,13 +112,14 @@ export const useClass = (id: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
   });
 };
 
 export const useClassPerformance = (classId: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classPerformance(classId),
+    enabled: !!user && !!classId,
     queryFn: async () => {
       const now = new Date();
       const weekStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -120,7 +127,6 @@ export const useClassPerformance = (classId: string) => {
       const weekStartStr = weekStart.toISOString().split('T')[0];
       const weekEndStr = weekEnd.toISOString().split('T')[0];
 
-      // Get schedule rows for this class this week
       const { data: weekSchedules, error: schedErr } = await supabase
         .from('schedule')
         .select('id, capacity')
@@ -134,7 +140,6 @@ export const useClassPerformance = (classId: string) => {
       const scheduledThisWeek = weekSchedules?.length || 0;
       const weekScheduleIds = weekSchedules?.map((s) => s.id) || [];
 
-      // Get bookings for this week's schedules
       let bookingsThisWeek = 0;
       if (weekScheduleIds.length > 0) {
         const { count, error: bErr } = await supabase
@@ -146,7 +151,6 @@ export const useClassPerformance = (classId: string) => {
         bookingsThisWeek = count || 0;
       }
 
-      // Avg capacity: get all schedules for this class with booking counts
       const { data: allSchedules, error: allSchedErr } = await supabase
         .from('schedule')
         .select('id, capacity')
@@ -160,7 +164,6 @@ export const useClassPerformance = (classId: string) => {
 
       if (allSchedules && allSchedules.length > 0) {
         const allIds = allSchedules.map((s) => s.id);
-        // Get booking counts per schedule
         const { data: bookings, error: bAllErr } = await supabase
           .from('class_bookings')
           .select('schedule_id')
@@ -171,7 +174,6 @@ export const useClassPerformance = (classId: string) => {
 
         totalBookings = bookings?.length || 0;
 
-        // Calculate per-schedule capacity percentage
         const bookingCounts: Record<string, number> = {};
         bookings?.forEach((b) => {
           bookingCounts[b.schedule_id] = (bookingCounts[b.schedule_id] || 0) + 1;
@@ -193,7 +195,6 @@ export const useClassPerformance = (classId: string) => {
         totalBookings,
       };
     },
-    enabled: !!classId,
   });
 };
 

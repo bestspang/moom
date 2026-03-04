@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type ScheduleWithRelations = Tables<'schedule'> & {
   class: Tables<'classes'> | null;
@@ -53,10 +54,12 @@ export type ScheduleStats = {
 };
 
 export function useScheduleByDate(date: Date) {
+  const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
   
   return useQuery({
     queryKey: queryKeys.schedule(dateStr),
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedule')
@@ -75,7 +78,6 @@ export function useScheduleByDate(date: Date) {
       const schedules = data as ScheduleWithRelations[];
       if (schedules.length === 0) return schedules;
 
-      // Fetch booking counts in a single query
       const scheduleIds = schedules.map(s => s.id);
       const { data: bookings } = await supabase
         .from('class_bookings')
@@ -83,7 +85,6 @@ export function useScheduleByDate(date: Date) {
         .in('schedule_id', scheduleIds)
         .in('status', ['booked', 'attended']);
 
-      // Aggregate counts
       const countMap: Record<string, { booked: number; attended: number }> = {};
       (bookings || []).forEach(b => {
         if (!countMap[b.schedule_id]) countMap[b.schedule_id] = { booked: 0, attended: 0 };
@@ -101,13 +102,14 @@ export function useScheduleByDate(date: Date) {
 }
 
 export function useScheduleStats(date: Date) {
+  const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
   const yesterdayStr = format(new Date(date.getTime() - 86400000), 'yyyy-MM-dd');
 
   return useQuery({
     queryKey: queryKeys.scheduleStats(dateStr),
+    enabled: !!user,
     queryFn: async () => {
-      // Get today's and yesterday's schedules in parallel
       const [todayResult, yesterdayResult] = await Promise.all([
         supabase.from('schedule').select('*, class:classes(type)').eq('scheduled_date', dateStr),
         supabase.from('schedule').select('*, class:classes(type)').eq('scheduled_date', yesterdayStr),
@@ -119,7 +121,6 @@ export function useScheduleStats(date: Date) {
       const todaySchedules = todayResult.data || [];
       const yesterdaySchedules = yesterdayResult.data || [];
 
-      // Fetch real booking counts for both days
       const allIds = [...todaySchedules, ...yesterdaySchedules].map(s => s.id);
       const bookingCounts: Record<string, { booked: number; attended: number }> = {};
 
@@ -137,7 +138,6 @@ export function useScheduleStats(date: Date) {
         });
       }
 
-      // Helper to compute avgCapacity from real booking data
       const computeAvgCapacity = (schedules: typeof todaySchedules) => {
         const scheduled = schedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
         if (scheduled.length === 0) return 0;
@@ -149,19 +149,16 @@ export function useScheduleStats(date: Date) {
         );
       };
 
-      // Today's stats
       const classesCount = todaySchedules.filter(s => s.class?.type === 'class').length;
       const ptCount = todaySchedules.filter(s => s.class?.type === 'pt').length;
       const cancellations = todaySchedules.filter(s => s.status === 'cancelled').length;
       const avgCapacity = computeAvgCapacity(todaySchedules);
 
-      // Yesterday's stats for comparison
       const yesterdayClassesCount = yesterdaySchedules.filter(s => s.class?.type === 'class').length;
       const yesterdayPtCount = yesterdaySchedules.filter(s => s.class?.type === 'pt').length;
       const yesterdayCancellations = yesterdaySchedules.filter(s => s.status === 'cancelled').length;
       const yesterdayAvgCapacity = computeAvgCapacity(yesterdaySchedules);
 
-      // Calculate differences
       const classesCountDiff = yesterdayClassesCount > 0
         ? Math.round(((classesCount - yesterdayClassesCount) / yesterdayClassesCount) * 100)
         : classesCount > 0 ? 100 : 0;
@@ -193,8 +190,10 @@ export function useScheduleStats(date: Date) {
 }
 
 export function useTrainers() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.trainers(),
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff')
@@ -233,17 +232,10 @@ export function useCreateSchedule() {
         entity_type: 'schedule',
         entity_id: data.id,
       });
-      toast({
-        title: 'Success',
-        description: 'Class scheduled successfully',
-      });
+      toast.success('Class scheduled successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(error.message);
     },
   });
 }
@@ -273,17 +265,10 @@ export function useUpdateSchedule() {
         entity_id: variables.id,
         new_value: variables as Record<string, unknown>,
       });
-      toast({
-        title: 'Success',
-        description: 'Schedule updated successfully',
-      });
+      toast.success('Schedule updated successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(error.message);
     },
   });
 }
@@ -309,17 +294,10 @@ export function useDeleteSchedule() {
         entity_type: 'schedule',
         entity_id: id,
       });
-      toast({
-        title: 'Success',
-        description: 'Schedule deleted successfully',
-      });
+      toast.success('Schedule deleted successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(error.message);
     },
   });
 }
@@ -360,7 +338,6 @@ export function useCreateScheduleValidated() {
 
       if (error) throw error;
 
-      // The RPC returns JSON — check for validation error
       const result = data as Record<string, unknown>;
       if (result?.error) {
         const errorCode = result.error as string;
@@ -380,19 +357,12 @@ export function useCreateScheduleValidated() {
         entity_type: 'schedule',
         entity_id: (result as any)?.id,
       });
-      toast({
-        title: 'Success',
-        description: 'Class scheduled successfully',
-      });
+      toast.success('Class scheduled successfully');
     },
     onError: (error) => {
       // Only show non-i18n errors here; i18n errors are handled by the caller
       if (!error.message.startsWith('schedule.error.')) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
+        toast.error(error.message);
       }
     },
   });
@@ -403,7 +373,6 @@ export function useCancelSchedule() {
 
   return useMutation({
     mutationFn: async (scheduleId: string) => {
-      // 1) Mark schedule as cancelled
       const { error: schedError } = await supabase
         .from('schedule')
         .update({ status: 'cancelled' })
@@ -411,7 +380,6 @@ export function useCancelSchedule() {
 
       if (schedError) throw schedError;
 
-      // 2) Batch-cancel all booked bookings
       const { error: bookError } = await supabase
         .from('class_bookings')
         .update({
@@ -437,17 +405,10 @@ export function useCancelSchedule() {
         entity_type: 'schedule',
         entity_id: scheduleId,
       });
-      toast({
-        title: 'Success',
-        description: 'Class cancelled successfully',
-      });
+      toast.success('Class cancelled successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(error.message);
     },
   });
 }

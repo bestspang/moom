@@ -4,14 +4,17 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Location = Tables<'locations'>;
 type LocationInsert = TablesInsert<'locations'>;
 type LocationUpdate = TablesUpdate<'locations'>;
 
 export const useLocations = (status?: string, search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.locations(status, search),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('locations').select('*');
       
@@ -32,34 +35,32 @@ export const useLocations = (status?: string, search?: string) => {
 };
 
 export const useLocationStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.locationStats(),
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('status');
-      
-      if (error) throw error;
-      
-      const stats = {
-        open: 0,
-        closed: 0,
+      const [openRes, closedRes] = await Promise.all([
+        supabase.from('locations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from('locations').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
+      ]);
+
+      if (openRes.error) throw openRes.error;
+      if (closedRes.error) throw closedRes.error;
+
+      return {
+        open: openRes.count ?? 0,
+        closed: closedRes.count ?? 0,
       };
-      
-      data?.forEach((loc) => {
-        if (loc.status && stats.hasOwnProperty(loc.status)) {
-          stats[loc.status as keyof typeof stats]++;
-        }
-      });
-      
-      return stats;
     },
   });
 };
 
 export const useLocation = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.locations(id),
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('locations')
@@ -70,7 +71,6 @@ export const useLocation = (id: string) => {
       if (error) throw error;
       return data as Location;
     },
-    enabled: !!id,
   });
 };
 
@@ -149,10 +149,17 @@ export const useDeleteLocation = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      logActivity({
+        event_type: 'location_deleted',
+        activity: `Location deleted`,
+        entity_type: 'location',
+        entity_id: id,
+      });
       toast.success('Location deleted successfully');
     },
     onError: (error) => {
