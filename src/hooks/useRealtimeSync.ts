@@ -16,7 +16,10 @@ type TableName =
   | 'member_packages'
   | 'package_usage_ledger'
   | 'leads'
-  | 'ai_suggestions';
+  | 'ai_suggestions'
+  | 'packages'
+  | 'promotions'
+  | 'transactions';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -28,10 +31,13 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   classes: ['classes', 'class-stats'],
   class_categories: ['class-stats', 'classes'],
   members: ['members', 'member', 'member-stats', 'high-risk-members', 'upcoming-birthdays'],
-  member_packages: ['high-risk-members', 'member-bookings'],
-  package_usage_ledger: ['member-bookings'],
+  member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages'],
+  package_usage_ledger: ['member-bookings', 'package-usage', 'package-usage-summary', 'package-metrics'],
   leads: ['leads', 'hot-leads'],
   ai_suggestions: ['ai-suggestions'],
+  packages: ['packages', 'package-stats', 'package-metrics'],
+  promotions: ['promotions', 'promotion-stats'],
+  transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
