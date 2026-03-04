@@ -901,6 +901,7 @@ export type Database = {
           id: string
           location_id: string
           name: string
+          opening_hours: Json | null
           status: Database["public"]["Enums"]["location_status"] | null
           updated_at: string | null
         }
@@ -911,6 +912,7 @@ export type Database = {
           id?: string
           location_id: string
           name: string
+          opening_hours?: Json | null
           status?: Database["public"]["Enums"]["location_status"] | null
           updated_at?: string | null
         }
@@ -921,6 +923,7 @@ export type Database = {
           id?: string
           location_id?: string
           name?: string
+          opening_hours?: Json | null
           status?: Database["public"]["Enums"]["location_status"] | null
           updated_at?: string | null
         }
