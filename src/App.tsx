@@ -52,6 +52,9 @@ import Profile from "./pages/Profile";
 import ComingSoon from "./pages/ComingSoon";
 import MemberAppPreview from "./pages/MemberAppPreview";
 import TrainerAppPreview from "./pages/TrainerAppPreview";
+import LiffMemberApp from "./pages/liff/LiffMemberApp";
+import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
+import LiffCallback from "./pages/liff/LiffCallback";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +71,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              
+              {/* LIFF public routes */}
+              <Route path="/liff/member" element={<LiffMemberApp />} />
+              <Route path="/liff/trainer" element={<LiffTrainerApp />} />
+              <Route path="/liff/callback" element={<LiffCallback />} />
               
               {/* Protected routes - wrap with ProtectedRoute which handles auth check before rendering MainLayout */}
               <Route 
