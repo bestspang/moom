@@ -7,14 +7,33 @@ import { StatusBadge } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCheckIns, type CheckInWithRelations } from '@/hooks/useLobby';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
+import { CheckInQRCodeDialog } from '@/components/lobby/CheckInQRCodeDialog';
+import { QrCode } from 'lucide-react';
 
 const Lobby = () => {
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
 
   const { data: checkInData = [], isLoading } = useCheckIns(selectedDate, search);
+
+  const methodVariant = (method: string | null | undefined) => {
+    switch (method) {
+      case 'qr': return 'active' as const;
+      case 'liff': return 'new' as const;
+      default: return 'paid' as const;
+    }
+  };
+
+  const methodLabel = (method: string | null | undefined) => {
+    switch (method) {
+      case 'qr': return 'QR';
+      case 'liff': return 'LIFF';
+      default: return 'Manual';
+    }
+  };
 
   const columns: Column<CheckInWithRelations>[] = [
     {
@@ -48,11 +67,12 @@ const Lobby = () => {
       cell: (row) => row.location?.name || '-',
     },
     {
-      key: 'checkedIn',
-      header: t('lobby.checkedIn'),
-      cell: () => (
-        <StatusBadge variant="paid">Yes</StatusBadge>
-      ),
+      key: 'checkinMethod',
+      header: t('lobby.checkinMethod'),
+      cell: (row) => {
+        const method = (row as any).checkin_method;
+        return <StatusBadge variant={methodVariant(method)}>{methodLabel(method)}</StatusBadge>;
+      },
     },
   ];
 
@@ -71,11 +91,15 @@ const Lobby = () => {
         />
         <div className="flex items-center gap-4">
           <SearchBar
-            placeholder={t('lobby.searchName')}
+            placeholder={t('lobby.searchPlaceholder')}
             value={search}
             onChange={setSearch}
             className="w-64"
           />
+          <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
+            <QrCode className="h-4 w-4 mr-1" />
+            {t('lobby.qrCode')}
+          </Button>
           <Button className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
             {t('lobby.checkIn')}
           </Button>
@@ -97,8 +121,8 @@ const Lobby = () => {
         />
       )}
 
-      {/* Check-in Dialog */}
       <CheckInDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <CheckInQRCodeDialog open={qrDialogOpen} onOpenChange={setQrDialogOpen} />
     </div>
   );
 };

@@ -35,7 +35,7 @@ type TableName =
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
-  member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats', 'gym-checkins'],
+  member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats', 'gym-checkins', 'check-ins'],
   class_bookings: ['class-bookings', 'member-bookings', 'booking-count', 'schedule'],
   class_waitlist: ['class-waitlist'],
   rooms: ['rooms', 'room-stats'],
