@@ -173,6 +173,31 @@ export const useActiveQRToken = (memberId: string | null, locationId?: string) =
   });
 };
 
+// Fetch token info (read-only, no mark as used) for redemption page
+export const useTokenInfo = (token: string | null) => {
+  return useQuery({
+    queryKey: ['token-info', token],
+    queryFn: async () => {
+      if (!token) return null;
+      const { data, error } = await supabase
+        .from('checkin_qr_tokens')
+        .select('*, locations(name)')
+        .eq('token', token)
+        .single();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        ...data,
+        location_name: (data.locations as any)?.name || '',
+      } as CheckinQRToken & { location_name: string };
+    },
+    enabled: !!token,
+    staleTime: 5000,
+  });
+};
+
 // Get time remaining until token expires
 export const getTokenTimeRemaining = (expiresAt: string): number => {
   const expiryTime = new Date(expiresAt).getTime();
