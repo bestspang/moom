@@ -1,83 +1,72 @@
 
 
-# Recheck: Staff & Roles RBAC (`staff_roles_rbac_rls_complete_01`)
+# Activity Log Data Complete (`activity_log_data_complete_01`)
 
-## Verification Summary
+## Current State
 
 | Area | Status |
 |------|--------|
-| Staff stats (head-only counts) | ✅ Done |
-| Roles account counting (head-only) | ✅ Done |
-| Staff details - profile editing | ✅ Done |
-| Staff details - add/remove positions | ✅ Done |
-| Promotions list discount display (new schema) | ✅ Done |
-| Data contract docs | ✅ Done |
-| Realtime sync (staff, staff_positions, role_permissions) | ✅ Done |
-| Activity log (staff CRUD, positions) | ✅ Done |
+| DB table `activity_log` | ✅ Exists with core columns |
+| `logActivity()` helper | ✅ Used in 21 files across all major modules |
+| Activity log page (date range, event filter, pagination) | ✅ Working |
+| Staff join for "who performed" | ✅ LEFT JOIN via `staff:staff_id(...)` |
+| Realtime invalidation | ✅ `activity_log` in `TABLE_INVALIDATION_MAP` |
+| Value change display | ✅ `formatValueChange()` renders old→new diffs |
 
-## Remaining Gaps
+## Gaps
 
-### GAP 1: Staff list "empty bug" — missing auth guard on queries
-**Severity: HIGH — Root cause of the reported symptom**
+### GAP 1: Missing DB indexes (performance)
+Only the PK index exists. No indexes on `created_at`, `event_type`, or `staff_id`. Date range + event type queries will do full table scans as data grows.
 
-`useStaff` and `useStaffStats` do NOT have `enabled: !!user` guards. During auth state transitions (page load, token refresh), the query fires with no auth token. RLS blocks everything, returning 0 rows. React Query caches the empty result. Meanwhile, `useStaffStats` may still show cached counts from a prior successful fetch — producing the exact symptom: "stats show Active 10, table shows empty."
+### GAP 2: Missing auth guard on query
+`useActivityLogs` has no `enabled: !!user` guard — same pattern that caused the staff empty-list bug.
 
-**Fix**: Import `useAuth` and add `enabled: !!user` to both `useStaff` and `useStaffStats` queries. Same pattern should be applied to `useRoles`.
+### GAP 3: No search functionality
+The page has date range and event type filters but no text search bar. User requirement: search across `activity` text.
 
-**File**: `src/hooks/useStaff.ts`, `src/hooks/useRoles.ts`
+### GAP 4: Page size mismatch
+Currently 25 per page; user requests 50.
 
-### GAP 2: Missing DB columns for emergency contact and staff_code
-**Severity: MEDIUM**
-
-The data contract (`docs/data-contract-staff.md`) and the `CreateStaffDialog` reference emergency contact fields (`emergency_first_name`, `emergency_last_name`, `emergency_phone`, `emergency_relationship`) and `staff_code`. These columns do **not exist** in the `staff` table.
-
-The `StaffDetails` page does NOT render emergency fields yet, but the data contract promises them.
-
-**Fix**: DB migration to add these 5 columns to the `staff` table. Then update `StaffDetails.tsx` to render emergency contact fields.
-
-### GAP 3: CreateStaffDialog doesn't persist emergency fields
-**Severity: LOW** — Blocked by GAP 2 (columns don't exist yet)
-
-The `StaffDraft` interface in `CreateStaffDialog` does not include emergency fields. Once GAP 2 adds the columns, the dialog should be extended.
+### GAP 5: Missing `location_id` column
+Data contract specifies `location_id` on activity_log for location-scoped filtering. Column doesn't exist yet.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Add auth guard to staff/roles queries (fixes empty bug)
-Add `enabled: !!user` to `useStaff`, `useStaffStats`, and `useRoles` queries by importing `useAuth`.
-
-**Files**: `src/hooks/useStaff.ts`, `src/hooks/useRoles.ts`
-
-### Step 2: DB migration — add missing staff columns
+### Step 1: DB migration — add indexes + `location_id` column
 ```sql
-ALTER TABLE staff
-  ADD COLUMN IF NOT EXISTS emergency_first_name text,
-  ADD COLUMN IF NOT EXISTS emergency_last_name text,
-  ADD COLUMN IF NOT EXISTS emergency_phone text,
-  ADD COLUMN IF NOT EXISTS emergency_relationship text,
-  ADD COLUMN IF NOT EXISTS staff_code text UNIQUE;
+ALTER TABLE public.activity_log
+  ADD COLUMN IF NOT EXISTS location_id uuid;
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON public.activity_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_log_event_type ON public.activity_log (event_type);
+CREATE INDEX IF NOT EXISTS idx_activity_log_staff_id ON public.activity_log (staff_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_location_id ON public.activity_log (location_id);
 ```
 
-### Step 3: Update StaffDetails — show emergency contact section
-Add emergency contact fields to the profile tab using the existing `EditableField` pattern.
+### Step 2: Fix `useActivityLog.ts`
+- Add `enabled: !!user` auth guard (import `useAuth`)
+- Add optional `search` parameter that filters with `.or('activity.ilike.%${search}%')`
+- Change default `perPage` to 50
 
-**File**: `src/pages/StaffDetails.tsx`
+### Step 3: Update `ActivityLog.tsx`
+- Add `SearchBar` component between date picker and filter button
+- Wire search state to hook
+- Change `PER_PAGE` to 50
 
-### Step 4: Update CreateStaffDialog — include emergency fields
-Extend `StaffDraft` interface and form to include emergency contact fields, persist them in the `onSubmit` handler.
-
-**File**: `src/components/staff/CreateStaffDialog.tsx`
+### Step 4: Update `logActivity` params interface
+- Add optional `location_id` field to `LogActivityParams`
+- Pass it through to the insert
 
 ### Files to Touch
 
 | File | Change |
 |------|--------|
-| `src/hooks/useStaff.ts` | Add `enabled: !!user` auth guard |
-| `src/hooks/useRoles.ts` | Add `enabled: !!user` auth guard |
-| DB migration | Add 5 missing columns to staff table |
-| `src/pages/StaffDetails.tsx` | Add emergency contact section |
-| `src/components/staff/CreateStaffDialog.tsx` | Add emergency fields to form |
+| DB migration | Add `location_id`, indexes |
+| `src/hooks/useActivityLog.ts` | Auth guard, search param, perPage 50 |
+| `src/pages/ActivityLog.tsx` | Add SearchBar, perPage 50 |
+| `src/lib/activityLogger.ts` | Add `location_id` to interface + insert |
 
-No breaking changes. Backward compatible (all new columns nullable).
+No breaking changes. All additive.
 
