@@ -130,7 +130,7 @@ const Lobby = () => {
           columns={columns}
           data={checkInData}
           rowKey={(row) => row.id}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('lobby.noCheckins')}
         />
       )}
 

@@ -153,7 +153,7 @@ const Staff = () => {
           columns={columns} 
           data={staff || []} 
           rowKey={(row) => row.id}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('staff.noStaff')}
           onRowClick={(row) => navigate(`/admin/${row.id}`)}
         />
       )}

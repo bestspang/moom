@@ -213,7 +213,7 @@ const Dashboard = () => {
                       columns={scheduleColumns}
                       data={filteredSchedule}
                       rowKey={(row) => row.id}
-                      emptyMessage={t('common.noData')}
+                      emptyMessage={t('dashboard.noClassesToday')}
                     />
                   )}
                 </TabsContent>
@@ -230,7 +230,7 @@ const Dashboard = () => {
                         columns={gymColumns}
                         data={gymCheckins}
                         rowKey={(row) => row.id}
-                        emptyMessage={t('common.noData')}
+                        emptyMessage={t('dashboard.noGymCheckins')}
                       />
                       <div className="mt-4 flex justify-end">
                         <Button variant="outline" size="sm" onClick={() => navigate('/lobby')}>
@@ -293,7 +293,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  {t('common.noData')}
+                  {t('dashboard.noHighRisk')}
                 </p>
               )}
             </CardContent>
@@ -340,9 +340,17 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {t('common.noData')}
-                </p>
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">{t('dashboard.noHotLeads')}</p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary mt-1"
+                    onClick={() => navigate('/leads')}
+                  >
+                    {t('leads.createLead')} →
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -389,7 +397,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  {t('common.noData')}
+                  {t('dashboard.noBirthdays')}
                 </p>
               )}
             </CardContent>

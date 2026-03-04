@@ -105,7 +105,7 @@ const Rooms = () => {
           data={rooms || []} 
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/room/${row.id}`)}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('rooms.noRooms')}
         />
       )}
 

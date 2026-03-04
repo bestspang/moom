@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Bell, ChevronDown, Menu, LogOut, User } from 'lucide-react';
+import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -176,29 +177,31 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Language selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1">
-              {language.toUpperCase()}
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => setLanguage('en')}
-              className={cn(language === 'en' && 'bg-accent')}
-            >
-              English
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setLanguage('th')}
-              className={cn(language === 'th' && 'bg-accent')}
-            >
-              ไทย
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Language selector — desktop only */}
+        <div className="hidden md:block">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1">
+                {language.toUpperCase()}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setLanguage('en')}
+                className={cn(language === 'en' && 'bg-accent')}
+              >
+                English
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLanguage('th')}
+                className={cn(language === 'th' && 'bg-accent')}
+              >
+                ไทย
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {/* User avatar */}
         <DropdownMenu>
@@ -240,6 +243,18 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
+            {/* Language toggle — mobile only */}
+            <div className="md:hidden">
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}
+              >
+                <Globe className="h-4 w-4 mr-2" />
+                {language === 'en' ? 'ไทย' : 'English'}
+              </DropdownMenuItem>
+            </div>
+            <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-primary cursor-pointer"
               onClick={handleLogout}
