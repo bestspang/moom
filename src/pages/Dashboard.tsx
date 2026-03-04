@@ -14,9 +14,12 @@ import {
   useHighRiskMembers,
   useHotLeads,
   useUpcomingBirthdays,
-  useScheduleByDate,
-  type ScheduleItem,
 } from '@/hooks/useDashboardStats';
+import {
+  useScheduleByDate,
+  mapScheduleToItem,
+  type ScheduleItem,
+} from '@/hooks/useSchedule';
 
 // Skeleton component for member list items
 const MemberListSkeleton = () => (
@@ -65,7 +68,8 @@ const Dashboard = () => {
   const { data: highRiskMembers = [], isLoading: riskLoading } = useHighRiskMembers();
   const { data: hotLeads = [], isLoading: leadsLoading } = useHotLeads();
   const { data: upcomingBirthdays = [], isLoading: birthdaysLoading } = useUpcomingBirthdays();
-  const { data: scheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
+  const { data: rawScheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
+  const scheduleData = rawScheduleData.map(mapScheduleToItem);
 
   const scheduleColumns: Column<ScheduleItem>[] = [
     { key: 'time', header: t('schedule.time'), cell: (row) => row.time },

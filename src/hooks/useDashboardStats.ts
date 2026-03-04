@@ -29,17 +29,6 @@ export interface UpcomingBirthday {
   date: string;
 }
 
-export interface ScheduleItem {
-  id: string;
-  time: string;
-  className: string;
-  trainer: string;
-  location: string;
-  room: string;
-  availability: string;
-  checkedIn: number;
-  capacity: number;
-}
 
 export const useDashboardStats = () => {
   return useQuery({
@@ -201,45 +190,3 @@ export const useUpcomingBirthdays = () => {
   });
 };
 
-export const useScheduleByDate = (date: Date) => {
-  return useQuery({
-    queryKey: queryKeys.schedule(formatDateForDB(date)),
-    queryFn: async (): Promise<ScheduleItem[]> => {
-      const dateStr = formatDateForDB(date);
-
-      const { data, error } = await supabase
-        .from('schedule')
-        .select(`
-          id,
-          start_time,
-          end_time,
-          capacity,
-          checked_in,
-          status,
-          classes (id, name),
-          staff (id, first_name, last_name),
-          locations (id, name),
-          rooms (id, name)
-        `)
-        .eq('scheduled_date', dateStr)
-        .eq('status', 'scheduled')
-        .order('start_time', { ascending: true });
-
-      if (error) throw error;
-
-      return (data || []).map((item) => ({
-        id: item.id,
-        time: `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}`,
-        className: (item.classes as any)?.name || 'Unknown',
-        trainer: (item.staff as any) 
-          ? `${(item.staff as any).first_name} ${(item.staff as any).last_name}`
-          : '-',
-        location: (item.locations as any)?.name || '-',
-        room: (item.rooms as any)?.name || '-',
-        availability: `${item.checked_in || 0}/${item.capacity || 0}`,
-        checkedIn: item.checked_in || 0,
-        capacity: item.capacity || 0,
-      }));
-    },
-  });
-};

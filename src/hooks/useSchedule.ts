@@ -12,6 +12,32 @@ export type ScheduleWithRelations = Tables<'schedule'> & {
   location: Tables<'locations'> | null;
 };
 
+export interface ScheduleItem {
+  id: string;
+  time: string;
+  className: string;
+  trainer: string;
+  location: string;
+  room: string;
+  availability: string;
+  checkedIn: number;
+  capacity: number;
+}
+
+export function mapScheduleToItem(s: ScheduleWithRelations): ScheduleItem {
+  return {
+    id: s.id,
+    time: `${s.start_time.slice(0, 5)} - ${s.end_time.slice(0, 5)}`,
+    className: (s.class as any)?.name || 'Unknown',
+    trainer: s.trainer ? `${s.trainer.first_name} ${s.trainer.last_name}` : '-',
+    location: (s.location as any)?.name || '-',
+    room: (s.room as any)?.name || '-',
+    availability: `${s.checked_in || 0}/${s.capacity || 0}`,
+    checkedIn: s.checked_in || 0,
+    capacity: s.capacity || 0,
+  };
+}
+
 export type ScheduleStats = {
   classesCount: number;
   ptCount: number;
