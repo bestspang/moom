@@ -1,101 +1,84 @@
 
 
-# Full Data Audit & Completion Plan
+# Members Import/Export & Enhanced Table Plan
 
-## Analysis Summary
+## Current State
+- Members page has a standalone Export button + Create button
+- `useMembers` fetches only from `members` table (no joins for packages/attendance/contracts)
+- `exportMembers()` in `lib/exportCsv.ts` exports basic fields only
+- No import functionality exists
+- `ManageDropdown` component exists in reports (reusable pattern)
 
-After auditing every hook and page, the system is **mostly well-wired**. The DB schema already covers nearly all UI fields. The main gaps are:
+## Plan
 
-### Gap 1: Missing `logActivity` in many mutation hooks
+### 1. Enhance `useMembers` query with related data
 
-These hooks perform CRUD but do NOT call `logActivity`:
+**File: `src/hooks/useMembers.ts`**
 
-| Hook | Missing mutations |
-|------|-------------------|
-| `useClasses.ts` | create, update, delete |
-| `useClassCategories.ts` | create, update, delete |
-| `useClassBookings.ts` | createBooking, cancelBooking, markAttendance |
-| `useRooms.ts` | create, update, delete |
-| `usePackages.ts` | create, update, delete, archive |
-| `useFinance.ts` | updateTransactionStatus |
-| `useAnnouncements.ts` | create, update, delete |
-| `useLeads.ts` | create, update, delete, convert |
-| `useSettings.ts` | updateSetting, saveSettings |
-| `useMemberDetails.ts` | createNote, updateMember (duplicate of useMembers — already logged there) |
+Add a new hook `useMembersWithDetails` (or modify existing) that fetches members with:
+- Latest active `member_packages` → joined `packages(name_en)` for "Recent package"
+- Latest `member_attendance(check_in_time)` for "Last attended"  
+- Count of `member_contracts` for "Contract status"
 
-### Gap 2: No canonical `docs/data-contract.md` (full system)
+Since Supabase PostgREST can't easily do "latest of each" in a single query, fetch these as separate lightweight queries per page load, or use embedded selects with limit. Pragmatic approach: fetch `member_packages`, `member_attendance`, `member_contracts` as embedded relations in the members query, then compute in JS.
 
-`docs/data-contract-yourgym.md` exists but only covers Staff/Locations/Roles/Workouts. Need a full-system contract.
+### 2. Update Members table columns
 
-### Gap 3: No Diagnostics/Data Audit page
+**File: `src/pages/Members.tsx`**
 
-No `/diagnostics/data-audit` route exists.
+Add columns: Recent Package, Last Attended, Contract (Yes/No). Replace Export button with Manage dropdown.
 
-### What Already Works (No Changes Needed)
+### 3. Create Manage Dropdown for Members
 
-- **Members**: All wizard fields (profile, contact, address, emergency, medical/consents as jsonb, source, package interest) already persist to real DB columns. `useMemberDetails.ts` loads all sub-resources (attendance, packages, billing, injuries, notes, suspensions, contracts).
-- **Staff**: Full structured address + demographics + positions persist correctly after previous migration.
-- **Leads**: All fields persist (first_name, last_name, phone, email, gender, DOB, address, source, notes, line fields).
-- **Locations**: opening_hours, categories, status — all complete.
-- **Workouts**: DB-backed via training_templates + workout_items. No hardcoded data.
-- **LINE identity**: Normalized in `line_users` table, linked via member_id/lead_id/staff_id.
-- **Packages**: All 20+ columns persist (access_locations, access_days, categories, AI fields, etc.).
-- **Realtime**: `useRealtimeSync.ts` already covers all key tables including activity_log and announcements.
-- **Query keys**: `queryKeys.ts` already centralizes most keys.
+**File: `src/pages/Members.tsx`**
 
----
+Use a dropdown with "Import CSV" and "Export to CSV" items, plus the existing "Create Member" button.
 
-## Implementation Plan
+### 4. Create ImportMembersDialog
 
-### Step 1: Add `logActivity` to all remaining mutation hooks (~10 files)
+**File: `src/components/members/ImportMembersDialog.tsx`**
 
-Add `import { logActivity } from '@/lib/activityLogger'` and `logActivity(...)` calls in `onSuccess` for every create/update/delete mutation in:
+Multi-step dialog:
+- **Step 1 - Upload**: File input / drag-drop for CSV
+- **Step 2 - Mapping**: Auto-detect columns from headers, show mapping UI
+- **Step 3 - Preview**: Show first 20 rows with validation warnings
+- **Step 4 - Import**: Process rows with progress, show results + error CSV download
 
-- `useClasses.ts` — class_created, class_updated, class_deleted
-- `useClassCategories.ts` — class_category_created, class_category_updated, class_category_deleted
-- `useClassBookings.ts` — booking_created, booking_cancelled, attendance_marked
-- `useRooms.ts` — room_created, room_updated, room_deleted
-- `usePackages.ts` — package_created, package_updated, package_deleted, package_archived
-- `useFinance.ts` — transaction_status_updated
-- `useAnnouncements.ts` — announcement_created, announcement_updated, announcement_deleted
-- `useLeads.ts` — lead_created, lead_updated, lead_deleted, lead_converted
-- `useSettings.ts` — setting_updated
+Key logic:
+- Parse CSV client-side (no library needed — split by newline/comma with quote handling)
+- Header mapping: case-insensitive match of known aliases (Firstname→first_name, etc.)
+- Dedup: match by member_id → phone → email
+- Upsert: create or update via existing `useCreateMember` / `useUpdateMember` or direct batch
+- Date parsing: accept YYYY-MM-DD and DD/MM/YYYY
+- Phone: keep as string, preserve leading zeros
+- Medical conditions → `has_medical_conditions` + `medical_notes`
+- Activity log: one summary entry for bulk import
 
-### Step 2: Create comprehensive `docs/data-contract.md`
+### 5. Update Export
 
-Document all entities: Members, Leads, Staff, Schedule, Classes, Rooms, Packages, Promotions, Finance, Announcements, Workouts, Settings, Notifications — with fields, storage mapping, who can R/W, event types, and realtime keys.
+**File: `src/lib/exportCsv.ts`**
 
-### Step 3: Create Diagnostics Data Audit page
+Update `exportMembers` to accept the enriched data type (with recent_package, last_attended, contract_status) and export all visible columns.
 
-Create `src/pages/DiagnosticsDataAudit.tsx` and add route `/diagnostics/data-audit`:
-- Query each table for rows with null required fields
-- Show per-entity health checklist
-- Only accessible in dev mode or master role
+### 6. Add CSV Templates
 
-### Step 4: Add i18n keys for new event types
+Generate template CSVs in-app (no static files needed). Two download links in ImportMembersDialog:
+- Minimal: Firstname, Lastname, Nickname, Gender, Birthdate, Phone, Joined Date, Address, Medical Conditions
+- Full: all supported fields
 
-Add labels for all new activity log event types in `en.ts` and `th.ts`.
+### 7. i18n Keys
 
----
+Add translation keys for import/export UI labels in `en.ts` and `th.ts`.
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Modify | `src/hooks/useClasses.ts` — add logActivity |
-| Modify | `src/hooks/useClassCategories.ts` — add logActivity |
-| Modify | `src/hooks/useClassBookings.ts` — add logActivity |
-| Modify | `src/hooks/useRooms.ts` — add logActivity |
-| Modify | `src/hooks/usePackages.ts` — add logActivity |
-| Modify | `src/hooks/useFinance.ts` — add logActivity |
-| Modify | `src/hooks/useAnnouncements.ts` — add logActivity |
-| Modify | `src/hooks/useLeads.ts` — add logActivity |
-| Modify | `src/hooks/useSettings.ts` — add logActivity |
-| Create | `docs/data-contract.md` — full system contract |
-| Create | `src/pages/DiagnosticsDataAudit.tsx` — audit page |
-| Modify | `src/App.tsx` — add diagnostics route |
-| Modify | `src/i18n/locales/en.ts` — add event type labels |
-| Modify | `src/i18n/locales/th.ts` — add event type labels |
+| Modify | `src/hooks/useMembers.ts` — add enriched query with joins |
+| Modify | `src/pages/Members.tsx` — manage dropdown, new columns |
+| Create | `src/components/members/ImportMembersDialog.tsx` — full import flow |
+| Modify | `src/lib/exportCsv.ts` — update export with new columns |
+| Modify | `src/i18n/locales/en.ts` + `th.ts` — import/export labels |
 
-No database migrations needed — schema is already complete. No breaking changes.
+No DB migrations needed. No breaking changes.
 
