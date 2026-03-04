@@ -1114,4 +1114,15 @@ export default {
       linkPrompt: 'Link your LINE account with your membership to access all features.',
     },
   },
+  ai: {
+    suggestions: 'AI Suggestions',
+    noSuggestions: 'No pending suggestions',
+    approve: 'Approve',
+    reject: 'Reject',
+    suggestionApproved: 'Suggestion approved',
+    suggestionRejected: 'Suggestion rejected',
+    suggestionApplied: 'Suggestion applied',
+    suggestionError: 'Failed to update suggestion',
+    confidence: 'Confidence',
+  },
 };
