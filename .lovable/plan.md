@@ -1,64 +1,70 @@
 
 
-# Realtime Sync for Packages, Promotions & Member Purchases
+# Improve Promotions: Package Linking + Performance + AI-Ready
 
 ## Current State
-
-- `queryKeys.ts` has no entries for packages, promotions, or package metrics
-- `useRealtimeSync` subscribes to `member_packages` and `package_usage_ledger` but only invalidates `high-risk-members`/`member-bookings` — missing packages/promotions/transactions
-- Hooks use these actual query key prefixes:
-  - `packages`, `package-stats`, `package-metrics` (usePackages, usePackageStats, usePackageMetrics)
-  - `promotions`, `promotion-stats` (usePromotions, usePromotionStats)
-  - `member-packages` (useMemberDetails.useMemberPackages)
-  - `package-usage`, `package-usage-summary` (usePackageUsage)
-  - `transactions` (useFinance)
+- `promotions` table already has `applicable_packages uuid[]` — no join table needed
+- No `/promotion/:id` detail route exists
+- No PromotionDetails page exists
+- Promotions list page is basic (no row click navigation)
+- Realtime for `promotions` already enabled
 
 ## Plan
 
-### 1. Extend `src/lib/queryKeys.ts`
-
-Add canonical keys:
-```
-packages: (status?, search?) => ['packages', status, search]
-package: (id) => ['packages', id]
-packageStats: () => ['package-stats']
-packageMetrics: (id) => ['package-metrics', id]
-promotions: (status?, search?) => ['promotions', status, search]
-promotion: (id) => ['promotions', id]
-promotionStats: () => ['promotion-stats']
-memberPackages: (memberId) => ['member-packages', memberId]
-packageUsage: (memberPackageId) => ['package-usage', memberPackageId]
-transactions: () => ['transactions']
-```
-
-### 2. Extend `src/hooks/useRealtimeSync.ts`
-
-Add tables to `TableName` union and `TABLE_INVALIDATION_MAP`:
-- `packages` → invalidate `['packages']`, `['package-stats']`, `['package-metrics']`
-- `promotions` → invalidate `['promotions']`, `['promotion-stats']`
-- `transactions` → invalidate `['transactions']`, `['package-metrics']`, `['dashboard-stats']`
-
-Update existing entries:
-- `member_packages` → add `['member-packages']`, `['package-metrics']`, `['packages']`
-- `package_usage_ledger` → add `['package-usage']`, `['package-usage-summary']`, `['package-metrics']`
-
-Enable realtime publication for new tables via migration:
+### 1. Database Migration
+Add AI-ready columns to `promotions`:
 ```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.packages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.promotions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
+ALTER TABLE promotions ADD COLUMN ai_target_segment jsonb;
+ALTER TABLE promotions ADD COLUMN ai_recommended_rules jsonb;
 ```
 
-### 3. No other changes needed
+### 2. Add Route — `src/App.tsx`
+Add `<Route path="promotion/:id" element={<PromotionDetails />} />` after the promotion list route.
 
-- Single channel `realtime-sync` already used — just adding more tables to it
-- Cleanup on unmount already handled via `supabase.removeChannel`
+### 3. Wire Row Click — `src/pages/Promotions.tsx`
+Add `onRowClick` to DataTable to navigate to `/promotion/${row.id}`.
+
+### 4. Create `src/pages/PromotionDetails.tsx`
+Structure (following PackageDetails pattern):
+- **Header**: Back button, promotion name, status badge, promo code copy, type badge
+- **Performance cards**: Units sold, Net revenue, Usage (used/limit), Active status
+  - Units sold: count from `transactions` where `package_id` in `applicable_packages` (TODO: needs promotion_id on transactions for accurate tracking — use placeholder count from `usage_count` field for now)
+  - Net revenue: placeholder computed from usage_count × discount_value (TODO marker)
+- **Details section**: Name, type, discount, dates, usage limit, promo code
+- **Eligible packages section**:
+  - Table showing linked packages (fetched by IDs from `applicable_packages`)
+  - Columns: Name, Sessions, Price, Discount applied, Net price
+  - "Edit packages" button opens a dialog
+- **AI Assist placeholder**: Disabled card "AI Suggest promotion rules (coming soon)"
+
+### 5. Create `src/components/promotions/EditPackagesDialog.tsx`
+- Dialog with package search + multi-select checkboxes
+- Fetches all packages via `usePackages()`
+- On save: updates `applicable_packages` array via `useUpdatePromotion()`
+
+### 6. Create `src/hooks/usePromotionPackages.ts`
+- Hook that fetches packages by IDs from `applicable_packages` array
+- Returns package data for the eligible packages table
+
+### 7. Update Realtime — `src/hooks/useRealtimeSync.ts`
+- Add `promotion-packages` to promotions invalidation list (already has `promotions`, `promotion-stats`)
+
+### 8. i18n Keys
+Add to `en.ts` and `th.ts`:
+- `promotions.details`, `promotions.eligiblePackages`, `promotions.editPackages`, `promotions.unitsSold`, `promotions.netRevenue`, `promotions.usageLimit`, `promotions.aiAssist`, `promotions.aiComingSoon`, `promotions.netPrice`, `promotions.sessions`
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Modify | `src/lib/queryKeys.ts` — add package/promotion/transaction keys |
-| Modify | `src/hooks/useRealtimeSync.ts` — add 3 tables + update 2 existing |
-| Migration | Enable realtime for packages, promotions, transactions |
+| Migration | Add 2 AI columns to `promotions` |
+| Modify | `src/App.tsx` — add route |
+| Modify | `src/pages/Promotions.tsx` — add onRowClick |
+| Create | `src/pages/PromotionDetails.tsx` |
+| Create | `src/components/promotions/EditPackagesDialog.tsx` |
+| Create | `src/hooks/usePromotionPackages.ts` |
+| Modify | `src/i18n/locales/en.ts` — new keys |
+| Modify | `src/i18n/locales/th.ts` — new keys |
+
+No breaking changes. Uses existing `applicable_packages uuid[]` column. Performance metrics use `usage_count` placeholder with TODO for accurate transaction-based tracking.
 
