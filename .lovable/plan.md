@@ -1,137 +1,90 @@
 
 
-# Promotions Data Completeness Recheck (`promotions_data_complete_01`)
+# Recheck: Promotions Data Completeness (`promotions_data_complete_01`)
 
-## Current State
+## Verification Summary
 
-### What exists:
-- **DB**: `promotions` table with basic columns: `name`, `type` (promo_code/discount), `discount_type`, `discount_value`, `promo_code`, `start_date`, `end_date`, `status`, `usage_limit`, `usage_count`, `applicable_packages` (uuid array)
-- **List page**: Works with status tabs, search, copy promo code. Button "Create promotion" exists but NOT wired to any page
-- **Details page**: Shows stats (placeholder TODOs), eligible packages via `applicable_packages` array, discount calculation
-- **Hooks**: CRUD hooks exist. `usePromotionStats` hits 1000-row limit (client-side counting)
-- **Realtime**: `promotions` in sync map → invalidates `['promotions', 'promotion-stats', 'promotion-packages']`
+| Area | Status | Notes |
+|------|--------|-------|
+| DB Schema (promotions columns) | ✅ Done | All new columns exist: discount_mode, percentage_discount, flat_rate_discount, same_discount_all_packages, has_max_redemption, max_redemption_value, has_min_price, min_price_requirement, units_mode, available_units, per_user_mode, per_user_limit, usage_time_mode, usage_time_rules, start_mode, has_end_date, name_en, name_th, description_en, description_th, created_by |
+| DB: promotion_packages join table | ✅ Done | Exists with discount_override, max_sale_amount, unique constraint |
+| DB: promotion_redemptions table | ✅ Done | Exists with all required columns |
+| usePromotionStats (1000-row fix) | ✅ Done | Uses head-only count queries per status |
+| Promotions list page | ✅ Done | Tabs, search, row click navigation all work |
+| Create promotion route | ✅ Done | Route `/promotion/create` exists, button wired |
+| Create promotion form (zod + all fields) | ✅ Done | All sections: type, promo_code, discount, limits, schedule |
+| promotion_packages hooks (CRUD) | ✅ Done | add/remove/update with discount_override and max_sale_amount |
+| EditPackagesDialog | ✅ Done | Checkbox toggle, batch save |
+| Realtime sync | ✅ Done | promotion_packages and promotion_redemptions in TABLE_INVALIDATION_MAP |
+| Activity log | ✅ Done | promotion_created/updated logged in useCreatePromotion/useUpdatePromotion |
 
-### What's missing (vs spec):
+## Gaps Found
 
-**Major gaps:**
+### GAP 1: CreatePromotion.onSubmit does NOT persist new columns to DB
+**Severity: HIGH**
 
-1. **No CreatePromotion page** — the button isn't wired, no form exists
-2. **DB schema incomplete** — missing ~15 columns (description, same_discount_all_packages, max_redemption, min_price, per_user_mode/limit, usage_time_mode/rules, start_mode, units_mode, created_by, etc.)
-3. **No `promotion_packages` join table** — currently uses flat `applicable_packages` uuid[] with no per-package discount override or max_sale_amount
-4. **No `promotion_redemptions` table** — no usage tracking infrastructure
-5. **No checkout integration** — no RPC or flow to apply promotions during purchase
-6. **`usePromotionStats` hits 1000-row limit** — same pattern as members/packages
-7. **Details page uses placeholder stats** — "TODO: from transactions" comment
+The `onSubmit` function (lines 103-133) only saves these legacy fields:
+```typescript
+{ name, type, discount_type, discount_value, promo_code, start_date, end_date, status, usage_limit }
+```
+
+It does **NOT** persist: `name_en`, `name_th`, `description_en`, `description_th`, `discount_mode`, `percentage_discount`, `flat_rate_discount`, `same_discount_all_packages`, `has_max_redemption`, `max_redemption_value`, `has_min_price`, `min_price_requirement`, `units_mode`, `available_units`, `per_user_mode`, `per_user_limit`, `usage_time_mode`, `start_mode`, `has_end_date`.
+
+This means the form renders all fields but **none of the new ones actually save**. After refresh, all data is lost.
+
+### GAP 2: PromotionDetails still uses only legacy fields
+**Severity: MEDIUM**
+
+- `getDiscountDisplay()` reads `promo.discount_type` / `promo.discount_value` (legacy) instead of `discount_mode` / `percentage_discount` / `flat_rate_discount` (new)
+- Stats use placeholder `usage_count` instead of querying `promotion_redemptions`
+- Details card doesn't show new fields (max_redemption, min_price, per_user, usage_time)
+- `computeDiscountAmount` doesn't respect per-package `discount_override` from join table
+
+### GAP 3: Promotions list search doesn't cover name_en/name_th
+**Severity: LOW**
+
+`usePromotions` search filter uses `name.ilike` (legacy column) instead of `name_en.ilike` / `name_th.ilike`.
 
 ---
 
 ## Implementation Plan
 
-This is a large feature. I recommend splitting into phases to keep changes safe and verifiable.
+### Step 1: Fix CreatePromotion.onSubmit to persist ALL new columns
 
-### Phase 1: DB Schema (migration)
+**File**: `src/pages/CreatePromotion.tsx` (lines 103-133)
 
-Add missing columns to `promotions`:
-```sql
-ALTER TABLE promotions
-  ADD COLUMN IF NOT EXISTS name_en text,
-  ADD COLUMN IF NOT EXISTS name_th text,
-  ADD COLUMN IF NOT EXISTS description_en text,
-  ADD COLUMN IF NOT EXISTS description_th text,
-  ADD COLUMN IF NOT EXISTS discount_mode text DEFAULT 'percentage',
-  ADD COLUMN IF NOT EXISTS percentage_discount numeric,
-  ADD COLUMN IF NOT EXISTS flat_rate_discount numeric,
-  ADD COLUMN IF NOT EXISTS same_discount_all_packages boolean DEFAULT true,
-  ADD COLUMN IF NOT EXISTS has_max_redemption boolean DEFAULT false,
-  ADD COLUMN IF NOT EXISTS max_redemption_value numeric,
-  ADD COLUMN IF NOT EXISTS has_min_price boolean DEFAULT false,
-  ADD COLUMN IF NOT EXISTS min_price_requirement numeric,
-  ADD COLUMN IF NOT EXISTS units_mode text DEFAULT 'infinite',
-  ADD COLUMN IF NOT EXISTS available_units integer,
-  ADD COLUMN IF NOT EXISTS per_user_mode text DEFAULT 'unlimited',
-  ADD COLUMN IF NOT EXISTS per_user_limit integer,
-  ADD COLUMN IF NOT EXISTS usage_time_mode text DEFAULT 'any_day_any_time',
-  ADD COLUMN IF NOT EXISTS usage_time_rules jsonb,
-  ADD COLUMN IF NOT EXISTS start_mode text DEFAULT 'start_now',
-  ADD COLUMN IF NOT EXISTS has_end_date boolean DEFAULT false,
-  ADD COLUMN IF NOT EXISTS created_by uuid;
--- Migrate existing data: name → name_en, discount_type → discount_mode, discount_value → percentage/flat, start_date → start_at naming, etc.
-UPDATE promotions SET name_en = name WHERE name_en IS NULL;
-```
+Map all form fields to their DB columns:
+- `name` → `name` (keep for backward compat) AND `name_en`
+- `name_th` → `name_th`
+- `description_en/th` → `description_en/th`
+- `discount_mode` → `discount_mode`
+- `percentage_discount` / `flat_rate_discount` → respective columns
+- `same_discount_all_packages` → `same_discount_all_packages`
+- All limit/usage fields → their DB columns
+- Also keep populating legacy `discount_type` and `discount_value` for backward compat
 
-Create `promotion_packages` table:
-```sql
-CREATE TABLE promotion_packages (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  promotion_id uuid NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
-  package_id uuid NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
-  discount_override numeric,
-  max_sale_amount numeric,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(promotion_id, package_id)
-);
--- RLS + indexes
-```
+### Step 2: Fix PromotionDetails to use new columns + join table overrides
 
-Create `promotion_redemptions` table:
-```sql
-CREATE TABLE promotion_redemptions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  promotion_id uuid NOT NULL REFERENCES promotions(id),
-  member_id uuid REFERENCES members(id),
-  transaction_id uuid REFERENCES transactions(id),
-  redeemed_at timestamptz DEFAULT now(),
-  discount_amount numeric NOT NULL,
-  gross_amount numeric NOT NULL,
-  net_amount numeric NOT NULL,
-  promo_code_used text
-);
--- RLS + indexes on (promotion_id, member_id), (promotion_id, redeemed_at)
-```
+**File**: `src/pages/PromotionDetails.tsx`
 
-Enable realtime for new tables.
+- `getDiscountDisplay()`: Use `discount_mode` + `percentage_discount`/`flat_rate_discount` (fallback to legacy)
+- `computeDiscountAmount()`: Check per-package `discount_override` from linked packages data when `same_discount_all_packages === false`
+- Add new fields to the details card: max_redemption, min_price, per_user, usage_time
+- Stats: Query `promotion_redemptions` count for units_sold and sum for net_revenue (instead of placeholder)
 
-### Phase 2: Fix `usePromotionStats` (1000-row limit)
-Same pattern as packages/members — use head-only count queries per status.
+### Step 3: Fix search to cover name_en/name_th
 
-### Phase 3: Create Promotion Page
-- New file `src/pages/CreatePromotion.tsx`
-- react-hook-form + zod validation covering ALL fields from spec
-- "Save as draft" → status='drafts', "Publish" → active/scheduled based on start_mode
-- Generate random promo code button with uniqueness check
-- Add route `/promotion/create` in App.tsx
-- Wire the "Create promotion" button on list page
+**File**: `src/hooks/usePromotions.ts` (line 22)
 
-### Phase 4: Eligible Packages Selection (promotion_packages)
-- Migrate from `applicable_packages` array to `promotion_packages` join table
-- Update `EditPackagesDialog` to use join table with per-package discount_override and max_sale_amount columns
-- Update `PromotionDetails` to query from `promotion_packages` instead of flat array
-
-### Phase 5: Realtime + Activity Log
-- Add `promotion_packages` and `promotion_redemptions` to `useRealtimeSync`
-- Ensure all mutations log activity
-
-### Phase 6 (Future): Checkout Integration
-- Server-side RPC `apply_promotion_to_transaction` with all validation rules
-- UI integration in member billing flow
+Change search filter from `name.ilike` to `name.ilike.%${search}%,name_en.ilike.%${search}%,name_th.ilike.%${search}%,promo_code.ilike.%${search}%`
 
 ### Files to Touch
 
 | File | Change |
 |------|--------|
-| DB migration | Add columns + 2 new tables |
-| `src/hooks/usePromotions.ts` | Fix stats, update queries for new columns |
-| `src/pages/CreatePromotion.tsx` (new) | Full create form |
-| `src/App.tsx` | Add route |
-| `src/pages/Promotions.tsx` | Wire create button |
-| `src/hooks/usePromotionPackages.ts` | Migrate to join table |
-| `src/components/promotions/EditPackagesDialog.tsx` | Use join table |
-| `src/pages/PromotionDetails.tsx` | Use new columns + join table |
-| `src/hooks/useRealtimeSync.ts` | Add new tables |
-| `src/i18n/locales/en.ts` + `th.ts` | Add i18n keys |
-| `docs/data-contract-promotions.md` (new) | Data contract |
+| `src/pages/CreatePromotion.tsx` | Fix onSubmit to persist all new columns |
+| `src/pages/PromotionDetails.tsx` | Use new columns, per-package overrides, real stats |
+| `src/hooks/usePromotions.ts` | Fix search filter to include name_en/name_th |
 
-### Risk Assessment
-- **Breaking change**: Migrating from `applicable_packages` array to `promotion_packages` join table requires data migration for existing promotions
-- **Mitigation**: Migration SQL will populate `promotion_packages` from existing `applicable_packages` arrays, keeping backward compatibility
+No DB migration needed. No breaking changes — backward compatible via dual-write of legacy + new columns.
 
