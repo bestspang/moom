@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, DataTable, StatusBadge, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import type { RoleWithCount } from '@/hooks/useRoles';
 
 const Roles = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   const { data: roles, isLoading } = useRoles(search);
@@ -42,7 +44,7 @@ const Roles = () => {
         title={t('roles.title')} 
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('roles.title') }]} 
         actions={
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/roles/create')}>
             {t('roles.createRole')}
           </Button>
         } 
@@ -67,6 +69,7 @@ const Roles = () => {
           data={roles || []} 
           rowKey={(row) => row.id}
           emptyMessage={t('common.noData')}
+          onRowClick={(row) => navigate(`/roles/${row.id}`)}
         />
       )}
     </div>

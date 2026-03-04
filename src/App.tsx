@@ -27,6 +27,7 @@ import ClassCategories from "./pages/ClassCategories";
 import Staff from "./pages/Staff";
 import StaffDetails from "./pages/StaffDetails";
 import Roles from "./pages/Roles";
+import RoleEditor from "./pages/RoleEditor";
 import Locations from "./pages/Locations";
 import ActivityLog from "./pages/ActivityLog";
 import Announcements from "./pages/Announcements";
@@ -108,6 +109,8 @@ const App = () => (
                 <Route path="admin" element={<Staff />} />
                 <Route path="admin/:id" element={<StaffDetails />} />
                 <Route path="roles" element={<Roles />} />
+                <Route path="roles/create" element={<RoleEditor />} />
+                <Route path="roles/:id" element={<RoleEditor />} />
                 <Route path="location" element={<Locations />} />
                 <Route path="activity-log" element={<ActivityLog />} />
                 <Route path="announcement" element={<Announcements />} />
