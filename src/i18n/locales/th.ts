@@ -1134,6 +1134,14 @@ export default {
     alreadyLinked: 'บัญชี LINE นี้เชื่อมต่อกับสมาชิกอื่นแล้ว',
     linkSuccess: 'เชื่อมบัญชี LINE สำเร็จ',
     unlinkSuccess: 'ยกเลิกการเชื่อมบัญชี LINE แล้ว',
+    status: 'สถานะ',
+    linked: 'เชื่อมต่อแล้ว',
+    pending: 'รอดำเนินการ',
+    unlinked: 'ยังไม่เชื่อมต่อ',
+    linkLine: 'เชื่อมต่อ LINE',
+    unlinkLine: 'ยกเลิกการเชื่อมต่อ',
+    linkRequested: 'คำขอเชื่อมต่อรอดำเนินการ — รอการเชื่อมต่อ LINE OAuth',
+    comingSoon: 'LINE OAuth กำลังจะมาเร็วๆ นี้ ตั้งสถานะเป็นรอดำเนินการ',
   },
 
   // LIFF App

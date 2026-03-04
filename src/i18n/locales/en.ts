@@ -1134,6 +1134,14 @@ export default {
     alreadyLinked: 'This LINE account is already linked to another member',
     linkSuccess: 'LINE account linked successfully',
     unlinkSuccess: 'LINE account unlinked',
+    status: 'Status',
+    linked: 'Linked',
+    pending: 'Pending',
+    unlinked: 'Not linked',
+    linkLine: 'Link LINE',
+    unlinkLine: 'Unlink',
+    linkRequested: 'Link request pending — waiting for LINE OAuth integration.',
+    comingSoon: 'LINE OAuth integration coming soon. This sets the status to pending.',
   },
 
   // LIFF App

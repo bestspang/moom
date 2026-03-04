@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList } from 'lucide-react';
+import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, EmptyState, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -294,6 +295,9 @@ const MemberDetails = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* LINE Identity card */}
+          <LineIdentityCard ownerType="member" ownerId={member.id} />
         </div>
 
         {/* Main content */}
