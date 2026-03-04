@@ -35,7 +35,7 @@ type TableName =
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
-  member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats', 'gym-checkins', 'check-ins'],
+  member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats', 'gym-checkins', 'check-ins', 'members-enrichment'],
   class_bookings: ['class-bookings', 'member-bookings', 'booking-count', 'schedule', 'class-performance'],
   class_waitlist: ['class-waitlist'],
   rooms: ['rooms', 'room-stats'],
@@ -43,7 +43,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   classes: ['classes', 'class-stats', 'class-performance'],
   class_categories: ['class-categories', 'class-stats', 'classes'],
   members: ['members', 'member', 'member-stats', 'high-risk-members', 'upcoming-birthdays'],
-  member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages'],
+  member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages', 'members-enrichment'],
   package_usage_ledger: ['member-bookings', 'package-usage', 'package-usage-summary', 'package-metrics'],
   leads: ['leads', 'hot-leads'],
   ai_suggestions: ['ai-suggestions'],
@@ -60,7 +60,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   member_notes: ['member-notes'],
   member_injuries: ['member-injuries'],
   member_suspensions: ['member-suspensions'],
-  member_contracts: ['member-contracts'],
+  member_contracts: ['member-contracts', 'members-enrichment'],
   member_billing: ['member-billing', 'member-summary-stats'],
 };
 

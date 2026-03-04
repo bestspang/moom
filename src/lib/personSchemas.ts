@@ -17,10 +17,16 @@ export const personContactSchema = (t: (key: string) => string) =>
     email: z.string().email(t('validation.invalidEmail')).optional().or(z.literal('')),
   });
 
-/** Shared address field */
+/** Shared structured address fields */
 export const personAddressSchema = () =>
   z.object({
     address: z.string().max(500).optional().or(z.literal('')),
+    address1: z.string().max(200).optional().or(z.literal('')),
+    address2: z.string().max(200).optional().or(z.literal('')),
+    subdistrict: z.string().max(100).optional().or(z.literal('')),
+    district: z.string().max(100).optional().or(z.literal('')),
+    province: z.string().max(100).optional().or(z.literal('')),
+    postalCode: z.string().max(10).optional().or(z.literal('')),
   });
 
 /** Emergency contact fields */
