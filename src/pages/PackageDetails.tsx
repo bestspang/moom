@@ -195,6 +195,10 @@ const PackageDetails = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/package/${id}/edit`)}>
+            <Pencil className="h-4 w-4 mr-1" />
+            {t('common.edit')}
+          </Button>
           {pkg.status !== 'archive' && (
             <Button variant="outline" size="sm" onClick={handleArchive}>
               <Archive className="h-4 w-4 mr-1" />

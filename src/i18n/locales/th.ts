@@ -457,6 +457,10 @@ export default {
       aiPricePlaceholder: 'คำแนะนำราคาจาก AI จะปรากฏที่นี่',
       aiCopyPlaceholder: 'คำแนะนำข้อความจาก AI จะปรากฏที่นี่',
     },
+    edit: {
+      title: 'แก้ไขแพ็คเกจ',
+      saveChanges: 'บันทึกการเปลี่ยนแปลง',
+    },
     details: {
       soldThisWeek: 'ขายสัปดาห์นี้',
       revenueToDate: 'รายได้รวม',

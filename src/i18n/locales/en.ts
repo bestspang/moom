@@ -457,6 +457,10 @@ export default {
       aiPricePlaceholder: 'AI price suggestion will appear here',
       aiCopyPlaceholder: 'AI copy suggestions will appear here',
     },
+    edit: {
+      title: 'Edit package',
+      saveChanges: 'Save changes',
+    },
     details: {
       soldThisWeek: 'Sold this week',
       revenueToDate: 'Revenue to date',
