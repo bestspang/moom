@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
+import { logActivity } from '@/lib/activityLogger';
 
 export type SettingsSection = 'general' | 'class' | 'client' | 'package' | 'contracts';
 
@@ -63,6 +64,12 @@ export const useUpdateSetting = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['settings', variables.section] });
+      logActivity({
+        event_type: 'setting_updated',
+        activity: `Setting "${variables.section}.${variables.key}" updated`,
+        entity_type: 'setting',
+        new_value: { section: variables.section, key: variables.key, value: variables.value } as Record<string, unknown>,
+      });
       toast.success(t('common.saved'));
     },
     onError: (error) => {
@@ -97,6 +104,12 @@ export const useSaveSettings = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['settings', variables.section] });
+      logActivity({
+        event_type: 'setting_updated',
+        activity: `Settings section "${variables.section}" updated (${Object.keys(variables.settings).length} keys)`,
+        entity_type: 'setting',
+        new_value: variables.settings as Record<string, unknown>,
+      });
       toast.success(t('common.saved'));
     },
     onError: (error) => {

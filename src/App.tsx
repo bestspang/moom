@@ -60,6 +60,7 @@ import TrainerAppPreview from "./pages/TrainerAppPreview";
 import LiffMemberApp from "./pages/liff/LiffMemberApp";
 import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
+import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const App = () => (
                   <Route path="member-contracts" element={<SettingsContracts />} />
                   <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                 </Route>
+                <Route path="diagnostics/data-audit" element={<DiagnosticsDataAudit />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

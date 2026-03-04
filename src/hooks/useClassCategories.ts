@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 type ClassCategory = Tables<'class_categories'>;
 type ClassCategoryInsert = TablesInsert<'class_categories'>;
@@ -56,8 +57,14 @@ export const useCreateClassCategory = () => {
       if (error) throw error;
       return newCategory;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['class-categories'] });
+      logActivity({
+        event_type: 'class_category_created',
+        activity: `Class category "${data.name}" created`,
+        entity_type: 'class_category',
+        entity_id: data.id,
+      });
       toast.success('Category created successfully');
     },
     onError: (error) => {
@@ -81,9 +88,16 @@ export const useUpdateClassCategory = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-categories'] });
       queryClient.invalidateQueries({ queryKey: ['class-categories', variables.id] });
+      logActivity({
+        event_type: 'class_category_updated',
+        activity: `Class category "${updated.name}" updated`,
+        entity_type: 'class_category',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Category updated successfully');
     },
     onError: (error) => {
@@ -103,9 +117,16 @@ export const useDeleteClassCategory = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['class-categories'] });
+      logActivity({
+        event_type: 'class_category_deleted',
+        activity: `Class category deleted`,
+        entity_type: 'class_category',
+        entity_id: id,
+      });
       toast.success('Category deleted successfully');
     },
     onError: (error) => {

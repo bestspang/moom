@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 type Room = Tables<'rooms'>;
 type RoomInsert = TablesInsert<'rooms'>;
@@ -101,9 +102,15 @@ export const useCreateRoom = () => {
       if (error) throw error;
       return newRoom;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      logActivity({
+        event_type: 'room_created',
+        activity: `Room "${data.name}" created`,
+        entity_type: 'room',
+        entity_id: data.id,
+      });
       toast.success('Room created successfully');
     },
     onError: (error) => {
@@ -127,9 +134,16 @@ export const useUpdateRoom = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      logActivity({
+        event_type: 'room_updated',
+        activity: `Room "${updated.name}" updated`,
+        entity_type: 'room',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Room updated successfully');
     },
     onError: (error) => {
@@ -149,10 +163,17 @@ export const useDeleteRoom = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      logActivity({
+        event_type: 'room_deleted',
+        activity: `Room deleted`,
+        entity_type: 'room',
+        entity_id: id,
+      });
       toast.success('Room deleted successfully');
     },
     onError: (error) => {

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 // Types based on database schema
 type BookingStatus = 'booked' | 'cancelled' | 'attended' | 'no_show';
@@ -126,9 +127,16 @@ export const useCreateBooking = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings', variables.scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings', variables.memberId] });
+      logActivity({
+        event_type: 'booking_created',
+        activity: `Booking created for schedule`,
+        entity_type: 'class_booking',
+        entity_id: data.id,
+        member_id: variables.memberId,
+      });
       toast.success('Booking created successfully');
     },
     onError: (error: Error) => {
@@ -171,9 +179,16 @@ export const useCancelBooking = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
+      logActivity({
+        event_type: 'booking_cancelled',
+        activity: `Booking cancelled`,
+        entity_type: 'class_booking',
+        entity_id: data.id,
+        member_id: data.member_id,
+      });
       toast.success('Booking cancelled');
     },
     onError: (error) => {
@@ -210,9 +225,16 @@ export const useMarkAttendance = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
+      logActivity({
+        event_type: 'attendance_marked',
+        activity: `Attendance marked as ${variables.status}`,
+        entity_type: 'class_booking',
+        entity_id: variables.bookingId,
+        member_id: data.member_id,
+      });
       toast.success('Attendance recorded');
     },
     onError: (error) => {
@@ -248,9 +270,14 @@ export const useBatchMarkAttendance = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
+      logActivity({
+        event_type: 'attendance_marked',
+        activity: `Batch attendance marked as ${variables.status} for ${variables.bookingIds.length} bookings`,
+        entity_type: 'class_booking',
+      });
       toast.success('Attendance recorded for all members');
     },
     onError: (error) => {

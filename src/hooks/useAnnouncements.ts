@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Database } from '@/integrations/supabase/types';
+import { logActivity } from '@/lib/activityLogger';
 
 type AnnouncementStatus = Database['public']['Enums']['announcement_status'];
 
@@ -132,9 +133,15 @@ export const useCreateAnnouncement = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
       queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      logActivity({
+        event_type: 'announcement_created',
+        activity: `Announcement created`,
+        entity_type: 'announcement',
+        entity_id: data.id,
+      });
       toast.success(t('common.success'));
     },
     onError: (error) => {
@@ -164,9 +171,16 @@ export const useUpdateAnnouncement = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
       queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      logActivity({
+        event_type: 'announcement_updated',
+        activity: `Announcement updated`,
+        entity_type: 'announcement',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success(t('common.success'));
     },
     onError: (error) => {
@@ -187,10 +201,17 @@ export const useDeleteAnnouncement = () => {
         .eq('id', id);
 
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
       queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      logActivity({
+        event_type: 'announcement_deleted',
+        activity: `Announcement deleted`,
+        entity_type: 'announcement',
+        entity_id: id,
+      });
       toast.success(t('common.deleted'));
     },
     onError: (error) => {
