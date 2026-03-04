@@ -1,62 +1,68 @@
 
 
-# Room Layouts Module — Gap Analysis & Implementation Plan
+# Room Details Page — Implementation Plan
 
-## Current State (Already Working)
+## Current State
 
-- **DB table `rooms`**: Has all required columns — `name`, `name_th`, `location_id`, `layout_type` (enum: open/fixed), `max_capacity`, `categories` (text[]), `status`
-- **CreateRoomDialog**: Saves all fields (name EN/TH, location, categories, layout type, max capacity) to DB
-- **Room list page**: Shows name, location, categories, layout type, max capacity with status tabs
-- **Activity logging**: `useCreateRoom`, `useUpdateRoom`, `useDeleteRoom` all log to `activity_log`
-- **Realtime sync**: `useRealtimeSync` covers `rooms` table → invalidates `['rooms', 'room-stats']`
-- **Schedule validation RPC**: `create_schedule_with_validation` already checks room-location match AND category compatibility using `rooms.categories`
+- `rooms` table has all needed columns: `name`, `name_th`, `location_id`, `max_capacity`, `layout_type`, `categories` (text[]), `status`
+- `useRoom(id)` hook exists, fetches room with joined location
+- `useUpdateRoom` mutation exists with activity logging
+- `CreateRoomDialog` has the full form UI pattern (sections: Information, Access, Room Layout)
+- `DataTable` supports `onRowClick`
+- Schedule validation RPC already enforces room-location match + category compatibility + capacity default
+- Realtime sync already covers `rooms` table
 
-## Real Gaps Found
+## What's Missing
 
-### Gap 1: Search doesn't include Thai name
-`useRooms` only searches `name` via `ilike`. Should also search `name_th`.
-
-### Gap 2: No category filter on room list
-The requirement asks for filtering rooms by category. Currently only status filter + text search exist.
-
-### Gap 3: Categories column shows "All" based on empty array, not `all_categories` flag
-The rooms table doesn't have an `all_categories` boolean column. The dialog sends `categories: []` for "all" — the list checks `cats.length === 0` to show "All". This works but is implicit. Adding a proper flag would be cleaner but the current approach works consistently. No change needed since behavior is correct.
-
-### Gap 4: No data contract doc for rooms
-
-### Gap 5: `useCreateRoom` doesn't log `old_value`/`new_value` properly
-Currently logs only the activity string, not structured before/after values.
+1. **No RoomDetails page** — no route, no component
+2. **Rooms list doesn't navigate on row click** — no `onRowClick` handler
+3. **No route for `/room/:id`** in App.tsx
+4. **`useUpdateRoom` doesn't capture `old_value`** in activity log
+5. **No i18n keys** for room details page
 
 ## Implementation Plan
 
-### 1. Fix search to include `name_th` (useRooms.ts)
-Change `query.ilike('name', ...)` to `query.or('name.ilike.%search%,name_th.ilike.%search%')`.
+### 1. Add route in App.tsx
+Add `<Route path="room/:id" element={<RoomDetails />} />` under protected routes, import the new page.
 
-### 2. Add category filter to Rooms page
-- Add a category filter dropdown/select to `Rooms.tsx` using `useClassCategories()`
-- Pass selected category to `useRooms` hook
-- In `useRooms`, when category filter is set:
-  - Use `.contains('categories', [categoryName])` to find rooms with that specific category
-  - OR include rooms where categories is empty (meaning "all categories")
-  - This translates to: `query.or('categories.cs.{categoryName},categories.eq.{}')` 
+### 2. Add row click navigation in Rooms.tsx
+Add `useNavigate` and pass `onRowClick={(row) => navigate(\`/room/${row.id}\`)}` to DataTable.
 
-### 3. Enhance activity logging in mutations
-Add `new_value` with structured data to `useCreateRoom` and ensure `useUpdateRoom` captures before/after.
+### 3. Create `src/pages/RoomDetails.tsx`
+A detail/edit page that:
+- Uses `useParams` to get room ID, `useRoom(id)` to load data
+- Uses `useLocations()` and `useClassCategories()` for select options
+- Displays sections matching CreateRoomDialog layout: Information, Access, Room Layout
+- Each section has a pencil/edit toggle for inline editing
+- On save: calls `useUpdateRoom` with changed fields, shows toast
+- Back button navigates to `/room`
 
-### 4. Create `docs/data-contract-rooms.md`
+**UI structure:**
+- PageHeader with breadcrumbs and back arrow
+- Card sections for Information (name EN/TH, location, max capacity), Access (all/specific categories), Room Layout (open/fixed)
+- Each section toggles between read-only display and edit form
+- Save/Cancel buttons per section
 
-### 5. Add i18n keys for category filter
+### 4. Enhance `useUpdateRoom` with old_value logging
+Fetch current room data before update to capture `old_value` in activity log alongside `new_value`.
 
-## Files to Modify
+### 5. Add query key for single room
+Add `room: (id: string) => ['rooms', 'detail', id]` to queryKeys.ts and use it in `useRoom` + invalidation.
+
+### 6. Add i18n keys
+Add `rooms.detail.*` keys for both EN and TH: `title`, `editInformation`, `editAccess`, `editLayout`, `backToList`, etc.
+
+## Files to Create/Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useRooms.ts` | Add `name_th` to search; add category filter param |
-| `src/pages/Rooms.tsx` | Add category filter dropdown |
-| `src/lib/queryKeys.ts` | Update rooms key to include category filter |
-| `docs/data-contract-rooms.md` | Create data contract |
-| `src/i18n/locales/en.ts` | Add filter label keys |
-| `src/i18n/locales/th.ts` | Same Thai keys |
+| `src/pages/RoomDetails.tsx` | **Create** — full detail/edit page |
+| `src/App.tsx` | Add route for `room/:id` |
+| `src/pages/Rooms.tsx` | Add `onRowClick` navigation |
+| `src/hooks/useRooms.ts` | Fix `useRoom` query key; enhance `useUpdateRoom` with `old_value` |
+| `src/lib/queryKeys.ts` | Add `room(id)` key |
+| `src/i18n/locales/en.ts` | Add room detail i18n keys |
+| `src/i18n/locales/th.ts` | Add room detail i18n keys |
 
-No DB migration needed — all columns exist. No breaking changes. Schedule integration already works via the existing RPC.
+No DB migration needed. No breaking changes.
 
