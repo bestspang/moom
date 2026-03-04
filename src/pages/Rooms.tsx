@@ -4,17 +4,21 @@ import { PageHeader, SearchBar, StatusTabs, DataTable, type Column, type StatusT
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRooms, useRoomStats } from '@/hooks/useRooms';
+import { useClassCategories } from '@/hooks/useClassCategories';
 import { CreateRoomDialog } from '@/components/rooms/CreateRoomDialog';
 
 const Rooms = () => {
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const { data: rooms, isLoading } = useRooms(activeTab, search);
+  const { data: rooms, isLoading } = useRooms(activeTab, search, categoryFilter && categoryFilter !== 'all' ? categoryFilter : undefined);
   const { data: stats } = useRoomStats();
+  const { data: categories } = useClassCategories();
 
   const totalRooms = (stats?.open || 0) + (stats?.closed || 0);
 
@@ -59,12 +63,25 @@ const Rooms = () => {
         } 
       />
       
-      <SearchBar 
-        placeholder={t('rooms.searchPlaceholder')} 
-        value={search} 
-        onChange={setSearch} 
-        className="max-w-md mb-6" 
-      />
+      <div className="flex items-center gap-3 mb-6">
+        <SearchBar 
+          placeholder={t('rooms.searchPlaceholder')} 
+          value={search} 
+          onChange={setSearch} 
+          className="max-w-md" 
+        />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t('rooms.filterByCategory')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
+            {categories?.map((cat) => (
+              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
       {/* Total count header */}
       <div className="flex items-center justify-between mb-4">

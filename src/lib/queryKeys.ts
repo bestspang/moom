@@ -1,7 +1,7 @@
 export const queryKeys = {
   schedule: (dateStr: string) => ['schedule', dateStr] as const,
   scheduleStats: (dateStr: string) => ['schedule-stats', dateStr] as const,
-  rooms: (status?: string, search?: string) => ['rooms', status, search] as const,
+  rooms: (status?: string, search?: string, categoryFilter?: string) => ['rooms', status, search, categoryFilter] as const,
   roomStats: () => ['room-stats'] as const,
   locations: (status?: string, search?: string) => ['locations', status, search] as const,
   locationStats: () => ['location-stats'] as const,
