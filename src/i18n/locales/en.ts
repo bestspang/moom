@@ -1023,6 +1023,17 @@ export default {
     noTrainings: 'No trainings yet',
     noTrainingsDesc: 'Create your first training to get started',
     filterByTraining: 'Filter by training',
+    editWorkout: 'Edit workout',
+    editWorkoutDesc: 'Update workout item details',
+    editTraining: 'Edit training',
+    editTrainingDesc: 'Update training name',
+    updateSuccess: 'Updated successfully',
+    deleteSuccess: 'Deleted successfully',
+    deleteTrainingSuccess: 'Training deleted successfully',
+    deleteWorkoutTitle: 'Delete workout',
+    deleteWorkoutDesc: 'Are you sure you want to delete this workout item? This cannot be undone.',
+    deleteTrainingTitle: 'Delete training',
+    deleteTrainingDesc: 'Are you sure you want to delete this training and all its workout items? This cannot be undone.',
   },
 
   // Transfer Slips
