@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  personProfileSchema,
+  personContactSchema,
+  personAddressSchema,
+} from '@/lib/personSchemas';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCreateLead } from '@/hooks/useLeads';
@@ -52,22 +57,18 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
   const { data: locations } = useLocations();
   const isMobile = useIsMobile();
 
-  const leadSchema = useMemo(() => z.object({
-    firstName: z.string().min(1, t('validation.firstNameRequired')).max(100),
-    lastName: z.string().max(100).optional(),
-    nickname: z.string().max(50).optional(),
-    phone: z.string().max(20).optional(),
-    email: z.string().email(t('validation.invalidEmail')).optional().or(z.literal('')),
-    gender: z.enum(['male', 'female', 'other']).optional(),
-    dateOfBirth: z.string().optional(),
-    source: z.string().optional(),
-    registerLocationId: z.string().optional(),
-    address: z.string().max(500).optional(),
-    notes: z.string().max(2000).optional(),
-  }).refine(
-    (data) => (data.phone && data.phone.trim().length > 0) || (data.email && data.email.trim().length > 0),
-    { message: t('leads.phoneOrEmailRequired'), path: ['phone'] }
-  ), [t]);
+  const leadSchema = useMemo(() => personProfileSchema(t)
+    .merge(personContactSchema(t))
+    .merge(personAddressSchema())
+    .merge(z.object({
+      source: z.string().optional(),
+      registerLocationId: z.string().optional(),
+      notes: z.string().max(2000).optional(),
+    }))
+    .refine(
+      (data) => (data.phone && data.phone.trim().length > 0) || (data.email && data.email.trim().length > 0),
+      { message: t('leads.phoneOrEmailRequired'), path: ['phone'] }
+    ), [t]);
 
   type LeadFormData = z.infer<typeof leadSchema>;
 

@@ -117,3 +117,25 @@ export const useDeleteLead = () => {
     },
   });
 };
+
+export const useConvertLeadToMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ leadId, memberId }: { leadId: string; memberId: string }) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: 'converted' as any, converted_member_id: memberId } as any)
+        .eq('id', leadId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to convert lead: ${error.message}`);
+    },
+  });
+};

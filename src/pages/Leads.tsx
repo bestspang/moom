@@ -9,6 +9,16 @@ import { useLeads } from '@/hooks/useLeads';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
 import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
+import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
+import type { MemberWizardFormData } from '@/components/members/wizard/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
 type Lead = Tables<'leads'>;
 
@@ -18,24 +28,14 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [convertLead, setConvertLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading } = useLeads(search, statusFilter);
 
-  const statusTabs: StatusTab[] = useMemo(() => {
-    const allLeads = leads || [];
-    return [
-      { key: 'all', label: t('common.all'), count: allLeads.length, color: 'default' },
-      { key: 'new', label: t('leads.statusNew'), count: allLeads.filter(l => l.status === 'new').length, color: 'teal' },
-      { key: 'contacted', label: t('leads.statusContacted'), count: allLeads.filter(l => l.status === 'contacted').length, color: 'orange' },
-      { key: 'interested', label: t('leads.statusInterested'), count: allLeads.filter(l => l.status === 'interested').length, color: 'teal' },
-      { key: 'not_interested', label: t('leads.statusNotInterested'), count: allLeads.filter(l => l.status === 'not_interested').length, color: 'red' },
-      { key: 'converted', label: t('leads.statusConverted'), count: allLeads.filter(l => l.status === 'converted').length, color: 'teal' },
-    ];
-  }, [leads, t]);
-
   // When filtering by status, we use the full dataset for tab counts but filter for display
   const { data: allLeads } = useLeads(search);
-  const displayLeads = statusFilter === 'all' ? (leads || []) : (leads || []);
+  const displayLeads = leads || [];
 
   const tabsWithCounts: StatusTab[] = useMemo(() => {
     const all = allLeads || [];
@@ -59,6 +59,30 @@ const Leads = () => {
       default: return 'default';
     }
   };
+
+  const handleConvert = (lead: Lead) => {
+    if (lead.status === 'converted') {
+      toast.info(t('leads.alreadyConverted'));
+      return;
+    }
+    setConvertLead(lead);
+    setConvertDialogOpen(true);
+  };
+
+  const convertInitialData: Partial<MemberWizardFormData> | undefined = convertLead
+    ? {
+        firstName: convertLead.first_name,
+        lastName: convertLead.last_name || '',
+        nickname: convertLead.nickname || '',
+        phone: convertLead.phone || '',
+        email: convertLead.email || '',
+        gender: (convertLead.gender as 'male' | 'female' | 'other') || undefined,
+        dateOfBirth: convertLead.date_of_birth || '',
+        address: convertLead.address || '',
+        source: convertLead.source || '',
+        notes: convertLead.notes || '',
+      }
+    : undefined;
 
   const columns: Column<Lead>[] = [
     {
@@ -96,6 +120,28 @@ const Leads = () => {
       key: 'lastAttended', 
       header: t('leads.lastAttended'), 
       cell: (row) => row.last_attended ? format(new Date(row.last_attended), 'd MMM yyyy', { locale }) : '-' 
+    },
+    {
+      key: 'actions',
+      header: '',
+      cell: (row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => handleConvert(row)}
+              disabled={row.status === 'converted'}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              {t('leads.convertToMember')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
@@ -138,6 +184,16 @@ const Leads = () => {
       )}
 
       <CreateLeadDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+
+      <CreateMemberDialog
+        open={convertDialogOpen}
+        onOpenChange={(open) => {
+          setConvertDialogOpen(open);
+          if (!open) setConvertLead(null);
+        }}
+        initialData={convertInitialData}
+        convertLeadId={convertLead?.id}
+      />
     </div>
   );
 };

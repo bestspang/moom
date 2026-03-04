@@ -1,0 +1,1 @@
+ALTER TABLE leads ADD COLUMN converted_member_id uuid REFERENCES members(id);

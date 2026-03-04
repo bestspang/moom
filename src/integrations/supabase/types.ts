@@ -660,6 +660,7 @@ export type Database = {
           address: string | null
           ai_summary: string | null
           ai_tags: Json | null
+          converted_member_id: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
@@ -689,6 +690,7 @@ export type Database = {
           address?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          converted_member_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -718,6 +720,7 @@ export type Database = {
           address?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          converted_member_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -744,6 +747,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_converted_member_id_fkey"
+            columns: ["converted_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_package_interest_id_fkey"
             columns: ["package_interest_id"]
