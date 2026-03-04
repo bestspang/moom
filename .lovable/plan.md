@@ -1,125 +1,131 @@
 
 
-# Phase 3: LINE Auth Edge Function + LIFF Login Flow
+# Feature Flags Management + Booking UI Plan
 
 ## Overview
 
-สร้าง Edge Function สำหรับ verify LINE LIFF token และ LIFF login shell — วาง infrastructure ไว้ก่อน แล้วค่อยใส่ LINE credentials ทีหลัง
+สร้าง 2 ฟีเจอร์:
+1. **Feature Flags page** ใน Settings — แสดงรายการ flags ทั้งหมด พร้อม toggle เปิด/ปิดได้
+2. **Booking Management** ใน Schedule page — staff คลิกที่คลาสแล้วจอง/ยกเลิก/เช็คชื่อสมาชิกได้
 
 ---
 
-## 1. Edge Function: `line-auth`
+## 1. Feature Flags Settings Page
 
-สร้าง `supabase/functions/line-auth/index.ts`
+### New File: `src/pages/settings/SettingsFeatureFlags.tsx`
 
-**Endpoints:**
-- `POST /` — รับ `idToken` จาก LIFF SDK → verify กับ LINE API → หา/สร้าง user ใน `line_users` → return session info
-- Flow:
-  1. รับ `{ idToken, liffAccessToken? }` จาก client
-  2. Verify idToken กับ `https://api.line.me/oauth2/v2.1/verify` (ต้องใช้ `LINE_CHANNEL_ID`)
-  3. ได้ `sub` (lineUserId), `name`, `picture`
-  4. ค้นหา `line_users` ตาม `line_user_id`
-     - ถ้ามี → update `last_login_at`, return member info
-     - ถ้าไม่มี → return `{ needsLinking: true, lineProfile }` เพื่อให้ client ไปหน้า link account
-  5. ถ้า linked กับ member → return member data + session token
+- ใช้ `SettingsLayout` pattern เดิม (sidebar + content)
+- แสดงรายการ feature flags จาก `useFeatureFlags()` hook
+- แต่ละ flag แสดง: name, description, scope badge, Switch toggle
+- Toggle เรียก `useToggleFeatureFlag()` mutation
+- Loading skeleton + empty state
+- ไม่ต้องมี create/delete UI ตอนนี้ (flags มาจาก seed data)
 
-**Config:** เพิ่มใน `supabase/config.toml`:
-```toml
-[functions.line-auth]
-verify_jwt = false
-```
-
-**Secrets ที่ต้องใส่ภายหลัง:** `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`
-
----
-
-## 2. LIFF App Routes + Shell
-
-### A. New Routes (public, ไม่ผ่าน ProtectedRoute)
-
-| Route | Component | Purpose |
-|-------|-----------|---------|
-| `/liff/member` | LiffMemberApp | Member LIFF shell |
-| `/liff/trainer` | LiffTrainerApp | Trainer LIFF shell |
-| `/liff/callback` | LiffCallback | Handle LIFF login redirect |
-
-### B. LIFF Context Provider
-
-สร้าง `src/contexts/LiffContext.tsx`:
-- Detect ว่าเปิดจาก LIFF หรือไม่ (check URL params / user agent)
-- เก็บ LINE profile (userId, displayName, pictureUrl)
-- เก็บ linked member info (ถ้ามี)
-- Provide `isInLiff`, `lineProfile`, `memberData`, `isLinked`
-
-### C. LIFF Member Shell (`src/pages/liff/LiffMemberApp.tsx`)
-
-Mobile-first layout:
-- Bottom navigation: หน้าแรก / จองคลาส / แพ็กเกจ / QR เช็คอิน / โปรไฟล์
-- หน้าแรก: แสดงชื่อ + แพ็กเกจเหลือ + คลาสถัดไป
-- ทุกหน้าเป็น Coming Soon placeholder ก่อน
-
-### D. LIFF Trainer Shell (`src/pages/liff/LiffTrainerApp.tsx`)
-
-Mobile-first layout:
-- Bottom navigation: ตารางวันนี้ / เช็คชื่อ / PT Log / สมาชิก
-- ทุกหน้าเป็น Coming Soon placeholder ก่อน
-
----
-
-## 3. Hook: `useLineAuth`
-
-สร้าง `src/hooks/useLineAuth.ts`:
-- `loginWithLine(idToken)` → call edge function
-- `linkAccount(lineUserId, memberId)` → link LINE to member
-- `getLineProfile()` → get profile from context
-- Handle error states (token expired, already linked, etc.)
-
----
-
-## 4. Files to Create
-
-| File | Purpose |
-|------|---------|
-| `supabase/functions/line-auth/index.ts` | LINE token verification edge function |
-| `src/contexts/LiffContext.tsx` | LIFF state management |
-| `src/pages/liff/LiffMemberApp.tsx` | Member LIFF shell |
-| `src/pages/liff/LiffTrainerApp.tsx` | Trainer LIFF shell |
-| `src/pages/liff/LiffCallback.tsx` | LIFF login callback handler |
-| `src/hooks/useLineAuth.ts` | LINE auth hook |
-| `src/components/liff/LiffBottomNav.tsx` | Shared bottom navigation |
-| `src/components/liff/LiffComingSoon.tsx` | Coming soon placeholder for LIFF pages |
-
-## 5. Files to Modify
+### Modified Files
 
 | File | Change |
 |------|--------|
-| `src/App.tsx` | Add `/liff/*` public routes |
-| `supabase/config.toml` | Add `[functions.line-auth]` |
-| `src/i18n/locales/en.ts` | Add LIFF i18n keys |
-| `src/i18n/locales/th.ts` | Add LIFF i18n keys |
+| `src/pages/Settings.tsx` | เพิ่ม tab "Feature Flags" |
+| `src/App.tsx` | เพิ่ม route `/setting/feature-flags` |
+| `src/i18n/locales/en.ts` | เพิ่ม settings.tabs.featureFlags key |
+| `src/i18n/locales/th.ts` | เพิ่ม settings.tabs.featureFlags key |
 
 ---
 
-## 6. Implementation Order
+## 2. Booking Management UI for Schedule
 
-1. Create `line-auth` edge function (with placeholder for LINE_CHANNEL_ID)
-2. Create `LiffContext` provider
-3. Create `LiffBottomNav` + `LiffComingSoon` components
-4. Create Member LIFF shell
-5. Create Trainer LIFF shell
-6. Create `LiffCallback` page
-7. Create `useLineAuth` hook
-8. Add routes to App.tsx
-9. Add i18n keys
+### New File: `src/components/schedule/BookingManagementDialog.tsx`
+
+Dialog/Drawer ที่เปิดเมื่อ staff คลิกที่ row ในตาราง Schedule:
+
+```text
+┌─────────────────────────────────────────┐
+│ Yoga Flow — 09:00-10:00                 │
+│ Trainer: สมชาย  |  Room: A  |  4/20     │
+├─────────────────────────────────────────┤
+│ [+ Add Member]                          │
+│                                         │
+│ Bookings (4)                            │
+│ ┌───────────────────────────────────┐   │
+│ │ 🟢 สมหญิง (M001) — booked       │   │
+│ │    [✓ Attended] [✗ No Show] [Cancel]│  │
+│ │ 🟢 สมศรี (M002) — booked         │   │
+│ │    [✓ Attended] [✗ No Show] [Cancel]│  │
+│ └───────────────────────────────────┘   │
+│                                         │
+│ Waitlist (1)                            │
+│ ┌───────────────────────────────────┐   │
+│ │ #1 สมปอง (M003)  [Promote]       │   │
+│ └───────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+```
+
+**Features:**
+- แสดง bookings list พร้อม status badge
+- ปุ่ม "Add Member" → เปิด member search combobox → เลือก → create booking
+- ปุ่ม mark attended / no_show / cancel per booking
+- แสดง waitlist พร้อมปุ่ม promote
+- Mobile: ใช้ Drawer, Desktop: ใช้ Dialog
+
+### New File: `src/components/schedule/AddBookingForm.tsx`
+
+- Member search (combobox) ค้นหาจาก `useMembers` hook
+- เลือก member → auto-create booking
+- แสดง error ถ้า member จองอยู่แล้ว
+
+### Modified: `src/pages/Schedule.tsx`
+
+- เพิ่ม `onRowClick` handler ที่เปิด `BookingManagementDialog`
+- เพิ่ม column "Actions" หรือ "Booked" count ที่คลิกได้
+- เพิ่ม state สำหรับ selected schedule
 
 ---
 
-## 7. Edge Function: Designed for Future
+## 3. i18n Keys to Add
 
-เมื่อมี LINE credentials:
-1. ใส่ `LINE_CHANNEL_ID` + `LINE_CHANNEL_SECRET` เป็น secrets
-2. Edge function จะ verify token กับ LINE API ได้จริง
-3. LIFF SDK จะ init ได้ (ต้องใส่ LIFF ID)
+```typescript
+// settings
+settings.tabs.featureFlags: 'Feature Flags' / 'Feature Flags'
 
-ตอนนี้ edge function จะ return mock/error response ที่บอกว่ายังไม่ได้ config credentials เพื่อให้ทดสอบ flow ได้
+// booking management  
+schedule.manageBookings: 'Manage Bookings' / 'จัดการการจอง'
+schedule.addMember: 'Add Member' / 'เพิ่มสมาชิก'
+schedule.searchMember: 'Search member...' / 'ค้นหาสมาชิก...'
+schedule.bookings: 'Bookings' / 'การจอง'
+schedule.markAttended: 'Attended' / 'เข้าเรียนแล้ว'
+schedule.markNoShow: 'No Show' / 'ไม่มาเรียน'
+schedule.promote: 'Promote' / 'โปรโมท'
+schedule.booked: 'Booked' / 'จองแล้ว'
+```
+
+---
+
+## 4. Implementation Order
+
+1. Create `SettingsFeatureFlags.tsx`
+2. Add Feature Flags tab to Settings + route
+3. Create `BookingManagementDialog.tsx` + `AddBookingForm.tsx`
+4. Update `Schedule.tsx` with row click → booking dialog
+5. Add all i18n keys
+6. Test both features
+
+---
+
+## 5. Files Summary
+
+### Create (3 files)
+| File | Purpose |
+|------|---------|
+| `src/pages/settings/SettingsFeatureFlags.tsx` | Feature flags management page |
+| `src/components/schedule/BookingManagementDialog.tsx` | Booking list + actions per schedule |
+| `src/components/schedule/AddBookingForm.tsx` | Member search + add booking |
+
+### Modify (5 files)
+| File | Change |
+|------|--------|
+| `src/pages/Settings.tsx` | +1 tab |
+| `src/App.tsx` | +1 route |
+| `src/pages/Schedule.tsx` | +row click → dialog |
+| `src/i18n/locales/en.ts` | +booking management keys |
+| `src/i18n/locales/th.ts` | +booking management keys |
 
