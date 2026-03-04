@@ -1,93 +1,58 @@
 
 
-# Lobby Module Completion Plan
+# QR Check-in Redemption Page — Plan
 
-## Current State Analysis
+## Summary
 
-**DB `member_attendance`** has: id, member_id, location_id, member_package_id, schedule_id, check_in_time, check_in_type, created_at.
-- Missing: `checkin_method` (manual/qr/liff), `usage_type` (gym/class/pt), `created_by` (staff uuid).
-- `check_in_type` exists but is a generic text field — we'll repurpose it as `usage_type` is conceptually redundant. Instead, add `checkin_method` and rename semantics: `check_in_type` = usage type (gym/class/pt), add `checkin_method` column.
+Create a public page at `/checkin?token=...` that validates a QR token and completes the check-in. Since the QR is location-only (no member_id), the page needs member identification — either via existing auth session or a simple member lookup form.
 
-**DB `checkin_qr_tokens`** exists but requires `member_id` NOT NULL — incompatible with "location QR" where member scans later. Need to make `member_id` nullable.
+## Current State
 
-**CheckInDialog** works but: location is optional (should be required), no audit logging, no duplicate check, no `checkin_method` field, search doesn't include phone/email.
+- `useValidateQRToken` in `useCheckinQR.ts` already handles: token validation, marking used, creating `member_attendance` row
+- QR tokens are generated without `member_id` (location-only)
+- No `/checkin` route or page exists
+- The page must be **public** (not behind `ProtectedRoute`) since members scan from their phone
 
-**useCheckinQR.ts** exists with generate/validate hooks but assumes member_id upfront.
+## Changes
 
-**Realtime** already invalidates `check-ins` via `member_attendance` changes — but query key pattern needs `check-ins` added explicitly.
+### 1. Create `src/pages/CheckinRedeem.tsx`
 
-## Plan
+Public page that:
+- Reads `token` from URL search params
+- Validates token immediately on load (check exists, not expired, not used) — read-only check first
+- Shows location name from token data
+- **Member identification**: Simple form asking for phone number or member ID to look up the member
+  - Query `members` table by phone/member_id match
+  - On match, call `useValidateQRToken` with token + memberId
+- States: loading → token info → member input → success / error
+- Success screen: checkmark animation, "You're checked in at {location}!" message
+- Error states: expired, already used, invalid, member not found
 
-### 1. DB Migration
+### 2. Add route in `App.tsx`
 
-Add columns to `member_attendance`:
-- `checkin_method text default 'manual'` — values: manual, qr, liff
-- `created_by uuid nullable` (FK to staff)
+Add `/checkin` as a public route (alongside `/login`, `/signup`):
+```
+<Route path="/checkin" element={<CheckinRedeem />} />
+```
 
-Make `checkin_qr_tokens.member_id` nullable (for location-only QR codes).
+### 3. Add member lookup query in `useCheckinQR.ts`
 
-Add index on `member_attendance(check_in_time DESC)` and `member_attendance(member_id, check_in_time)`.
+Add `useTokenInfo(token)` — fetches token data + location name without marking as used:
+- Query `checkin_qr_tokens` joined with `locations` by token string
+- Returns token status (valid/expired/used) + location name
 
-### 2. Update `useLobby.ts`
+### 4. i18n keys (EN + TH)
 
-- Add `phone` and `email` to member search in `useMembersForCheckIn`
-- Expand `useCheckIns` client-side search to include member_id, phone, email
-- Add audit logging to `useCreateCheckIn` (event_type: `member_check_in`)
-- Add duplicate check helper: `useCheckDuplicateCheckIn(memberId, locationId, date)`
-
-### 3. Update `CheckInDialog.tsx`
-
-- Make location required (first field, must select before member search)
-- Add "No package / walk-in" option in package selector
-- Set `checkin_method: 'manual'` on insert
-- Pass `created_by` from auth context staff id
-- Add duplicate check before submit (warn if same member/location/day)
-- Widen member search to show nickname, phone in results
-
-### 4. Create `CheckInQRCodeDialog.tsx`
-
-- Location selector
-- Generate QR token (location-only, member_id null) using updated `useCheckinQR`
-- Render QR code using a simple SVG/canvas QR generator (add `qrcode` package)
-- Download as PNG + Print buttons
-- Auto-refresh token every 2 minutes
-- Shows countdown timer
-
-### 5. Update `useCheckinQR.ts`
-
-- Make `memberId` optional in `useGenerateQRToken` for location-only tokens
-- Update `useValidateQRToken` to create `member_attendance` row with `checkin_method: 'qr'`
-
-### 6. Update `Lobby.tsx`
-
-- Add "QR Code" button next to check-in button
-- Replace hardcoded "Yes" column with `checkin_method` display (Manual/QR/LIFF badge)
-- Update search placeholder to indicate broader search capability
-
-### 7. Update `useRealtimeSync.ts`
-
-- Add `check-ins` to `member_attendance` invalidation list
-
-### 8. Create `docs/data-contract-lobby.md`
-
-### 9. Add i18n keys (EN + TH)
-
-New keys: `lobby.checkinMethod`, `lobby.manual`, `lobby.qrCode`, `lobby.qrCheckin`, `lobby.selectLocationFirst`, `lobby.noPackage`, `lobby.duplicateWarning`, `lobby.downloadQR`, `lobby.printQR`, `lobby.searchPlaceholder`
+Keys for: page title, enter phone/member ID, check in button, success message, expired/used/invalid errors
 
 ## Files
 
 | Action | File |
 |--------|------|
-| Migration | Add `checkin_method`, `created_by` to `member_attendance`; make `checkin_qr_tokens.member_id` nullable; add indexes |
-| Modify | `src/hooks/useLobby.ts` — audit log, duplicate check, broader search |
-| Modify | `src/components/lobby/CheckInDialog.tsx` — required location, checkin_method, created_by, duplicate check |
-| Create | `src/components/lobby/CheckInQRCodeDialog.tsx` — QR generation + download/print |
-| Modify | `src/hooks/useCheckinQR.ts` — optional memberId for location tokens |
-| Modify | `src/pages/Lobby.tsx` — QR button, checkin_method column, search placeholder |
-| Modify | `src/hooks/useRealtimeSync.ts` — add check-ins invalidation |
-| Create | `docs/data-contract-lobby.md` |
-| Modify | `src/i18n/locales/en.ts` + `th.ts` — new lobby keys |
-| Install | `qrcode` npm package for QR rendering |
+| Create | `src/pages/CheckinRedeem.tsx` |
+| Modify | `src/App.tsx` — add public route |
+| Modify | `src/hooks/useCheckinQR.ts` — add `useTokenInfo` query |
+| Modify | `src/i18n/locales/en.ts` + `th.ts` — add checkin keys |
 
-No breaking changes to existing flows.
+No DB migration needed — all tables and columns exist.
 
