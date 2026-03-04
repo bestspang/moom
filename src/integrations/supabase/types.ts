@@ -1473,7 +1473,12 @@ export type Database = {
       packages: {
         Row: {
           access_days: Json | null
+          access_locations: string[] | null
+          ai_copy_suggestions: Json | null
+          ai_price_suggestion: Json | null
+          ai_tags: Json | null
           all_categories: boolean | null
+          all_locations: boolean | null
           any_day_any_time: boolean | null
           categories: string[] | null
           created_at: string | null
@@ -1489,6 +1494,8 @@ export type Database = {
           price: number
           quantity: number | null
           recurring_payment: boolean | null
+          schedule_end_at: string | null
+          schedule_start_at: string | null
           sessions: number | null
           status: Database["public"]["Enums"]["package_status"] | null
           term_days: number
@@ -1499,7 +1506,12 @@ export type Database = {
         }
         Insert: {
           access_days?: Json | null
+          access_locations?: string[] | null
+          ai_copy_suggestions?: Json | null
+          ai_price_suggestion?: Json | null
+          ai_tags?: Json | null
           all_categories?: boolean | null
+          all_locations?: boolean | null
           any_day_any_time?: boolean | null
           categories?: string[] | null
           created_at?: string | null
@@ -1515,6 +1527,8 @@ export type Database = {
           price: number
           quantity?: number | null
           recurring_payment?: boolean | null
+          schedule_end_at?: string | null
+          schedule_start_at?: string | null
           sessions?: number | null
           status?: Database["public"]["Enums"]["package_status"] | null
           term_days: number
@@ -1525,7 +1539,12 @@ export type Database = {
         }
         Update: {
           access_days?: Json | null
+          access_locations?: string[] | null
+          ai_copy_suggestions?: Json | null
+          ai_price_suggestion?: Json | null
+          ai_tags?: Json | null
           all_categories?: boolean | null
+          all_locations?: boolean | null
           any_day_any_time?: boolean | null
           categories?: string[] | null
           created_at?: string | null
@@ -1541,6 +1560,8 @@ export type Database = {
           price?: number
           quantity?: number | null
           recurring_payment?: boolean | null
+          schedule_end_at?: string | null
+          schedule_start_at?: string | null
           sessions?: number | null
           status?: Database["public"]["Enums"]["package_status"] | null
           term_days?: number
