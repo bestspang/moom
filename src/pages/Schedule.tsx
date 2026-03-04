@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, type Column } from '@/components/common';
+import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, SearchBar, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +12,7 @@ const Schedule = () => {
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithRelations | null>(null);
@@ -20,10 +21,23 @@ const Schedule = () => {
   const { data: stats, isLoading: statsLoading } = useScheduleStats(selectedDate);
   const { data: trainers = [] } = useTrainers();
 
-  // Filter by trainer if selected
-  const filteredSchedule = selectedTrainerId
-    ? scheduleData.filter((s) => s.trainer_id === selectedTrainerId)
-    : scheduleData;
+  // Filter by trainer and search
+  const filteredSchedule = useMemo(() => {
+    let result = scheduleData;
+    if (selectedTrainerId) {
+      result = result.filter((s) => s.trainer_id === selectedTrainerId);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((s) => {
+        const className = s.class?.name?.toLowerCase() || '';
+        const trainerName = s.trainer ? `${s.trainer.first_name} ${s.trainer.last_name}`.toLowerCase() : '';
+        const roomName = s.room?.name?.toLowerCase() || '';
+        return className.includes(q) || trainerName.includes(q) || roomName.includes(q);
+      });
+    }
+    return result;
+  }, [scheduleData, selectedTrainerId, searchQuery]);
 
   const columns: Column<ScheduleWithRelations>[] = [
     {
@@ -54,7 +68,7 @@ const Schedule = () => {
     {
       key: 'availability',
       header: t('schedule.availability'),
-      cell: (row) => `${row.checked_in || 0}/${row.capacity || 0}`,
+      cell: (row) => `${row.booked_count ?? row.checked_in ?? 0}/${row.capacity || 0}`,
     },
   ];
 
@@ -72,6 +86,12 @@ const Schedule = () => {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <DatePicker date={selectedDate} onChange={setSelectedDate} />
+        <SearchBar
+          placeholder={t('schedule.searchPlaceholder')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          className="md:max-w-xs"
+        />
       </div>
 
       {/* Stats */}

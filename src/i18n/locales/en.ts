@@ -660,6 +660,9 @@ export default {
     markNoShow: 'No Show',
     promote: 'Promote',
     booked: 'Booked',
+    searchPlaceholder: 'Search class, trainer, or room',
+    cancelClass: 'Cancel Class',
+    cancelClassConfirm: 'Are you sure you want to cancel this class? All bookings will be cancelled.',
     error: {
       roomOverlap: 'This room is already booked at this time',
       roomLocationMismatch: 'Room does not belong to the selected location',

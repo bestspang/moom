@@ -219,15 +219,74 @@ export const useMarkAttendance = () => {
         .from('class_bookings')
         .update(updates)
         .eq('id', bookingId)
-        .select()
+        .select(`
+          *,
+          schedule:schedule_id(id, scheduled_date, location_id)
+        `)
         .single();
 
       if (error) throw error;
+
+      // --- Cross-module writes for "attended" ---
+      if (status === 'attended' && data) {
+        const schedule = (data as any).schedule;
+
+        // 1) Insert member_attendance row
+        await supabase.from('member_attendance').insert({
+          member_id: data.member_id,
+          schedule_id: data.schedule_id,
+          member_package_id: data.member_package_id ?? undefined,
+          location_id: schedule?.location_id ?? undefined,
+          checkin_method: 'manual',
+          check_in_type: 'class',
+          check_in_time: new Date().toISOString(),
+        });
+
+        // 2) If session-based package, insert ledger entry
+        if (data.member_package_id) {
+          const { data: mp } = await supabase
+            .from('member_packages')
+            .select('sessions_remaining, sessions_used, package_id, packages(sessions)')
+            .eq('id', data.member_package_id)
+            .single();
+
+          const pkg = (mp as any)?.packages;
+          if (pkg?.sessions && pkg.sessions > 0) {
+            const newBalance = Math.max((mp?.sessions_remaining ?? 0) - 1, 0);
+
+            await supabase.from('package_usage_ledger').insert({
+              member_package_id: data.member_package_id,
+              delta_sessions: -1,
+              balance_after: newBalance,
+              usage_type: 'booking',
+              reference_type: 'schedule',
+              reference_id: data.schedule_id,
+              note: 'Class attendance',
+            });
+
+            // Update sessions_remaining on member_packages
+            await supabase
+              .from('member_packages')
+              .update({
+                sessions_remaining: newBalance,
+                sessions_used: (mp?.sessions_used ?? 0) + 1,
+              })
+              .eq('id', data.member_package_id);
+          }
+        }
+      }
+
       return data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['package-usage'] });
+      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-checkins'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
       logActivity({
         event_type: 'attendance_marked',
         activity: `Attendance marked as ${variables.status}`,

@@ -660,6 +660,9 @@ export default {
     markNoShow: 'ไม่มาเรียน',
     promote: 'โปรโมท',
     booked: 'จองแล้ว',
+    searchPlaceholder: 'ค้นหาคลาส เทรนเนอร์ หรือห้อง',
+    cancelClass: 'ยกเลิกคลาส',
+    cancelClassConfirm: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคลาสนี้? การจองทั้งหมดจะถูกยกเลิก',
     error: {
       roomOverlap: 'ห้องนี้มีคลาสอื่นจองอยู่แล้วในเวลานี้',
       roomLocationMismatch: 'ห้องนี้ไม่ได้อยู่ในสาขาที่เลือก',

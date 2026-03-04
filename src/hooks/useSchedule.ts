@@ -11,6 +11,8 @@ export type ScheduleWithRelations = Tables<'schedule'> & {
   trainer: Tables<'staff'> | null;
   room: Tables<'rooms'> | null;
   location: Tables<'locations'> | null;
+  booked_count?: number;
+  attended_count?: number;
 };
 
 export interface ScheduleItem {
@@ -69,7 +71,31 @@ export function useScheduleByDate(date: Date) {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      return data as ScheduleWithRelations[];
+
+      const schedules = data as ScheduleWithRelations[];
+      if (schedules.length === 0) return schedules;
+
+      // Fetch booking counts in a single query
+      const scheduleIds = schedules.map(s => s.id);
+      const { data: bookings } = await supabase
+        .from('class_bookings')
+        .select('schedule_id, status')
+        .in('schedule_id', scheduleIds)
+        .in('status', ['booked', 'attended']);
+
+      // Aggregate counts
+      const countMap: Record<string, { booked: number; attended: number }> = {};
+      (bookings || []).forEach(b => {
+        if (!countMap[b.schedule_id]) countMap[b.schedule_id] = { booked: 0, attended: 0 };
+        countMap[b.schedule_id].booked++;
+        if (b.status === 'attended') countMap[b.schedule_id].attended++;
+      });
+
+      return schedules.map(s => ({
+        ...s,
+        booked_count: countMap[s.id]?.booked ?? 0,
+        attended_count: countMap[s.id]?.attended ?? 0,
+      }));
     },
   });
 }
@@ -367,6 +393,60 @@ export function useCreateScheduleValidated() {
           variant: 'destructive',
         });
       }
+    },
+  });
+}
+
+export function useCancelSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (scheduleId: string) => {
+      // 1) Mark schedule as cancelled
+      const { error: schedError } = await supabase
+        .from('schedule')
+        .update({ status: 'cancelled' })
+        .eq('id', scheduleId);
+
+      if (schedError) throw schedError;
+
+      // 2) Batch-cancel all booked bookings
+      const { error: bookError } = await supabase
+        .from('class_bookings')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: 'Class cancelled',
+        })
+        .eq('schedule_id', scheduleId)
+        .eq('status', 'booked');
+
+      if (bookError) throw bookError;
+
+      return scheduleId;
+    },
+    onSuccess: (scheduleId) => {
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      logActivity({
+        event_type: 'schedule_cancelled',
+        activity: 'Schedule cancelled with all bookings',
+        entity_type: 'schedule',
+        entity_id: scheduleId,
+      });
+      toast({
+        title: 'Success',
+        description: 'Class cancelled successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }
