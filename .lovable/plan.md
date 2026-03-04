@@ -1,56 +1,93 @@
 
 
-# Dashboard Search — Implementation Plan
+# Lobby Module Completion Plan
 
-## Summary
+## Current State Analysis
 
-Add a SearchBar to the Dashboard that filters the Classes tab (client-side) and the Gym check-in tab (DB-backed query replacing the current EmptyState).
+**DB `member_attendance`** has: id, member_id, location_id, member_package_id, schedule_id, check_in_time, check_in_type, created_at.
+- Missing: `checkin_method` (manual/qr/liff), `usage_type` (gym/class/pt), `created_by` (staff uuid).
+- `check_in_type` exists but is a generic text field — we'll repurpose it as `usage_type` is conceptually redundant. Instead, add `checkin_method` and rename semantics: `check_in_type` = usage type (gym/class/pt), add `checkin_method` column.
 
-## Changes
+**DB `checkin_qr_tokens`** exists but requires `member_id` NOT NULL — incompatible with "location QR" where member scans later. Need to make `member_id` nullable.
 
-### 1. New hook: `src/hooks/useDashboardAttendance.ts`
+**CheckInDialog** works but: location is optional (should be required), no audit logging, no duplicate check, no `checkin_method` field, search doesn't include phone/email.
 
-Create `useGymCheckinsByDate(date, search)`:
-- Query `member_attendance` joined with `members`, `member_packages.package`, `locations`
-- Filter by date range and `schedule_id IS NULL` (gym-only check-ins)
-- Client-side filter by member name/phone when search provided (same pattern as `useLobby.ts`)
-- Limit 200 rows
-- Query key: `['gym-checkins', dateStr, search]`
+**useCheckinQR.ts** exists with generate/validate hooks but assumes member_id upfront.
 
-### 2. Update `src/hooks/useRealtimeSync.ts`
+**Realtime** already invalidates `check-ins` via `member_attendance` changes — but query key pattern needs `check-ins` added explicitly.
 
-Add `gym-checkins` to the `member_attendance` invalidation list so gym tab updates in realtime.
+## Plan
 
-### 3. Update `src/lib/queryKeys.ts`
+### 1. DB Migration
 
-Add `gymCheckins: (dateStr: string, search?: string) => ['gym-checkins', dateStr, search] as const`
+Add columns to `member_attendance`:
+- `checkin_method text default 'manual'` — values: manual, qr, liff
+- `created_by uuid nullable` (FK to staff)
 
-### 4. Update `src/pages/Dashboard.tsx`
+Make `checkin_qr_tokens.member_id` nullable (for location-only QR codes).
 
-- Add `searchQuery` state + debounce (300ms via `setTimeout`)
-- Import `SearchBar` from common components
-- Render SearchBar between tabs header and table content, with tab-aware placeholder
-- Reset search on tab change
-- Classes tab: client-side filter `scheduleData` by className/trainer/location/room matching search
-- Gym tab: replace `EmptyState` with `DataTable` using `useGymCheckinsByDate`, add "Go to Lobby" button
-- Define gym columns: time, name, package, location, check-in method
+Add index on `member_attendance(check_in_time DESC)` and `member_attendance(member_id, check_in_time)`.
 
-### 5. Add i18n keys
+### 2. Update `useLobby.ts`
 
-- `dashboard.searchClasses`: "Search class, trainer, or room" / Thai equivalent
-- `dashboard.searchGym`: "Search name or contact number" / Thai equivalent
-- `dashboard.goToLobby`: "Go to Lobby" / Thai equivalent
+- Add `phone` and `email` to member search in `useMembersForCheckIn`
+- Expand `useCheckIns` client-side search to include member_id, phone, email
+- Add audit logging to `useCreateCheckIn` (event_type: `member_check_in`)
+- Add duplicate check helper: `useCheckDuplicateCheckIn(memberId, locationId, date)`
+
+### 3. Update `CheckInDialog.tsx`
+
+- Make location required (first field, must select before member search)
+- Add "No package / walk-in" option in package selector
+- Set `checkin_method: 'manual'` on insert
+- Pass `created_by` from auth context staff id
+- Add duplicate check before submit (warn if same member/location/day)
+- Widen member search to show nickname, phone in results
+
+### 4. Create `CheckInQRCodeDialog.tsx`
+
+- Location selector
+- Generate QR token (location-only, member_id null) using updated `useCheckinQR`
+- Render QR code using a simple SVG/canvas QR generator (add `qrcode` package)
+- Download as PNG + Print buttons
+- Auto-refresh token every 2 minutes
+- Shows countdown timer
+
+### 5. Update `useCheckinQR.ts`
+
+- Make `memberId` optional in `useGenerateQRToken` for location-only tokens
+- Update `useValidateQRToken` to create `member_attendance` row with `checkin_method: 'qr'`
+
+### 6. Update `Lobby.tsx`
+
+- Add "QR Code" button next to check-in button
+- Replace hardcoded "Yes" column with `checkin_method` display (Manual/QR/LIFF badge)
+- Update search placeholder to indicate broader search capability
+
+### 7. Update `useRealtimeSync.ts`
+
+- Add `check-ins` to `member_attendance` invalidation list
+
+### 8. Create `docs/data-contract-lobby.md`
+
+### 9. Add i18n keys (EN + TH)
+
+New keys: `lobby.checkinMethod`, `lobby.manual`, `lobby.qrCode`, `lobby.qrCheckin`, `lobby.selectLocationFirst`, `lobby.noPackage`, `lobby.duplicateWarning`, `lobby.downloadQR`, `lobby.printQR`, `lobby.searchPlaceholder`
 
 ## Files
 
 | Action | File |
 |--------|------|
-| Create | `src/hooks/useDashboardAttendance.ts` |
-| Modify | `src/pages/Dashboard.tsx` |
-| Modify | `src/hooks/useRealtimeSync.ts` |
-| Modify | `src/lib/queryKeys.ts` |
-| Modify | `src/i18n/locales/en.ts` |
-| Modify | `src/i18n/locales/th.ts` |
+| Migration | Add `checkin_method`, `created_by` to `member_attendance`; make `checkin_qr_tokens.member_id` nullable; add indexes |
+| Modify | `src/hooks/useLobby.ts` — audit log, duplicate check, broader search |
+| Modify | `src/components/lobby/CheckInDialog.tsx` — required location, checkin_method, created_by, duplicate check |
+| Create | `src/components/lobby/CheckInQRCodeDialog.tsx` — QR generation + download/print |
+| Modify | `src/hooks/useCheckinQR.ts` — optional memberId for location tokens |
+| Modify | `src/pages/Lobby.tsx` — QR button, checkin_method column, search placeholder |
+| Modify | `src/hooks/useRealtimeSync.ts` — add check-ins invalidation |
+| Create | `docs/data-contract-lobby.md` |
+| Modify | `src/i18n/locales/en.ts` + `th.ts` — new lobby keys |
+| Install | `qrcode` npm package for QR rendering |
 
-No DB migrations needed.
+No breaking changes to existing flows.
 
