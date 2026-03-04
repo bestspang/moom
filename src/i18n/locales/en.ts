@@ -362,6 +362,9 @@ export default {
     statusInterested: 'Interested',
     statusNotInterested: 'Not interested',
     statusConverted: 'Converted',
+    convertToMember: 'Convert to member',
+    convertSuccess: 'Lead converted to member successfully',
+    alreadyConverted: 'This lead has already been converted',
     sourceOptions: {
       walk_in: 'Walk-in',
       referral: 'Referral',

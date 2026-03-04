@@ -362,6 +362,9 @@ export default {
     statusInterested: 'สนใจ',
     statusNotInterested: 'ไม่สนใจ',
     statusConverted: 'แปลงแล้ว',
+    convertToMember: 'แปลงเป็นสมาชิก',
+    convertSuccess: 'แปลงลีดเป็นสมาชิกสำเร็จ',
+    alreadyConverted: 'ลีดนี้ถูกแปลงแล้ว',
     sourceOptions: {
       walk_in: 'เดินเข้ามา',
       referral: 'แนะนำ',

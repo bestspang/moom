@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Trash2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCreateMember, useNextMemberId } from '@/hooks/useMembers';
+import { useConvertLeadToMember } from '@/hooks/useLeads';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -36,15 +37,20 @@ const DRAFT_KEY = 'member-create-draft';
 interface CreateMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialData?: Partial<MemberWizardFormData>;
+  convertLeadId?: string;
 }
 
 export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
   open,
   onOpenChange,
+  initialData,
+  convertLeadId,
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const createMember = useCreateMember();
+  const convertLead = useConvertLeadToMember();
   const { data: nextMemberId, refetch: refetchMemberId } = useNextMemberId();
   const isMobile = useIsMobile();
   const [currentStep, setCurrentStep] = useState(1);
@@ -90,10 +96,17 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
     return () => clearTimeout(timeout);
   }, [formValues, open, currentStep]);
 
-  // Restore draft + refetch ID on open
+  // Restore draft or initialData + refetch ID on open
   useEffect(() => {
     if (open) {
       refetchMemberId();
+      // If initialData provided (convert flow), prefill from lead
+      if (initialData) {
+        Object.entries(initialData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) setValue(key as any, value);
+        });
+        return;
+      }
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
@@ -150,7 +163,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
 
   const onSubmit = async (data: MemberWizardFormData) => {
     try {
-      await createMember.mutateAsync({
+      const newMember = await createMember.mutateAsync({
         member_id: nextMemberId || 'M-0000001',
         first_name: data.firstName,
         last_name: data.lastName,
@@ -179,10 +192,19 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
         is_new: true,
       });
 
-      toast({
-        title: t('common.success'),
-        description: t('members.memberCreated'),
-      });
+      // If converting from lead, update lead status
+      if (convertLeadId && newMember?.id) {
+        await convertLead.mutateAsync({ leadId: convertLeadId, memberId: newMember.id });
+        toast({
+          title: t('common.success'),
+          description: t('leads.convertSuccess'),
+        });
+      } else {
+        toast({
+          title: t('common.success'),
+          description: t('members.memberCreated'),
+        });
+      }
 
       localStorage.removeItem(DRAFT_KEY);
       onOpenChange(false);
