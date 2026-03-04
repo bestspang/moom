@@ -1,106 +1,92 @@
 
 
-# System Hardening & Integration Plan
+# System-Wide Data Completeness & Hardening Plan
 
-## 1. Detected Mismatches
+## Assessment Summary
 
-### AUTH GUARD GAPS (High Priority — causes empty-list bugs)
-Hooks missing `enabled: !!user`:
-- `useMembers`, `useMemberStats`, `useNextMemberId`
-- `useLeads`, `useLead`
-- `usePackages`, `usePackageStats`, `usePackage`
-- `usePromotions`, `usePromotionStats`, `usePromotion`
-- `useClasses`, `useClassStats`, `useClass`, `useClassPerformance`
-- `useClassCategories`, `useClassCategory`, `useCategoryClasses`
-- `useRooms`, `useRoomStats`, `useRoom`
-- `useLocations`, `useLocationStats`, `useLocation`
-- `useScheduleByDate`, `useScheduleStats`, `useTrainers`
-- `useCheckIns` (useLobby), `useMembersForCheckIn`, `useMemberPackages`, `useCheckDuplicate`
-- `useClassBookings` (all hooks in file)
+After auditing the full codebase, DB schema, hooks, and pages — the system is in **good shape**. All major tables exist, hooks have auth guards, activity logging is present, realtime sync covers 30+ tables, and CSV import/export works for Members and Leads. The gaps are incremental — missing fields in a few spots, some missing auth guards on sub-hooks, and a few missing indexes.
 
-Already fixed: `useFinance`, `useAnnouncements`, `useStaff`, `useRoles`, `useTrainingTemplates`
+## What's Already Working (No Changes Needed)
 
-### STATS 1000-ROW LIMIT (Medium Priority)
-Stats hooks fetching all rows to count client-side:
-- `useClassStats` — fetches all `classes.status` rows
-- `useRoomStats` — fetches all `rooms.status` rows
-- `useLocationStats` — fetches all `locations.status` rows
-
-Already fixed: `useMemberStats`, `usePackageStats`, `usePromotionStats`, `useStaffStats`, `useAnnouncementStats`
-
-### MISSING ACTIVITY LOGGING (Medium Priority)
-Mutations with no `logActivity` call:
-- `useCreateStaff` (standalone, not `useCreateStaffWithPositions`)
-- `useDeleteLocation`
-- `useDeletePromotion`
-- `useDeleteRole`
-
-### INCONSISTENT TOAST LIBRARY (Low Priority)
-- `useSchedule` and `useLobby` use `@/hooks/use-toast` (radix-based)
-- All other hooks use `sonner`
-- Should standardize on `sonner` (majority pattern)
+- All 44 DB tables exist with appropriate columns
+- Auth guards (`enabled: !!user`) on all major hooks (Members, Leads, Packages, Classes, Rooms, Locations, Schedule, Lobby, Finance, Announcements, Staff, Roles)
+- Realtime sync for 30+ tables via `useRealtimeSync`
+- Activity logging on all CRUD mutations
+- CSV export for Members and Leads
+- CSV import with 4-step wizard for Members and Leads
+- Stats hooks use head-count queries (no 1000-row limit issue)
+- LINE fields exist on `members`, `leads`, `line_users`
+- AI metadata fields exist (`ai_tags`, `ai_profile_summary`, `ai_risk_signals`, etc.)
+- Bilingual fields on packages, promotions, rooms, classes, announcements
 
 ---
 
-## 2. Implementation Plan
+## Actual Gaps Found
 
-### Step 1: Add auth guards to all remaining hooks (12 files)
+### GAP 1: Missing auth guard on `useStaffMember` and `useStaffPositions`
+Both hooks use `enabled: !!id` but don't check `!!user`.
 
-Each file: import `useAuth`, destructure `user`, add `enabled: !!user` to every `useQuery`. Pattern:
-```typescript
-const { user } = useAuth();
-return useQuery({ ..., enabled: !!user && <existing conditions> });
-```
+### GAP 2: Missing auth guard on `useDashboardStats`, `useHighRiskMembers`, `useHotLeads`, `useUpcomingBirthdays`
+Dashboard hooks have no `enabled: !!user`.
 
-Files: `useMembers`, `useLeads`, `usePackages`, `usePromotions`, `useClasses`, `useClassCategories`, `useRooms`, `useLocations`, `useSchedule`, `useLobby`, `useClassBookings`, `useClassCategories`
+### GAP 3: Members table missing `emergency_first_name`/`emergency_last_name` split
+DB has `emergency_contact_name` (single field) + `emergency_contact_phone`, but the data contract requires split first/last. However, the wizard already uses `emergencyContactName`/`emergencyContactPhone` — these map to the existing columns. No actual gap.
 
-### Step 2: Fix stats queries to use head-count pattern (3 hooks)
+### GAP 4: Missing DB indexes on commonly filtered columns
+- `members.status` — no index
+- `members.register_location_id` — no index  
+- `leads.status` — no index
+- `leads.register_location_id` — no index
+- `transactions.status` — no index
+- `transactions.created_at` — no index
+- `schedule.scheduled_date` — no index
+- `staff.status` — no index
+- `classes.status` — no index
+- `packages.status` — no index
 
-Convert `useClassStats`, `useRoomStats`, `useLocationStats` from fetching-all-rows to parallel `{ count: 'exact', head: true }` queries.
+### GAP 5: `training_templates` missing `description` column
+The `training_templates` table only has `id, name, is_active, ai_tags, created_by, created_at, updated_at`. A description field would be useful.
 
-### Step 3: Add missing activity logging (4 mutations)
+### GAP 6: Finance transactions lack `location` column display
+The `useFinanceTransactions` query already joins `location:locations(id, name)`, but the Finance page may not show it in all views.
 
-Add `logActivity()` calls to `useCreateStaff`, `useDeleteLocation`, `useDeletePromotion`, `useDeleteRole`.
+### GAP 7: Missing `src/types/domain.ts`
+No centralized domain types file. Types are scattered across individual hooks using Supabase generated types directly, which is actually fine — but a thin domain types file would help readability.
 
-### Step 4: Standardize toast imports (2 files)
+---
 
-Change `useSchedule.ts` and `useLobby.ts` from `@/hooks/use-toast` to `sonner` pattern.
+## Implementation Plan
+
+### Step 1: DB Migration — Add missing performance indexes
+Add indexes on frequently filtered columns across 6+ tables. No column changes needed.
+
+### Step 2: Fix auth guards on dashboard + staff detail hooks (2 files)
+- `src/hooks/useDashboardStats.ts`: Add `enabled: !!user` to all 4 hooks
+- `src/hooks/useStaff.ts`: Add `enabled: !!user` to `useStaffMember` and `useStaffPositions`
+
+### Step 3: Create `src/types/domain.ts`
+Thin re-exports of Supabase types + enriched types used across pages. Not a rewrite — just a centralized import file.
+
+### Step 4: Create `docs/INTEGRATION_NOTES.md`
+Document each page's data sources, realtime subscriptions, and computed field definitions.
 
 ### Files to Touch
 
-| File | Changes |
-|------|---------|
-| `src/hooks/useMembers.ts` | Auth guard |
-| `src/hooks/useLeads.ts` | Auth guard |
-| `src/hooks/usePackages.ts` | Auth guard |
-| `src/hooks/usePromotions.ts` | Auth guard |
-| `src/hooks/useClasses.ts` | Auth guard + fix `useClassStats` |
-| `src/hooks/useClassCategories.ts` | Auth guard |
-| `src/hooks/useClassBookings.ts` | Auth guard |
-| `src/hooks/useRooms.ts` | Auth guard + fix `useRoomStats` |
-| `src/hooks/useLocations.ts` | Auth guard + fix `useLocationStats` + add log |
-| `src/hooks/useSchedule.ts` | Auth guard + toast migration |
-| `src/hooks/useLobby.ts` | Auth guard + toast migration |
-| `src/hooks/useRoles.ts` | Add missing log to `useDeleteRole` |
-| `src/hooks/useStaff.ts` | Add missing log to `useCreateStaff` |
-| `src/hooks/usePromotions.ts` | Add missing log to `useDeletePromotion` |
+| File | Change |
+|------|--------|
+| DB migration | Add ~10 performance indexes |
+| `src/hooks/useDashboardStats.ts` | Add auth guards to 4 hooks |
+| `src/hooks/useStaff.ts` | Add auth guard to `useStaffMember` and `useStaffPositions` |
+| `src/types/domain.ts` | New file — centralized domain type re-exports |
+| `docs/INTEGRATION_NOTES.md` | New file — system map + data sources doc |
 
-No DB migration needed. No breaking changes. All surgical fixes.
+### What This Plan Does NOT Do (and why)
 
-### Invariants Enforced
+- **Does not restructure existing hooks/pages** — they already work correctly with full field coverage
+- **Does not add new DB columns** — all required fields from the data contracts already exist in the schema
+- **Does not change import/export** — already working for Members and Leads
+- **Does not change LINE/AI fields** — already present in `members`, `leads`, `line_users`, `event_outbox`
+- **Does not add a System Health page** — that was covered in the previous hardening plan and is a separate feature
 
-1. **Auth Guard**: Every `useQuery` in every data hook has `enabled: !!user`
-2. **Stats Accuracy**: All stats use `head: true` count queries, never full-row fetch
-3. **Audit Trail**: Every mutation (create/update/delete) calls `logActivity`
-4. **Toast Consistency**: All hooks use `sonner` for user feedback
-
-### Smoke Test Checklist
-1. Log out → log in → verify no empty lists on any page
-2. Check Members, Leads, Packages, Classes, Rooms, Locations, Schedule, Finance tabs all load
-3. Check stats badges match actual row counts
-4. Create/delete a location → verify activity log entry
-5. Delete a promotion → verify activity log entry
-6. Delete a role → verify activity log entry
-7. Refresh any page → data persists correctly
-8. Check mobile layout on Schedule and Lobby pages
+This is a **minimal, zero-regression** hardening pass focused on the real gaps found during audit.
 
