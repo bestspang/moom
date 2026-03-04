@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCreateMember, useNextMemberId } from '@/hooks/useMembers';
 import { useToast } from '@/hooks/use-toast';
@@ -14,15 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Drawer,
@@ -31,6 +21,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { StepIndicator } from './wizard/StepIndicator';
+import { StepProfile } from './wizard/StepProfile';
+import { StepContact } from './wizard/StepContact';
+import { StepAddress } from './wizard/StepAddress';
+import { StepEmergency } from './wizard/StepEmergency';
+import { StepMedical } from './wizard/StepMedical';
+import { StepOther } from './wizard/StepOther';
+import { createMemberWizardSchema, STEP_FIELDS, TOTAL_STEPS } from './wizard/types';
+import type { MemberWizardFormData } from './wizard/types';
+
+const DRAFT_KEY = 'member-create-draft';
 
 interface CreateMemberDialogProps {
   open: boolean;
@@ -46,20 +47,10 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
   const createMember = useCreateMember();
   const { data: nextMemberId, refetch: refetchMemberId } = useNextMemberId();
   const isMobile = useIsMobile();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [stepError, setStepError] = useState('');
 
-  // Create schema with translations
-  const memberSchema = useMemo(() => z.object({
-    firstName: z.string().min(1, t('validation.firstNameRequired')).max(100),
-    lastName: z.string().min(1, t('validation.lastNameRequired')).max(100),
-    nickname: z.string().max(50).optional(),
-    email: z.string().email(t('validation.invalidEmail')).optional().or(z.literal('')),
-    phone: z.string().max(20).optional(),
-    dateOfBirth: z.string().optional(),
-    gender: z.enum(['male', 'female', 'other']).optional(),
-    address: z.string().max(500).optional(),
-  }), [t]);
-
-  type MemberFormData = z.infer<typeof memberSchema>;
+  const schema = useMemo(() => createMemberWizardSchema(t), [t]);
 
   const {
     register,
@@ -67,19 +58,97 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
     reset,
     setValue,
     watch,
+    trigger,
     formState: { errors },
-  } = useForm<MemberFormData>({
-    resolver: zodResolver(memberSchema),
+  } = useForm<MemberWizardFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      hasMedicalConditions: false,
+      allowPhysicalContact: true,
+    },
   });
 
+  const formValues = watch();
+
+  const stepLabels = useMemo(() => [
+    t('memberWizard.stepProfile'),
+    t('memberWizard.stepContact'),
+    t('memberWizard.stepAddress'),
+    t('memberWizard.stepEmergency'),
+    t('memberWizard.stepMedical'),
+    t('memberWizard.stepOther'),
+  ], [t]);
+
+  // Draft save (debounced)
+  useEffect(() => {
+    if (!open) return;
+    const timeout = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...formValues, _step: currentStep }));
+      } catch {}
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [formValues, open, currentStep]);
+
+  // Restore draft + refetch ID on open
   useEffect(() => {
     if (open) {
       refetchMemberId();
-      reset();
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const draft = JSON.parse(saved);
+          const { _step, ...fields } = draft;
+          Object.entries(fields).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) setValue(key as any, value);
+          });
+          if (_step) setCurrentStep(_step);
+          toast({ title: t('leads.draftRestored') });
+        }
+      } catch {}
+    } else {
+      setCurrentStep(1);
+      setStepError('');
     }
-  }, [open, refetchMemberId, reset]);
+  }, [open]);
 
-  const onSubmit = async (data: MemberFormData) => {
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(DRAFT_KEY);
+    reset({
+      hasMedicalConditions: false,
+      allowPhysicalContact: true,
+    });
+    setCurrentStep(1);
+    setStepError('');
+    onOpenChange(false);
+  }, [reset, onOpenChange]);
+
+  const handleNext = async () => {
+    setStepError('');
+    const fields = STEP_FIELDS[currentStep];
+    const valid = await trigger(fields);
+    if (!valid) {
+      setStepError(t('memberWizard.completeRequired'));
+      return;
+    }
+    // Special: step 2 needs refine check (phone or email)
+    if (currentStep === 2) {
+      const phone = formValues.phone?.trim();
+      const email = formValues.email?.trim();
+      if (!phone && !email) {
+        setStepError(t('memberWizard.phoneOrEmailRequired'));
+        return;
+      }
+    }
+    setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  };
+
+  const handleBack = () => {
+    setStepError('');
+    setCurrentStep((s) => Math.max(s - 1, 1));
+  };
+
+  const onSubmit = async (data: MemberWizardFormData) => {
     try {
       await createMember.mutateAsync({
         member_id: nextMemberId || 'M-0000001',
@@ -90,7 +159,22 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
         phone: data.phone || null,
         date_of_birth: data.dateOfBirth || null,
         gender: data.gender || null,
+        register_location_id: data.registerLocationId || null,
         address: data.address || null,
+        emergency_contact_name: data.emergencyContactName || null,
+        emergency_contact_phone: data.emergencyContactPhone || null,
+        emergency_relationship: data.emergencyRelationship || null,
+        medical: {
+          has_conditions: data.hasMedicalConditions || false,
+          notes: data.medicalNotes || '',
+        } as any,
+        consents: {
+          allow_physical_contact: data.allowPhysicalContact ?? true,
+          physical_contact_notes: data.physicalContactNotes || '',
+        } as any,
+        source: data.source || null,
+        package_interest_id: data.packageInterestId || null,
+        notes: data.notes || null,
         status: 'active',
         is_new: true,
       });
@@ -99,9 +183,11 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
         title: t('common.success'),
         description: t('members.memberCreated'),
       });
-      
+
+      localStorage.removeItem(DRAFT_KEY);
       onOpenChange(false);
       reset();
+      setCurrentStep(1);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -111,110 +197,93 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
     }
   };
 
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <StepProfile
+            register={register}
+            setValue={setValue}
+            errors={errors}
+            watchGender={formValues.gender}
+            watchLocationId={formValues.registerLocationId}
+          />
+        );
+      case 2:
+        return <StepContact register={register} errors={errors} />;
+      case 3:
+        return <StepAddress register={register} />;
+      case 4:
+        return <StepEmergency register={register} errors={errors} />;
+      case 5:
+        return <StepMedical register={register} setValue={setValue} watch={watch} />;
+      case 6:
+        return (
+          <StepOther
+            register={register}
+            setValue={setValue}
+            watchSource={formValues.source}
+            watchPackageId={formValues.packageInterestId}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   const FormContent = (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <p className="text-xs text-muted-foreground mb-4">{t('form.requiredFieldsNote')}</p>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">{t('auth.firstName')} *</Label>
-          <Input
-            id="firstName"
-            {...register('firstName')}
-            className={errors.firstName ? 'border-destructive' : ''}
-          />
-          {errors.firstName && (
-            <p className="text-sm text-destructive">{errors.firstName.message}</p>
-          )}
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
+      <StepIndicator
+        currentStep={currentStep}
+        totalSteps={TOTAL_STEPS}
+        stepLabels={stepLabels}
+      />
+
+      <div className="flex-1 overflow-y-auto py-4 px-1 min-h-0">
+        {renderStep()}
+      </div>
+
+      {/* Error banner */}
+      {stepError && (
+        <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {stepError}
         </div>
+      )}
 
-        <div className="space-y-2">
-          <Label htmlFor="lastName">{t('auth.lastName')} *</Label>
-          <Input
-            id="lastName"
-            {...register('lastName')}
-            className={errors.lastName ? 'border-destructive' : ''}
-          />
-          {errors.lastName && (
-            <p className="text-sm text-destructive">{errors.lastName.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="nickname">{t('form.nickname')}</Label>
-        <Input id="nickname" {...register('nickname')} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email">{t('auth.email')}</Label>
-        <Input
-          id="email"
-          type="email"
-          {...register('email')}
-          className={errors.email ? 'border-destructive' : ''}
-        />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="phone">{t('leads.contactNumber')}</Label>
-        <Input id="phone" {...register('phone')} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="dateOfBirth">{t('form.dateOfBirth')}</Label>
-          <Input
-            id="dateOfBirth"
-            type="date"
-            {...register('dateOfBirth')}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="gender">{t('form.gender')}</Label>
-          <Select
-            onValueChange={(value) => setValue('gender', value as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('form.selectGender')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="male">{t('form.male')}</SelectItem>
-              <SelectItem value="female">{t('form.female')}</SelectItem>
-              <SelectItem value="other">{t('form.other')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address">{t('form.address')}</Label>
-        <Input id="address" {...register('address')} />
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
+      {/* Bottom bar */}
+      <div className="flex items-center justify-between pt-4 border-t mt-2">
         <Button
           type="button"
-          variant="outline"
-          onClick={() => onOpenChange(false)}
+          variant="ghost"
+          size="sm"
+          onClick={clearDraft}
+          className="text-muted-foreground"
         >
-          {t('common.cancel')}
+          <Trash2 className="mr-1 h-4 w-4" />
+          {t('leads.discardDraft')}
         </Button>
-        <Button type="submit" disabled={createMember.isPending}>
-          {createMember.isPending && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <div className="flex gap-2">
+          {currentStep > 1 && (
+            <Button type="button" variant="outline" onClick={handleBack}>
+              {t('common.back')}
+            </Button>
           )}
-          {t('common.create')}
-        </Button>
+          {currentStep < TOTAL_STEPS ? (
+            <Button type="button" onClick={handleNext}>
+              {t('common.next')}
+            </Button>
+          ) : (
+            <Button type="submit" disabled={createMember.isPending}>
+              {createMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('common.create')}
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );
 
-  // Use Drawer on mobile for better UX
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -225,7 +294,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
               {nextMemberId && `ID: ${nextMemberId}`}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="max-h-[70vh] overflow-y-auto px-1">
+          <div className="max-h-[70vh] overflow-y-auto">
             {FormContent}
           </div>
         </DrawerContent>
@@ -235,7 +304,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('members.createMember')}</DialogTitle>
           <DialogDescription>

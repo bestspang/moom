@@ -974,6 +974,34 @@ export default {
     requiredFieldsNote: '* Required fields',
   },
 
+  // Member Creation Wizard
+  memberWizard: {
+    stepProfile: 'Profile',
+    stepContact: 'Contact',
+    stepAddress: 'Address',
+    stepEmergency: 'Emergency',
+    stepMedical: 'Medical',
+    stepOther: 'Other',
+    registerLocation: 'Register location',
+    phoneOrEmailRequired: 'Phone or email is required',
+    linkLine: 'Link LINE',
+    linkLineTooltip: 'Available soon',
+    addressPlaceholder: 'Enter full address...',
+    emergencyName: 'Emergency contact name',
+    emergencyPhone: 'Emergency contact phone',
+    emergencyRelationship: 'Relationship',
+    emergencyRelationshipPlaceholder: 'e.g. Parent, Spouse, Friend',
+    hasMedicalConditions: 'Has medical conditions',
+    medicalNotes: 'Medical notes',
+    allowPhysicalContact: 'Allow physical contact',
+    physicalContactNotes: 'Physical contact notes',
+    packageInterest: 'Package interest',
+    selectPackage: 'Select package',
+    internalNotes: 'Internal notes',
+    internalNotesPlaceholder: 'Front desk notes...',
+    completeRequired: 'Please complete all required fields',
+  },
+
   // Dashboard
   dashboardExtra: {
     attendees: 'attendees',
