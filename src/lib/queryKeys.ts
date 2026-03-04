@@ -24,4 +24,22 @@ export const queryKeys = {
   featureFlag: (key: string) => ['feature-flag', key] as const,
   aiSuggestions: (status?: string) => ['ai-suggestions', status] as const,
   aiRuns: () => ['ai-runs'] as const,
+
+  // Packages
+  packages: (status?: string, search?: string) => ['packages', status, search] as const,
+  package: (id: string) => ['packages', id] as const,
+  packageStats: () => ['package-stats'] as const,
+  packageMetrics: (id: string) => ['package-metrics', id] as const,
+
+  // Promotions
+  promotions: (status?: string, search?: string) => ['promotions', status, search] as const,
+  promotion: (id: string) => ['promotions', id] as const,
+  promotionStats: () => ['promotion-stats'] as const,
+
+  // Member packages & usage
+  memberPackages: (memberId: string) => ['member-packages', memberId] as const,
+  packageUsage: (memberPackageId: string) => ['package-usage', memberPackageId] as const,
+
+  // Finance
+  transactions: () => ['transactions'] as const,
 };
