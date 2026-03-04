@@ -42,18 +42,39 @@ function parseCsv(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
-// ── Header Aliases ──
+// ── Header Aliases (EN + TH) ──
 
 const HEADER_ALIASES: Record<string, string> = {
+  // Name
   'firstname': 'first_name', 'first name': 'first_name', 'first_name': 'first_name', 'ชื่อ': 'first_name',
   'lastname': 'last_name', 'last name': 'last_name', 'last_name': 'last_name', 'นามสกุล': 'last_name',
   'nickname': 'nickname', 'ชื่อเล่น': 'nickname',
   'gender': 'gender', 'เพศ': 'gender',
   'birthdate': 'date_of_birth', 'date_of_birth': 'date_of_birth', 'date of birth': 'date_of_birth', 'dob': 'date_of_birth', 'วันเกิด': 'date_of_birth',
+  // Contact
   'phone': 'phone', 'contact number': 'phone', 'เบอร์โทร': 'phone',
   'email': 'email', 'อีเมล': 'email',
+  'line_id': 'line_id', 'line id': 'line_id', 'ไลน์': 'line_id',
+  // Location
+  'register_location_id': 'register_location_id', 'location': 'register_location_id', 'สาขา': 'register_location_id',
+  // Address
   'address': 'address', 'ที่อยู่': 'address',
-  'medical conditions': 'medical_notes', 'medical_notes': 'medical_notes',
+  'address_1': 'address_1', 'address 1': 'address_1', 'ที่อยู่ 1': 'address_1',
+  'address_2': 'address_2', 'address 2': 'address_2', 'ที่อยู่ 2': 'address_2',
+  'subdistrict': 'subdistrict', 'แขวง': 'subdistrict', 'ตำบล': 'subdistrict',
+  'district': 'district', 'เขต': 'district', 'อำเภอ': 'district',
+  'province': 'province', 'จังหวัด': 'province',
+  'postal_code': 'postal_code', 'postal code': 'postal_code', 'zip': 'postal_code', 'รหัสไปรษณีย์': 'postal_code',
+  // Emergency
+  'emergency_first_name': 'emergency_first_name', 'emergency first name': 'emergency_first_name',
+  'emergency_last_name': 'emergency_last_name', 'emergency last name': 'emergency_last_name',
+  'emergency_phone': 'emergency_phone', 'emergency phone': 'emergency_phone', 'เบอร์ฉุกเฉิน': 'emergency_phone',
+  'emergency_relationship': 'emergency_relationship', 'emergency relationship': 'emergency_relationship',
+  // Medical
+  'has_medical_conditions': 'has_medical_conditions', 'medical conditions': 'has_medical_conditions',
+  'medical_notes': 'medical_notes', 'medical notes': 'medical_notes',
+  'allow_physical_contact': 'allow_physical_contact',
+  // Other
   'joined date': 'member_since', 'joined_date': 'member_since', 'member_since': 'member_since',
   'member_id': 'member_id', 'id': 'member_id',
   'status': 'status',
@@ -70,8 +91,22 @@ const TARGET_FIELDS = [
   { value: 'date_of_birth', label: 'Date of Birth' },
   { value: 'phone', label: 'Phone' },
   { value: 'email', label: 'Email' },
-  { value: 'address', label: 'Address' },
-  { value: 'medical_notes', label: 'Medical Conditions' },
+  { value: 'line_id', label: 'LINE ID' },
+  { value: 'register_location_id', label: 'Register Location ID' },
+  { value: 'address', label: 'Address (legacy)' },
+  { value: 'address_1', label: 'Address Line 1' },
+  { value: 'address_2', label: 'Address Line 2' },
+  { value: 'subdistrict', label: 'Sub-district' },
+  { value: 'district', label: 'District' },
+  { value: 'province', label: 'Province' },
+  { value: 'postal_code', label: 'Postal Code' },
+  { value: 'emergency_first_name', label: 'Emergency First Name' },
+  { value: 'emergency_last_name', label: 'Emergency Last Name' },
+  { value: 'emergency_phone', label: 'Emergency Phone' },
+  { value: 'emergency_relationship', label: 'Emergency Relationship' },
+  { value: 'has_medical_conditions', label: 'Has Medical Conditions' },
+  { value: 'medical_notes', label: 'Medical Notes' },
+  { value: 'allow_physical_contact', label: 'Allow Physical Contact' },
   { value: 'member_since', label: 'Joined Date' },
   { value: 'member_id', label: 'Member ID' },
   { value: 'status', label: 'Status' },
@@ -83,9 +118,7 @@ const TARGET_FIELDS = [
 
 function parseDate(val: string): string | null {
   if (!val) return null;
-  // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-  // DD/MM/YYYY
   const m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
   return null;
@@ -97,6 +130,17 @@ function normalizeGender(val: string): string | null {
   if (['female', 'f', 'หญิง'].includes(v)) return 'female';
   if (['other', 'อื่นๆ'].includes(v)) return 'other';
   return null;
+}
+
+function normalizePhone(val: string): string {
+  let p = val.replace(/[^0-9+]/g, '');
+  if (p.startsWith('66') && p.length === 11) p = '0' + p.slice(2);
+  return p;
+}
+
+function parseBool(val: string): boolean {
+  const v = val.toLowerCase().trim();
+  return ['true', '1', 'yes', 'ใช่'].includes(v);
 }
 
 // ── Types ──
@@ -120,10 +164,18 @@ type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'done';
 
 // ── Templates ──
 
+const FULL_TEMPLATE_HEADERS = [
+  'member_id', 'first_name', 'last_name', 'nickname', 'gender', 'date_of_birth',
+  'phone', 'email', 'line_id', 'register_location_id',
+  'address_1', 'address_2', 'subdistrict', 'district', 'province', 'postal_code',
+  'emergency_first_name', 'emergency_last_name', 'emergency_phone', 'emergency_relationship',
+  'has_medical_conditions', 'medical_notes', 'allow_physical_contact',
+  'joined_date', 'status', 'notes', 'source',
+];
+
 function downloadTemplate(type: 'minimal' | 'full') {
-  const minHeaders = ['Firstname', 'Lastname', 'Nickname', 'Gender', 'Birthdate', 'Phone', 'Joined Date', 'Address', 'Medical Conditions'];
-  const fullHeaders = ['member_id', 'first_name', 'last_name', 'nickname', 'gender', 'date_of_birth', 'phone', 'email', 'address', 'member_since', 'status', 'notes', 'source'];
-  const headers = type === 'minimal' ? minHeaders : fullHeaders;
+  const minHeaders = ['first_name', 'last_name', 'nickname', 'gender', 'date_of_birth', 'phone', 'email', 'register_location_id', 'joined_date', 'status'];
+  const headers = type === 'minimal' ? minHeaders : FULL_TEMPLATE_HEADERS;
   const csv = headers.map(h => `"${h}"`).join(',') + '\n';
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -183,7 +235,6 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
       setCsvHeaders(headers);
       setCsvRows(rows);
 
-      // Auto-map
       const autoMap: Record<number, string> = {};
       headers.forEach((h, i) => {
         const normalized = h.toLowerCase().trim();
@@ -216,8 +267,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
 
       const errors: string[] = [];
       if (!data.first_name) errors.push('Missing first name');
-      if (!data.last_name) errors.push('Missing last name');
-      if (!data.phone && !data.email) errors.push('Need phone or email');
+      if (!data.last_name && !data.phone && !data.email) errors.push('Need last_name or phone/email');
       if (data.date_of_birth && !parseDate(data.date_of_birth)) errors.push('Invalid date of birth');
       if (data.member_since && !parseDate(data.member_since)) errors.push('Invalid joined date');
       if (data.gender && !normalizeGender(data.gender)) errors.push('Invalid gender');
@@ -243,8 +293,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
       });
       const errors: string[] = [];
       if (!data.first_name) errors.push('Missing first name');
-      if (!data.last_name) errors.push('Missing last name');
-      if (!data.phone && !data.email) errors.push('Need phone or email');
+      if (!data.last_name && !data.phone && !data.email) errors.push('Need last_name or phone/email');
       return { rowIndex: idx + 2, data, errors };
     });
 
@@ -288,20 +337,35 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
         // Find match
         let matchId: string | undefined;
         if (row.data.member_id) matchId = byMemberId.get(row.data.member_id.toLowerCase());
-        if (!matchId && row.data.phone) matchId = byPhone.get(row.data.phone);
+        if (!matchId && row.data.phone) matchId = byPhone.get(normalizePhone(row.data.phone));
         if (!matchId && row.data.email) matchId = byEmail.get(row.data.email.toLowerCase());
 
         const memberData: Record<string, any> = {
           first_name: row.data.first_name,
-          last_name: row.data.last_name,
+          last_name: row.data.last_name || '',
         };
 
-        if (row.data.nickname) memberData.nickname = row.data.nickname;
-        if (row.data.phone) memberData.phone = row.data.phone;
-        if (row.data.email) memberData.email = row.data.email;
-        if (row.data.address) memberData.address = row.data.address;
-        if (row.data.notes) memberData.notes = row.data.notes;
-        if (row.data.source) memberData.source = row.data.source;
+        // Simple text fields
+        const textFields = ['nickname', 'phone', 'email', 'address', 'notes', 'source', 'line_id',
+          'address_1', 'address_2', 'subdistrict', 'district', 'province', 'postal_code',
+          'emergency_first_name', 'emergency_last_name', 'emergency_phone', 'emergency_relationship',
+          'medical_notes', 'register_location_id'];
+        for (const f of textFields) {
+          if (row.data[f]) memberData[f] = f === 'phone' ? normalizePhone(row.data[f]) : row.data[f];
+        }
+
+        // Boolean fields
+        if (row.data.has_medical_conditions) memberData.has_medical_conditions = parseBool(row.data.has_medical_conditions);
+        if (row.data.allow_physical_contact) memberData.allow_physical_contact = parseBool(row.data.allow_physical_contact);
+
+        // Backfill legacy emergency fields
+        if (memberData.emergency_first_name || memberData.emergency_last_name) {
+          memberData.emergency_contact_name = [memberData.emergency_first_name, memberData.emergency_last_name].filter(Boolean).join(' ');
+        }
+        if (memberData.emergency_phone) {
+          memberData.emergency_contact_phone = memberData.emergency_phone;
+        }
+
         if (row.data.gender) {
           const g = normalizeGender(row.data.gender);
           if (g) memberData.gender = g;
@@ -317,36 +381,46 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
         if (row.data.status && ['active', 'inactive', 'suspended', 'on_hold'].includes(row.data.status.toLowerCase())) {
           memberData.status = row.data.status.toLowerCase();
         }
-        if (row.data.medical_notes) {
-          memberData.medical = { has_medical_conditions: true, medical_notes: row.data.medical_notes };
-        }
 
         if (matchId) {
           // Update
           const { error } = await supabase.from('members').update(memberData).eq('id', matchId);
           if (error) throw error;
           importResult.updated++;
+
+          // Per-row audit log
+          logActivity({
+            event_type: 'member_updated',
+            activity: `Member ${memberData.first_name} ${memberData.last_name} updated via CSV import`,
+            entity_type: 'member',
+            entity_id: matchId,
+            member_id: matchId,
+            new_value: { ...memberData, _source: 'csv_import' },
+          });
         } else {
           // Create
           const newMemberId = row.data.member_id || `M-${String(nextNum++).padStart(7, '0')}`;
           memberData.member_id = newMemberId;
           if (!memberData.status) memberData.status = 'active';
-          const { error } = await supabase.from('members').insert(memberData as any);
+          const { data: created, error } = await supabase.from('members').insert(memberData as any).select('id').single();
           if (error) throw error;
           importResult.created++;
+
+          // Per-row audit log
+          logActivity({
+            event_type: 'member_created',
+            activity: `Member ${memberData.first_name} ${memberData.last_name} created via CSV import`,
+            entity_type: 'member',
+            entity_id: created?.id,
+            member_id: created?.id,
+            new_value: { ...memberData, _source: 'csv_import' },
+          });
         }
       } catch (err: any) {
         importResult.failed++;
         importResult.errors.push({ row: row.rowIndex, reason: err.message || 'Unknown error', data: row.data });
       }
     }
-
-    // Activity log
-    logActivity({
-      event_type: 'member_bulk_import',
-      activity: `Imported ${importResult.created} new, ${importResult.updated} updated, ${importResult.failed} failed from ${fileName}`,
-      entity_type: 'member',
-    });
 
     // Invalidate
     queryClient.invalidateQueries({ queryKey: ['members'] });
@@ -449,7 +523,6 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
         {step === 'preview' && (() => {
           const validCount = previewRows.filter(r => r.errors.length === 0).length;
           const errorCount = previewRows.filter(r => r.errors.length > 0).length;
-          const totalErrorCount = csvRows.length - csvRows.slice(0, 20).filter((_, idx) => previewRows[idx]?.errors.length === 0).length;
           const allErrors = csvRows.length > 0 && validCount === 0 && errorCount === previewRows.length;
 
           return (
@@ -458,7 +531,6 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
               {t('members.import.previewDesc')} (showing {previewRows.length} of {csvRows.length})
             </p>
 
-            {/* Summary banner */}
             <div className="flex gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 text-xs font-medium">
                 <CheckCircle className="h-3.5 w-3.5" />
@@ -535,60 +607,33 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
         {step === 'done' && result && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-lg font-medium">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-green-600" />
               {t('members.import.complete')}
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+              <div className="rounded-lg border p-3">
                 <p className="text-2xl font-bold text-green-600">{result.created}</p>
                 <p className="text-xs text-muted-foreground">{t('members.import.created')}</p>
               </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <div className="rounded-lg border p-3">
                 <p className="text-2xl font-bold text-blue-600">{result.updated}</p>
                 <p className="text-xs text-muted-foreground">{t('members.import.updated')}</p>
               </div>
-              <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+              <div className="rounded-lg border p-3">
                 <p className="text-2xl font-bold text-red-600">{result.failed}</p>
                 <p className="text-xs text-muted-foreground">{t('members.import.failed')}</p>
               </div>
             </div>
+
             {result.errors.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-destructive flex items-center gap-1">
-                  <AlertTriangle className="h-4 w-4" />
-                  Failed rows ({result.errors.length})
-                </p>
-                <ScrollArea className="h-[160px] border rounded-md">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b bg-muted/50 sticky top-0">
-                        <th className="p-1.5 text-left w-12">Row</th>
-                        <th className="p-1.5 text-left">Name</th>
-                        <th className="p-1.5 text-left">Reason</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.errors.slice(0, 20).map((err, i) => (
-                        <tr key={i} className="border-b bg-red-50/30 dark:bg-red-950/20">
-                          <td className="p-1.5">{err.row}</td>
-                          <td className="p-1.5">{err.data.first_name || ''} {err.data.last_name || ''}</td>
-                          <td className="p-1.5 text-destructive">{err.reason}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </ScrollArea>
-                {result.errors.length > 20 && (
-                  <p className="text-xs text-muted-foreground">Showing 20 of {result.errors.length} errors</p>
-                )}
-                <Button variant="outline" size="sm" onClick={downloadErrors}>
-                  <Download className="h-3 w-3 mr-1" />
-                  {t('members.import.downloadErrors')}
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" onClick={downloadErrors}>
+                <Download className="h-3 w-3 mr-1" />
+                {t('members.import.downloadErrors')}
+              </Button>
             )}
+
             <div className="flex justify-end">
-              <Button onClick={handleClose}>{t('members.import.done')}</Button>
+              <Button onClick={handleClose}>{t('common.close')}</Button>
             </div>
           </div>
         )}

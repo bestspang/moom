@@ -163,6 +163,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
 
   const onSubmit = async (data: MemberWizardFormData) => {
     try {
+      const emergencyName = data.emergencyContactName || null;
       const newMember = await createMember.mutateAsync({
         member_id: nextMemberId || 'M-0000001',
         first_name: data.firstName,
@@ -180,9 +181,20 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
         district: data.district || null,
         province: data.province || null,
         postal_code: data.postalCode || null,
-        emergency_contact_name: data.emergencyContactName || null,
-        emergency_contact_phone: data.emergencyContactPhone || null,
+        // Flat emergency columns
+        emergency_first_name: emergencyName,
+        emergency_last_name: null,
+        emergency_phone: data.emergencyContactPhone || null,
         emergency_relationship: data.emergencyRelationship || null,
+        // Legacy compat
+        emergency_contact_name: emergencyName,
+        emergency_contact_phone: data.emergencyContactPhone || null,
+        // Flat medical/consent columns
+        has_medical_conditions: data.hasMedicalConditions || false,
+        medical_notes: data.medicalNotes || null,
+        allow_physical_contact: data.allowPhysicalContact ?? true,
+        physical_contact_notes: data.physicalContactNotes || null,
+        // Keep jsonb for backward compat
         medical: {
           has_conditions: data.hasMedicalConditions || false,
           notes: data.medicalNotes || '',
@@ -196,7 +208,7 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
         notes: data.notes || null,
         status: 'active',
         is_new: true,
-      });
+      } as any);
 
       // If converting from lead, update lead status
       if (convertLeadId && newMember?.id) {

@@ -10,6 +10,11 @@ type MemberInsert = Database['public']['Tables']['members']['Insert'];
 type MemberUpdate = Database['public']['Tables']['members']['Update'];
 type MemberStatus = Database['public']['Enums']['member_status'];
 
+// Member with joined location name
+export interface MemberWithLocation extends Member {
+  register_location?: { id: string; name: string } | null;
+}
+
 interface UseMembersParams {
   status?: MemberStatus | 'all';
   search?: string;
@@ -33,7 +38,7 @@ export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50
     queryFn: async () => {
       let query = supabase
         .from('members')
-        .select('*', { count: 'exact' })
+        .select('*, register_location:locations!members_register_location_id_fkey(id, name)', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (status && status !== 'all') {
@@ -55,7 +60,7 @@ export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50
       if (error) throw error;
 
       return {
-        members: data || [],
+        members: (data || []) as MemberWithLocation[],
         total: count || 0,
         page,
         perPage,
@@ -71,12 +76,12 @@ export const useMember = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')
-        .select('*')
+        .select('*, register_location:locations!members_register_location_id_fkey(id, name)')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as MemberWithLocation;
     },
     enabled: !!user && !!id,
   });
