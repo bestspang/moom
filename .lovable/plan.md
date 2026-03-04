@@ -1,114 +1,68 @@
 
 
-# Roles Management with Permission Matrix
+# Locations CRUD with Categories, Opening Hours & Dependency Sync
 
 ## Current State
-- `roles` table exists with `name`, `access_level`, `permissions` (jsonb, unused), `description`
-- `Roles.tsx` list page shows roles with counts — functional but no create/edit wiring
-- Access control is purely `access_level`-based via `has_min_access_level()` in Sidebar and ProtectedRoute
-- No `role_permissions` table, no permission matrix, no per-resource enforcement
-- `useRoles.ts` has CRUD hooks but Create button not wired to anything
+- `Locations.tsx` is a read-only list with search + status tabs — no create/edit buttons, no row click
+- `useLocations.ts` has full CRUD hooks already (create/update/delete) — just not wired to UI
+- `locations` table has: `id`, `location_id`, `name`, `contact_number`, `categories` (text[]), `status` (open/closed) — **no `opening_hours` column**
+- i18n has minimal `locations.*` keys (title, searchPlaceholder, id, locationName)
+- Dependent modules already use `useLocations()`: Schedule, CreatePackage, CreateRoom, CreateLead, CreateStaff, CheckIn, Settings
 
 ## Plan
 
-### 1. Database Migration
+### 1. Database Migration — Add `opening_hours` column
 
 ```sql
--- role_permissions table
-CREATE TABLE public.role_permissions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  role_id uuid NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
-  resource text NOT NULL,
-  can_read boolean DEFAULT false,
-  can_write boolean DEFAULT false,
-  can_delete boolean DEFAULT false,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(role_id, resource)
-);
-
-ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "All can read role_permissions" ON public.role_permissions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Masters can manage role_permissions" ON public.role_permissions
-  FOR ALL USING (has_min_access_level(auth.uid(), 'level_4_master'::access_level));
-
--- AI-ready field on roles
-ALTER TABLE public.roles ADD COLUMN IF NOT EXISTS ai_policy jsonb DEFAULT '{}'::jsonb;
-
--- Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.role_permissions;
+ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS opening_hours jsonb DEFAULT '{}'::jsonb;
 ```
 
-Resource keys (predefined list): `dashboard`, `lobby`, `schedule`, `rooms`, `classes`, `class_categories`, `members`, `leads`, `packages`, `promotions`, `staff`, `roles`, `locations`, `activity_log`, `announcements`, `workout_list`, `transfer_slips`, `finance`, `reports`, `settings`, `notifications`.
+Shape: `{ "monday": { "open": "06:00", "close": "22:00" }, ... }` — nullable per day means closed that day.
 
-### 2. Create `usePermissions` Hook — `src/hooks/usePermissions.ts`
+### 2. Create `CreateLocationDialog` — `src/components/locations/CreateLocationDialog.tsx`
 
-- Fetches `role_permissions` for the current user's staff `role_id` (from `user_roles` → `staff` → `staff_positions` or direct `role_id`)
-- Returns `{ can(resource, action): boolean, permissions, loading }`
-- Caches in React Query with key `['my-permissions']`
-- Falls back to access_level-based defaults when no role_permissions rows exist (backward compat)
+Dialog with fields:
+- `location_id` (text, required, e.g. "BR-0001")
+- `name` (text, required)
+- `contact_number` (text, optional)
+- `status` (select: open/closed, default open)
+- `categories` (multi-select checkboxes from `useClassCategories()`)
+- `opening_hours` (7 weekday rows: toggle enabled + open/close time inputs)
 
-### 3. Update `useRoles.ts`
+Uses `useCreateLocation()` mutation. Zod validation. Draft autosave to localStorage.
 
-- Add `useRolePermissions(roleId)` — fetches permissions for a specific role
-- Add `useSaveRoleWithPermissions()` — mutation that upserts role + deletes old permissions + inserts new permissions
-- Add `useDefaultPermissions(accessLevel)` — returns default permission matrix for a given access level
+### 3. Create `EditLocationDialog` — `src/components/locations/EditLocationDialog.tsx`
 
-### 4. Create `RoleEditorPage` — `src/pages/RoleEditor.tsx`
+Same form as Create but pre-populated from existing location data. Uses `useUpdateLocation()`. Includes delete button with confirmation.
 
-- Routes: `/roles/create` and `/roles/:id`
-- Sections:
-  - Role name input (required)
-  - Access level selector (4 cards: Master/Manager/Operator/Minimum)
-  - Permission matrix table: rows = resources, columns = All/Read/Write/Delete checkboxes
-  - "All" column toggles all 3 permissions for that resource
-  - "Restore default settings" button resets matrix to access-level defaults
-- Footer: Discard + Save buttons
-- On save: upserts role → deletes old role_permissions → inserts new ones → navigates back to `/roles`
+### 4. Update `Locations.tsx`
 
-### 5. Update `Roles.tsx`
+- Add "Create" button in PageHeader → opens CreateLocationDialog
+- Add `onRowClick` → opens EditLocationDialog with selected location
+- Add `opening_hours` column showing summary (e.g. "Mon-Fri 06:00-22:00")
+- Add status column with StatusBadge
 
-- Wire Create button → navigate to `/roles/create`
-- Add row click → navigate to `/roles/:id`
-- Show accounts count from staff_positions (already done via useRoles)
+### 5. i18n Keys
 
-### 6. Update Sidebar — Permission-based Nav Filtering
+Add to both `en.ts` and `th.ts` under `locations`:
+- `createLocation`, `editLocation`, `contactNumber`, `categories`, `openingHours`, `status`, `open`, `closed`, `createSuccess`, `updateSuccess`, `deleteSuccess`, `deleteConfirm`, `monday`-`sunday`, `openTime`, `closeTime`, `allDay`, `closedDay`
 
-- Import `usePermissions` hook
-- Each nav item gets a `resource` key mapping
-- `hasAccess()` checks both `minLevel` (existing) AND `permissions.can(resource, 'read')`
-- Backward compatible: if no permissions loaded, fall back to access_level only
+### 6. Dependency Consistency Check
 
-### 7. Update Routes — `App.tsx`
+All dependent modules already consume `useLocations()` which returns live data from DB — **no code changes needed** in Schedule, Packages, Staff, etc. They already use the locations list dynamically. The only change is that locations data now includes `opening_hours` in the response, which existing consumers safely ignore (they don't reference that field).
 
-- Add `/roles/create` and `/roles/:id` routes pointing to `RoleEditorPage`
-
-### 8. Update Realtime — `useRealtimeSync.ts`
-
-- Add `role_permissions` → invalidates `['roles', 'my-permissions']`
-
-### 9. i18n Keys
-
-Add under `roles`:
-- `editRole`, `permissionMatrix`, `resource`, `read`, `write`, `deleteAction`, `allPermissions`, `restoreDefaults`, `saveRole`, `createSuccess`, `updateSuccess`, `accessLevelDescription.*`, `resources.*` (all 21 resource labels)
+No schema contract changes for existing consumers.
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Migration | `role_permissions` table + `ai_policy` column + RLS + realtime |
-| Create | `src/hooks/usePermissions.ts` |
-| Create | `src/pages/RoleEditor.tsx` |
-| Modify | `src/hooks/useRoles.ts` — add permission hooks |
-| Modify | `src/pages/Roles.tsx` — wire navigation |
-| Modify | `src/components/layout/Sidebar.tsx` — permission filtering |
-| Modify | `src/App.tsx` — add routes |
-| Modify | `src/hooks/useRealtimeSync.ts` — add table |
-| Modify | `src/lib/queryKeys.ts` — add keys |
-| Modify | `src/i18n/locales/en.ts` — extend roles keys |
-| Modify | `src/i18n/locales/th.ts` — extend roles keys |
+| Migration | Add `opening_hours` jsonb column to `locations` |
+| Create | `src/components/locations/CreateLocationDialog.tsx` |
+| Create | `src/components/locations/EditLocationDialog.tsx` |
+| Modify | `src/pages/Locations.tsx` — wire create/edit, add columns |
+| Modify | `src/i18n/locales/en.ts` — extend locations keys |
+| Modify | `src/i18n/locales/th.ts` — extend locations keys |
 
-No breaking changes. Existing access_level enforcement remains as fallback. Permission-based filtering is additive — if no `role_permissions` rows exist for a role, behavior defaults to current access_level logic.
+No breaking changes. Existing consumers of `useLocations()` are unaffected — additive column only.
 
