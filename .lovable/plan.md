@@ -1,46 +1,67 @@
 
 
-# AI Actions Layer
+# Create Lead Dialog — Implementation Plan
 
-## Overview
+## Current State Analysis
 
-Create a new `src/ai/` module with typed action functions and a stub AI service. These are pure TypeScript modules — no UI changes, no database changes. The app compiles identically; this just provides a callable foundation for future AI integration.
+**Leads table** has: `first_name`, `last_name`, `phone`, `email`, `source`, `notes`, `status`, `times_contacted`, `last_contacted`, `last_attended`.
+
+**Missing from DB** (requested): nickname, gender, date_of_birth, register_location_id, address fields, line fields, AI fields (ai_tags, ai_summary, next_action, followup_at).
+
+**Existing code**: `useCreateLead` mutation already exists in `useLeads.ts`. The Create button in `Leads.tsx` has no `onClick` handler.
 
 ---
 
-## 1. New File: `src/ai/actions/index.ts`
+## Plan
 
-Three typed action functions that fetch structured context data from existing Supabase queries. Each uses Zod for input validation and returns minimal, safe data (no secrets).
+### 1. Database Migration — Add columns to `leads` table
 
-- **`getDashboardContext(date: Date)`** — Returns today's check-in count, class count, and top risk members. Reuses queries from `useDashboardStats`.
-- **`getScheduleContext(date: Date, locationId?: string)`** — Returns schedule items for a date/location. Reuses `schedule` table query pattern.
-- **`getMemberContext(memberId: string)`** — Returns member profile + active packages. Reuses `members` + `member_packages` query pattern.
+Add columns that naturally belong on a lead record:
 
-Each function:
-- Validates input with Zod
-- Calls Supabase directly (server-side ready)
-- Throws typed errors on invalid input or missing auth
-- Returns a plain object (no React hooks)
-
-RBAC: Each action accepts a `userId` param and calls `has_min_access_level` RPC or checks locally. Dashboard/Schedule require `level_1_minimum`, Member requires `level_2_operator`.
-
-## 2. New File: `src/ai/aiService.ts`
-
-Stub interface + implementation:
-
-```typescript
-interface AiService {
-  runPrompt(templateName: string, input: Record<string, unknown>): Promise<unknown>;
-  logRun(meta: AiRunMeta): Promise<void>;
-}
+```sql
+ALTER TABLE leads ADD COLUMN nickname text;
+ALTER TABLE leads ADD COLUMN gender text;  -- male/female/other
+ALTER TABLE leads ADD COLUMN date_of_birth date;
+ALTER TABLE leads ADD COLUMN register_location_id uuid REFERENCES locations(id);
+ALTER TABLE leads ADD COLUMN line_user_id text;
+ALTER TABLE leads ADD COLUMN line_display_name text;
+ALTER TABLE leads ADD COLUMN line_picture_url text;
+ALTER TABLE leads ADD COLUMN line_link_status text DEFAULT 'unlinked';
+ALTER TABLE leads ADD COLUMN ai_tags jsonb DEFAULT '[]';
+ALTER TABLE leads ADD COLUMN ai_summary text;
+ALTER TABLE leads ADD COLUMN next_action text;
+ALTER TABLE leads ADD COLUMN followup_at timestamptz;
+ALTER TABLE leads ADD COLUMN address text;  -- simple single address field
+ALTER TABLE leads ADD COLUMN package_interest_id uuid REFERENCES packages(id);
 ```
 
-- `runPrompt` — returns `{ stub: true, templateName, input }` for now
-- `logRun` — inserts into `ai_runs` table (or no-ops in stub mode)
+This is additive-only — no existing columns changed. All nullable. Zero regression risk.
 
-## 3. New File: `src/ai/types.ts`
+### 2. Create `src/components/leads/CreateLeadDialog.tsx`
 
-Shared types: `DashboardContext`, `ScheduleContext`, `MemberContext`, `AiRunMeta`.
+Follow `CreateMemberDialog` pattern exactly:
+- Dialog on desktop, Drawer on mobile
+- `react-hook-form` + `zodResolver` + i18n memoized schema
+- **Fields**: first_name*, last_name*, nickname, phone, email (at least one of phone/email required via `.refine()`), gender, date_of_birth, source (select: walk_in/referral/social_media/website/other), register_location_id (select from `useLocations`), address, notes
+- **localStorage draft**: Save form values on change to `lead-create-draft`, restore on open, "Discard draft" button clears it
+- LINE and AI fields are NOT shown in the form (they're for future programmatic use only)
+
+### 3. Update `src/pages/Leads.tsx`
+
+- Add `createDialogOpen` state
+- Wire Create button `onClick` to open dialog
+- Add `StatusTabs` for lead status filtering (new/contacted/interested/not_interested/converted) — consistent with Members page pattern
+- Import and render `CreateLeadDialog`
+
+### 4. Add i18n keys for leads form
+
+Add to both `en.ts` and `th.ts`:
+- `leads.source`, `leads.sourceOptions.*`, `leads.phoneOrEmailRequired`, `leads.discardDraft`, `leads.draftRestored`, `leads.leadCreated`, `leads.new`, `leads.contacted`, `leads.interested`, `leads.notInterested`, `leads.converted`
+
+### 5. Update `useLeads.ts`
+
+- Add `status` filter param to `useLeads(search, status)`
+- Update query key to include status
 
 ---
 
@@ -48,9 +69,12 @@ Shared types: `DashboardContext`, `ScheduleContext`, `MemberContext`, `AiRunMeta
 
 | Action | File |
 |--------|------|
-| Create | `src/ai/types.ts` — shared AI context types |
-| Create | `src/ai/actions/index.ts` — 3 typed action functions with Zod + RBAC |
-| Create | `src/ai/aiService.ts` — stub AI service interface |
+| Migration | Add 14 nullable columns to `leads` table |
+| Create | `src/components/leads/CreateLeadDialog.tsx` |
+| Modify | `src/pages/Leads.tsx` — dialog state + status tabs |
+| Modify | `src/hooks/useLeads.ts` — add status filter |
+| Modify | `src/i18n/locales/en.ts` — add lead form keys |
+| Modify | `src/i18n/locales/th.ts` — add lead form keys |
 
-No existing files modified. No database changes. No UI changes. App compiles with zero behavior difference.
+No existing behavior changes. All new columns are nullable. Form uses existing `useCreateLead` mutation.
 
