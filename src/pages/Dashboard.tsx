@@ -22,6 +22,9 @@ import {
 } from '@/hooks/useSchedule';
 import { useGymCheckinsByDate, type GymCheckinItem } from '@/hooks/useDashboardAttendance';
 import { AiSuggestionsCard } from '@/components/dashboard/AiSuggestionsCard';
+import { ExpiringPackagesCard } from '@/components/dashboard/ExpiringPackagesCard';
+import { CheckInDialog } from '@/components/lobby/CheckInDialog';
+import { DoorOpen } from 'lucide-react';
 
 // Skeleton component for member list items
 const MemberListSkeleton = () => (
@@ -66,6 +69,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('classes');
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [quickCheckInOpen, setQuickCheckInOpen] = useState(false);
 
   // Debounce search 300ms
   useEffect(() => {
@@ -402,10 +406,25 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+          {/* Expiring Packages */}
+          <ExpiringPackagesCard />
+
           {/* AI Suggestions */}
           <AiSuggestionsCard />
         </div>
       </div>
+
+      {/* Quick Check-in FAB */}
+      <Button
+        onClick={() => setQuickCheckInOpen(true)}
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-30 lg:h-auto lg:w-auto lg:rounded-md lg:px-4 lg:gap-2"
+        size="icon"
+      >
+        <DoorOpen className="h-5 w-5" />
+        <span className="hidden lg:inline text-sm">{t('lobby.checkIn')}</span>
+      </Button>
+
+      <CheckInDialog open={quickCheckInOpen} onOpenChange={setQuickCheckInOpen} />
     </div>
   );
 };

@@ -314,6 +314,10 @@ export default {
     setupMember: 'Register your first member',
     setupComplete: 'All set! 🎉',
     setupDismiss: 'Dismiss',
+    expiringPackages: 'Expiring Packages',
+    noExpiringPackages: 'No packages expiring soon',
+    urgent: 'urgent',
+    soon: 'soon',
   },
 
   // Lobby
@@ -1689,5 +1693,14 @@ export default {
     noToken: 'No check-in token provided.',
     memberNotFound: 'Member not found. Please check your phone number or ID.',
     error: 'Something went wrong. Please try again.',
+  },
+
+  // Command Palette
+  commandPalette: {
+    placeholder: 'Search pages, members, leads...',
+    noResults: 'No results found.',
+    people: 'People',
+    quickActions: 'Quick Actions',
+    goTo: 'Go to',
   },
 };

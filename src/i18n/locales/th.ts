@@ -314,6 +314,10 @@ export default {
     setupMember: 'ลงทะเบียนสมาชิกคนแรก',
     setupComplete: 'พร้อมแล้ว! 🎉',
     setupDismiss: 'ปิด',
+    expiringPackages: 'แพ็กเกจใกล้หมดอายุ',
+    noExpiringPackages: 'ไม่มีแพ็กเกจใกล้หมดอายุ',
+    urgent: 'ด่วน',
+    soon: 'เร็วๆ นี้',
   },
 
   // Lobby
@@ -1689,5 +1693,14 @@ export default {
     noToken: 'ไม่พบ token สำหรับเช็คอิน',
     memberNotFound: 'ไม่พบสมาชิก กรุณาตรวจสอบเบอร์โทรหรือรหัสสมาชิก',
     error: 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
+  },
+
+  // Command Palette
+  commandPalette: {
+    placeholder: 'ค้นหาหน้า สมาชิก ลูกค้าเป้าหมาย...',
+    noResults: 'ไม่พบผลลัพธ์',
+    people: 'บุคคล',
+    quickActions: 'การดำเนินการด่วน',
+    goTo: 'ไปที่',
   },
 };
