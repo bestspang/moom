@@ -1,96 +1,83 @@
 
 
-# Staff & Roles RBAC Recheck (`staff_roles_rbac_rls_complete_01`)
+# Recheck: Staff & Roles RBAC (`staff_roles_rbac_rls_complete_01`)
 
-## Current State Analysis
+## Verification Summary
 
-### What's Working
 | Area | Status |
 |------|--------|
-| Staff CRUD hooks | ✅ create/update/delete with positions + activity log |
-| Staff list page | ✅ Tabs, search, columns (name, phone, email, roles, locations, status) |
-| Staff details - profile tab | ✅ Inline editing for all fields + LINE identity |
-| Staff details - positions tab | ✅ Read-only display of positions with role + location scope |
-| Create staff dialog | ✅ Full form with multiple positions, draft persistence |
-| Roles list page | ✅ Name, access level, accounts count |
-| Role editor (create/edit) | ✅ Access level cards + full permission matrix |
-| usePermissions hook | ✅ Merges DB permissions with access_level fallback |
-| Sidebar permission filtering | ✅ Uses `can(resource, 'read')` |
-| RLS on staff | ✅ level_1_minimum can read, level_3_manager can manage |
-| RLS on roles | ✅ All can read, level_4_master can manage |
-| RLS on role_permissions | ✅ All can read, level_4_master can manage |
-| RLS on staff_positions | ✅ level_1_minimum can read, level_3_manager can manage |
-| Realtime sync | ✅ staff, staff_positions, role_permissions all in TABLE_INVALIDATION_MAP |
-| Activity log | ✅ staff_created/updated/deleted logged |
+| Staff stats (head-only counts) | ✅ Done |
+| Roles account counting (head-only) | ✅ Done |
+| Staff details - profile editing | ✅ Done |
+| Staff details - add/remove positions | ✅ Done |
+| Promotions list discount display (new schema) | ✅ Done |
+| Data contract docs | ✅ Done |
+| Realtime sync (staff, staff_positions, role_permissions) | ✅ Done |
+| Activity log (staff CRUD, positions) | ✅ Done |
 
-### Gaps Found
+## Remaining Gaps
 
-#### GAP 1: `useStaffStats` hits 1000-row limit
-**Severity: HIGH** — Same bug pattern fixed for packages and promotions. Fetches ALL staff rows client-side and counts by status. Will produce wrong counts for >1000 staff.
+### GAP 1: Staff list "empty bug" — missing auth guard on queries
+**Severity: HIGH — Root cause of the reported symptom**
 
-This is also the likely root cause of the "stats show 10 but table empty" symptom: if the stats query returns cached/stale data while the list query fails (e.g., brief auth state transition during page load), you get stats with no rows.
+`useStaff` and `useStaffStats` do NOT have `enabled: !!user` guards. During auth state transitions (page load, token refresh), the query fires with no auth token. RLS blocks everything, returning 0 rows. React Query caches the empty result. Meanwhile, `useStaffStats` may still show cached counts from a prior successful fetch — producing the exact symptom: "stats show Active 10, table shows empty."
 
-**Fix**: Use head-only count queries per status (same pattern as `usePackageStats` fix).
+**Fix**: Import `useAuth` and add `enabled: !!user` to both `useStaff` and `useStaffStats` queries. Same pattern should be applied to `useRoles`.
 
-#### GAP 2: `useRoles` account counting hits 1000-row limit  
-**Severity: MEDIUM** — Fetches ALL `staff_positions` and ALL `staff` rows to count per role. Will be wrong for >1000 entries.
+**File**: `src/hooks/useStaff.ts`, `src/hooks/useRoles.ts`
 
-**Fix**: Use count queries grouped by role_id, or use head-only counts per role.
+### GAP 2: Missing DB columns for emergency contact and staff_code
+**Severity: MEDIUM**
 
-#### GAP 3: Staff details - no add/remove position capability
-**Severity: MEDIUM** — Positions tab is read-only. Users cannot add new positions or remove existing ones from the detail page.
+The data contract (`docs/data-contract-staff.md`) and the `CreateStaffDialog` reference emergency contact fields (`emergency_first_name`, `emergency_last_name`, `emergency_phone`, `emergency_relationship`) and `staff_code`. These columns do **not exist** in the `staff` table.
 
-**Fix**: Add "Add position" button and remove button per position on the details page positions tab.
+The `StaffDetails` page does NOT render emergency fields yet, but the data contract promises them.
 
-#### GAP 4: No data contract documentation
-**Severity: LOW** — No `docs/data-contract-staff.md` or `docs/data-contract-roles.md`.
+**Fix**: DB migration to add these 5 columns to the `staff` table. Then update `StaffDetails.tsx` to render emergency contact fields.
 
-**Fix**: Create both files.
+### GAP 3: CreateStaffDialog doesn't persist emergency fields
+**Severity: LOW** — Blocked by GAP 2 (columns don't exist yet)
 
-#### GAP 5: Promotions list still uses legacy `discount_type`/`discount_value` display
-**Severity: LOW** — `Promotions.tsx` line 38-43 `getDiscountDisplay()` reads legacy `discount_type`/`discount_value` instead of new `discount_mode`/`percentage_discount`/`flat_rate_discount`. This was fixed in `PromotionDetails` but not in the list page.
-
-**Fix**: Update `getDiscountDisplay()` in `Promotions.tsx` to use new columns with legacy fallback.
+The `StaffDraft` interface in `CreateStaffDialog` does not include emergency fields. Once GAP 2 adds the columns, the dialog should be extended.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Fix `useStaffStats` — head-only count queries
-Replace client-side counting with 3 parallel `{ count: 'exact', head: true }` queries for active/pending/terminated.
+### Step 1: Add auth guard to staff/roles queries (fixes empty bug)
+Add `enabled: !!user` to `useStaff`, `useStaffStats`, and `useRoles` queries by importing `useAuth`.
 
-**File**: `src/hooks/useStaff.ts`
+**Files**: `src/hooks/useStaff.ts`, `src/hooks/useRoles.ts`
 
-### Step 2: Fix `useRoles` account counting
-Replace fetching all staff_positions + staff rows with per-role count queries (or a single grouped query via RPC). Simpler approach: keep existing pattern but add `.limit(10000)` safeguard, or use count queries per role from the roles list.
+### Step 2: DB migration — add missing staff columns
+```sql
+ALTER TABLE staff
+  ADD COLUMN IF NOT EXISTS emergency_first_name text,
+  ADD COLUMN IF NOT EXISTS emergency_last_name text,
+  ADD COLUMN IF NOT EXISTS emergency_phone text,
+  ADD COLUMN IF NOT EXISTS emergency_relationship text,
+  ADD COLUMN IF NOT EXISTS staff_code text UNIQUE;
+```
 
-**File**: `src/hooks/useRoles.ts`
-
-### Step 3: Add position management to Staff details
-Add "Add position" form and "Remove" button per position on the positions tab.
+### Step 3: Update StaffDetails — show emergency contact section
+Add emergency contact fields to the profile tab using the existing `EditableField` pattern.
 
 **File**: `src/pages/StaffDetails.tsx`
-**New hooks needed**: `useAddStaffPosition`, `useRemoveStaffPosition` in `src/hooks/useStaff.ts`
 
-### Step 4: Fix Promotions list discount display
-Update `getDiscountDisplay()` to use new schema columns.
+### Step 4: Update CreateStaffDialog — include emergency fields
+Extend `StaffDraft` interface and form to include emergency contact fields, persist them in the `onSubmit` handler.
 
-**File**: `src/pages/Promotions.tsx`
-
-### Step 5: Create data contract docs
-
-**Files**: `docs/data-contract-staff.md`, `docs/data-contract-roles.md`
+**File**: `src/components/staff/CreateStaffDialog.tsx`
 
 ### Files to Touch
 
 | File | Change |
 |------|--------|
-| `src/hooks/useStaff.ts` | Fix stats + add position mutation hooks |
-| `src/hooks/useRoles.ts` | Fix account counting |
-| `src/pages/StaffDetails.tsx` | Add/remove positions UI |
-| `src/pages/Promotions.tsx` | Fix discount display |
-| `docs/data-contract-staff.md` (new) | Data contract |
-| `docs/data-contract-roles.md` (new) | Data contract |
+| `src/hooks/useStaff.ts` | Add `enabled: !!user` auth guard |
+| `src/hooks/useRoles.ts` | Add `enabled: !!user` auth guard |
+| DB migration | Add 5 missing columns to staff table |
+| `src/pages/StaffDetails.tsx` | Add emergency contact section |
+| `src/components/staff/CreateStaffDialog.tsx` | Add emergency fields to form |
 
-No DB migration needed. No breaking changes.
+No breaking changes. Backward compatible (all new columns nullable).
 
