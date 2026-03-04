@@ -667,16 +667,26 @@ export type Database = {
       leads: {
         Row: {
           address: string | null
+          address_1: string | null
+          address_2: string | null
           ai_summary: string | null
           ai_tags: Json | null
+          allow_physical_contact: boolean | null
           converted_member_id: string | null
           created_at: string | null
           date_of_birth: string | null
+          district: string | null
           email: string | null
+          emergency_first_name: string | null
+          emergency_last_name: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
           first_name: string
           followup_at: string | null
           gender: string | null
+          has_medical_conditions: boolean | null
           id: string
+          internal_notes: string | null
           last_attended: string | null
           last_contacted: string | null
           last_name: string | null
@@ -684,29 +694,45 @@ export type Database = {
           line_link_status: string | null
           line_picture_url: string | null
           line_user_id: string | null
+          medical_notes: string | null
           next_action: string | null
           nickname: string | null
           notes: string | null
           package_interest_id: string | null
           phone: string | null
+          physical_contact_notes: string | null
+          postal_code: string | null
+          province: string | null
           register_location_id: string | null
           source: string | null
           status: Database["public"]["Enums"]["lead_status"] | null
+          subdistrict: string | null
+          temperature: string | null
           times_contacted: number | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          allow_physical_contact?: boolean | null
           converted_member_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          district?: string | null
           email?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           first_name: string
           followup_at?: string | null
           gender?: string | null
+          has_medical_conditions?: boolean | null
           id?: string
+          internal_notes?: string | null
           last_attended?: string | null
           last_contacted?: string | null
           last_name?: string | null
@@ -714,29 +740,45 @@ export type Database = {
           line_link_status?: string | null
           line_picture_url?: string | null
           line_user_id?: string | null
+          medical_notes?: string | null
           next_action?: string | null
           nickname?: string | null
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          physical_contact_notes?: string | null
+          postal_code?: string | null
+          province?: string | null
           register_location_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
+          subdistrict?: string | null
+          temperature?: string | null
           times_contacted?: number | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          allow_physical_contact?: boolean | null
           converted_member_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          district?: string | null
           email?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           first_name?: string
           followup_at?: string | null
           gender?: string | null
+          has_medical_conditions?: boolean | null
           id?: string
+          internal_notes?: string | null
           last_attended?: string | null
           last_contacted?: string | null
           last_name?: string | null
@@ -744,14 +786,20 @@ export type Database = {
           line_link_status?: string | null
           line_picture_url?: string | null
           line_user_id?: string | null
+          medical_notes?: string | null
           next_action?: string | null
           nickname?: string | null
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          physical_contact_notes?: string | null
+          postal_code?: string | null
+          province?: string | null
           register_location_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
+          subdistrict?: string | null
+          temperature?: string | null
           times_contacted?: number | null
           updated_at?: string | null
         }
