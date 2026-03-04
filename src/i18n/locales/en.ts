@@ -706,6 +706,7 @@ export default {
       helperText: 'Please complete room creation',
       discard: 'Discard',
     },
+    filterByCategory: 'Filter by category',
   },
 
   // Classes

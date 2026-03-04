@@ -706,6 +706,7 @@ export default {
       helperText: 'โปรดดำเนินการสร้างห้อง',
       discard: 'ละทิ้ง',
     },
+    filterByCategory: 'กรองตามหมวดหมู่',
   },
 
   // Classes

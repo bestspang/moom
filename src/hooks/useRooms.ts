@@ -15,9 +15,9 @@ interface RoomInsertExtended extends Omit<RoomInsert, 'layout_type'> {
   layout_type?: 'open' | 'fixed';
 }
 
-export const useRooms = (status?: string, search?: string) => {
+export const useRooms = (status?: string, search?: string, categoryFilter?: string) => {
   return useQuery({
-    queryKey: queryKeys.rooms(status, search),
+    queryKey: queryKeys.rooms(status, search, categoryFilter),
     queryFn: async () => {
       let query = supabase
         .from('rooms')
@@ -31,7 +31,11 @@ export const useRooms = (status?: string, search?: string) => {
       }
       
       if (search) {
-        query = query.ilike('name', `%${search}%`);
+        query = query.or(`name.ilike.%${search}%,name_th.ilike.%${search}%`);
+      }
+
+      if (categoryFilter) {
+        query = query.or(`categories.cs.{${categoryFilter}},categories.eq.{}`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -110,6 +114,14 @@ export const useCreateRoom = () => {
         activity: `Room "${data.name}" created`,
         entity_type: 'room',
         entity_id: data.id,
+        new_value: {
+          name: data.name,
+          name_th: data.name_th,
+          location_id: data.location_id,
+          layout_type: data.layout_type,
+          max_capacity: data.max_capacity,
+          categories: data.categories,
+        } as Record<string, unknown>,
       });
       toast.success('Room created successfully');
     },
