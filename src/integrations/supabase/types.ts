@@ -1225,25 +1225,37 @@ export type Database = {
       members: {
         Row: {
           address: string | null
+          ai_profile_summary: string | null
+          ai_risk_signals: Json | null
+          ai_tags: Json | null
           avatar_url: string | null
+          consents: Json | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          emergency_relationship: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
           is_new: boolean | null
           last_name: string
+          line_display_name: string | null
+          line_link_status: string | null
+          line_picture_url: string | null
+          line_user_id: string | null
+          medical: Json | null
           member_id: string
           member_since: string | null
           most_attended_category: string | null
           nickname: string | null
           notes: string | null
+          package_interest_id: string | null
           phone: string | null
           register_location_id: string | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
+          source: string | null
           status: Database["public"]["Enums"]["member_status"] | null
           tax_id: string | null
           total_spent: number | null
@@ -1251,25 +1263,37 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_profile_summary?: string | null
+          ai_risk_signals?: Json | null
+          ai_tags?: Json | null
           avatar_url?: string | null
+          consents?: Json | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_relationship?: string | null
           first_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
           is_new?: boolean | null
           last_name: string
+          line_display_name?: string | null
+          line_link_status?: string | null
+          line_picture_url?: string | null
+          line_user_id?: string | null
+          medical?: Json | null
           member_id: string
           member_since?: string | null
           most_attended_category?: string | null
           nickname?: string | null
           notes?: string | null
+          package_interest_id?: string | null
           phone?: string | null
           register_location_id?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          source?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
           tax_id?: string | null
           total_spent?: number | null
@@ -1277,31 +1301,50 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_profile_summary?: string | null
+          ai_risk_signals?: Json | null
+          ai_tags?: Json | null
           avatar_url?: string | null
+          consents?: Json | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_relationship?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
           is_new?: boolean | null
           last_name?: string
+          line_display_name?: string | null
+          line_link_status?: string | null
+          line_picture_url?: string | null
+          line_user_id?: string | null
+          medical?: Json | null
           member_id?: string
           member_since?: string | null
           most_attended_category?: string | null
           nickname?: string | null
           notes?: string | null
+          package_interest_id?: string | null
           phone?: string | null
           register_location_id?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          source?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
           tax_id?: string | null
           total_spent?: number | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "members_package_interest_id_fkey"
+            columns: ["package_interest_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "members_register_location_id_fkey"
             columns: ["register_location_id"]

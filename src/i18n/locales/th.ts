@@ -974,6 +974,34 @@ export default {
     requiredFieldsNote: '* ข้อมูลที่จำเป็น',
   },
 
+  // Member Creation Wizard
+  memberWizard: {
+    stepProfile: 'โปรไฟล์',
+    stepContact: 'ติดต่อ',
+    stepAddress: 'ที่อยู่',
+    stepEmergency: 'ฉุกเฉิน',
+    stepMedical: 'สุขภาพ',
+    stepOther: 'อื่นๆ',
+    registerLocation: 'สาขาที่ลงทะเบียน',
+    phoneOrEmailRequired: 'ต้องกรอกเบอร์โทรหรืออีเมลอย่างน้อย 1 อย่าง',
+    linkLine: 'เชื่อมต่อ LINE',
+    linkLineTooltip: 'เร็วๆ นี้',
+    addressPlaceholder: 'กรอกที่อยู่เต็ม...',
+    emergencyName: 'ชื่อผู้ติดต่อฉุกเฉิน',
+    emergencyPhone: 'เบอร์โทรฉุกเฉิน',
+    emergencyRelationship: 'ความสัมพันธ์',
+    emergencyRelationshipPlaceholder: 'เช่น พ่อแม่, คู่สมรส, เพื่อน',
+    hasMedicalConditions: 'มีโรคประจำตัว',
+    medicalNotes: 'บันทึกทางการแพทย์',
+    allowPhysicalContact: 'อนุญาตให้สัมผัสร่างกาย',
+    physicalContactNotes: 'บันทึกเกี่ยวกับการสัมผัสร่างกาย',
+    packageInterest: 'แพ็คเกจที่สนใจ',
+    selectPackage: 'เลือกแพ็คเกจ',
+    internalNotes: 'บันทึกภายใน',
+    internalNotesPlaceholder: 'บันทึกจากพนักงานต้อนรับ...',
+    completeRequired: 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมด',
+  },
+
   // Dashboard
   dashboardExtra: {
     attendees: 'ผู้เข้าร่วม',
