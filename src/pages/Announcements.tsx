@@ -5,6 +5,7 @@ import {
   useAnnouncements,
   useAnnouncementStats,
   useDeleteAnnouncement,
+  type Announcement,
 } from '@/hooks/useAnnouncements';
 import { PageHeader, SearchBar, StatusTabs, EmptyState, type StatusTab } from '@/components/common';
 import { CreateAnnouncementDialog } from '@/components/announcements/CreateAnnouncementDialog';
@@ -54,19 +55,26 @@ const Announcements = () => {
     { key: 'completed', label: t('announcements.completed'), count: stats?.completed || 0 },
   ];
 
-  const getStatusBadge = (status: AnnouncementStatus | null) => {
+  const getStatusBadge = (ann: Announcement) => {
+    const status = ann.computed_status;
     const styles: Record<string, string> = {
       active: 'bg-accent-teal/10 text-accent-teal',
       scheduled: 'bg-primary/10 text-primary',
       completed: 'bg-muted text-muted-foreground',
     };
     return (
-      <Badge variant="secondary" className={styles[status || 'scheduled']}>
-        {status === 'active' ? t('common.active') : 
-         status === 'completed' ? t('announcements.completed') : 
+      <Badge variant="secondary" className={styles[status]}>
+        {status === 'active' ? t('common.active') :
+         status === 'completed' ? t('announcements.completed') :
          t('packages.scheduled')}
       </Badge>
     );
+  };
+
+  /** Show message_th when in Thai locale if available, otherwise message_en */
+  const getDisplayMessage = (ann: Announcement) => {
+    if (language === 'th' && ann.message_th) return ann.message_th;
+    return ann.message_en || ann.message || '';
   };
 
   const renderChannelBadges = (channels: { in_app?: boolean; line?: boolean } | null) => {
@@ -165,7 +173,7 @@ const Announcements = () => {
                       : '-'}
                   </TableCell>
                   <TableCell className="max-w-md">
-                    <p className="truncate">{announcement.message}</p>
+                    <p className="truncate">{getDisplayMessage(announcement)}</p>
                   </TableCell>
                   <TableCell>
                     {renderChannelBadges(announcement.channels as unknown as { in_app?: boolean; line?: boolean } | null)}
@@ -174,7 +182,7 @@ const Announcements = () => {
                     {renderTarget(announcement.target_mode, announcement.target_location_ids)}
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(announcement.status)}
+                    {getStatusBadge(announcement)}
                   </TableCell>
                   <TableCell>
                     <AlertDialog>

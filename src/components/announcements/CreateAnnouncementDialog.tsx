@@ -23,13 +23,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -46,10 +39,10 @@ import { AnnouncementChannelsSection } from './AnnouncementChannelsSection';
 import { AnnouncementTargetSection } from './AnnouncementTargetSection';
 
 const announcementSchema = z.object({
-  message: z.string().min(1, 'Message is required').max(1000),
+  message_en: z.string().min(1, 'Message (EN) is required').max(1000),
+  message_th: z.string().max(1000).optional().or(z.literal('')),
   publish_date: z.date({ required_error: 'Publish date is required' }),
   end_date: z.date({ required_error: 'End date is required' }),
-  status: z.enum(['active', 'scheduled', 'completed']),
 }).refine((data) => data.end_date >= data.publish_date, {
   message: 'End date must be after publish date',
   path: ['end_date'],
@@ -76,17 +69,17 @@ export const CreateAnnouncementDialog = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(announcementSchema),
     defaultValues: {
-      message: '',
-      status: 'scheduled',
+      message_en: '',
+      message_th: '',
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     const data: AnnouncementFormData = {
-      message: values.message,
+      message_en: values.message_en,
+      message_th: values.message_th || '',
       publish_date: values.publish_date.toISOString(),
       end_date: values.end_date.toISOString(),
-      status: values.status,
       channels,
       target_mode: targetMode,
       target_location_ids: targetMode === 'all' ? [] : targetLocationIds,
@@ -109,14 +102,14 @@ export const CreateAnnouncementDialog = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Message + AI Draft */}
+            {/* Message EN (required) */}
             <FormField
               control={form.control}
-              name="message"
+              name="message_en"
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between">
-                    <FormLabel>{t('announcements.message')}</FormLabel>
+                    <FormLabel>{t('announcements.messageEn')}</FormLabel>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -139,8 +132,27 @@ export const CreateAnnouncementDialog = ({
                   </div>
                   <FormControl>
                     <Textarea
-                      placeholder={t('announcements.messagePlaceholder')}
+                      placeholder={t('announcements.messageEnPlaceholder')}
                       className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Message TH (optional) */}
+            <FormField
+              control={form.control}
+              name="message_th"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('announcements.messageTh')}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t('announcements.messageThPlaceholder')}
+                      className="min-h-[80px]"
                       {...field}
                     />
                   </FormControl>
@@ -217,30 +229,6 @@ export const CreateAnnouncementDialog = ({
                       <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                     </PopoverContent>
                   </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Status */}
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('common.status')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('common.selectStatus')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">{t('common.active')}</SelectItem>
-                      <SelectItem value="scheduled">{t('packages.scheduled')}</SelectItem>
-                      <SelectItem value="completed">{t('announcements.completed')}</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
