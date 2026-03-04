@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Edit, MoreVertical } from 'lucide-react';
+import { Download, Upload, Edit, MoreVertical, FileText, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getInitials } from '@/lib/formatters';
-import { exportMembers } from '@/lib/exportCsv';
+import { exportMembers, type ExportableMember } from '@/lib/exportCsv';
 import { useMembers, useMemberStats } from '@/hooks/useMembers';
+import { useMembersEnrichment } from '@/hooks/useMembersEnriched';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import { EditMemberDialog } from '@/components/members/EditMemberDialog';
+import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import type { Database } from '@/integrations/supabase/types';
+import { format } from 'date-fns';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberStatus = Database['public']['Enums']['member_status'];
@@ -31,9 +34,9 @@ const Members = () => {
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-  // Fetch members and stats
   const { data: membersData, isLoading: membersLoading } = useMembers({
     status: activeTab,
     search,
@@ -44,6 +47,9 @@ const Members = () => {
 
   const members = membersData?.members || [];
   const total = membersData?.total || 0;
+
+  const memberIds = useMemo(() => members.map(m => m.id), [members]);
+  const { data: enrichment } = useMembersEnrichment(memberIds);
 
   const statusTabs: StatusTab[] = useMemo(() => [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
@@ -57,6 +63,24 @@ const Members = () => {
     e.stopPropagation();
     setSelectedMember(member);
     setEditDialogOpen(true);
+  };
+
+  const handleExport = () => {
+    if (members.length === 0) return;
+    const exportData: ExportableMember[] = members.map(m => ({
+      member_id: m.member_id,
+      first_name: m.first_name,
+      last_name: m.last_name,
+      nickname: m.nickname,
+      email: m.email,
+      phone: m.phone,
+      status: m.status,
+      member_since: m.member_since,
+      recent_package: enrichment?.[m.id]?.recent_package ?? null,
+      last_attended: enrichment?.[m.id]?.last_attended ?? null,
+      has_contract: enrichment?.[m.id]?.has_contract ?? false,
+    }));
+    exportMembers(exportData);
   };
 
   const columns: Column<Member>[] = [
@@ -81,6 +105,24 @@ const Members = () => {
     { key: 'memberId', header: t('locations.id'), cell: (row) => row.member_id },
     { key: 'phone', header: t('leads.contactNumber'), cell: (row) => row.phone || '-' },
     { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
+    {
+      key: 'recentPackage',
+      header: t('members.recentPackage'),
+      cell: (row) => enrichment?.[row.id]?.recent_package || '-',
+    },
+    {
+      key: 'lastAttended',
+      header: t('members.lastAttended'),
+      cell: (row) => {
+        const d = enrichment?.[row.id]?.last_attended;
+        return d ? format(new Date(d), 'dd MMM yyyy') : '-';
+      },
+    },
+    {
+      key: 'contract',
+      header: t('members.tabs.contract'),
+      cell: (row) => enrichment?.[row.id]?.has_contract ? 'Yes' : 'No',
+    },
     {
       key: 'actions',
       header: '',
@@ -116,12 +158,6 @@ const Members = () => {
     }
   };
 
-  const handleExport = () => {
-    if (members.length > 0) {
-      exportMembers(members);
-    }
-  };
-
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as MemberStatus | 'all');
     setPage(1);
@@ -134,10 +170,25 @@ const Members = () => {
         breadcrumbs={[{ label: t('nav.client') }, { label: t('members.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={members.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              {t('common.export')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-primary text-primary">
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t('members.manage')}
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background z-50">
+                <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {t('members.import.importCsv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExport} disabled={members.length === 0}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t('common.export')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateDialogOpen(true)}>
               {t('members.createMember')}
             </Button>
@@ -165,11 +216,7 @@ const Members = () => {
 
       {membersLoading ? (
         <div className="space-y-2">
-          <Skeleton className="h-12" />
-          <Skeleton className="h-12" />
-          <Skeleton className="h-12" />
-          <Skeleton className="h-12" />
-          <Skeleton className="h-12" />
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12" />)}
         </div>
       ) : (
         <DataTable
@@ -181,25 +228,14 @@ const Members = () => {
           onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
-          pagination={{
-            page,
-            perPage: 50,
-            total,
-          }}
+          pagination={{ page, perPage: 50, total }}
           onPageChange={setPage}
         />
       )}
 
-      <CreateMemberDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
-
-      <EditMemberDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        member={selectedMember}
-      />
+      <CreateMemberDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <EditMemberDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} member={selectedMember} />
+      <ImportMembersDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     </div>
   );
 };
