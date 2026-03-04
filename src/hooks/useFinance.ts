@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 type Transaction = Tables<'transactions'>;
 type TransactionUpdate = TablesUpdate<'transactions'>;
@@ -170,11 +171,18 @@ export const useUpdateTransactionStatus = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['finance-stats'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
+      logActivity({
+        event_type: 'transaction_status_updated',
+        activity: `Transaction ${data.transaction_id} status changed to ${variables.status}`,
+        entity_type: 'transaction',
+        entity_id: variables.id,
+        new_value: { status: variables.status },
+      });
       toast.success('Transaction status updated');
     },
     onError: (error) => {

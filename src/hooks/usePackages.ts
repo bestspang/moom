@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 type Package = Tables<'packages'>;
 type PackageInsert = TablesInsert<'packages'>;
@@ -88,9 +89,15 @@ export const useCreatePackage = () => {
       if (error) throw error;
       return newPackage;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'package_created',
+        activity: `Package "${data.name_en}" created`,
+        entity_type: 'package',
+        entity_id: data.id,
+      });
       toast.success('Package created successfully');
     },
     onError: (error) => {
@@ -114,10 +121,17 @@ export const useUpdatePackage = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       queryClient.invalidateQueries({ queryKey: ['packages', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'package_updated',
+        activity: `Package "${updated.name_en}" updated`,
+        entity_type: 'package',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Package updated successfully');
     },
     onError: (error) => {
@@ -137,10 +151,17 @@ export const useDeletePackage = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'package_deleted',
+        activity: `Package deleted`,
+        entity_type: 'package',
+        entity_id: id,
+      });
       toast.success('Package deleted successfully');
     },
     onError: (error) => {
@@ -160,10 +181,17 @@ export const useArchivePackage = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'package_archived',
+        activity: `Package archived`,
+        entity_type: 'package',
+        entity_id: id,
+      });
       toast.success('Package archived successfully');
     },
     onError: (error) => {

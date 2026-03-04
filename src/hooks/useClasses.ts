@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 type Class = Tables<'classes'>;
 type ClassInsert = TablesInsert<'classes'>;
@@ -97,9 +98,15 @@ export const useCreateClass = () => {
       if (error) throw error;
       return newClass;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'class_created',
+        activity: `Class "${data.name}" created`,
+        entity_type: 'class',
+        entity_id: data.id,
+      });
       toast.success('Class created successfully');
     },
     onError: (error) => {
@@ -123,9 +130,16 @@ export const useUpdateClass = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: () => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'class_updated',
+        activity: `Class "${updated.name}" updated`,
+        entity_type: 'class',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Class updated successfully');
     },
     onError: (error) => {
@@ -145,10 +159,17 @@ export const useDeleteClass = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'class_deleted',
+        activity: `Class deleted`,
+        entity_type: 'class',
+        entity_id: id,
+      });
       toast.success('Class deleted successfully');
     },
     onError: (error) => {

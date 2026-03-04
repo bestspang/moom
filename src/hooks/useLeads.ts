@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 type Lead = Tables<'leads'>;
 type LeadInsert = TablesInsert<'leads'>;
@@ -61,8 +62,14 @@ export const useCreateLead = () => {
       if (error) throw error;
       return newLead;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      logActivity({
+        event_type: 'lead_created',
+        activity: `Lead "${data.first_name} ${data.last_name || ''}" created`,
+        entity_type: 'lead',
+        entity_id: data.id,
+      });
       toast.success('Lead created successfully');
     },
     onError: (error) => {
@@ -86,8 +93,15 @@ export const useUpdateLead = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      logActivity({
+        event_type: 'lead_updated',
+        activity: `Lead "${updated.first_name} ${updated.last_name || ''}" updated`,
+        entity_type: 'lead',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Lead updated successfully');
     },
     onError: (error) => {
@@ -107,9 +121,16 @@ export const useDeleteLead = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      logActivity({
+        event_type: 'lead_deleted',
+        activity: `Lead deleted`,
+        entity_type: 'lead',
+        entity_id: id,
+      });
       toast.success('Lead deleted successfully');
     },
     onError: (error) => {
@@ -129,10 +150,18 @@ export const useConvertLeadToMember = () => {
         .eq('id', leadId);
 
       if (error) throw error;
+      return { leadId, memberId };
     },
-    onSuccess: () => {
+    onSuccess: ({ leadId, memberId }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['members'] });
+      logActivity({
+        event_type: 'lead_converted',
+        activity: `Lead converted to member`,
+        entity_type: 'lead',
+        entity_id: leadId,
+        new_value: { converted_member_id: memberId },
+      });
     },
     onError: (error) => {
       toast.error(`Failed to convert lead: ${error.message}`);
