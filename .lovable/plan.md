@@ -1,136 +1,150 @@
 
 
-# Realtime Sync Layer: queryKeys + useRealtimeSync
+# Robust Schedule Creation with Server-Side Validation
 
 ## Overview
 
-Create a centralized query key registry and a single Supabase Realtime subscription that auto-invalidates React Query caches on database changes. Mount once in `MainLayout`.
+Add a PostgreSQL RPC function `create_schedule_with_validation` that validates room overlap, room-location match, and category compatibility before inserting. Update the frontend to use it with smart UX (auto-capacity, location→room filtering, class duration→end_time).
 
 ---
 
-## 1. New File: `src/lib/queryKeys.ts`
+## 1. Database Migration
 
-Canonical query key builders replacing all inline `['schedule', ...]` arrays:
-
-```typescript
-export const queryKeys = {
-  schedule: (dateStr: string) => ['schedule', dateStr] as const,
-  scheduleStats: (dateStr: string) => ['schedule-stats', dateStr] as const,
-  rooms: (status?: string, search?: string) => ['rooms', status, search] as const,
-  roomStats: () => ['room-stats'] as const,
-  locations: (status?: string, search?: string) => ['locations', status, search] as const,
-  locationStats: () => ['location-stats'] as const,
-  classes: (status?: string, search?: string) => ['classes', status, search] as const,
-  classStats: () => ['class-stats'] as const,
-  classBookings: (scheduleId?: string) => ['class-bookings', scheduleId] as const,
-  classWaitlist: (scheduleId?: string) => ['class-waitlist', scheduleId] as const,
-  bookingCount: (scheduleId: string) => ['booking-count', scheduleId] as const,
-  memberBookings: (memberId: string, status?: string) => ['member-bookings', memberId, status] as const,
-  members: (params?: object) => ['members', params] as const,
-  member: (id: string) => ['member', id] as const,
-  memberStats: () => ['member-stats'] as const,
-  leads: (search?: string) => ['leads', search] as const,
-  dashboardStats: () => ['dashboard-stats'] as const,
-  highRiskMembers: () => ['high-risk-members'] as const,
-  hotLeads: () => ['hot-leads'] as const,
-  upcomingBirthdays: () => ['upcoming-birthdays'] as const,
-  trainers: () => ['trainers'] as const,
-  featureFlags: () => ['feature-flags'] as const,
-  featureFlag: (key: string) => ['feature-flag', key] as const,
-};
-```
-
----
-
-## 2. New File: `src/hooks/useRealtimeSync.ts`
-
-Single hook that:
-- Creates one Supabase channel `realtime-sync`
-- Subscribes to `postgres_changes` for 12 tables
-- On change, does targeted query invalidation:
-
-**Table → Invalidation mapping:**
-
-| Table | Invalidated Keys |
-|-------|-----------------|
-| `schedule` | `schedule` (by `scheduled_date` if available), `schedule-stats`, `dashboard-stats` |
-| `member_attendance` | `dashboard-stats`, `schedule` (broad) |
-| `class_bookings` | `class-bookings`, `member-bookings`, `booking-count`, `schedule` |
-| `class_waitlist` | `class-waitlist` |
-| `rooms` | `rooms`, `room-stats` |
-| `locations` | `locations`, `location-stats` |
-| `classes` | `classes`, `class-stats` |
-| `class_categories` | `class-stats`, `classes` |
-| `members` | `members`, `member-stats`, `high-risk-members`, `upcoming-birthdays` |
-| `member_packages` | `high-risk-members`, `member-bookings` |
-| `package_usage_ledger` | `member-bookings` |
-| `leads` | `leads`, `hot-leads` |
-
-- Uses `queryClient.invalidateQueries({ queryKey: [prefix] })` (prefix match, not exact) for broad invalidation
-- For `schedule` changes: extracts `scheduled_date` from payload for targeted invalidation
-
----
-
-## 3. Database Migration
-
-Enable realtime publication for the 12 tables:
+### A. RPC Function: `create_schedule_with_validation`
 
 ```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE 
-  schedule, member_attendance, class_bookings, class_waitlist,
-  rooms, locations, classes, class_categories,
-  members, member_packages, package_usage_ledger, leads;
+CREATE OR REPLACE FUNCTION public.create_schedule_with_validation(
+  p_scheduled_date date,
+  p_start_time time,
+  p_end_time time,
+  p_class_id uuid,
+  p_trainer_id uuid DEFAULT NULL,
+  p_location_id uuid DEFAULT NULL,
+  p_room_id uuid DEFAULT NULL,
+  p_capacity integer DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_room rooms%ROWTYPE;
+  v_class classes%ROWTYPE;
+  v_category_name text;
+  v_final_capacity integer;
+  v_result schedule%ROWTYPE;
+BEGIN
+  -- Validate time range
+  IF p_end_time <= p_start_time THEN
+    RETURN json_build_object('error', 'end_time_before_start', 'message', 'End time must be after start time');
+  END IF;
+
+  -- If room provided, validate it
+  IF p_room_id IS NOT NULL THEN
+    SELECT * INTO v_room FROM rooms WHERE id = p_room_id;
+    IF NOT FOUND THEN
+      RETURN json_build_object('error', 'room_not_found', 'message', 'Room not found');
+    END IF;
+
+    -- Check room belongs to location
+    IF p_location_id IS NOT NULL AND v_room.location_id IS NOT NULL 
+       AND v_room.location_id != p_location_id THEN
+      RETURN json_build_object('error', 'room_location_mismatch', 'message', 'Room does not belong to selected location');
+    END IF;
+
+    -- Check category compatibility
+    SELECT * INTO v_class FROM classes WHERE id = p_class_id;
+    IF v_class.category_id IS NOT NULL AND v_room.categories IS NOT NULL 
+       AND array_length(v_room.categories, 1) > 0 THEN
+      SELECT name INTO v_category_name FROM class_categories WHERE id = v_class.category_id;
+      IF v_category_name IS NOT NULL AND NOT (v_category_name = ANY(v_room.categories)) THEN
+        RETURN json_build_object('error', 'category_mismatch', 'message', 
+          format('Room does not support category: %s', v_category_name));
+      END IF;
+    END IF;
+
+    -- Check overlapping schedule
+    IF EXISTS (
+      SELECT 1 FROM schedule
+      WHERE room_id = p_room_id
+        AND scheduled_date = p_scheduled_date
+        AND status != 'cancelled'
+        AND start_time < p_end_time
+        AND end_time > p_start_time
+    ) THEN
+      RETURN json_build_object('error', 'room_overlap', 'message', 
+        'This room already has a class scheduled at this time');
+    END IF;
+  END IF;
+
+  -- Determine capacity
+  v_final_capacity := COALESCE(p_capacity, v_room.max_capacity, 20);
+
+  -- Insert
+  INSERT INTO schedule (class_id, trainer_id, room_id, location_id, scheduled_date, start_time, end_time, capacity, status)
+  VALUES (p_class_id, p_trainer_id, p_room_id, COALESCE(p_location_id, v_room.location_id), p_scheduled_date, p_start_time, p_end_time, v_final_capacity, 'scheduled')
+  RETURNING * INTO v_result;
+
+  RETURN row_to_json(v_result);
+END;
+$$;
+```
+
+### B. Performance Index
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_schedule_room_date_time 
+  ON schedule (room_id, scheduled_date, start_time, end_time) 
+  WHERE status != 'cancelled';
 ```
 
 ---
 
-## 4. Mount Point: `MainLayout.tsx`
+## 2. Frontend Hook: `useCreateScheduleValidated`
 
-Add `useRealtimeSync()` call inside `MainLayout` component body. This runs after auth (since `MainLayout` is inside `ProtectedRoute`), and cleans up on unmount.
+In `src/hooks/useSchedule.ts`, add new mutation:
 
----
+- Calls `supabase.rpc('create_schedule_with_validation', params)`
+- Checks returned JSON for `error` field → shows translated friendly error via toast
+- On success: invalidates `schedule`, `schedule-stats`, `dashboard-stats` using `queryKeys`
+- Error mapping: `room_overlap` → "This room is already booked at this time", etc.
 
-## 5. Update Existing Hooks to Use `queryKeys`
-
-Update all 9 hook files to import from `queryKeys` instead of inline arrays:
-- `useSchedule.ts`
-- `useRooms.ts`
-- `useLocations.ts`
-- `useClasses.ts`
-- `useMembers.ts`
-- `useLeads.ts`
-- `useDashboardStats.ts`
-- `useClassBookings.ts`
-- `useFeatureFlags.ts`
-
-This is a mechanical find-replace of query key strings with `queryKeys.xxx()` calls. No behavior change.
+Keep existing `useCreateSchedule` untouched for backward compatibility.
 
 ---
 
-## 6. Files Summary
+## 3. Update `ScheduleClassDialog`
+
+Changes:
+1. **Location → Room filtering**: When `location_id` changes, filter rooms list to only show rooms at that location. Clear `room_id` if no longer valid.
+2. **Room → Auto-capacity**: When `room_id` selected, set `capacity` to that room's `max_capacity`.
+3. **Class → Auto-duration**: When class selected, compute `end_time = start_time + class.duration` (from `classes.duration` field).
+4. **Use `useCreateScheduleValidated`** instead of `useCreateSchedule`.
+5. **Error display**: Show server validation errors as form-level or toast messages.
+
+---
+
+## 4. i18n Keys
+
+Add error message translations for:
+- `schedule.error.roomOverlap`
+- `schedule.error.roomLocationMismatch`
+- `schedule.error.categoryMismatch`
+- `schedule.error.endTimeBeforeStart`
+- `schedule.error.roomNotFound`
+
+---
+
+## 5. Files Summary
 
 | Action | File |
 |--------|------|
-| Create | `src/lib/queryKeys.ts` |
-| Create | `src/hooks/useRealtimeSync.ts` |
-| Modify | `src/components/layout/MainLayout.tsx` (add hook call) |
-| Modify | `src/hooks/useSchedule.ts` (use queryKeys) |
-| Modify | `src/hooks/useRooms.ts` (use queryKeys) |
-| Modify | `src/hooks/useLocations.ts` (use queryKeys) |
-| Modify | `src/hooks/useClasses.ts` (use queryKeys) |
-| Modify | `src/hooks/useMembers.ts` (use queryKeys) |
-| Modify | `src/hooks/useLeads.ts` (use queryKeys) |
-| Modify | `src/hooks/useDashboardStats.ts` (use queryKeys) |
-| Modify | `src/hooks/useClassBookings.ts` (use queryKeys) |
-| Modify | `src/hooks/useFeatureFlags.ts` (use queryKeys) |
-| Migration | Enable realtime for 12 tables |
+| Migration | SQL: RPC function + index |
+| Modify | `src/hooks/useSchedule.ts` — add `useCreateScheduleValidated` |
+| Modify | `src/components/schedule/ScheduleClassDialog.tsx` — smart form UX |
+| Modify | `src/i18n/locales/en.ts` — error keys |
+| Modify | `src/i18n/locales/th.ts` — error keys |
 
----
-
-## 7. Safety
-
-- No behavior change — only centralizes key strings and adds background sync
-- Existing mutation `onSuccess` invalidation still works (redundant but harmless)
-- Channel cleanup on unmount prevents memory leaks
-- Only runs inside `ProtectedRoute` so auth is guaranteed
+No existing behavior changed. Old `useCreateSchedule` remains. Realtime sync already handles cross-page updates via `useRealtimeSync`.
 
