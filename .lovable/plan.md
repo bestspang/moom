@@ -1,91 +1,64 @@
 
 
-# Enhance Activity Log — Filters, Pagination, Logger & Realtime
+# Upgrade Announcements: Multi-Channel, Location Targeting & AI Draft Placeholder
 
 ## Current State
-- `ActivityLog.tsx` shows a table with date range filter, hardcoded `limit(100)`, no event type filters, no pagination
-- `useActivityLog.ts` fetches from `activity_log` with date filters only
-- Only 3 places currently write to `activity_log`: `useStaff.ts` (staff_created), `PackageDetails.tsx` (package_updated), `invite-staff` edge function (staff_invited)
-- **Missing audit logging**: member create/update/delete, schedule create/update/delete, announcement, promotion, location, role changes — none of these log to `activity_log`
-- `activity_log` table already has: `event_type`, `entity_type`, `entity_id`, `activity`, `old_value`, `new_value`, `staff_id`, `member_id`
-- `activity_log` is NOT in `useRealtimeSync.ts` — no realtime updates
-- No `supabase_realtime` publication for `activity_log`
+- `announcements` table has: `id`, `message`, `publish_date`, `end_date`, `status`, `created_by`, timestamps
+- No `channels`, `target_locations`, or `location_ids` columns
+- `announcements` is NOT in `supabase_realtime` publication
+- CreateAnnouncementDialog has basic fields: message, publish/end date, status
+- No edit capability, no channel toggles, no AI draft
 
 ## Plan
 
-### 1. Database Migration — Enable realtime for `activity_log`
+### 1. Database Migration
 
 ```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_log;
+-- Add multi-channel + location targeting columns
+ALTER TABLE public.announcements
+  ADD COLUMN IF NOT EXISTS channels jsonb DEFAULT '{"in_app": true, "line": false}'::jsonb,
+  ADD COLUMN IF NOT EXISTS target_mode text DEFAULT 'all',
+  ADD COLUMN IF NOT EXISTS target_location_ids uuid[] DEFAULT '{}'::uuid[];
+
+-- Enable realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.announcements;
 ```
 
-### 2. Create `src/lib/activityLogger.ts`
+### 2. Update `useAnnouncements.ts`
 
-Centralized helper that inserts into `activity_log`:
+- Add `channels`, `target_mode`, `target_location_ids` to `Announcement` interface and `AnnouncementFormData`
+- Include new fields in select query and insert/update mutations
 
-```ts
-export async function logActivity(params: {
-  event_type: string;
-  activity: string;
-  entity_type?: string;
-  entity_id?: string;
-  old_value?: Record<string, unknown>;
-  new_value?: Record<string, unknown>;
-  staff_id?: string;
-  member_id?: string;
-}) { ... }
-```
+### 3. Update `CreateAnnouncementDialog.tsx`
 
-Fire-and-forget (catch errors, don't block mutations).
+- Add **Channels** section: Switch toggles for "In-App" (enabled) and "LINE" (disabled + tooltip "Coming soon")
+- Add **Target Locations** section: Radio group "All locations" / "Specific locations" + multi-select location picker (using `useLocations`)
+- Add **"AI Draft"** button (disabled, with tooltip "Coming soon") near the message field
+- Add `pointer-events-auto` to Calendar components
 
-### 3. Update `useActivityLog.ts` — Add filters + server-side pagination
+### 4. Update `Announcements.tsx` (table)
 
-- Accept `eventTypes: string[]` filter and `page/perPage` params
-- Use `.in('event_type', eventTypes)` when filter is set
-- Use `.range()` for pagination with `{ count: 'exact' }`
-- Return `{ data, total }` for pagination controls
+- Add "Channels" column showing channel badges (in-app / LINE icons)
+- Add "Target" column showing "All" or location count
 
-### 4. Update `ActivityLog.tsx` — Filter panel + pagination UI
+### 5. Update `useRealtimeSync.ts`
 
-- Add collapsible/popover filter panel with event type checkboxes
-- Event type list: `member_created`, `member_updated`, `member_deleted`, `staff_created`, `staff_invited`, `package_updated`, `package_created`, `schedule_created`, `schedule_updated`, `schedule_deleted`, `promotion_created`, `promotion_updated`, `location_created`, `location_updated`, `role_updated`, `announcement_created`
-- Add pagination controls at bottom (prev/next, page X of Y)
-- Use existing `DataTable` or keep current table with added pagination
+- Add `'announcements'` to table union and invalidation map → `['announcements', 'announcement-stats']`
 
-### 5. Wire `logActivity` into existing mutation hooks
+### 6. i18n Keys
 
-Add `logActivity()` calls in `onSuccess` of these hooks:
-- `useMembers.ts`: `useCreateMember`, `useUpdateMember`, `useDeleteMember`
-- `useSchedule.ts`: `useCreateSchedule`/`useCreateScheduleValidated`, `useUpdateSchedule`, `useDeleteSchedule`
-- `usePromotions.ts`: `useCreatePromotion`, `useUpdatePromotion`
-- `useLocations.ts`: `useCreateLocation`, `useUpdateLocation`
-- `useRoles.ts`: role save mutations
-- `useStaff.ts`: already has staff_created — replace inline insert with `logActivity`
-
-### 6. Update `useRealtimeSync.ts`
-
-Add `activity_log` to the table union and invalidation map → invalidates `['activity-logs']`.
-
-### 7. i18n Keys
-
-Add filter-related keys under `activityLog`: `filterByEvent`, `allEvents`, `clearFilters`, `page`, `of`, and event type labels.
+Add under `announcements`: `channels`, `inApp`, `line`, `lineComingSoon`, `aiDraft`, `aiDraftComingSoon`, `targetLocations`, `allLocations`, `specificLocations`, `selectLocations`
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Migration | Enable realtime on `activity_log` |
-| Create | `src/lib/activityLogger.ts` |
-| Modify | `src/hooks/useActivityLog.ts` — filters + pagination |
-| Modify | `src/pages/ActivityLog.tsx` — filter UI + pagination |
-| Modify | `src/hooks/useMembers.ts` — add audit logging |
-| Modify | `src/hooks/useSchedule.ts` — add audit logging |
-| Modify | `src/hooks/usePromotions.ts` — add audit logging |
-| Modify | `src/hooks/useLocations.ts` — add audit logging |
-| Modify | `src/hooks/useRoles.ts` — add audit logging |
-| Modify | `src/hooks/useStaff.ts` — use centralized logger |
-| Modify | `src/hooks/useRealtimeSync.ts` — add activity_log |
+| Migration | Add `channels`, `target_mode`, `target_location_ids` + realtime |
+| Modify | `src/hooks/useAnnouncements.ts` — extend types + queries |
+| Modify | `src/components/announcements/CreateAnnouncementDialog.tsx` — channel toggles, location targeting, AI placeholder |
+| Modify | `src/pages/Announcements.tsx` — new columns |
+| Modify | `src/hooks/useRealtimeSync.ts` — add announcements table |
 | Modify | `src/i18n/locales/en.ts` + `th.ts` — add keys |
 
-No schema changes needed (table already exists). Existing behavior preserved — logger is additive.
+No breaking changes. New columns have defaults so existing data is unaffected.
 
