@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Types based on database schema
 type FlagScope = 'global' | 'location' | 'user';
@@ -30,7 +31,7 @@ interface FeatureFlagAssignment {
 // Fetch all feature flags
 export const useFeatureFlags = () => {
   return useQuery({
-    queryKey: ['feature-flags'],
+    queryKey: queryKeys.featureFlags(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('feature_flags')
@@ -46,7 +47,7 @@ export const useFeatureFlags = () => {
 // Fetch a single feature flag by key
 export const useFeatureFlag = (key: string) => {
   return useQuery({
-    queryKey: ['feature-flag', key],
+    queryKey: queryKeys.featureFlag(key),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('feature_flags')
@@ -66,7 +67,6 @@ export const useIsFeatureEnabled = (key: string, locationId?: string) => {
   return useQuery({
     queryKey: ['feature-enabled', key, locationId],
     queryFn: async () => {
-      // First get the global flag
       const { data: flag, error: flagError } = await supabase
         .from('feature_flags')
         .select('id, enabled, scope')
@@ -76,12 +76,10 @@ export const useIsFeatureEnabled = (key: string, locationId?: string) => {
       if (flagError) throw flagError;
       if (!flag) return false;
 
-      // If global scope and no location override needed
       if (flag.scope === 'global' || !locationId) {
         return flag.enabled;
       }
 
-      // Check for location-specific override
       const { data: assignment, error: assignError } = await supabase
         .from('feature_flag_assignments')
         .select('enabled')
@@ -91,7 +89,6 @@ export const useIsFeatureEnabled = (key: string, locationId?: string) => {
 
       if (assignError) throw assignError;
 
-      // If there's a location assignment, use it; otherwise use global
       return assignment ? assignment.enabled : flag.enabled;
     },
     enabled: !!key,
@@ -252,7 +249,6 @@ export const useSetFlagAssignment = () => {
         throw new Error('Either locationId or userId must be provided');
       }
 
-      // Try to upsert the assignment
       const { data, error } = await supabase
         .from('feature_flag_assignments')
         .upsert(

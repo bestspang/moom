@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Location = Tables<'locations'>;
 type LocationInsert = TablesInsert<'locations'>;
@@ -9,7 +10,7 @@ type LocationUpdate = TablesUpdate<'locations'>;
 
 export const useLocations = (status?: string, search?: string) => {
   return useQuery({
-    queryKey: ['locations', status, search],
+    queryKey: queryKeys.locations(status, search),
     queryFn: async () => {
       let query = supabase.from('locations').select('*');
       
@@ -31,7 +32,7 @@ export const useLocations = (status?: string, search?: string) => {
 
 export const useLocationStats = () => {
   return useQuery({
-    queryKey: ['location-stats'],
+    queryKey: queryKeys.locationStats(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('locations')
@@ -57,7 +58,7 @@ export const useLocationStats = () => {
 
 export const useLocation = (id: string) => {
   return useQuery({
-    queryKey: ['locations', id],
+    queryKey: queryKeys.locations(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('locations')
@@ -112,9 +113,8 @@ export const useUpdateLocation = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['locations'] });
-      queryClient.invalidateQueries({ queryKey: ['locations', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['location-stats'] });
       toast.success('Location updated successfully');
     },

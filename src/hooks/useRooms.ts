@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Room = Tables<'rooms'>;
 type RoomInsert = TablesInsert<'rooms'>;
@@ -15,7 +16,7 @@ interface RoomInsertExtended extends Omit<RoomInsert, 'layout_type'> {
 
 export const useRooms = (status?: string, search?: string) => {
   return useQuery({
-    queryKey: ['rooms', status, search],
+    queryKey: queryKeys.rooms(status, search),
     queryFn: async () => {
       let query = supabase
         .from('rooms')
@@ -42,7 +43,7 @@ export const useRooms = (status?: string, search?: string) => {
 
 export const useRoomStats = () => {
   return useQuery({
-    queryKey: ['room-stats'],
+    queryKey: queryKeys.roomStats(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
@@ -68,7 +69,7 @@ export const useRoomStats = () => {
 
 export const useRoom = (id: string) => {
   return useQuery({
-    queryKey: ['rooms', id],
+    queryKey: queryKeys.rooms(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
@@ -128,7 +129,6 @@ export const useUpdateRoom = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['rooms', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['room-stats'] });
       toast.success('Room updated successfully');
     },

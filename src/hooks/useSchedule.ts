@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type ScheduleWithRelations = Tables<'schedule'> & {
   class: Tables<'classes'> | null;
@@ -26,7 +27,7 @@ export function useScheduleByDate(date: Date) {
   const dateStr = format(date, 'yyyy-MM-dd');
   
   return useQuery({
-    queryKey: ['schedule', dateStr],
+    queryKey: queryKeys.schedule(dateStr),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedule')
@@ -51,7 +52,7 @@ export function useScheduleStats(date: Date) {
   const yesterdayStr = format(new Date(date.getTime() - 86400000), 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: ['schedule-stats', dateStr],
+    queryKey: queryKeys.scheduleStats(dateStr),
     queryFn: async () => {
       // Get today's schedule
       const { data: todayData, error: todayError } = await supabase
@@ -139,7 +140,7 @@ export function useScheduleStats(date: Date) {
 
 export function useTrainers() {
   return useQuery({
-    queryKey: ['trainers'],
+    queryKey: queryKeys.trainers(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff')
@@ -150,7 +151,6 @@ export function useTrainers() {
         .eq('status', 'active');
 
       if (error) throw error;
-      // Filter trainers (role name contains 'trainer' or staff that have assigned classes)
       return data || [];
     },
   });

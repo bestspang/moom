@@ -3,9 +3,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { cn } from '@/lib/utils';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useRealtimeSync();
   const location = useLocation();
 
   return (
