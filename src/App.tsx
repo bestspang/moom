@@ -22,6 +22,7 @@ import Promotions from "./pages/Promotions";
 import PromotionDetails from "./pages/PromotionDetails";
 import Schedule from "./pages/Schedule";
 import Rooms from "./pages/Rooms";
+import RoomDetails from "./pages/RoomDetails";
 import Classes from "./pages/Classes";
 import ClassCategories from "./pages/ClassCategories";
 import Staff from "./pages/Staff";
@@ -109,6 +110,7 @@ const App = () => (
                 <Route path="promotion/:id" element={<PromotionDetails />} />
                 <Route path="calendar" element={<Schedule />} />
                 <Route path="room" element={<Rooms />} />
+                <Route path="room/:id" element={<RoomDetails />} />
                 <Route path="class" element={<Classes />} />
                 <Route path="class-category" element={<ClassCategories />} />
                 <Route path="admin" element={<Staff />} />

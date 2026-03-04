@@ -707,6 +707,9 @@ export default {
       discard: 'Discard',
     },
     filterByCategory: 'Filter by category',
+    detail: {
+      backToList: 'Back to list',
+    },
   },
 
   // Classes
