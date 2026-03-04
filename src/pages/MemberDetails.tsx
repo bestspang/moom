@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, EmptyState, type Column } from '@/components/common';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import {
   useMember,
@@ -23,8 +24,14 @@ import {
   useMemberInjuries,
   useMemberSuspensions,
   useMemberContracts,
+  useMemberSummaryStats,
   useCreateMemberNote,
   useUpdateMember,
+  useCreateMemberInjury,
+  useMarkInjuryRecovered,
+  useCreateMemberSuspension,
+  useEndMemberSuspension,
+  useCreateMemberContract,
   calculateDaysUntilExpiry,
   calculateDaysSinceJoin,
   type MemberPackage,
@@ -44,6 +51,27 @@ const MemberDetails = () => {
   const [packageStatus, setPackageStatus] = useState('active');
   const [newNote, setNewNote] = useState('');
 
+  // Profile edit state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileDraft, setProfileDraft] = useState<Record<string, string>>({});
+
+  // Injury form state
+  const [injuryOpen, setInjuryOpen] = useState(false);
+  const [injuryDesc, setInjuryDesc] = useState('');
+  const [injuryDate, setInjuryDate] = useState('');
+  const [injuryNotes, setInjuryNotes] = useState('');
+
+  // Suspension form state
+  const [suspensionOpen, setSuspensionOpen] = useState(false);
+  const [suspReason, setSuspReason] = useState('');
+  const [suspStartDate, setSuspStartDate] = useState('');
+  const [suspEndDate, setSuspEndDate] = useState('');
+
+  // Contract form state
+  const [contractOpen, setContractOpen] = useState(false);
+  const [contractType, setContractType] = useState('');
+  const [contractUrl, setContractUrl] = useState('');
+
   // Fetch all member data
   const { data: member, isLoading: memberLoading } = useMember(id);
   const { data: packages = [], isLoading: packagesLoading } = useMemberPackages(id);
@@ -53,9 +81,15 @@ const MemberDetails = () => {
   const { data: injuries = [], isLoading: injuriesLoading } = useMemberInjuries(id);
   const { data: suspensions = [], isLoading: suspensionsLoading } = useMemberSuspensions(id);
   const { data: contracts = [], isLoading: contractsLoading } = useMemberContracts(id);
+  const { data: summaryStats } = useMemberSummaryStats(id);
 
   const createNote = useCreateMemberNote();
   const updateMember = useUpdateMember();
+  const createInjury = useCreateMemberInjury();
+  const markRecovered = useMarkInjuryRecovered();
+  const createSuspension = useCreateMemberSuspension();
+  const endSuspension = useEndMemberSuspension();
+  const createContract = useCreateMemberContract();
 
   const tabs = [
     { value: 'home', label: t('members.tabs.home'), icon: User },
@@ -85,13 +119,91 @@ const MemberDetails = () => {
     });
   };
 
+  const handleStartEditProfile = () => {
+    if (!member) return;
+    setProfileDraft({
+      first_name: member.first_name || '',
+      last_name: member.last_name || '',
+      nickname: member.nickname || '',
+      email: member.email || '',
+      phone: member.phone || '',
+      gender: member.gender || '',
+      date_of_birth: member.date_of_birth || '',
+      tax_id: member.tax_id || '',
+      address: member.address || '',
+    });
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = () => {
+    if (!member || !id) return;
+    const oldData = {
+      first_name: member.first_name,
+      last_name: member.last_name,
+      nickname: member.nickname,
+      email: member.email,
+      phone: member.phone,
+      gender: member.gender,
+      date_of_birth: member.date_of_birth,
+      tax_id: member.tax_id,
+      address: member.address,
+    };
+    updateMember.mutate({ id, data: profileDraft, oldData }, {
+      onSuccess: () => setIsEditingProfile(false),
+    });
+  };
+
+  const handleAddInjury = () => {
+    if (!injuryDesc.trim() || !id) return;
+    createInjury.mutate(
+      { memberId: id, injury_description: injuryDesc, injury_date: injuryDate || undefined, notes: injuryNotes || undefined },
+      {
+        onSuccess: () => {
+          setInjuryOpen(false);
+          setInjuryDesc('');
+          setInjuryDate('');
+          setInjuryNotes('');
+        },
+      }
+    );
+  };
+
+  const handleAddSuspension = () => {
+    if (!suspStartDate || !id) return;
+    createSuspension.mutate(
+      { memberId: id, reason: suspReason || undefined, start_date: suspStartDate, end_date: suspEndDate || undefined },
+      {
+        onSuccess: () => {
+          setSuspensionOpen(false);
+          setSuspReason('');
+          setSuspStartDate('');
+          setSuspEndDate('');
+        },
+      }
+    );
+  };
+
+  const handleAddContract = () => {
+    if (!id) return;
+    createContract.mutate(
+      { memberId: id, contract_type: contractType || undefined, document_url: contractUrl || undefined },
+      {
+        onSuccess: () => {
+          setContractOpen(false);
+          setContractType('');
+          setContractUrl('');
+        },
+      }
+    );
+  };
+
   // Map member status to StatusBadge variant
   const getStatusVariant = (status: string | null) => {
     switch (status) {
       case 'active': return 'active';
       case 'suspended': return 'suspended';
       case 'inactive': return 'inactive';
-      case 'on_hold': return 'suspended'; // Map on_hold to suspended style
+      case 'on_hold': return 'suspended';
       default: return 'active';
     }
   };
@@ -135,6 +247,17 @@ const MemberDetails = () => {
       </Badge>
     )},
     { key: 'recovery_date', header: t('members.recoveryDate'), cell: (row) => row.recovery_date ? formatDate(row.recovery_date) : '-' },
+    { key: 'actions', header: t('common.actions'), cell: (row) => row.is_active ? (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => id && markRecovered.mutate({ injuryId: row.id, memberId: id })}
+        disabled={markRecovered.isPending}
+      >
+        <Check className="h-3 w-3 mr-1" />
+        {t('members.markRecovered')}
+      </Button>
+    ) : null },
   ];
 
   const suspensionColumns: Column<MemberSuspension>[] = [
@@ -146,6 +269,16 @@ const MemberDetails = () => {
         {row.is_active ? t('members.activeSuspension') : t('members.ended')}
       </Badge>
     )},
+    { key: 'actions', header: t('common.actions'), cell: (row) => row.is_active ? (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => id && endSuspension.mutate({ suspensionId: row.id, memberId: id })}
+        disabled={endSuspension.isPending}
+      >
+        {t('members.endSuspension')}
+      </Button>
+    ) : null },
   ];
 
   const contractColumns: Column<MemberContract>[] = [
@@ -157,6 +290,11 @@ const MemberDetails = () => {
     )},
     { key: 'signed_date', header: t('members.signedDate'), cell: (row) => row.signed_date ? formatDate(row.signed_date) : '-' },
     { key: 'expiry_date', header: t('members.expiryDate'), cell: (row) => row.expiry_date ? formatDate(row.expiry_date) : '-' },
+    { key: 'document_url', header: t('members.document'), cell: (row) => row.document_url ? (
+      <a href={row.document_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+        {t('members.viewDocument')}
+      </a>
+    ) : '-' },
   ];
 
   if (memberLoading) {
@@ -302,7 +440,7 @@ const MemberDetails = () => {
 
         {/* Main content */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Stats */}
+          {/* Stats — computed from actual data */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title={t('members.memberSince')}
@@ -312,12 +450,12 @@ const MemberDetails = () => {
             />
             <StatCard
               title={t('members.mostAttendedCategory')}
-              value={member.most_attended_category || '-'}
+              value={summaryStats?.mostAttendedCategory || member.most_attended_category || '-'}
               color="orange"
             />
             <StatCard
               title={t('members.amountSpent')}
-              value={formatCurrency(member.total_spent || 0)}
+              value={formatCurrency(summaryStats?.totalSpent ?? member.total_spent ?? 0)}
               color="blue"
             />
             <StatCard
@@ -377,42 +515,95 @@ const MemberDetails = () => {
                 </TabsContent>
 
                 <TabsContent value="profile" className="mt-6">
+                  <div className="flex justify-end mb-4">
+                    {isEditingProfile ? (
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                          {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleSaveProfile} disabled={updateMember.isPending}>
+                          {t('common.save')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="outline" onClick={handleStartEditProfile}>
+                        {t('common.edit')}
+                      </Button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>{t('members.firstName')}</Label>
-                      <Input value={member.first_name} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.first_name : member.first_name}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, first_name: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.lastName')}</Label>
-                      <Input value={member.last_name} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.last_name : member.last_name}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, last_name: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.nickname')}</Label>
-                      <Input value={member.nickname || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.nickname : member.nickname || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, nickname: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.email')}</Label>
-                      <Input value={member.email || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.email : member.email || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, email: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.phone')}</Label>
-                      <Input value={member.phone || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.phone : member.phone || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, phone: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.gender')}</Label>
-                      <Input value={member.gender || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.gender : member.gender || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, gender: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.dateOfBirth')}</Label>
-                      <Input value={member.date_of_birth ? formatDate(member.date_of_birth) : ''} readOnly />
+                      <Input
+                        type={isEditingProfile ? 'date' : 'text'}
+                        value={isEditingProfile ? profileDraft.date_of_birth : (member.date_of_birth ? formatDate(member.date_of_birth) : '')}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, date_of_birth: e.target.value }))}
+                      />
                     </div>
                     <div>
                       <Label>{t('members.taxId')}</Label>
-                      <Input value={member.tax_id || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.tax_id : member.tax_id || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, tax_id: e.target.value }))}
+                      />
                     </div>
                     <div className="md:col-span-2">
                       <Label>{t('members.address')}</Label>
-                      <Input value={member.address || ''} readOnly />
+                      <Input
+                        value={isEditingProfile ? profileDraft.address : member.address || ''}
+                        readOnly={!isEditingProfile}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, address: e.target.value }))}
+                      />
                     </div>
                   </div>
                 </TabsContent>
@@ -466,6 +657,38 @@ const MemberDetails = () => {
                 </TabsContent>
 
                 <TabsContent value="injuries" className="mt-6">
+                  <div className="flex justify-end mb-4">
+                    <Dialog open={injuryOpen} onOpenChange={setInjuryOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          {t('members.addInjury')}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('members.addInjury')}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>{t('members.description')}</Label>
+                            <Textarea value={injuryDesc} onChange={(e) => setInjuryDesc(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>{t('members.injuryDate')}</Label>
+                            <Input type="date" value={injuryDate} onChange={(e) => setInjuryDate(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>{t('members.notes')}</Label>
+                            <Textarea value={injuryNotes} onChange={(e) => setInjuryNotes(e.target.value)} />
+                          </div>
+                          <Button onClick={handleAddInjury} disabled={!injuryDesc.trim() || createInjury.isPending}>
+                            {t('common.save')}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   {injuriesLoading ? (
                     <Skeleton className="h-48" />
                   ) : injuries.length === 0 ? (
@@ -512,6 +735,38 @@ const MemberDetails = () => {
                 </TabsContent>
 
                 <TabsContent value="suspensions" className="mt-6">
+                  <div className="flex justify-end mb-4">
+                    <Dialog open={suspensionOpen} onOpenChange={setSuspensionOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive">
+                          <PauseCircle className="h-4 w-4 mr-2" />
+                          {t('members.suspendMember')}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('members.suspendMember')}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>{t('members.reason')}</Label>
+                            <Textarea value={suspReason} onChange={(e) => setSuspReason(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>{t('members.startDate')}</Label>
+                            <Input type="date" value={suspStartDate} onChange={(e) => setSuspStartDate(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>{t('members.endDate')}</Label>
+                            <Input type="date" value={suspEndDate} onChange={(e) => setSuspEndDate(e.target.value)} />
+                          </div>
+                          <Button onClick={handleAddSuspension} disabled={!suspStartDate || createSuspension.isPending}>
+                            {t('common.save')}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   {suspensionsLoading ? (
                     <Skeleton className="h-48" />
                   ) : suspensions.length === 0 ? (
@@ -522,6 +777,34 @@ const MemberDetails = () => {
                 </TabsContent>
 
                 <TabsContent value="contract" className="mt-6">
+                  <div className="flex justify-end mb-4">
+                    <Dialog open={contractOpen} onOpenChange={setContractOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          {t('members.addContract')}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('members.addContract')}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>{t('members.contractType')}</Label>
+                            <Input value={contractType} onChange={(e) => setContractType(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>{t('members.documentUrl')}</Label>
+                            <Input value={contractUrl} onChange={(e) => setContractUrl(e.target.value)} placeholder="https://..." />
+                          </div>
+                          <Button onClick={handleAddContract} disabled={createContract.isPending}>
+                            {t('common.save')}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   {contractsLoading ? (
                     <Skeleton className="h-48" />
                   ) : contracts.length === 0 ? (

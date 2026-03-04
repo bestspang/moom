@@ -26,11 +26,16 @@ type TableName =
   | 'staff_positions'
   | 'role_permissions'
   | 'activity_log'
-  | 'announcements';
+  | 'announcements'
+  | 'member_notes'
+  | 'member_injuries'
+  | 'member_suspensions'
+  | 'member_contracts'
+  | 'member_billing';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
-  member_attendance: ['dashboard-stats', 'schedule'],
+  member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats'],
   class_bookings: ['class-bookings', 'member-bookings', 'booking-count', 'schedule'],
   class_waitlist: ['class-waitlist'],
   rooms: ['rooms', 'room-stats'],
@@ -52,6 +57,11 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   role_permissions: ['roles', 'role-permissions', 'my-permissions'],
   activity_log: ['activity-logs'],
   announcements: ['announcements', 'announcement-stats'],
+  member_notes: ['member-notes'],
+  member_injuries: ['member-injuries'],
+  member_suspensions: ['member-suspensions'],
+  member_contracts: ['member-contracts'],
+  member_billing: ['member-billing', 'member-summary-stats'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
