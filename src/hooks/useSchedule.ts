@@ -35,8 +35,8 @@ export function mapScheduleToItem(s: ScheduleWithRelations): ScheduleItem {
     trainer: s.trainer ? `${s.trainer.first_name} ${s.trainer.last_name}` : '-',
     location: (s.location as any)?.name || '-',
     room: (s.room as any)?.name || '-',
-    availability: `${s.checked_in || 0}/${s.capacity || 0}`,
-    checkedIn: s.checked_in || 0,
+    availability: `${s.booked_count ?? s.checked_in ?? 0}/${s.capacity || 0}`,
+    checkedIn: s.attended_count ?? s.checked_in ?? 0,
     capacity: s.capacity || 0,
   };
 }
@@ -107,58 +107,59 @@ export function useScheduleStats(date: Date) {
   return useQuery({
     queryKey: queryKeys.scheduleStats(dateStr),
     queryFn: async () => {
-      // Get today's schedule
-      const { data: todayData, error: todayError } = await supabase
-        .from('schedule')
-        .select(`
-          *,
-          class:classes(type)
-        `)
-        .eq('scheduled_date', dateStr);
+      // Get today's and yesterday's schedules in parallel
+      const [todayResult, yesterdayResult] = await Promise.all([
+        supabase.from('schedule').select('*, class:classes(type)').eq('scheduled_date', dateStr),
+        supabase.from('schedule').select('*, class:classes(type)').eq('scheduled_date', yesterdayStr),
+      ]);
 
-      if (todayError) throw todayError;
+      if (todayResult.error) throw todayResult.error;
+      if (yesterdayResult.error) throw yesterdayResult.error;
 
-      // Get yesterday's schedule for comparison
-      const { data: yesterdayData, error: yesterdayError } = await supabase
-        .from('schedule')
-        .select(`
-          *,
-          class:classes(type)
-        `)
-        .eq('scheduled_date', yesterdayStr);
+      const todaySchedules = todayResult.data || [];
+      const yesterdaySchedules = yesterdayResult.data || [];
 
-      if (yesterdayError) throw yesterdayError;
+      // Fetch real booking counts for both days
+      const allIds = [...todaySchedules, ...yesterdaySchedules].map(s => s.id);
+      const bookingCounts: Record<string, { booked: number; attended: number }> = {};
 
-      const todaySchedules = todayData || [];
-      const yesterdaySchedules = yesterdayData || [];
+      if (allIds.length > 0) {
+        const { data: bookings } = await supabase
+          .from('class_bookings')
+          .select('schedule_id, status')
+          .in('schedule_id', allIds)
+          .in('status', ['booked', 'attended']);
+
+        (bookings || []).forEach(b => {
+          if (!bookingCounts[b.schedule_id]) bookingCounts[b.schedule_id] = { booked: 0, attended: 0 };
+          bookingCounts[b.schedule_id].booked++;
+          if (b.status === 'attended') bookingCounts[b.schedule_id].attended++;
+        });
+      }
+
+      // Helper to compute avgCapacity from real booking data
+      const computeAvgCapacity = (schedules: typeof todaySchedules) => {
+        const scheduled = schedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
+        if (scheduled.length === 0) return 0;
+        return Math.round(
+          scheduled.reduce((sum, s) => {
+            const attended = bookingCounts[s.id]?.attended ?? 0;
+            return sum + (attended / (s.capacity || 1)) * 100;
+          }, 0) / scheduled.length
+        );
+      };
 
       // Today's stats
       const classesCount = todaySchedules.filter(s => s.class?.type === 'class').length;
       const ptCount = todaySchedules.filter(s => s.class?.type === 'pt').length;
       const cancellations = todaySchedules.filter(s => s.status === 'cancelled').length;
+      const avgCapacity = computeAvgCapacity(todaySchedules);
 
       // Yesterday's stats for comparison
       const yesterdayClassesCount = yesterdaySchedules.filter(s => s.class?.type === 'class').length;
       const yesterdayPtCount = yesterdaySchedules.filter(s => s.class?.type === 'pt').length;
       const yesterdayCancellations = yesterdaySchedules.filter(s => s.status === 'cancelled').length;
-
-      // Calculate average capacity for today
-      const scheduledClasses = todaySchedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
-      const avgCapacity = scheduledClasses.length > 0
-        ? Math.round(
-            scheduledClasses.reduce((sum, s) => sum + ((s.checked_in || 0) / (s.capacity || 1)) * 100, 0) /
-              scheduledClasses.length
-          )
-        : 0;
-
-      // Calculate yesterday's average capacity
-      const yesterdayScheduledClasses = yesterdaySchedules.filter(s => s.status === 'scheduled' && s.capacity && s.capacity > 0);
-      const yesterdayAvgCapacity = yesterdayScheduledClasses.length > 0
-        ? Math.round(
-            yesterdayScheduledClasses.reduce((sum, s) => sum + ((s.checked_in || 0) / (s.capacity || 1)) * 100, 0) /
-              yesterdayScheduledClasses.length
-          )
-        : 0;
+      const yesterdayAvgCapacity = computeAvgCapacity(yesterdaySchedules);
 
       // Calculate differences
       const classesCountDiff = yesterdayClassesCount > 0
