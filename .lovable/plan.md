@@ -1,68 +1,69 @@
 
 
-# Room Details Page — Implementation Plan
+# Class Module — Implementation Plan
 
 ## Current State
 
-- `rooms` table has all needed columns: `name`, `name_th`, `location_id`, `max_capacity`, `layout_type`, `categories` (text[]), `status`
-- `useRoom(id)` hook exists, fetches room with joined location
-- `useUpdateRoom` mutation exists with activity logging
-- `CreateRoomDialog` has the full form UI pattern (sections: Information, Access, Room Layout)
-- `DataTable` supports `onRowClick`
-- Schedule validation RPC already enforces room-location match + category compatibility + capacity default
-- Realtime sync already covers `rooms` table
+- **DB `classes` table**: Has `name`, `description`, `type` (class/pt), `category_id`, `level`, `duration`, `status` (active/drafts/archive). Missing `name_th`.
+- **Hooks**: `useClasses`, `useClassStats`, `useClass`, `useCreateClass`, `useUpdateClass`, `useDeleteClass` exist with basic functionality.
+- **Classes list page**: Has tabs + search but no filters (Type/Categories/Level), no row click navigation, no create page link.
+- **No Create Class page** — button exists but does nothing.
+- **No Class Details page** — no route, no component.
+- **`useClass(id)` uses `queryKeys.classes(id)`** which collides with list query keys.
+- **Status values**: 'active'/'drafts'/'archive' — keep these to avoid breaking existing data. Map 'active' as "published" conceptually.
 
-## What's Missing
+## Gaps to Fix
 
-1. **No RoomDetails page** — no route, no component
-2. **Rooms list doesn't navigate on row click** — no `onRowClick` handler
-3. **No route for `/room/:id`** in App.tsx
-4. **`useUpdateRoom` doesn't capture `old_value`** in activity log
-5. **No i18n keys** for room details page
+### A. DB Migration
+Add `name_th` column to `classes` table (text, nullable).
 
-## Implementation Plan
+### B. Query Keys
+Add `classDetail: (id) => ['classes', 'detail', id]` and update `useClass` to use it. Add `classPerformance: (id) => ['class-performance', id]`.
 
-### 1. Add route in App.tsx
-Add `<Route path="room/:id" element={<RoomDetails />} />` under protected routes, import the new page.
+### C. Class List Page Enhancements
+- Add Type, Categories, Level filter dropdowns
+- Add row click → navigate to `/class/:id`
+- Create button → navigate to `/class/create`
+- Pass filters to `useClasses` hook
+- Search both `name` and `name_th` (like rooms)
 
-### 2. Add row click navigation in Rooms.tsx
-Add `useNavigate` and pass `onRowClick={(row) => navigate(\`/room/${row.id}\`)}` to DataTable.
+### D. Create Class Page
+New page at `/class/create` with:
+- Type selector (Class/PT)
+- Fields: name (EN)*, name_th, description*, category*, duration*, level* (for class type)
+- Actions: Discard, Save as draft (status='drafts'), Publish (status='active')
+- Zod validation, react-hook-form
+- Activity log on create
 
-### 3. Create `src/pages/RoomDetails.tsx`
-A detail/edit page that:
-- Uses `useParams` to get room ID, `useRoom(id)` to load data
-- Uses `useLocations()` and `useClassCategories()` for select options
-- Displays sections matching CreateRoomDialog layout: Information, Access, Room Layout
-- Each section has a pencil/edit toggle for inline editing
-- On save: calls `useUpdateRoom` with changed fields, shows toast
-- Back button navigates to `/room`
+### E. Class Details Page
+New page at `/class/:id` with:
+- Performance cards (scheduled this week, bookings this week, avg capacity, total bookings)
+- Class information section with inline edit (same pattern as RoomDetails)
+- Performance metrics hook using schedule + class_bookings aggregation
 
-**UI structure:**
-- PageHeader with breadcrumbs and back arrow
-- Card sections for Information (name EN/TH, location, max capacity), Access (all/specific categories), Room Layout (open/fixed)
-- Each section toggles between read-only display and edit form
-- Save/Cancel buttons per section
+### F. Hooks Updates
+- `useClasses`: Add type, category, level filter params; search `name_th`
+- `useClassPerformance(classId)`: Query schedule + class_bookings for metrics
+- `useUpdateClass`: Accept `oldData` for structured activity logging
 
-### 4. Enhance `useUpdateRoom` with old_value logging
-Fetch current room data before update to capture `old_value` in activity log alongside `new_value`.
+### G. Routes
+Add `/class/create` → CreateClass and `/class/:id` → ClassDetails in App.tsx.
 
-### 5. Add query key for single room
-Add `room: (id: string) => ['rooms', 'detail', id]` to queryKeys.ts and use it in `useRoom` + invalidation.
-
-### 6. Add i18n keys
-Add `rooms.detail.*` keys for both EN and TH: `title`, `editInformation`, `editAccess`, `editLayout`, `backToList`, etc.
+### H. Realtime
+Already covered — `useRealtimeSync` handles `classes` and `class_categories`.
 
 ## Files to Create/Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/RoomDetails.tsx` | **Create** — full detail/edit page |
-| `src/App.tsx` | Add route for `room/:id` |
-| `src/pages/Rooms.tsx` | Add `onRowClick` navigation |
-| `src/hooks/useRooms.ts` | Fix `useRoom` query key; enhance `useUpdateRoom` with `old_value` |
-| `src/lib/queryKeys.ts` | Add `room(id)` key |
-| `src/i18n/locales/en.ts` | Add room detail i18n keys |
-| `src/i18n/locales/th.ts` | Add room detail i18n keys |
-
-No DB migration needed. No breaking changes.
+| **DB migration** | Add `name_th` text column to `classes` |
+| `src/pages/CreateClass.tsx` | **Create** — form page with draft/publish |
+| `src/pages/ClassDetails.tsx` | **Create** — details + performance + inline edit |
+| `src/App.tsx` | Add routes for `/class/create` and `/class/:id` |
+| `src/pages/Classes.tsx` | Add filters, row click, create button navigation |
+| `src/hooks/useClasses.ts` | Add filters, fix query key, add performance hook, enhance logging |
+| `src/lib/queryKeys.ts` | Add `classDetail`, `classPerformance` keys |
+| `src/i18n/locales/en.ts` | Add class create/detail i18n keys |
+| `src/i18n/locales/th.ts` | Same Thai keys |
+| `docs/data-contract-classes.md` | **Create** — data contract |
 
