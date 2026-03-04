@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useStaff, useStaffStats } from '@/hooks/useStaff';
+import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { getInitials } from '@/lib/formatters';
 
 const Staff = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: staff, isLoading } = useStaff(activeTab, search);
   const { data: stats } = useStaffStats();
@@ -53,12 +58,26 @@ const Staff = () => {
     { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
     { 
       key: 'roles', 
-      header: t('nav.roles'), 
-      cell: (row) => (
-        <StatusBadge variant="default">
-          {row.role?.name || '-'}
-        </StatusBadge>
-      )
+      header: t('staff.positions'), 
+      cell: (row) => {
+        const positions = row.staff_positions;
+        if (positions?.length > 0) {
+          return (
+            <div className="flex flex-wrap gap-1">
+              {positions.map((p: any) => (
+                <Badge key={p.id} variant="secondary" className="text-xs">
+                  {p.role?.name || '-'}
+                </Badge>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <Badge variant="outline" className="text-xs">
+            {row.role?.name || '-'}
+          </Badge>
+        );
+      }
     },
   ];
 
@@ -68,7 +87,7 @@ const Staff = () => {
         title={t('staff.title')} 
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('staff.title') }]} 
         actions={
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
             {t('staff.createStaff')}
           </Button>
         } 
@@ -95,8 +114,11 @@ const Staff = () => {
           data={staff || []} 
           rowKey={(row) => row.id}
           emptyMessage={t('common.noData')}
+          onRowClick={(row) => navigate(`/admin/${row.id}`)}
         />
       )}
+
+      <CreateStaffDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

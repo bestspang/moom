@@ -21,7 +21,9 @@ type TableName =
   | 'promotions'
   | 'transactions'
   | 'training_templates'
-  | 'workout_items';
+  | 'workout_items'
+  | 'staff'
+  | 'staff_positions';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -42,6 +44,8 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats'],
   training_templates: ['training-templates'],
   workout_items: ['training-templates'],
+  staff: ['staff', 'staff-stats'],
+  staff_positions: ['staff', 'staff-positions'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
