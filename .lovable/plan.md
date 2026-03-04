@@ -1,85 +1,172 @@
 
 
-# Members + Leads Data Completeness Plan
+# System-Wide Hardening & Integration Plan
 
-## Detected Gaps
+## 1. Detected Mismatches / Drift
 
-### Members DB Schema
-- Members uses `emergency_contact_name` (single) + `emergency_contact_phone` — needs split `emergency_first_name`/`emergency_last_name`/`emergency_phone` like leads/staff
-- Medical/consent stored in jsonb (`medical`, `consents`) — needs flat columns (`has_medical_conditions`, `medical_notes`, `allow_physical_contact`, `physical_contact_notes`) for consistency with leads and CSV import/export
-- Missing `line_id` column (LINE username, distinct from `line_user_id`)
+After auditing schema, types, hooks, pages, and realtime sync:
 
-### Members List Page
-- Missing columns: `status`, `register_location_name`, `member_since` (joined_date)
-- Query (`useMembers`) doesn't join `locations` table for location name
+### A. Schema vs Runtime Usage Mismatches
+- **`members` table**: Has both legacy JSONB (`medical`, `consents`) AND new flat columns (`has_medical_conditions`, `medical_notes`, `allow_physical_contact`). The `EditMemberDialog` reads flat columns but `CreateMemberDialog` still writes BOTH (dual-write). Some export paths use `(m as any).has_medical_conditions` — indicating type awareness gaps.
+- **`members.emergency_*`**: Legacy `emergency_contact_name`/`emergency_contact_phone` coexist with new `emergency_first_name`/`emergency_last_name`/`emergency_phone`. Export uses fallback chain `(m as any).emergency_first_name ?? m.emergency_contact_name`. This works but is fragile.
+- **`training_templates`**: `description` column was added via migration but the `useTrainingTemplates` hook doesn't use `description` in insert/update.
+- **`leads.status` enum**: DB enum is `new|contacted|interested|not_interested|converted`. The `useConvertLeadToMember` casts `'converted' as any` — this suggests `converted` may not be in the TS enum, OR the dev wasn't sure. Checking types: `lead_status` enum in types.ts DOES include `converted`, so the `as any` cast is unnecessary and masks type safety.
 
-### Members Edit Dialog
-- Only saves: name, nickname, email, phone, dob, gender, address (single field), status
-- Missing: address_1/2, subdistrict, district, province, postal_code, emergency fields, medical, consent, source, package_interest, line_id
+### B. Type Drift
+- **`src/types/domain.ts`** exists but is NOT imported by most hooks/pages. Hooks still import directly from `@/integrations/supabase/types`. The domain types file is orphaned.
+- **`ExportableMember` in `exportCsv.ts`** has `member_since` but the DB column is also `member_since`. No drift, but the CSV header says `joined_date` (display alias) — this is fine.
+- **`useClassBookings` defines local interfaces** (`ClassBooking`, `ClassWaitlist`) instead of using generated types. These could drift if columns are added.
 
-### Members Import
-- Template only has 13 columns — needs all 26 contract columns
-- `HEADER_ALIASES` and `TARGET_FIELDS` missing: address split fields, emergency, medical flat fields, line_id, register_location_id, allow_physical_contact
-- Import doesn't write per-row activity_log entries (only bulk summary)
+### C. Permission / UI Mismatches
+- **Sidebar filters by `can(resource, 'read')`** but individual row actions (edit, delete) don't check `can(resource, 'write')` or `can(resource, 'delete')`. Users can see edit buttons they can't use — the server will reject, but UX is confusing.
+- **`DiagnosticsDataAudit` page** has no access level guard in routing (`App.tsx`). Any authenticated user can access it.
+- **Activity log `logActivity()` is fire-and-forget** — if it fails, no retry. The `console.warn` is the only signal. This is acceptable for now but means audit completeness is not guaranteed.
 
-### Members Export  
-- Only exports 10 basic columns — needs all 26 contract columns plus computed fields
+### D. Realtime Sync Gaps
+- **`notifications` table** is NOT in `useRealtimeSync`'s `TABLE_INVALIDATION_MAP`. Notifications won't auto-refresh.
+- **`roles` table** is NOT in the realtime sync map. Role changes require page refresh.
+- **`user_roles` table** is NOT in realtime sync. If an admin changes a user's role, the affected user won't see it until they re-login.
+- **`checkin_qr_tokens` table** is NOT in realtime sync. QR token expiry/usage won't reflect in real-time.
 
-### Leads Export
-- Only exports 11 columns — missing address, emergency, medical fields
+### E. Missing Idempotency Guards
+- **`useMarkAttendance`**: No check for duplicate attendance records. If called twice for the same booking, it will insert 2 `member_attendance` rows and deduct 2 sessions from the package.
+- **`useBatchMarkAttendance`**: Same issue at scale.
+- **`useCreateCheckIn` (lobby)**: The `useCheckDuplicate` hook exists and is used in the UI, but the server (RLS/trigger) doesn't enforce uniqueness — it's client-side only.
+
+### F. Missing Cross-Module Links
+- **Finance transactions** don't have a `staff` join in the query despite `staff_id` being on the table. The `staff` relation is available but not fetched.
+- **Lead conversion** copies basic fields but doesn't copy address/emergency/medical data from the lead to the new member.
+- **Schedule cancellation** cancels bookings but doesn't refund sessions to `member_packages` or write ledger reversal entries.
+
+### G. Default Data / Config Assumptions
+- **No default location** check. If `locations` table is empty, many forms break silently (location dropdowns empty, check-ins fail).
+- **No default role** check. If `roles` table is empty, staff creation with positions fails.
+- **`handle_new_user` trigger** creates staff with `status: 'pending'` and `role: 'front_desk'` but doesn't assign a `role_id` from the `roles` table. The `staff.role_id` stays null until manually set.
 
 ---
 
-## Implementation Plan
+## 2. Fix Plan (prioritized by impact)
 
-### Step 1: DB Migration
-Add flat columns to `members` to match leads/staff pattern:
-- `emergency_first_name text`, `emergency_last_name text`, `emergency_phone text` (keep legacy `emergency_contact_name`/`emergency_contact_phone` for backward compat)
-- `has_medical_conditions boolean DEFAULT false`, `medical_notes text`, `allow_physical_contact boolean DEFAULT false`, `physical_contact_notes text`
-- `line_id text`
+### Phase 1: Critical Data Integrity Fixes
 
-### Step 2: Update `useMembers` hook
-- Change `select('*')` to `select('*, register_location:locations!register_location_id(id, name)')` to join location name
+**File: `src/hooks/useClassBookings.ts`**
+- Add idempotency guard to `useMarkAttendance`: before inserting `member_attendance`, check if a record already exists for this `(member_id, schedule_id)`. If yes, skip insert + ledger deduction.
+- Same for `useBatchMarkAttendance`.
 
-### Step 3: Update Members list page columns
-Add columns: `status` (with StatusBadge), `register_location_name`, `member_since`
+**File: `src/hooks/useRealtimeSync.ts`**
+- Add missing tables to `TABLE_INVALIDATION_MAP`:
+  - `notifications` → `['notifications']`
+  - `roles` → `['roles', 'role-permissions', 'my-permissions']`
+  - `user_roles` → `['my-permissions', 'user-roles']`
+  - `checkin_qr_tokens` → `['checkin-qr-tokens', 'check-ins']`
 
-### Step 4: Update EditMemberDialog
-Expand form to include all fields in collapsible sections (matching CreateMemberDialog pattern):
-- Contact: phone, email, line_id
-- Address: address_1, address_2, subdistrict, district, province, postal_code
-- Emergency: emergency_first_name, emergency_last_name, emergency_phone, emergency_relationship
-- Medical: has_medical_conditions, medical_notes
-- Consent: allow_physical_contact, physical_contact_notes
-- Other: source, package_interest_id, notes
+**File: `src/hooks/useLobby.ts` (useCancelSchedule in useSchedule.ts)**
+- When cancelling a schedule with booked members who have `member_package_id`, refund sessions: insert positive ledger entry and increment `sessions_remaining`.
 
-### Step 5: Update Members Import
-- Expand `HEADER_ALIASES` and `TARGET_FIELDS` to cover all 26+ contract columns
-- Update `downloadTemplate('full')` to output exact contract columns
-- Write per-row `logActivity` with `source: 'csv_import'` for create/update
-- Map new flat columns in import data builder
+### Phase 2: Type & Contract Alignment
 
-### Step 6: Update Members Export
-- Expand `ExportableMember` and `exportMembers()` to output all contract columns + computed (`recent_package_name`, `last_attended_at`)
+**File: `src/hooks/useLeads.ts`**
+- Remove `as any` cast in `useConvertLeadToMember` — the `converted` status IS in the enum.
 
-### Step 7: Update Leads Export
-- Expand `ExportableLead` and `exportLeads()` to include address, emergency, medical, consent fields
+**File: `src/hooks/useClassBookings.ts`**
+- Replace local `ClassBooking`/`ClassWaitlist` interfaces with `Tables<'class_bookings'>` and `Tables<'class_waitlist'>` from generated types.
 
-### Step 8: Update CreateMemberDialog submit
-- Write to new flat columns instead of jsonb for medical/consent/emergency
+**File: Multiple hooks**
+- Where hooks still import directly from `@/integrations/supabase/types`, that's fine — the `src/types/domain.ts` file serves as optional convenience, not mandatory. No forced migration needed.
 
-### Files to Touch
+### Phase 3: Permission UX Alignment
 
-| File | Change |
-|------|--------|
-| DB migration | Add ~8 columns to `members` |
-| `src/hooks/useMembers.ts` | Join locations in query |
-| `src/pages/Members.tsx` | Add status, location, joined_date columns |
-| `src/components/members/EditMemberDialog.tsx` | Full field coverage with sections |
-| `src/components/members/ImportMembersDialog.tsx` | Full template + aliases + per-row audit |
-| `src/components/members/CreateMemberDialog.tsx` | Use flat columns for medical/emergency |
-| `src/lib/exportCsv.ts` | Full member + lead export columns |
-| `src/pages/Leads.tsx` | Export passes full lead data |
+**File: `src/pages/Members.tsx`**
+- Wrap the Edit dropdown action with `can('members', 'write')` check — hide if user lacks write permission.
 
-No style changes. All additive. Legacy columns preserved.
+**File: `src/pages/Leads.tsx`**
+- Wrap Convert action with `can('leads', 'write')` check.
+
+**File: `src/App.tsx`**
+- Add `minAccessLevel="level_4_master"` to the DiagnosticsDataAudit route.
+
+### Phase 4: Cross-Module Integration
+
+**File: `src/hooks/useLeads.ts` — `useConvertLeadToMember`**
+- After converting, copy address/emergency/medical fields from lead to the new member record (or document that this is the caller's responsibility and verify the caller does it).
+
+**File: `src/hooks/useFinance.ts`**
+- Add `staff:staff(id, first_name, last_name)` to the finance transactions query for display.
+
+**File: `src/hooks/useTrainingTemplates.ts`**
+- Accept `description` field in create/update mutations.
+
+### Phase 5: System Health / Diagnostics
+
+**File: `src/pages/DiagnosticsDataAudit.tsx`**
+- Expand checks to include:
+  - At least 1 location exists
+  - At least 1 role exists
+  - `handle_new_user` trigger exists (can check via RPC or just document)
+  - Realtime subscription count matches expected tables
+  - Secrets configured (already in context)
+
+### Phase 6: Documentation
+
+**File: `docs/INTEGRATION_NOTES.md`**
+- Update with new invariants, idempotency rules, and realtime coverage map.
+
+---
+
+## 3. Final Invariants List
+
+| Invariant | Enforcement |
+|-----------|------------|
+| Attendance is recorded at most once per (member, schedule) | Check before insert in `useMarkAttendance` |
+| Package sessions are decremented atomically with ledger entry | Same transaction in `useMarkAttendance` |
+| Schedule cancellation refunds sessions | Ledger reversal in `useCancelSchedule` |
+| Lead conversion copies all profile data | Caller responsibility (CreateMemberDialog) |
+| Notifications refresh in real-time | Added to realtime sync map |
+| Role changes reflect immediately | Added `roles`/`user_roles` to realtime sync |
+| Only master-level users access diagnostics | Route guard in App.tsx |
+| Edit/delete buttons hidden when user lacks permission | `can()` checks in UI |
+| Audit log written for every mutation | `logActivity()` in every mutation's `onSuccess` |
+| At least 1 location and 1 role must exist | Diagnostics page checks |
+
+---
+
+## 4. Golden-Path Test Checklist
+
+1. **Sign up** → verify staff record created with `pending` status and `front_desk` role
+2. **Log in** → verify dashboard loads with KPIs (0 if empty)
+3. **Create location** → verify it appears in dropdowns
+4. **Create role** → verify it appears in staff position assignment
+5. **Create member** → verify all fields persisted (profile, contact, address, emergency, medical)
+6. **Import members via CSV** → verify upsert, per-row activity log, error reporting
+7. **Export members** → verify all 28+ columns present including computed
+8. **Create class + schedule** → verify room capacity validation
+9. **Book member into class** → verify booking created, session count unchanged
+10. **Mark attendance** → verify session decremented, ledger entry created, attendance record created
+11. **Mark attendance again (idempotency)** → verify NO duplicate deduction
+12. **Cancel schedule** → verify all bookings cancelled, sessions refunded
+13. **Check in via lobby** → verify attendance recorded, duplicate check works
+14. **Create lead → convert to member** → verify all data carried over
+15. **Change user role (as admin)** → verify sidebar updates via realtime
+16. **Access diagnostics as non-master** → verify redirect
+
+---
+
+## 5. Implementation Summary
+
+**Files to modify:**
+| File | Change | Risk |
+|------|--------|------|
+| `src/hooks/useClassBookings.ts` | Idempotency guards on attendance marking | Medium — core flow |
+| `src/hooks/useRealtimeSync.ts` | Add 4 missing tables | Low — additive |
+| `src/hooks/useSchedule.ts` | Session refund on cancel | Medium — financial |
+| `src/hooks/useLeads.ts` | Remove `as any` cast | Low — type fix |
+| `src/hooks/useFinance.ts` | Add staff join | Low — additive |
+| `src/hooks/useTrainingTemplates.ts` | Accept description field | Low — additive |
+| `src/pages/Members.tsx` | Permission-gated edit button | Low — UI only |
+| `src/pages/Leads.tsx` | Permission-gated convert button | Low — UI only |
+| `src/App.tsx` | Access guard on diagnostics route | Low — security |
+| `src/pages/DiagnosticsDataAudit.tsx` | Add system health checks | Low — additive |
+| `docs/INTEGRATION_NOTES.md` | Update invariants | None |
+
+No DB migrations needed — all schema is already aligned.
 
