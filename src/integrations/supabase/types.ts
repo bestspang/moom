@@ -1574,6 +1574,8 @@ export type Database = {
       }
       promotions: {
         Row: {
+          ai_recommended_rules: Json | null
+          ai_target_segment: Json | null
           applicable_packages: string[] | null
           created_at: string | null
           discount_type: string | null
@@ -1590,6 +1592,8 @@ export type Database = {
           usage_limit: number | null
         }
         Insert: {
+          ai_recommended_rules?: Json | null
+          ai_target_segment?: Json | null
           applicable_packages?: string[] | null
           created_at?: string | null
           discount_type?: string | null
@@ -1606,6 +1610,8 @@ export type Database = {
           usage_limit?: number | null
         }
         Update: {
+          ai_recommended_rules?: Json | null
+          ai_target_segment?: Json | null
           applicable_packages?: string[] | null
           created_at?: string | null
           discount_type?: string | null

@@ -36,7 +36,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   leads: ['leads', 'hot-leads'],
   ai_suggestions: ['ai-suggestions'],
   packages: ['packages', 'package-stats', 'package-metrics'],
-  promotions: ['promotions', 'promotion-stats'],
+  promotions: ['promotions', 'promotion-stats', 'promotion-packages'],
   transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats'],
 };
 

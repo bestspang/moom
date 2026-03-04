@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ type Promotion = Tables<'promotions'>;
 const Promotions = () => {
   const { t, language } = useLanguage();
   const locale = getDateLocale(language);
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
 
@@ -115,6 +117,7 @@ const Promotions = () => {
           columns={columns}
           data={promotions || []}
           rowKey={(row) => row.id}
+          onRowClick={(row) => navigate(`/promotion/${row.id}`)}
           emptyMessage={t('common.noData')}
         />
       )}
