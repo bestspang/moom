@@ -42,4 +42,7 @@ export const queryKeys = {
 
   // Finance
   transactions: () => ['transactions'] as const,
+
+  // Training / Workouts
+  trainingTemplates: (search?: string, filter?: string) => ['training-templates', search, filter] as const,
 };
