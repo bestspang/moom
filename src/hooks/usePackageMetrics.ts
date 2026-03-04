@@ -15,41 +15,50 @@ export const usePackageMetrics = (packageId: string) => {
     queryFn: async (): Promise<PackageMetrics> => {
       const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
-      // Parallel queries
-      const [transactionsRes, memberPackagesRes] = await Promise.all([
+      // Parallel server-side count/sum queries — avoids 1000-row limit
+      const [soldWeekRes, revenueRes, activeRes, inactiveRes] = await Promise.all([
+        // Sold this week: count transactions created in last 7 days
         supabase
           .from('transactions')
-          .select('amount, created_at, status')
-          .eq('package_id', packageId),
+          .select('id', { count: 'exact', head: true })
+          .eq('package_id', packageId)
+          .gte('created_at', sevenDaysAgo),
+        // Revenue: fetch only completed transactions amounts (need sum, so fetch amounts only)
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('package_id', packageId)
+          .eq('status', 'paid' as any),
+        // Active member_packages count
         supabase
           .from('member_packages')
-          .select('status')
-          .eq('package_id', packageId),
+          .select('id', { count: 'exact', head: true })
+          .eq('package_id', packageId)
+          .eq('status', 'active'),
+        // Inactive member_packages count
+        supabase
+          .from('member_packages')
+          .select('id', { count: 'exact', head: true })
+          .eq('package_id', packageId)
+          .in('status', ['expired', 'completed', 'on_hold']),
       ]);
 
-      if (transactionsRes.error) throw transactionsRes.error;
-      if (memberPackagesRes.error) throw memberPackagesRes.error;
+      if (soldWeekRes.error) throw soldWeekRes.error;
+      if (revenueRes.error) throw revenueRes.error;
+      if (activeRes.error) throw activeRes.error;
+      if (inactiveRes.error) throw inactiveRes.error;
 
-      const transactions = transactionsRes.data || [];
-      const memberPackages = memberPackagesRes.data || [];
+      const revenueToDate = (revenueRes.data || []).reduce(
+        (sum, t) => sum + Number(t.amount || 0),
+        0
+      );
 
-      const soldThisWeek = transactions.filter(
-        (t) => t.created_at && t.created_at >= sevenDaysAgo
-      ).length;
-
-      const revenueToDate = transactions
-        .filter((t) => (t.status as string) === 'completed')
-        .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-      const activeCount = memberPackages.filter(
-        (mp) => mp.status === 'active'
-      ).length;
-
-      const inactiveCount = memberPackages.filter(
-        (mp) => mp.status && ['expired', 'completed', 'on_hold'].includes(mp.status)
-      ).length;
-
-      return { soldThisWeek, revenueToDate, activeCount, inactiveCount };
+      return {
+        soldThisWeek: soldWeekRes.count ?? 0,
+        revenueToDate,
+        activeCount: activeRes.count ?? 0,
+        inactiveCount: inactiveRes.count ?? 0,
+      };
     },
     enabled: !!packageId,
   });

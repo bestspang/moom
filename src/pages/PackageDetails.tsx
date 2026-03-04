@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pencil, Check, X, ShoppingCart, DollarSign, Users, UserX, Archive } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,22 @@ const PackageDetails = () => {
   const { data: metrics } = usePackageMetrics(id!);
   const updatePackage = useUpdatePackage();
   const archivePackage = useArchivePackage();
+
+  // Resolve access_locations UUIDs to names
+  const locationIds = pkg?.access_locations?.filter(Boolean) ?? [];
+  const { data: accessLocationNames } = useQuery({
+    queryKey: ['package-access-locations', id, locationIds],
+    queryFn: async () => {
+      if (!locationIds.length) return '';
+      const { data, error } = await supabase
+        .from('locations')
+        .select('name')
+        .in('id', locationIds);
+      if (error) throw error;
+      return (data || []).map((l) => l.name).join(', ');
+    },
+    enabled: !!pkg && !pkg.all_locations && locationIds.length > 0,
+  });
 
   const startEdit = useCallback((section: EditingSection, initialValues: Partial<TablesUpdate<'packages'>>) => {
     setEditingSection(section);
@@ -490,8 +507,7 @@ const PackageDetails = () => {
                 <DetailRow label={t('packages.create.usageType')} value={getUsageTypeLabel(pkg.usage_type)} />
                 <DetailRow label={t('packages.create.classCategories')} value={pkg.all_categories ? t('packages.create.allCategories') : (pkg.categories?.join(', ') || '-')} />
                 <DetailRow label={t('packages.create.accessDays')} value={pkg.any_day_any_time ? t('packages.create.anyDayAnyTime') : t('packages.create.specificDays')} />
-                {/* TODO: access_locations not in DB yet — show '-' */}
-                <DetailRow label={t('packages.details.accessLocations')} value="-" />
+                <DetailRow label={t('packages.details.accessLocations')} value={pkg.all_locations ? t('packages.create.allLocations') : (accessLocationNames || '-')} />
               </>
             )}
           </CardContent>
