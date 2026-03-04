@@ -509,6 +509,7 @@ export type Database = {
           id: string
           level: Database["public"]["Enums"]["class_level"] | null
           name: string
+          name_th: string | null
           status: string | null
           type: Database["public"]["Enums"]["class_type"] | null
           updated_at: string | null
@@ -521,6 +522,7 @@ export type Database = {
           id?: string
           level?: Database["public"]["Enums"]["class_level"] | null
           name: string
+          name_th?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["class_type"] | null
           updated_at?: string | null
@@ -533,6 +535,7 @@ export type Database = {
           id?: string
           level?: Database["public"]["Enums"]["class_level"] | null
           name?: string
+          name_th?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["class_type"] | null
           updated_at?: string | null

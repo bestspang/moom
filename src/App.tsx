@@ -24,6 +24,8 @@ import Schedule from "./pages/Schedule";
 import Rooms from "./pages/Rooms";
 import RoomDetails from "./pages/RoomDetails";
 import Classes from "./pages/Classes";
+import CreateClass from "./pages/CreateClass";
+import ClassDetails from "./pages/ClassDetails";
 import ClassCategories from "./pages/ClassCategories";
 import Staff from "./pages/Staff";
 import StaffDetails from "./pages/StaffDetails";
@@ -112,6 +114,8 @@ const App = () => (
                 <Route path="room" element={<Rooms />} />
                 <Route path="room/:id" element={<RoomDetails />} />
                 <Route path="class" element={<Classes />} />
+                <Route path="class/create" element={<CreateClass />} />
+                <Route path="class/:id" element={<ClassDetails />} />
                 <Route path="class-category" element={<ClassCategories />} />
                 <Route path="admin" element={<Staff />} />
                 <Route path="admin/:id" element={<StaffDetails />} />
