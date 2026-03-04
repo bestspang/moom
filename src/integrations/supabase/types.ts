@@ -1696,6 +1696,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_schedule_with_validation: {
+        Args: {
+          p_capacity?: number
+          p_class_id: string
+          p_end_time: string
+          p_location_id?: string
+          p_room_id?: string
+          p_scheduled_date: string
+          p_start_time: string
+          p_trainer_id?: string
+        }
+        Returns: Json
+      }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]

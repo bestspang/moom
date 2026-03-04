@@ -453,6 +453,13 @@ export default {
     markNoShow: 'ไม่มาเรียน',
     promote: 'โปรโมท',
     booked: 'จองแล้ว',
+    error: {
+      roomOverlap: 'ห้องนี้มีคลาสอื่นจองอยู่แล้วในเวลานี้',
+      roomLocationMismatch: 'ห้องนี้ไม่ได้อยู่ในสาขาที่เลือก',
+      categoryMismatch: 'ห้องนี้ไม่รองรับหมวดหมู่คลาสนี้',
+      endTimeBeforeStart: 'เวลาสิ้นสุดต้องหลังเวลาเริ่มต้น',
+      roomNotFound: 'ไม่พบห้อง',
+    },
   },
 
   // Rooms
