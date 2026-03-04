@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, DataTable, StatusBadge, StatusTabs, type StatusTab, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,6 +29,7 @@ type Lead = LeadWithLocation;
 const Leads = () => {
   const { t, language } = useLanguage();
   const locale = getDateLocale(language);
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -141,24 +143,27 @@ const Leads = () => {
     {
       key: 'actions',
       header: '',
-      cell: (row) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => handleConvert(row)}
-              disabled={row.status === 'converted'}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t('leads.convertToMember')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: (row) => {
+        if (!can('leads', 'write')) return null;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => handleConvert(row)}
+                disabled={row.status === 'converted'}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t('leads.convertToMember')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 
