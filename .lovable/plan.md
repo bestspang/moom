@@ -1,84 +1,121 @@
 
 
-# Add Edit Mode to CreatePackage
+# DB-Backed Training/Workout System
 
 ## Current State
-- `CreatePackage.tsx` is create-only, no edit support
-- Route is `/package/create`; detail view is at `/package/:id` (PackageDetails page)
-- `usePackage(id)` and `useUpdatePackage()` hooks already exist in `usePackages.ts`
-- Form uses react-hook-form + Zod with `defaultValues` and draft autosave to localStorage
+- `WorkoutList.tsx` uses hardcoded data, no DB tables exist for training/workouts
+- Existing `workouts` table in DB is a flat structure (no training groups) — will be replaced by the new `training_templates` + `workout_items` two-table design
+- Realtime sync already covers many tables but not training/workout tables
 
 ## Plan
 
-### 1. Add Edit Route — `src/App.tsx`
-Add `<Route path="package/:id/edit" element={<CreatePackage />} />` next to the create route.
+### 1. Database Migration
 
-### 2. Modify `src/pages/CreatePackage.tsx`
+Create two new tables + enable realtime:
 
-**Detect edit mode:**
-- Read `id` from `useParams()`. If present → edit mode.
-- Fetch package via `usePackage(id)` when in edit mode.
-- Import `useUpdatePackage` alongside `useCreatePackage`.
+```sql
+-- Training templates (groups)
+CREATE TABLE public.training_templates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  is_active boolean DEFAULT true,
+  ai_tags jsonb DEFAULT '[]'::jsonb,
+  created_by uuid,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 
-**Populate form on load:**
-- When `usePackage` data arrives, map the DB record back to `FormValues` and call `reset(mappedValues)`.
-- Skip draft restore when in edit mode.
-- Skip draft autosave when in edit mode.
+-- Workout items within a training
+CREATE TABLE public.workout_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  training_id uuid NOT NULL REFERENCES public.training_templates(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  track_metric text,
+  unit text,
+  goal_type text,  -- minimize, maximize, target
+  description text,
+  ai_cues jsonb DEFAULT '{}'::jsonb,
+  sort_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 
-**Mapping DB → Form (reverse of `onSubmit`):**
+-- RLS
+ALTER TABLE public.training_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workout_items ENABLE ROW LEVEL SECURITY;
+
+-- Read policies (all authenticated)
+CREATE POLICY "All can read training_templates" ON public.training_templates FOR SELECT USING (true);
+CREATE POLICY "All can read workout_items" ON public.workout_items FOR SELECT USING (true);
+
+-- Write policies (manager+)
+CREATE POLICY "Managers can manage training_templates" ON public.training_templates FOR ALL USING (has_min_access_level(auth.uid(), 'level_3_manager'::access_level));
+CREATE POLICY "Managers can manage workout_items" ON public.workout_items FOR ALL USING (has_min_access_level(auth.uid(), 'level_3_manager'::access_level));
+
+-- updated_at trigger
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.training_templates FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.training_templates;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.workout_items;
 ```
-nameEn ← name_en
-nameTh ← name_th
-packageType ← type
-price ← String(price)
-duration ← String(term_days)
-expiration ← String(expiration_days)
-sessions ← String(sessions)
-recurringPayment ← recurring_payment
-quantityType ← infinite_quantity ? 'infinite' : 'specific'
-quantity ← String(quantity)
-purchaseLimitType ← infinite_purchase_limit ? 'infinite' : 'specific'
-purchaseLimit ← String(user_purchase_limit)
-usageType ← usage_type ('gym_checkin_only' → 'gym_only')
-categoryType ← all_categories ? 'all' : 'specific'
-selectedCategories ← categories
-locationMode ← all_locations ? 'all' : 'specific'
-selectedLocations ← access_locations
-accessType ← any_day_any_time ? 'any' : 'specific'
-accessDays ← access_days
-descriptionEn ← description_en
-descriptionTh ← description_th
-distribution ← status → reverse map
-scheduleStartAt ← schedule_start_at
-scheduleEndAt ← schedule_end_at
-```
 
-**Submit behavior:**
-- In edit mode: call `updatePackage.mutate({ id, data: packageData })` instead of `createPackage.mutate`.
-- No localStorage clear needed in edit mode.
-- Navigate back to `/package/${id}` on success.
+### 2. Create Hook — `src/hooks/useTrainingTemplates.ts`
 
-**UI changes:**
-- Title: "Edit Package" instead of "Create Package" when editing.
-- Hide "Discard Draft" button in edit mode.
-- Submit button text: "Save Changes" vs "Create Package".
-- Breadcrumb: include package name.
+- `useTrainingTemplates(search?, filterTrainingId?)` — fetches `training_templates` with nested `workout_items` via `.select('*, workout_items(*)')`, filters by search across training name / workout name / description
+- `useCreateTraining()` — mutation that inserts training + items (insert training first, then batch insert items with the returned ID)
+- `useUpdateTraining()` — update name / toggle `is_active`
+- `useDeleteTraining()` — optional delete
 
-### 3. Add Navigation from PackageDetails
-Add an "Edit" button on PackageDetails that navigates to `/package/${id}/edit`.
+Query keys: `['training-templates', search, filter]`
 
-### 4. i18n Keys
-Add `packages.edit.title`, `packages.edit.saveChanges` to en.ts and th.ts.
+### 3. Create Component — `src/components/workouts/CreateTrainingDialog.tsx`
+
+- Dialog with training name input (required)
+- Dynamic workout rows: name, track_metric (select: Time/Rounds+Reps/Weight/Distance/Reps), unit (text), goal_type (select: Minimize/Maximize/Target), description
+- "Add workout" button appends row
+- Remove row button per row
+- Footer: required fields message + Discard + Confirm buttons
+- Draft autosave to `localStorage` key `training-create-draft`
+- On confirm: calls `useCreateTraining` mutation, closes dialog, shows toast
+
+### 4. Rewrite `src/pages/WorkoutList.tsx`
+
+- Replace hardcoded data with `useTrainingTemplates(search, selectedTrainingId)`
+- Search bar filters across training name, workout name, description
+- Filter dropdown "All training" lists training names from data
+- Each training group rendered as a `Collapsible` section with:
+  - Training name + active/inactive toggle (Switch)
+  - DataTable of workout items (columns: Workout, Track metric, Unit, Goal type, Description)
+- "Create training" button in PageHeader opens `CreateTrainingDialog`
+- Empty state when no trainings exist
+
+### 5. Update Realtime — `src/hooks/useRealtimeSync.ts`
+
+Add `training_templates` and `workout_items` to `TableName` union and invalidation map:
+- `training_templates` → `['training-templates']`
+- `workout_items` → `['training-templates']`
+
+### 6. i18n Keys
+
+Add to both `en.ts` and `th.ts` under `workouts`:
+- `createTraining`, `trainingName`, `addWorkout`, `goalType`, `description`, `minimize`, `maximize`, `target`, `discardDraft`, `confirm`, `requiredFields`, `createSuccess`, `deleteConfirm`, `active`, `inactive`, `noTrainings`, `filterByTraining`
+
+### 7. Update `src/lib/queryKeys.ts`
+
+Add: `trainingTemplates: (search?, filter?) => ['training-templates', search, filter]`
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Modify | `src/App.tsx` — add edit route |
-| Modify | `src/pages/CreatePackage.tsx` — add edit mode logic |
-| Modify | `src/pages/PackageDetails.tsx` — add edit button |
-| Modify | `src/i18n/locales/en.ts` — new keys |
-| Modify | `src/i18n/locales/th.ts` — new keys |
+| Migration | Create `training_templates` + `workout_items` tables with RLS + realtime |
+| Create | `src/hooks/useTrainingTemplates.ts` |
+| Create | `src/components/workouts/CreateTrainingDialog.tsx` |
+| Rewrite | `src/pages/WorkoutList.tsx` |
+| Modify | `src/hooks/useRealtimeSync.ts` — add 2 tables |
+| Modify | `src/lib/queryKeys.ts` — add training keys |
+| Modify | `src/i18n/locales/en.ts` — extend workouts keys |
+| Modify | `src/i18n/locales/th.ts` — extend workouts keys |
 
-No database changes. No new files. Reuses existing `usePackage` and `useUpdatePackage` hooks.
+No breaking changes. Existing `workouts` table in DB is unused by the new code (the old page used hardcoded data). New tables are additive.
 
