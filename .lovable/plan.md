@@ -1,61 +1,91 @@
 
 
-# Package Details Page — Implementation Plan
+# Upgrade CreatePackage — Implementation Plan
 
 ## Current State
-- Routes: `/package` (list) and `/package/create` only
-- `usePackage(id)` and `useUpdatePackage()` already exist
-- `DataTable` supports `onRowClick` prop — just needs to be wired
-- Related tables for metrics: `transactions` (has `package_id`), `member_packages` (has `package_id`, `status`)
+- `CreatePackage.tsx` uses raw `useState`, no form validation, no autosave, no draft persistence
+- `packages` table has: `categories text[]`, `access_days jsonb`, `all_categories bool`, `any_day_any_time bool` — but NO `access_locations`, `schedule_start_at`, `schedule_end_at`, or AI columns
+- `package_status` enum already includes `scheduled`
+- `locations` table and `useLocations` hook exist; `useClassCategories` hook exists
 
-## Plan
+## Database Migration
 
-### 1. Add route — `src/App.tsx`
-Add `<Route path="package/:id" element={<PackageDetails />} />` after the create route.
+Add missing columns to `packages`:
 
-### 2. Wire row click — `src/pages/Packages.tsx`
-Add `onRowClick={(row) => navigate(`/package/${row.id}`)}` to the DataTable. No new columns needed now (access_locations, sold_at not in DB — would show '-' with no value).
+```sql
+ALTER TABLE packages ADD COLUMN access_locations uuid[] DEFAULT '{}'::uuid[];
+ALTER TABLE packages ADD COLUMN all_locations boolean DEFAULT true;
+ALTER TABLE packages ADD COLUMN schedule_start_at timestamptz;
+ALTER TABLE packages ADD COLUMN schedule_end_at timestamptz;
+ALTER TABLE packages ADD COLUMN ai_tags jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE packages ADD COLUMN ai_price_suggestion jsonb;
+ALTER TABLE packages ADD COLUMN ai_copy_suggestions jsonb;
+```
 
-### 3. Create metrics hook — `src/hooks/usePackageMetrics.ts`
-Queries `member_packages` and `transactions` filtered by `package_id`:
-- **Sold this week**: count from `transactions` where `package_id = id` and `created_at >= 7 days ago`
-- **Revenue to date**: sum `amount` from `transactions` where `package_id = id` and `status = 'completed'`
-- **Active**: count from `member_packages` where `status = 'active'`
-- **Inactive**: count from `member_packages` where `status` in ('expired', 'completed', 'on_hold')
+No join tables needed — `access_locations uuid[]` stores location IDs directly (matches existing `categories text[]` pattern). `access_days jsonb` already exists for day/time rules.
 
-### 4. Create page — `src/pages/PackageDetails.tsx`
-Structure (following MemberDetails pattern):
-- **Header**: Back button, package name, status badge, Edit/Archive actions
-- **Performance cards row**: 4x StatCard (sold this week, revenue, active, inactive)
-- **Details sections** in Card components with pencil icon toggle for inline edit:
-  - Names (EN/TH)
-  - Price
-  - Term (term_days, expiration_days, sessions)
-  - Recurring payment toggle
-  - Quantity + user purchase limit
-  - Access (usage_type, categories, access_days)
-  - Description (EN/TH)
-  - Status/Distribution
-- Each section: view mode → edit mode on pencil click → save calls `useUpdatePackage()` → toast + invalidate
+## Implementation Plan
 
-### 5. Activity log on edit
-After successful update, insert into `activity_log` with `entity_type: 'package'`, `entity_id`, `old_value`/`new_value` diff.
+### 1. Refactor CreatePackage to react-hook-form + Zod
 
-### 6. i18n keys
-Add package detail labels to `en.ts` and `th.ts`: `packages.details.*`, `packages.metrics.*`, section headers.
+- Define `createPackageSchema` with Zod (all current fields + new ones)
+- Replace `useState` with `useForm` + `zodResolver`
+- `watch()` feeds the preview sidebar in real-time
 
----
+### 2. Autosave Draft
+
+- `useEffect` with debounced (1s) save of `watch()` values to `localStorage('package-create-draft')`
+- On mount, check localStorage and call `reset(draft)` if found
+- "Discard" button clears localStorage + resets form
+
+### 3. Access Locations Section
+
+- Fetch locations via `useLocations()` (already exists)
+- Radio: All locations / Specific locations
+- When specific: multi-select checkboxes for locations
+- Maps to `all_locations` bool + `access_locations uuid[]`
+
+### 4. Class Categories Selection
+
+- Already has radio for all/specific
+- When specific: fetch `useClassCategories()`, render multi-select checkboxes
+- Maps to existing `all_categories` bool + `categories text[]`
+
+### 5. Access Days & Times
+
+- Already has radio for any/specific
+- When specific: day-of-week checkboxes + start/end time inputs per selected day
+- Maps to existing `access_days jsonb` (array of `{day, start_time, end_time}`)
+
+### 6. Distribution Section
+
+- New Card with 3 radio options:
+  - "Sell now" → status = `on_sale`
+  - "Scheduled sale" → status = `scheduled`, show date pickers for `schedule_start_at` / `schedule_end_at`
+  - "Save as draft" → status = `drafts`
+- Remove old action buttons pattern, replace with single "Create Package" button that uses the selected distribution
+
+### 7. AI Assist Placeholder
+
+- Disabled Card section "AI Assist (coming soon)" with greyed-out placeholders for tags, price suggestion, copy suggestions
+- No logic wired
+
+### 8. Preview Sidebar
+
+- Enhanced with all new fields: selected locations, selected categories, access day rules, distribution status/dates
+
+### 9. i18n Keys
+
+Add keys for: access locations, specific locations, distribution, sell now, scheduled sale, schedule dates, AI assist coming soon
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Modify | `src/App.tsx` — add route |
-| Modify | `src/pages/Packages.tsx` — add onRowClick |
-| Create | `src/hooks/usePackageMetrics.ts` |
-| Create | `src/pages/PackageDetails.tsx` |
-| Modify | `src/i18n/locales/en.ts` — detail keys |
-| Modify | `src/i18n/locales/th.ts` — detail keys |
+| Migration | Add 7 columns to `packages` |
+| Rewrite | `src/pages/CreatePackage.tsx` — react-hook-form + all new sections |
+| Modify | `src/i18n/locales/en.ts` — new keys |
+| Modify | `src/i18n/locales/th.ts` — new keys |
 
-No DB migration needed. All data comes from existing tables.
+No new hooks needed — reuses existing `useLocations`, `useClassCategories`, `useCreatePackage`. No breaking changes to existing data.
 
