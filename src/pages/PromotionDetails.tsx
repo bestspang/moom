@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Copy, Package, DollarSign, BarChart3, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,32 @@ import { EditPackagesDialog } from '@/components/promotions/EditPackagesDialog';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-type Package = Tables<'packages'>;
+type PackageRow = Tables<'packages'> & { discount_override?: number | null; max_sale_amount?: number | null };
+
+/** Query real redemption stats from promotion_redemptions */
+const usePromotionRedemptionStats = (promotionId: string | null) => {
+  return useQuery({
+    queryKey: ['promotion-redemptions', promotionId, 'stats'],
+    queryFn: async () => {
+      if (!promotionId) return { unitsSold: 0, netRevenue: 0, totalDiscount: 0 };
+      const { data, error } = await supabase
+        .from('promotion_redemptions')
+        .select('discount_amount, net_amount')
+        .eq('promotion_id', promotionId);
+      if (error) throw error;
+      const rows = data || [];
+      return {
+        unitsSold: rows.length,
+        netRevenue: rows.reduce((s, r) => s + Number(r.net_amount || 0), 0),
+        totalDiscount: rows.reduce((s, r) => s + Number(r.discount_amount || 0), 0),
+      };
+    },
+    enabled: !!promotionId,
+  });
+};
 
 const PromotionDetails = () => {
   const { t, language } = useLanguage();
@@ -28,6 +52,7 @@ const PromotionDetails = () => {
     id ?? null,
     promo?.applicable_packages ?? null,
   );
+  const { data: redemptionStats } = usePromotionRedemptionStats(id ?? null);
 
   if (isLoading) {
     return (
@@ -56,32 +81,45 @@ const PromotionDetails = () => {
     }
   };
 
+  // Use new columns with fallback to legacy
+  const discountMode = promo.discount_mode || promo.discount_type || 'percentage';
+
   const getDiscountDisplay = () => {
-    if (promo.discount_type === 'percentage') return `${promo.discount_value}%`;
-    return formatCurrency(Number(promo.discount_value));
-  };
-
-  const computeNetPrice = (pkg: Package) => {
-    const price = Number(pkg.price);
-    if (promo.discount_type === 'percentage') {
-      return price - price * (Number(promo.discount_value) / 100);
+    if (discountMode === 'percentage') {
+      const val = promo.percentage_discount ?? promo.discount_value;
+      return `${val}%`;
     }
-    return Math.max(0, price - Number(promo.discount_value));
+    const val = promo.flat_rate_discount ?? promo.discount_value;
+    return formatCurrency(Number(val));
   };
 
-  const computeDiscountAmount = (pkg: Package) => {
-    const price = Number(pkg.price);
-    if (promo.discount_type === 'percentage') {
-      return price * (Number(promo.discount_value) / 100);
+  const getPackageDiscount = (pkg: PackageRow): number => {
+    // Per-package override when same_discount_all_packages is false
+    if (promo.same_discount_all_packages === false && pkg.discount_override != null) {
+      return pkg.discount_override;
     }
-    return Math.min(price, Number(promo.discount_value));
+    // Global discount
+    if (discountMode === 'percentage') return Number(promo.percentage_discount ?? promo.discount_value ?? 0);
+    return Number(promo.flat_rate_discount ?? promo.discount_value ?? 0);
   };
 
-  // TODO: Replace with actual transaction-based tracking when promotion_id is added to transactions
-  const unitsSold = promo.usage_count ?? 0;
-  const netRevenue = unitsSold * Number(promo.discount_value); // placeholder
+  const computeDiscountAmount = (pkg: PackageRow) => {
+    const price = Number(pkg.price);
+    const discount = getPackageDiscount(pkg);
+    if (discountMode === 'percentage') {
+      return price * (discount / 100);
+    }
+    return Math.min(price, discount);
+  };
 
-  const packageColumns: Column<Package>[] = [
+  const computeNetPrice = (pkg: PackageRow) => {
+    return Math.max(0, Number(pkg.price) - computeDiscountAmount(pkg));
+  };
+
+  const unitsSold = redemptionStats?.unitsSold ?? promo.usage_count ?? 0;
+  const netRevenue = redemptionStats?.netRevenue ?? 0;
+
+  const packageColumns: Column<PackageRow>[] = [
     {
       key: 'name',
       header: t('lobby.name'),
@@ -109,10 +147,18 @@ const PromotionDetails = () => {
     },
   ];
 
+  // Helper for per-user display
+  const perUserDisplay = () => {
+    const mode = promo.per_user_mode || 'unlimited';
+    if (mode === 'unlimited') return t('promotions.unlimited');
+    if (mode === 'one_time') return t('promotions.oneTime');
+    return `${promo.per_user_limit ?? '-'} ${t('promotions.times')}`;
+  };
+
   return (
     <div>
       <PageHeader
-        title={promo.name}
+        title={language === 'th' ? (promo.name_th || promo.name) : (promo.name_en || promo.name)}
         breadcrumbs={[
           { label: t('nav.package'), href: '/package' },
           { label: t('promotions.title'), href: '/promotion' },
@@ -156,11 +202,10 @@ const PromotionDetails = () => {
           title={t('promotions.netRevenue')}
           value={formatCurrency(netRevenue)}
           icon={<DollarSign className="h-5 w-5" />}
-          subtitle="TODO: from transactions"
         />
         <StatCard
           title={t('promotions.usage')}
-          value={`${promo.usage_count ?? 0} / ${promo.usage_limit ?? '∞'}`}
+          value={`${promo.usage_count ?? 0} / ${promo.units_mode === 'specific' ? (promo.available_units ?? '∞') : '∞'}`}
           icon={<Package className="h-5 w-5" />}
         />
         <StatCard
@@ -179,7 +224,7 @@ const PromotionDetails = () => {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div>
               <dt className="text-muted-foreground">{t('lobby.name')}</dt>
-              <dd className="font-medium">{promo.name}</dd>
+              <dd className="font-medium">{language === 'th' ? (promo.name_th || promo.name) : (promo.name_en || promo.name)}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{t('promotions.type')}</dt>
@@ -192,9 +237,27 @@ const PromotionDetails = () => {
             <div>
               <dt className="text-muted-foreground">{t('promotions.usageLimit')}</dt>
               <dd className="font-medium">
-                {promo.usage_limit ? `${promo.usage_count ?? 0} / ${promo.usage_limit}` : t('promotions.unlimited')}
+                {promo.units_mode === 'specific'
+                  ? `${promo.usage_count ?? 0} / ${promo.available_units ?? '∞'}`
+                  : t('promotions.unlimited')}
               </dd>
             </div>
+            <div>
+              <dt className="text-muted-foreground">{t('promotions.perUserMode')}</dt>
+              <dd className="font-medium">{perUserDisplay()}</dd>
+            </div>
+            {promo.has_max_redemption && (
+              <div>
+                <dt className="text-muted-foreground">{t('promotions.maxRedemption')}</dt>
+                <dd className="font-medium">{formatCurrency(Number(promo.max_redemption_value ?? 0))}</dd>
+              </div>
+            )}
+            {promo.has_min_price && (
+              <div>
+                <dt className="text-muted-foreground">{t('promotions.minPrice')}</dt>
+                <dd className="font-medium">{formatCurrency(Number(promo.min_price_requirement ?? 0))}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-muted-foreground">{t('promotions.startedOn')}</dt>
               <dd className="font-medium">
@@ -227,7 +290,7 @@ const PromotionDetails = () => {
           ) : linkedPackages && linkedPackages.length > 0 ? (
             <DataTable
               columns={packageColumns}
-              data={linkedPackages}
+              data={linkedPackages as PackageRow[]}
               rowKey={(row) => row.id}
               emptyMessage={t('promotions.noPackagesLinked')}
             />
