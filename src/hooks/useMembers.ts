@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberInsert = Database['public']['Tables']['members']['Insert'];
@@ -25,8 +26,10 @@ interface MemberStats {
 }
 
 export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50 }: UseMembersParams = {}) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.members({ status, search, page, perPage }),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('members')
@@ -62,6 +65,7 @@ export const useMembers = ({ status = 'all', search = '', page = 1, perPage = 50
 };
 
 export const useMember = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.member(id),
     queryFn: async () => {
@@ -74,15 +78,16 @@ export const useMember = (id: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!user && !!id,
   });
 };
 
 export const useMemberStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.memberStats(),
+    enabled: !!user,
     queryFn: async (): Promise<MemberStats> => {
-      // Use individual head-only count queries to avoid 1000-row limit
       const [activeRes, suspendedRes, onHoldRes, inactiveRes, totalRes] = await Promise.all([
         supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'suspended'),
@@ -91,7 +96,6 @@ export const useMemberStats = () => {
         supabase.from('members').select('id', { count: 'exact', head: true }),
       ]);
 
-      // Check for errors
       for (const res of [activeRes, suspendedRes, onHoldRes, inactiveRes, totalRes]) {
         if (res.error) throw res.error;
       }
@@ -193,8 +197,10 @@ export const useDeleteMember = () => {
 
 // Generate next member ID
 export const useNextMemberId = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['next-member-id'],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')

@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import type { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type CheckInWithRelations = Tables<'member_attendance'> & {
   member: Tables<'members'> | null;
@@ -14,10 +15,12 @@ export type CheckInWithRelations = Tables<'member_attendance'> & {
 };
 
 export function useCheckIns(date: Date, search: string = '') {
+  const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
   
   return useQuery({
     queryKey: ['check-ins', dateStr, search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('member_attendance')
@@ -40,7 +43,6 @@ export function useCheckIns(date: Date, search: string = '') {
 
       let results = (data ?? []) as unknown as CheckInWithRelations[];
 
-      // Filter by search on client side (member name/nickname/member_id/phone/email)
       if (search) {
         const s = search.toLowerCase();
         results = results.filter((item) => {
@@ -94,7 +96,6 @@ export function useCreateCheckIn() {
       queryClient.invalidateQueries({ queryKey: ['check-ins'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
 
-      // Audit log
       logActivity({
         event_type: 'member_check_in',
         activity: `Member checked in via ${variables.checkin_method || 'manual'}`,
@@ -108,24 +109,19 @@ export function useCreateCheckIn() {
         },
       });
 
-      toast({
-        title: 'Success',
-        description: 'Member checked in successfully',
-      });
+      toast.success('Member checked in successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(error.message);
     },
   });
 }
 
 export function useMembersForCheckIn(search: string = '') {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['members-for-checkin', search],
+    enabled: !!user && (search.length >= 2 || search.length === 0),
     queryFn: async () => {
       let query = supabase
         .from('members')
@@ -144,13 +140,14 @@ export function useMembersForCheckIn(search: string = '') {
       if (error) throw error;
       return data || [];
     },
-    enabled: search.length >= 2 || search.length === 0,
   });
 }
 
 export function useMemberPackages(memberId: string | null) {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['member-packages-for-checkin', memberId],
+    enabled: !!user && !!memberId,
     queryFn: async () => {
       if (!memberId) return [];
       
@@ -167,15 +164,16 @@ export function useMemberPackages(memberId: string | null) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!memberId,
   });
 }
 
 /** Check if a member already checked in at a location today */
 export function useCheckDuplicate(memberId: string | null, locationId: string | null, date: Date) {
+  const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
   return useQuery({
     queryKey: ['check-in-duplicate', memberId, locationId, dateStr],
+    enabled: !!user && !!memberId && !!locationId,
     queryFn: async () => {
       if (!memberId || !locationId) return false;
       const { data, error } = await supabase
@@ -189,6 +187,5 @@ export function useCheckDuplicate(memberId: string | null, locationId: string | 
       if (error) throw error;
       return (data?.length ?? 0) > 0;
     },
-    enabled: !!memberId && !!locationId,
   });
 }

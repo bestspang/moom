@@ -4,20 +4,22 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Room = Tables<'rooms'>;
 type RoomInsert = TablesInsert<'rooms'>;
 type RoomUpdate = TablesUpdate<'rooms'>;
 
-// Extended type for room insert with new fields (until types are regenerated)
 interface RoomInsertExtended extends Omit<RoomInsert, 'layout_type'> {
   name_th?: string | null;
   layout_type?: 'open' | 'fixed';
 }
 
 export const useRooms = (status?: string, search?: string, categoryFilter?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.rooms(status, search, categoryFilter),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('rooms')
@@ -47,34 +49,32 @@ export const useRooms = (status?: string, search?: string, categoryFilter?: stri
 };
 
 export const useRoomStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.roomStats(),
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('status');
-      
-      if (error) throw error;
-      
-      const stats = {
-        open: 0,
-        closed: 0,
+      const [openRes, closedRes] = await Promise.all([
+        supabase.from('rooms').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from('rooms').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
+      ]);
+
+      if (openRes.error) throw openRes.error;
+      if (closedRes.error) throw closedRes.error;
+
+      return {
+        open: openRes.count ?? 0,
+        closed: closedRes.count ?? 0,
       };
-      
-      data?.forEach((room) => {
-        if (room.status && stats.hasOwnProperty(room.status)) {
-          stats[room.status as keyof typeof stats]++;
-        }
-      });
-      
-      return stats;
     },
   });
 };
 
 export const useRoom = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.room(id),
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms')
@@ -88,7 +88,6 @@ export const useRoom = (id: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
   });
 };
 

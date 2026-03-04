@@ -190,9 +190,16 @@ export const useDeleteRole = () => {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('roles').delete().eq('id', id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
+      logActivity({
+        event_type: 'role_deleted',
+        activity: `Role deleted`,
+        entity_type: 'role',
+        entity_id: id,
+      });
       toast.success('Role deleted successfully');
     },
     onError: (error) => {

@@ -4,14 +4,17 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Lead = Tables<'leads'>;
 type LeadInsert = TablesInsert<'leads'>;
 type LeadUpdate = TablesUpdate<'leads'>;
 
 export const useLeads = (search?: string, status?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.leads(search, status),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('leads').select('*');
       
@@ -32,8 +35,10 @@ export const useLeads = (search?: string, status?: string) => {
 };
 
 export const useLead = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['leads', id],
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
@@ -44,7 +49,6 @@ export const useLead = (id: string) => {
       if (error) throw error;
       return data as Lead;
     },
-    enabled: !!id,
   });
 };
 

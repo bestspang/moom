@@ -115,9 +115,15 @@ export const useCreateStaff = () => {
       if (error) throw error;
       return newStaff;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      logActivity({
+        event_type: 'staff_created',
+        activity: `Staff member ${data.first_name} ${data.last_name} created (standalone)`,
+        entity_type: 'staff',
+        entity_id: data.id,
+      });
       toast.success('Staff member created successfully');
     },
     onError: (error) => {

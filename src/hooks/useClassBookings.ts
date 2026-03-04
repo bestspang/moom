@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types based on database schema
 type BookingStatus = 'booked' | 'cancelled' | 'attended' | 'no_show';
@@ -37,8 +38,10 @@ interface ClassWaitlist {
 
 // Fetch bookings for a specific schedule
 export const useClassBookings = (scheduleId?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classBookings(scheduleId),
+    enabled: !!user && !!scheduleId,
     queryFn: async () => {
       let query = supabase
         .from('class_bookings')
@@ -57,14 +60,15 @@ export const useClassBookings = (scheduleId?: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!scheduleId,
   });
 };
 
 // Fetch bookings for a specific member
 export const useMemberBookings = (memberId: string, status?: BookingStatus) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.memberBookings(memberId, status),
+    enabled: !!user && !!memberId,
     queryFn: async () => {
       let query = supabase
         .from('class_bookings')
@@ -91,7 +95,6 @@ export const useMemberBookings = (memberId: string, status?: BookingStatus) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!memberId,
   });
 };
 
@@ -227,11 +230,9 @@ export const useMarkAttendance = () => {
 
       if (error) throw error;
 
-      // --- Cross-module writes for "attended" ---
       if (status === 'attended' && data) {
         const schedule = (data as any).schedule;
 
-        // 1) Insert member_attendance row
         await supabase.from('member_attendance').insert({
           member_id: data.member_id,
           schedule_id: data.schedule_id,
@@ -242,7 +243,6 @@ export const useMarkAttendance = () => {
           check_in_time: new Date().toISOString(),
         });
 
-        // 2) If session-based package, insert ledger entry
         if (data.member_package_id) {
           const { data: mp } = await supabase
             .from('member_packages')
@@ -264,7 +264,6 @@ export const useMarkAttendance = () => {
               note: 'Class attendance',
             });
 
-            // Update sessions_remaining on member_packages
             await supabase
               .from('member_packages')
               .update({
@@ -331,12 +330,10 @@ export const useBatchMarkAttendance = () => {
 
       if (error) throw error;
 
-      // --- Cross-module writes for each "attended" booking ---
       if (status === 'attended' && data) {
         for (const booking of data) {
           const schedule = (booking as any).schedule;
 
-          // 1) Insert member_attendance row
           await supabase.from('member_attendance').insert({
             member_id: booking.member_id,
             schedule_id: booking.schedule_id,
@@ -347,7 +344,6 @@ export const useBatchMarkAttendance = () => {
             check_in_time: new Date().toISOString(),
           });
 
-          // 2) If session-based package, insert ledger entry
           if (booking.member_package_id) {
             const { data: mp } = await supabase
               .from('member_packages')
@@ -412,8 +408,10 @@ export const useBatchMarkAttendance = () => {
 
 // Fetch waitlist for a schedule
 export const useWaitlist = (scheduleId: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.classWaitlist(scheduleId),
+    enabled: !!user && !!scheduleId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('class_waitlist')
@@ -428,7 +426,6 @@ export const useWaitlist = (scheduleId: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!scheduleId,
   });
 };
 
@@ -505,8 +502,8 @@ export const useLeaveWaitlist = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-waitlist'] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['class-waitlist', data.schedule_id] });
       toast.success('Removed from waitlist');
     },
     onError: (error) => {
@@ -532,7 +529,8 @@ export const usePromoteFromWaitlist = () => {
       memberId: string;
       memberPackageId?: string;
     }) => {
-      const { error: waitlistError } = await supabase
+      // Update waitlist entry
+      const { error: wlError } = await supabase
         .from('class_waitlist')
         .update({
           status: 'promoted',
@@ -540,9 +538,10 @@ export const usePromoteFromWaitlist = () => {
         })
         .eq('id', waitlistId);
 
-      if (waitlistError) throw waitlistError;
+      if (wlError) throw wlError;
 
-      const { data, error } = await supabase
+      // Create booking
+      const { data: booking, error: bkError } = await supabase
         .from('class_bookings')
         .insert({
           schedule_id: scheduleId,
@@ -550,17 +549,23 @@ export const usePromoteFromWaitlist = () => {
           member_package_id: memberPackageId || null,
           status: 'booked',
           booked_at: new Date().toISOString(),
-          notes: 'Promoted from waitlist',
         })
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (bkError) throw bkError;
+      return booking;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-waitlist', variables.scheduleId] });
       queryClient.invalidateQueries({ queryKey: ['class-bookings', variables.scheduleId] });
+      logActivity({
+        event_type: 'waitlist_promoted',
+        activity: `Member promoted from waitlist to booking`,
+        entity_type: 'class_booking',
+        entity_id: data.id,
+        member_id: variables.memberId,
+      });
       toast.success('Member promoted from waitlist');
     },
     onError: (error) => {

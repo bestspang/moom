@@ -3,14 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Promotion = Tables<'promotions'>;
 type PromotionInsert = TablesInsert<'promotions'>;
 type PromotionUpdate = TablesUpdate<'promotions'>;
 
 export const usePromotions = (status?: string, search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['promotions', status, search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('promotions').select('*');
       
@@ -31,8 +34,10 @@ export const usePromotions = (status?: string, search?: string) => {
 };
 
 export const usePromotionStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['promotion-stats'],
+    enabled: !!user,
     queryFn: async () => {
       const statuses = ['active', 'scheduled', 'drafts', 'archive'] as const;
       const results = await Promise.all(
@@ -55,8 +60,10 @@ export const usePromotionStats = () => {
 };
 
 export const usePromotion = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['promotions', id],
+    enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('promotions')
@@ -67,7 +74,6 @@ export const usePromotion = (id: string) => {
       if (error) throw error;
       return data as Promotion;
     },
-    enabled: !!id,
   });
 };
 
@@ -147,10 +153,17 @@ export const useDeletePromotion = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotion_deleted',
+        activity: `Promotion deleted`,
+        entity_type: 'promotion',
+        entity_id: id,
+      });
       toast.success('Promotion deleted successfully');
     },
     onError: (error) => {
