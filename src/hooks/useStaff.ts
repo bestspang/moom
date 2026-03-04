@@ -212,11 +212,19 @@ export const useUpdateStaff = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
       toast.success('Staff member updated successfully');
+
+      logActivity({
+        event_type: 'staff_updated',
+        activity: `Staff member ${updated.first_name} ${updated.last_name} updated`,
+        entity_type: 'staff',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
     },
     onError: (error) => {
       toast.error(`Failed to update staff member: ${error.message}`);
@@ -235,11 +243,19 @@ export const useDeleteStaff = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
       toast.success('Staff member deleted successfully');
+
+      logActivity({
+        event_type: 'staff_deleted',
+        activity: `Staff member deleted`,
+        entity_type: 'staff',
+        entity_id: id,
+      });
     },
     onError: (error) => {
       toast.error(`Failed to delete staff member: ${error.message}`);

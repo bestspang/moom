@@ -9,7 +9,6 @@ import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,6 +43,8 @@ const StaffDetails = () => {
     return <div className="text-center py-12 text-muted-foreground">{t('common.noData')}</div>;
   }
 
+  const staffAny = staff as any;
+
   const startEdit = (field: string, value: string) => {
     setEditField(field);
     setEditValue(value || '');
@@ -56,7 +57,7 @@ const StaffDetails = () => {
 
   const saveEdit = async () => {
     if (!editField) return;
-    await updateStaff.mutateAsync({ id: id!, data: { [editField]: editValue.trim() || null } });
+    await updateStaff.mutateAsync({ id: id!, data: { [editField]: editValue.trim() || null } as any });
     setEditField(null);
     setEditValue('');
   };
@@ -75,17 +76,13 @@ const StaffDetails = () => {
     }
   };
 
-  const EditableField = ({ field, label, value, multiline = false }: { field: string; label: string; value: string | null; multiline?: boolean }) => (
+  const EditableField = ({ field, label, value }: { field: string; label: string; value: string | null }) => (
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
         {editField === field ? (
           <div className="flex items-center gap-2">
-            {multiline ? (
-              <Textarea value={editValue} onChange={e => setEditValue(e.target.value)} rows={2} className="text-sm" />
-            ) : (
-              <Input value={editValue} onChange={e => setEditValue(e.target.value)} className="h-8 text-sm" />
-            )}
+            <Input value={editValue} onChange={e => setEditValue(e.target.value)} className="h-8 text-sm" />
             <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={saveEdit} disabled={updateStaff.isPending}>
               <Check className="h-4 w-4" />
             </Button>
@@ -163,12 +160,26 @@ const StaffDetails = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <EditableField field="first_name" label="First name" value={staff.first_name} />
-                <EditableField field="last_name" label="Last name" value={staff.last_name} />
-                <EditableField field="nickname" label="Nickname" value={staff.nickname} />
+                <EditableField field="first_name" label={t('staff.firstName')} value={staff.first_name} />
+                <EditableField field="last_name" label={t('staff.lastName')} value={staff.last_name} />
+                <EditableField field="nickname" label={t('staff.nickname')} value={staff.nickname} />
+                <EditableField field="date_of_birth" label={t('staff.dateOfBirth')} value={staffAny.date_of_birth} />
+                <EditableField field="gender" label={t('staff.gender')} value={staffAny.gender} />
                 <EditableField field="phone" label={t('staff.contactNumber')} value={staff.phone} />
                 <EditableField field="email" label={t('leads.email')} value={staff.email} />
-                <EditableField field="address" label={t('staff.address')} value={(staff as any).address} multiline />
+
+                {/* Structured address */}
+                <div className="pt-2 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">{t('staff.address')}</p>
+                  <div className="space-y-3">
+                    <EditableField field="address_1" label={t('staff.address1')} value={staffAny.address_1} />
+                    <EditableField field="address_2" label={t('staff.address2')} value={staffAny.address_2} />
+                    <EditableField field="subdistrict" label={t('staff.subdistrict')} value={staffAny.subdistrict} />
+                    <EditableField field="district" label={t('staff.district')} value={staffAny.district} />
+                    <EditableField field="province" label={t('staff.province')} value={staffAny.province} />
+                    <EditableField field="postal_code" label={t('staff.postalCode')} value={staffAny.postal_code} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

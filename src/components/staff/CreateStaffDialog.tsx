@@ -9,7 +9,6 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -29,9 +28,16 @@ interface StaffDraft {
   first_name: string;
   last_name: string;
   nickname: string;
+  date_of_birth: string;
+  gender: string;
   phone: string;
   email: string;
-  address: string;
+  address_1: string;
+  address_2: string;
+  subdistrict: string;
+  district: string;
+  province: string;
+  postal_code: string;
   positions: Position[];
 }
 
@@ -39,9 +45,16 @@ const emptyDraft: StaffDraft = {
   first_name: '',
   last_name: '',
   nickname: '',
+  date_of_birth: '',
+  gender: '',
   phone: '',
   email: '',
-  address: '',
+  address_1: '',
+  address_2: '',
+  subdistrict: '',
+  district: '',
+  province: '',
+  postal_code: '',
   positions: [{ role_id: '', scope_all_locations: true, location_ids: [] }],
 };
 
@@ -66,7 +79,7 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          setForm(parsed);
+          setForm({ ...emptyDraft, ...parsed });
           toast.info(t('staff.draftRestored'));
         } catch { /* ignore */ }
       }
@@ -124,11 +137,18 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim(),
           nickname: form.nickname.trim() || null,
+          date_of_birth: form.date_of_birth || null,
+          gender: form.gender || null,
           phone: form.phone.trim() || null,
           email: form.email.trim() || null,
-          address: form.address.trim() || null,
+          address_1: form.address_1.trim() || null,
+          address_2: form.address_2.trim() || null,
+          subdistrict: form.subdistrict.trim() || null,
+          district: form.district.trim() || null,
+          province: form.province.trim() || null,
+          postal_code: form.postal_code.trim() || null,
           status: 'active',
-        },
+        } as any,
         positions: form.positions.filter(p => p.role_id).map(p => ({
           role_id: p.role_id,
           scope_all_locations: p.scope_all_locations,
@@ -148,29 +168,59 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
         <h3 className="text-sm font-semibold text-foreground">{t('staff.profile')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>{t('members.tabs.profile')} *</Label>
+            <Label>{t('staff.firstName')} *</Label>
             <Input
-              placeholder={t('lobby.name')}
+              placeholder={t('staff.firstName')}
               value={form.first_name}
               onChange={e => updateField('first_name', e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>{t('leads.email').replace('Email', 'Last name')} *</Label>
+            <Label>{t('staff.lastName')} *</Label>
             <Input
-              placeholder="Last name"
+              placeholder={t('staff.lastName')}
               value={form.last_name}
               onChange={e => updateField('last_name', e.target.value)}
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Nickname</Label>
+          <Label>{t('staff.nickname')}</Label>
           <Input
-            placeholder="Nickname"
+            placeholder={t('staff.nickname')}
             value={form.nickname}
             onChange={e => updateField('nickname', e.target.value)}
           />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Demographics */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">{t('staff.demographics')}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('staff.dateOfBirth')}</Label>
+            <Input
+              type="date"
+              value={form.date_of_birth}
+              onChange={e => updateField('date_of_birth', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('staff.gender')}</Label>
+            <Select value={form.gender} onValueChange={v => updateField('gender', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('staff.selectGender')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">{t('staff.genderMale')}</SelectItem>
+                <SelectItem value="female">{t('staff.genderFemale')}</SelectItem>
+                <SelectItem value="other">{t('staff.genderOther')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -205,12 +255,60 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
       {/* Address Section */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-foreground">{t('staff.address')}</h3>
-        <Textarea
-          placeholder={t('staff.address')}
-          value={form.address}
-          onChange={e => updateField('address', e.target.value)}
-          rows={2}
-        />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label>{t('staff.address1')}</Label>
+            <Input
+              placeholder={t('staff.address1')}
+              value={form.address_1}
+              onChange={e => updateField('address_1', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('staff.address2')}</Label>
+            <Input
+              placeholder={t('staff.address2')}
+              value={form.address_2}
+              onChange={e => updateField('address_2', e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{t('staff.subdistrict')}</Label>
+              <Input
+                placeholder={t('staff.subdistrict')}
+                value={form.subdistrict}
+                onChange={e => updateField('subdistrict', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('staff.district')}</Label>
+              <Input
+                placeholder={t('staff.district')}
+                value={form.district}
+                onChange={e => updateField('district', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{t('staff.province')}</Label>
+              <Input
+                placeholder={t('staff.province')}
+                value={form.province}
+                onChange={e => updateField('province', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('staff.postalCode')}</Label>
+              <Input
+                placeholder={t('staff.postalCode')}
+                value={form.postal_code}
+                onChange={e => updateField('postal_code', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <Separator />
