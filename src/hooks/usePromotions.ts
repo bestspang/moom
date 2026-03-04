@@ -19,7 +19,7 @@ export const usePromotions = (status?: string, search?: string) => {
       }
       
       if (search) {
-        query = query.or(`name.ilike.%${search}%,promo_code.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%,name_en.ilike.%${search}%,name_th.ilike.%${search}%,promo_code.ilike.%${search}%`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });

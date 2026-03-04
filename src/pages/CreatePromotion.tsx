@@ -107,13 +107,14 @@ const CreatePromotion = () => {
       status = data.start_mode === 'scheduled' ? 'scheduled' : 'active';
     }
 
-    // Map discount_value for backward compat
+    // Map discount_value for backward compat (legacy columns)
     const discountValue = data.discount_mode === 'percentage'
       ? (data.percentage_discount ?? 0)
       : (data.flat_rate_discount ?? 0);
 
     createPromotion.mutate(
       {
+        // Legacy fields (backward compat)
         name: data.name,
         type: data.type === 'promo_code' ? 'promo_code' : 'discount',
         discount_type: data.discount_mode,
@@ -123,6 +124,27 @@ const CreatePromotion = () => {
         end_date: data.has_end_date ? data.end_date || null : null,
         status,
         usage_limit: data.units_mode === 'specific' ? data.available_units || null : null,
+
+        // New columns
+        name_en: data.name,
+        name_th: data.name_th || null,
+        description_en: data.description_en || null,
+        description_th: data.description_th || null,
+        discount_mode: data.discount_mode,
+        percentage_discount: data.discount_mode === 'percentage' ? (data.percentage_discount ?? null) : null,
+        flat_rate_discount: data.discount_mode === 'flat_rate' ? (data.flat_rate_discount ?? null) : null,
+        same_discount_all_packages: data.same_discount_all_packages,
+        has_max_redemption: data.has_max_redemption,
+        max_redemption_value: data.has_max_redemption ? (data.max_redemption_value ?? null) : null,
+        has_min_price: data.has_min_price,
+        min_price_requirement: data.has_min_price ? (data.min_price_requirement ?? null) : null,
+        units_mode: data.units_mode,
+        available_units: data.units_mode === 'specific' ? (data.available_units ?? null) : null,
+        per_user_mode: data.per_user_mode,
+        per_user_limit: data.per_user_mode === 'multiple' ? (data.per_user_limit ?? null) : null,
+        usage_time_mode: data.usage_time_mode,
+        start_mode: data.start_mode,
+        has_end_date: data.has_end_date,
       } as any,
       {
         onSuccess: () => {
