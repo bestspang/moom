@@ -6,6 +6,11 @@ import type { Database } from '@/integrations/supabase/types';
 
 type AnnouncementStatus = Database['public']['Enums']['announcement_status'];
 
+export interface AnnouncementChannels {
+  in_app: boolean;
+  line: boolean;
+}
+
 export interface Announcement {
   id: string;
   message: string;
@@ -15,6 +20,9 @@ export interface Announcement {
   created_at: string | null;
   updated_at: string | null;
   created_by: string | null;
+  channels: AnnouncementChannels | null;
+  target_mode: string | null;
+  target_location_ids: string[] | null;
   staff?: {
     id: string;
     first_name: string;
@@ -27,6 +35,9 @@ export interface AnnouncementFormData {
   publish_date: string;
   end_date: string;
   status: AnnouncementStatus;
+  channels: AnnouncementChannels;
+  target_mode: string;
+  target_location_ids: string[];
 }
 
 export const useAnnouncements = (status?: AnnouncementStatus | null, search?: string) => {
@@ -44,6 +55,9 @@ export const useAnnouncements = (status?: AnnouncementStatus | null, search?: st
           created_at,
           updated_at,
           created_by,
+          channels,
+          target_mode,
+          target_location_ids,
           staff:created_by (
             id,
             first_name,
@@ -103,12 +117,15 @@ export const useCreateAnnouncement = () => {
     mutationFn: async (data: AnnouncementFormData) => {
       const { data: result, error } = await supabase
         .from('announcements')
-        .insert({
+        .insert([{
           message: data.message,
           publish_date: data.publish_date,
           end_date: data.end_date,
           status: data.status,
-        })
+          channels: data.channels as unknown as Database['public']['Tables']['announcements']['Insert']['channels'],
+          target_mode: data.target_mode,
+          target_location_ids: data.target_location_ids,
+        }])
         .select()
         .single();
 
@@ -132,9 +149,14 @@ export const useUpdateAnnouncement = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<AnnouncementFormData> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = { ...data };
+      if (data.channels) {
+        updateData.channels = data.channels;
+      }
       const { data: result, error } = await supabase
         .from('announcements')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
