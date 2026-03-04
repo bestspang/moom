@@ -317,23 +317,31 @@ export const ImportLeadsDialog = ({ open, onOpenChange }: ImportLeadsDialogProps
           const { error } = await supabase.from('leads').update(leadData).eq('id', matchId);
           if (error) throw error;
           importResult.updated++;
+          logActivity({
+            event_type: 'lead_updated',
+            activity: `Lead ${leadData.first_name} ${leadData.last_name || ''} updated via CSV import`,
+            entity_type: 'lead',
+            entity_id: matchId,
+            new_value: { ...leadData, _source: 'csv_import' },
+          });
         } else {
           if (!leadData.status) leadData.status = 'new';
-          const { error } = await supabase.from('leads').insert(leadData as any);
+          const { data: created, error } = await supabase.from('leads').insert(leadData as any).select('id').single();
           if (error) throw error;
           importResult.created++;
+          logActivity({
+            event_type: 'lead_created',
+            activity: `Lead ${leadData.first_name} ${leadData.last_name || ''} created via CSV import`,
+            entity_type: 'lead',
+            entity_id: created?.id,
+            new_value: { ...leadData, _source: 'csv_import' },
+          });
         }
       } catch (err: any) {
         importResult.failed++;
         importResult.errors.push({ row: row.rowIndex, reason: err.message || 'Unknown error', data: row.data });
       }
     }
-
-    logActivity({
-      event_type: 'lead_bulk_import',
-      activity: `Imported ${importResult.created} new, ${importResult.updated} updated, ${importResult.failed} failed from ${fileName}`,
-      entity_type: 'lead',
-    });
 
     queryClient.invalidateQueries({ queryKey: ['leads'] });
     setResult(importResult);

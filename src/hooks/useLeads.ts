@@ -10,13 +10,17 @@ type Lead = Tables<'leads'>;
 type LeadInsert = TablesInsert<'leads'>;
 type LeadUpdate = TablesUpdate<'leads'>;
 
+export type LeadWithLocation = Lead & {
+  register_location?: { id: string; name: string } | null;
+};
+
 export const useLeads = (search?: string, status?: string) => {
   const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.leads(search, status),
     enabled: !!user,
     queryFn: async () => {
-      let query = supabase.from('leads').select('*');
+      let query = supabase.from('leads').select('*, register_location:locations!leads_register_location_id_fkey(id, name)');
       
       if (status && status !== 'all') {
         query = query.eq('status', status as Lead['status']);
@@ -29,7 +33,7 @@ export const useLeads = (search?: string, status?: string) => {
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Lead[];
+      return data as LeadWithLocation[];
     },
   });
 };

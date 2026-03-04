@@ -235,6 +235,22 @@ const Members = () => {
                   <Download className="h-4 w-4 mr-2" />
                   {t('common.export')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  const headers = ['member_id','first_name','last_name','nickname','gender','date_of_birth','phone','email','register_location_id','address_1','address_2','subdistrict','district','province','postal_code','emergency_first_name','emergency_last_name','emergency_phone','emergency_relationship','has_medical_conditions','medical_notes','allow_physical_contact','line_id','joined_date','status','notes'];
+                  const csv = headers.map(h => `"${h}"`).join(',') + '\n';
+                  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'members-template.csv';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t('members.import.downloadTemplate')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateDialogOpen(true)}>
