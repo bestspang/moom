@@ -1069,6 +1069,15 @@ export default {
     transactionNo: 'Transaction no.',
     soldTo: 'Sold to',
     amount: 'Amount',
+    location: 'Location',
+    allStatuses: 'All statuses',
+    allPaymentMethods: 'All methods',
+    paymentMethod: 'Payment method',
+    export: 'Export CSV',
+    cash: 'Cash',
+    bankTransfer: 'Bank transfer',
+    creditCard: 'Credit card',
+    promptpay: 'PromptPay',
   },
 
   // Reports

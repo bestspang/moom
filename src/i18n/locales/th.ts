@@ -1069,6 +1069,15 @@ export default {
     transactionNo: 'เลขที่รายการ',
     soldTo: 'ขายให้',
     amount: 'จำนวนเงิน',
+    location: 'สาขา',
+    allStatuses: 'ทุกสถานะ',
+    allPaymentMethods: 'ทุกวิธี',
+    paymentMethod: 'วิธีชำระเงิน',
+    export: 'ส่งออก CSV',
+    cash: 'เงินสด',
+    bankTransfer: 'โอนเงิน',
+    creditCard: 'บัตรเครดิต',
+    promptpay: 'พร้อมเพย์',
   },
 
   // Reports

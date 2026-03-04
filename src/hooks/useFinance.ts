@@ -3,27 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Transaction = Tables<'transactions'>;
-type TransactionUpdate = TablesUpdate<'transactions'>;
 
-interface FinanceFilters {
+export interface FinanceFilters {
   startDate?: Date;
   endDate?: Date;
   search?: string;
   status?: string;
+  paymentMethod?: string;
 }
 
 export const useFinanceTransactions = (filters: FinanceFilters) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['finance-transactions', filters],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('transactions')
         .select(`
           *,
-          member:members(id, first_name, last_name),
-          package:packages(id, name_en, name_th)
+          member:members(id, first_name, last_name, phone),
+          package:packages(id, name_en, name_th, type),
+          location:locations(id, name)
         `);
       
       if (filters.startDate) {
@@ -41,6 +46,10 @@ export const useFinanceTransactions = (filters: FinanceFilters) => {
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status as Transaction['status']);
       }
+
+      if (filters.paymentMethod && filters.paymentMethod !== 'all') {
+        query = query.eq('payment_method', filters.paymentMethod as Transaction['payment_method']);
+      }
       
       const { data, error } = await query.order('created_at', { ascending: false });
       
@@ -50,50 +59,38 @@ export const useFinanceTransactions = (filters: FinanceFilters) => {
   });
 };
 
-export const useFinanceStats = (startDate?: Date, endDate?: Date) => {
-  return useQuery({
-    queryKey: ['finance-stats', startDate?.toISOString(), endDate?.toISOString()],
-    queryFn: async () => {
-      let query = supabase
-        .from('transactions')
-        .select('amount, status');
-      
-      if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
-      }
-      
-      if (endDate) {
-        query = query.lte('created_at', endDate.toISOString());
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const stats = {
-        transactions: data?.length || 0,
-        totalSales: 0,
-        netIncome: 0,
-        refunds: 0,
-      };
-      
-      data?.forEach((tx) => {
-        if (tx.status === 'paid') {
-          stats.totalSales += Number(tx.amount);
-          stats.netIncome += Number(tx.amount);
-        } else if (tx.status === 'voided') {
-          stats.refunds += Number(tx.amount);
-        }
-      });
-      
-      return stats;
-    },
+/** Compute KPI stats from the already-fetched transaction list — guarantees consistency with table */
+export function computeFinanceStats(transactions: any[] | undefined) {
+  const stats = {
+    transactions: 0,
+    totalSales: 0,
+    netIncome: 0,
+    refunds: 0,
+  };
+
+  if (!transactions) return stats;
+
+  stats.transactions = transactions.length;
+
+  transactions.forEach((tx) => {
+    const amount = Number(tx.amount) || 0;
+    if (tx.status === 'paid') {
+      stats.totalSales += amount;
+      stats.netIncome += amount;
+    } else if (tx.status === 'voided') {
+      stats.refunds += amount;
+    }
   });
-};
+
+  return stats;
+}
 
 export const useTransferSlips = (filters: FinanceFilters & { slipStatus?: string }) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['transfer-slips', filters],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('transactions')
@@ -129,8 +126,11 @@ export const useTransferSlips = (filters: FinanceFilters & { slipStatus?: string
 };
 
 export const useTransferSlipStats = () => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['transfer-slip-stats'],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
@@ -173,7 +173,6 @@ export const useUpdateTransactionStatus = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['finance-stats'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
       logActivity({
