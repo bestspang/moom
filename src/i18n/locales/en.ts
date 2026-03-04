@@ -444,6 +444,15 @@ export default {
     room: 'Room',
     availability: 'Availability',
     qr: 'QR',
+    manageBookings: 'Manage Bookings',
+    addMember: 'Add Member',
+    searchMember: 'Search member...',
+    bookings: 'Bookings',
+    waitlist: 'Waitlist',
+    markAttended: 'Attended',
+    markNoShow: 'No Show',
+    promote: 'Promote',
+    booked: 'Booked',
   },
 
   // Rooms
@@ -712,6 +721,7 @@ export default {
       client: 'Client',
       package: 'Package',
       memberContracts: 'Member contracts',
+      featureFlags: 'Feature Flags',
     },
     general: {
       // Sidebar menu

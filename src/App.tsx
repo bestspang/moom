@@ -44,6 +44,7 @@ import SettingsClass from "./pages/settings/SettingsClass";
 import SettingsClient from "./pages/settings/SettingsClient";
 import SettingsPackage from "./pages/settings/SettingsPackage";
 import SettingsContracts from "./pages/settings/SettingsContracts";
+import SettingsFeatureFlags from "./pages/settings/SettingsFeatureFlags";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
@@ -124,6 +125,7 @@ const App = () => (
                   <Route path="client-management" element={<SettingsClient />} />
                   <Route path="setting-package" element={<SettingsPackage />} />
                   <Route path="member-contracts" element={<SettingsContracts />} />
+                  <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

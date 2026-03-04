@@ -6,12 +6,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useScheduleByDate, useScheduleStats, useTrainers, type ScheduleWithRelations } from '@/hooks/useSchedule';
 import { ScheduleClassDialog } from '@/components/schedule/ScheduleClassDialog';
+import { BookingManagementDialog } from '@/components/schedule/BookingManagementDialog';
 
 const Schedule = () => {
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithRelations | null>(null);
 
   const { data: scheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
   const { data: stats, isLoading: statsLoading } = useScheduleStats(selectedDate);
@@ -152,7 +155,15 @@ const Schedule = () => {
       ) : filteredSchedule.length === 0 ? (
         <EmptyState message={t('common.noData')} />
       ) : (
-        <DataTable columns={columns} data={filteredSchedule} rowKey={(row) => row.id} />
+        <DataTable
+          columns={columns}
+          data={filteredSchedule}
+          rowKey={(row) => row.id}
+          onRowClick={(row) => {
+            setSelectedSchedule(row);
+            setBookingDialogOpen(true);
+          }}
+        />
       )}
 
       {/* Schedule Dialog */}
@@ -160,6 +171,13 @@ const Schedule = () => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         defaultDate={selectedDate}
+      />
+
+      {/* Booking Management Dialog */}
+      <BookingManagementDialog
+        open={bookingDialogOpen}
+        onOpenChange={setBookingDialogOpen}
+        schedule={selectedSchedule}
       />
     </div>
   );
