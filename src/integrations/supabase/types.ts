@@ -2127,6 +2127,10 @@ export type Database = {
           date_of_birth: string | null
           district: string | null
           email: string | null
+          emergency_first_name: string | null
+          emergency_last_name: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
           first_name: string
           gender: string | null
           id: string
@@ -2137,6 +2141,7 @@ export type Database = {
           postal_code: string | null
           province: string | null
           role_id: string | null
+          staff_code: string | null
           status: Database["public"]["Enums"]["staff_status"] | null
           subdistrict: string | null
           updated_at: string | null
@@ -2151,6 +2156,10 @@ export type Database = {
           date_of_birth?: string | null
           district?: string | null
           email?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           first_name: string
           gender?: string | null
           id?: string
@@ -2161,6 +2170,7 @@ export type Database = {
           postal_code?: string | null
           province?: string | null
           role_id?: string | null
+          staff_code?: string | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           subdistrict?: string | null
           updated_at?: string | null
@@ -2175,6 +2185,10 @@ export type Database = {
           date_of_birth?: string | null
           district?: string | null
           email?: string | null
+          emergency_first_name?: string | null
+          emergency_last_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           first_name?: string
           gender?: string | null
           id?: string
@@ -2185,6 +2199,7 @@ export type Database = {
           postal_code?: string | null
           province?: string | null
           role_id?: string | null
+          staff_code?: string | null
           status?: Database["public"]["Enums"]["staff_status"] | null
           subdistrict?: string | null
           updated_at?: string | null

@@ -215,6 +215,17 @@ const StaffDetails = () => {
                     <EditableField field="postal_code" label={t('staff.postalCode')} value={staffAny.postal_code} />
                   </div>
                 </div>
+
+                {/* Emergency Contact */}
+                <div className="pt-2 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">{t('staff.emergencyContact')}</p>
+                  <div className="space-y-3">
+                    <EditableField field="emergency_first_name" label={t('staff.emergencyFirstName')} value={staffAny.emergency_first_name} />
+                    <EditableField field="emergency_last_name" label={t('staff.emergencyLastName')} value={staffAny.emergency_last_name} />
+                    <EditableField field="emergency_phone" label={t('staff.emergencyPhone')} value={staffAny.emergency_phone} />
+                    <EditableField field="emergency_relationship" label={t('staff.emergencyRelationship')} value={staffAny.emergency_relationship} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

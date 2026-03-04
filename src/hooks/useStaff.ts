@@ -3,14 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Staff = Tables<'staff'>;
 type StaffInsert = TablesInsert<'staff'>;
 type StaffUpdate = TablesUpdate<'staff'>;
 
 export const useStaff = (status?: string, search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['staff', status, search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('staff')
@@ -37,8 +40,10 @@ export const useStaff = (status?: string, search?: string) => {
 };
 
 export const useStaffStats = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['staff-stats'],
+    enabled: !!user,
     queryFn: async () => {
       const [activeRes, pendingRes, terminatedRes] = await Promise.all([
         supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'active'),

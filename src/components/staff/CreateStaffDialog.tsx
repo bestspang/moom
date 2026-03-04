@@ -38,6 +38,10 @@ interface StaffDraft {
   district: string;
   province: string;
   postal_code: string;
+  emergency_first_name: string;
+  emergency_last_name: string;
+  emergency_phone: string;
+  emergency_relationship: string;
   positions: Position[];
 }
 
@@ -55,6 +59,10 @@ const emptyDraft: StaffDraft = {
   district: '',
   province: '',
   postal_code: '',
+  emergency_first_name: '',
+  emergency_last_name: '',
+  emergency_phone: '',
+  emergency_relationship: '',
   positions: [{ role_id: '', scope_all_locations: true, location_ids: [] }],
 };
 
@@ -147,6 +155,10 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
           district: form.district.trim() || null,
           province: form.province.trim() || null,
           postal_code: form.postal_code.trim() || null,
+          emergency_first_name: form.emergency_first_name.trim() || null,
+          emergency_last_name: form.emergency_last_name.trim() || null,
+          emergency_phone: form.emergency_phone.trim() || null,
+          emergency_relationship: form.emergency_relationship.trim() || null,
           status: 'active',
         } as any,
         positions: form.positions.filter(p => p.role_id).map(p => ({
@@ -307,6 +319,49 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
                 onChange={e => updateField('postal_code', e.target.value)}
               />
             </div>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Emergency Contact Section */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">{t('staff.emergencyContact')}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('staff.emergencyFirstName')}</Label>
+            <Input
+              placeholder={t('staff.emergencyFirstName')}
+              value={form.emergency_first_name}
+              onChange={e => updateField('emergency_first_name', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('staff.emergencyLastName')}</Label>
+            <Input
+              placeholder={t('staff.emergencyLastName')}
+              value={form.emergency_last_name}
+              onChange={e => updateField('emergency_last_name', e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t('staff.emergencyPhone')}</Label>
+            <Input
+              placeholder="0xx-xxx-xxxx"
+              value={form.emergency_phone}
+              onChange={e => updateField('emergency_phone', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('staff.emergencyRelationship')}</Label>
+            <Input
+              placeholder={t('staff.emergencyRelationship')}
+              value={form.emergency_relationship}
+              onChange={e => updateField('emergency_relationship', e.target.value)}
+            />
           </div>
         </div>
       </div>

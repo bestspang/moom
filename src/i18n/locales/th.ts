@@ -845,6 +845,11 @@ export default {
     locationScope: 'ขอบเขตสาขา',
     selectGender: 'เลือกเพศ',
     demographics: 'ข้อมูลส่วนตัว',
+    emergencyContact: 'ผู้ติดต่อฉุกเฉิน',
+    emergencyFirstName: 'ชื่อผู้ติดต่อฉุกเฉิน',
+    emergencyLastName: 'นามสกุลผู้ติดต่อฉุกเฉิน',
+    emergencyPhone: 'เบอร์โทรฉุกเฉิน',
+    emergencyRelationship: 'ความสัมพันธ์',
   },
 
   // Roles
