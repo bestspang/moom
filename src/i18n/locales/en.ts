@@ -439,6 +439,17 @@ export default {
       descriptionThPlaceholder: 'คำอธิบายแพ็คเกจ...',
       completeRequired: 'Please complete all required fields to create this package.',
     },
+    details: {
+      soldThisWeek: 'Sold this week',
+      revenueToDate: 'Revenue to date',
+      activeMemberships: 'Active',
+      inactiveMemberships: 'Inactive',
+      days: 'days',
+      packageName: 'Package name',
+      distribution: 'Distribution',
+      noPurchaseLimit: 'No limit',
+      accessLocations: 'Access locations',
+    },
   },
 
   // Promotions

@@ -151,6 +151,7 @@ const Packages = () => {
           onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           emptyMessage={t('common.noData')}
+          onRowClick={(row) => navigate(`/package/${row.id}`)}
         />
       )}
     </div>

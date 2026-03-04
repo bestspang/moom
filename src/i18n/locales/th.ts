@@ -439,6 +439,17 @@ export default {
       descriptionThPlaceholder: 'คำอธิบายแพ็คเกจ...',
       completeRequired: 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมดเพื่อสร้างแพ็คเกจ',
     },
+    details: {
+      soldThisWeek: 'ขายสัปดาห์นี้',
+      revenueToDate: 'รายได้รวม',
+      activeMemberships: 'ใช้งานอยู่',
+      inactiveMemberships: 'ไม่ใช้งาน',
+      days: 'วัน',
+      packageName: 'ชื่อแพ็คเกจ',
+      distribution: 'การจัดจำหน่าย',
+      noPurchaseLimit: 'ไม่จำกัด',
+      accessLocations: 'สาขาที่เข้าใช้ได้',
+    },
   },
 
   // Promotions
