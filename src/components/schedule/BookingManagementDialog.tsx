@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useClassBookings, useWaitlist, useCancelBooking, useMarkAttendance, usePromoteFromWaitlist } from '@/hooks/useClassBookings';
 import { useAuth } from '@/contexts/AuthContext';
-import type { ScheduleWithRelations } from '@/hooks/useSchedule';
+import { useCancelSchedule, type ScheduleWithRelations } from '@/hooks/useSchedule';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Check, X, UserPlus, Clock, ArrowUp } from 'lucide-react';
+import { Check, X, UserPlus, Clock, ArrowUp, Ban } from 'lucide-react';
 import { AddBookingForm } from './AddBookingForm';
 
 interface BookingManagementDialogProps {
@@ -49,6 +49,7 @@ export const BookingManagementDialog = ({ open, onOpenChange, schedule }: Bookin
   const cancelBooking = useCancelBooking();
   const markAttendance = useMarkAttendance();
   const promoteFromWaitlist = usePromoteFromWaitlist();
+  const cancelSchedule = useCancelSchedule();
 
   if (!schedule) return null;
 
@@ -208,6 +209,29 @@ export const BookingManagementDialog = ({ open, onOpenChange, schedule }: Bookin
           </div>
         )}
       </div>
+
+      {/* Cancel Class */}
+      {schedule.status !== 'cancelled' && (
+        <>
+          <Separator />
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full"
+            disabled={cancelSchedule.isPending}
+            onClick={() => {
+              if (window.confirm(t('schedule.cancelClassConfirm'))) {
+                cancelSchedule.mutate(schedule.id, {
+                  onSuccess: () => onOpenChange(false),
+                });
+              }
+            }}
+          >
+            <Ban className="h-4 w-4 mr-2" />
+            {t('schedule.cancelClass')}
+          </Button>
+        </>
+      )}
     </div>
   );
 
