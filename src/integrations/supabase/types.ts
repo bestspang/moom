@@ -990,7 +990,9 @@ export type Database = {
         Row: {
           check_in_time: string | null
           check_in_type: string | null
+          checkin_method: string
           created_at: string | null
+          created_by: string | null
           id: string
           location_id: string | null
           member_id: string
@@ -1000,7 +1002,9 @@ export type Database = {
         Insert: {
           check_in_time?: string | null
           check_in_type?: string | null
+          checkin_method?: string
           created_at?: string | null
+          created_by?: string | null
           id?: string
           location_id?: string | null
           member_id: string
@@ -1010,7 +1014,9 @@ export type Database = {
         Update: {
           check_in_time?: string | null
           check_in_type?: string | null
+          checkin_method?: string
           created_at?: string | null
+          created_by?: string | null
           id?: string
           location_id?: string | null
           member_id?: string
@@ -1018,6 +1024,13 @@ export type Database = {
           schedule_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "member_attendance_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "member_attendance_location_id_fkey"
             columns: ["location_id"]
