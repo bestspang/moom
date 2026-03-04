@@ -61,8 +61,10 @@ export const useStaffStats = () => {
 };
 
 export const useStaffMember = (id: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['staff', id],
+    enabled: !!id && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff')
@@ -77,13 +79,14 @@ export const useStaffMember = (id: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
   });
 };
 
 export const useStaffPositions = (staffId: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['staff-positions', staffId],
+    enabled: !!staffId && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_positions')
@@ -97,7 +100,6 @@ export const useStaffPositions = (staffId: string) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!staffId,
   });
 };
 
