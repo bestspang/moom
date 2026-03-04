@@ -68,6 +68,185 @@ export type Database = {
           },
         ]
       }
+      ai_policies: {
+        Row: {
+          id: string
+          key: string
+          scope: Database["public"]["Enums"]["ai_policy_scope"]
+          scope_id: string | null
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          scope?: Database["public"]["Enums"]["ai_policy_scope"]
+          scope_id?: string | null
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          scope?: Database["public"]["Enums"]["ai_policy_scope"]
+          scope_id?: string | null
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      ai_prompt_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          input_schema: Json | null
+          is_active: boolean
+          name: string
+          output_schema: Json | null
+          purpose: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean
+          name: string
+          output_schema?: Json | null
+          purpose?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean
+          name?: string
+          output_schema?: Json | null
+          purpose?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      ai_runs: {
+        Row: {
+          actor_user_id: string | null
+          cost_usd: number | null
+          created_at: string
+          error: string | null
+          id: string
+          input: Json | null
+          latency_ms: number | null
+          model: string | null
+          output: Json | null
+          prompt_template_id: string | null
+          scope_location_id: string | null
+          status: Database["public"]["Enums"]["ai_run_status"]
+        }
+        Insert: {
+          actor_user_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          model?: string | null
+          output?: Json | null
+          prompt_template_id?: string | null
+          scope_location_id?: string | null
+          status?: Database["public"]["Enums"]["ai_run_status"]
+        }
+        Update: {
+          actor_user_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          model?: string | null
+          output?: Json | null
+          prompt_template_id?: string | null
+          scope_location_id?: string | null
+          status?: Database["public"]["Enums"]["ai_run_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_runs_prompt_template_id_fkey"
+            columns: ["prompt_template_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_runs_scope_location_id_fkey"
+            columns: ["scope_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_suggestions: {
+        Row: {
+          applied_at: string | null
+          approved_at: string | null
+          approved_by: string | null
+          confidence: number | null
+          created_at: string
+          created_by_ai_run_id: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          payload: Json
+          status: Database["public"]["Enums"]["ai_suggestion_status"]
+          suggestion_type: string
+        }
+        Insert: {
+          applied_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_by_ai_run_id?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["ai_suggestion_status"]
+          suggestion_type: string
+        }
+        Update: {
+          applied_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_by_ai_run_id?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["ai_suggestion_status"]
+          suggestion_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_suggestions_created_by_ai_run_id_fkey"
+            columns: ["created_by_ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           created_at: string | null
@@ -1734,6 +1913,9 @@ export type Database = {
         | "level_2_operator"
         | "level_3_manager"
         | "level_4_master"
+      ai_policy_scope: "global" | "location" | "role" | "user"
+      ai_run_status: "pending" | "running" | "completed" | "failed"
+      ai_suggestion_status: "pending" | "approved" | "rejected" | "applied"
       announcement_status: "active" | "scheduled" | "completed"
       app_role: "owner" | "admin" | "trainer" | "front_desk"
       booking_status: "booked" | "cancelled" | "attended" | "no_show"
@@ -1904,6 +2086,9 @@ export const Constants = {
         "level_3_manager",
         "level_4_master",
       ],
+      ai_policy_scope: ["global", "location", "role", "user"],
+      ai_run_status: ["pending", "running", "completed", "failed"],
+      ai_suggestion_status: ["pending", "approved", "rejected", "applied"],
       announcement_status: ["active", "scheduled", "completed"],
       app_role: ["owner", "admin", "trainer", "front_desk"],
       booking_status: ["booked", "cancelled", "attended", "no_show"],

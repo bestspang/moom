@@ -22,4 +22,6 @@ export const queryKeys = {
   trainers: () => ['trainers'] as const,
   featureFlags: () => ['feature-flags'] as const,
   featureFlag: (key: string) => ['feature-flag', key] as const,
+  aiSuggestions: (status?: string) => ['ai-suggestions', status] as const,
+  aiRuns: () => ['ai-runs'] as const,
 };

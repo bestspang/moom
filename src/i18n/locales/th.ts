@@ -1114,4 +1114,15 @@ export default {
       linkPrompt: 'เชื่อมบัญชี LINE กับสมาชิกของคุณเพื่อเข้าถึงฟีเจอร์ทั้งหมด',
     },
   },
+  ai: {
+    suggestions: 'คำแนะนำ AI',
+    noSuggestions: 'ไม่มีคำแนะนำที่รอดำเนินการ',
+    approve: 'อนุมัติ',
+    reject: 'ปฏิเสธ',
+    suggestionApproved: 'อนุมัติคำแนะนำแล้ว',
+    suggestionRejected: 'ปฏิเสธคำแนะนำแล้ว',
+    suggestionApplied: 'นำคำแนะนำไปใช้แล้ว',
+    suggestionError: 'ไม่สามารถอัปเดตคำแนะนำได้',
+    confidence: 'ความมั่นใจ',
+  },
 };

@@ -20,6 +20,7 @@ import {
   mapScheduleToItem,
   type ScheduleItem,
 } from '@/hooks/useSchedule';
+import { AiSuggestionsCard } from '@/components/dashboard/AiSuggestionsCard';
 
 // Skeleton component for member list items
 const MemberListSkeleton = () => (
@@ -324,6 +325,8 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+          {/* AI Suggestions */}
+          <AiSuggestionsCard />
         </div>
       </div>
     </div>
