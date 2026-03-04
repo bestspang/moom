@@ -39,7 +39,8 @@ export const useMembersEnrichment = (memberIds: string[]) => {
       const { data: contracts } = await supabase
         .from('member_contracts')
         .select('member_id')
-        .in('member_id', memberIds);
+        .in('member_id', memberIds)
+        .eq('is_signed', true);
 
       // Build enrichment map
       const enrichment: Record<string, { recent_package: string | null; last_attended: string | null; has_contract: boolean }> = {};
