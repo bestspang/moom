@@ -1672,60 +1672,223 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_packages: {
+        Row: {
+          created_at: string | null
+          discount_override: number | null
+          id: string
+          max_sale_amount: number | null
+          package_id: string
+          promotion_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discount_override?: number | null
+          id?: string
+          max_sale_amount?: number | null
+          package_id: string
+          promotion_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discount_override?: number | null
+          id?: string
+          max_sale_amount?: number | null
+          package_id?: string
+          promotion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_packages_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_redemptions: {
+        Row: {
+          discount_amount: number
+          gross_amount: number
+          id: string
+          member_id: string | null
+          net_amount: number
+          promo_code_used: string | null
+          promotion_id: string
+          redeemed_at: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          discount_amount: number
+          gross_amount: number
+          id?: string
+          member_id?: string | null
+          net_amount: number
+          promo_code_used?: string | null
+          promotion_id: string
+          redeemed_at?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          discount_amount?: number
+          gross_amount?: number
+          id?: string
+          member_id?: string | null
+          net_amount?: number
+          promo_code_used?: string | null
+          promotion_id?: string
+          redeemed_at?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_redemptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_redemptions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_redemptions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotions: {
         Row: {
           ai_recommended_rules: Json | null
           ai_target_segment: Json | null
           applicable_packages: string[] | null
+          available_units: number | null
           created_at: string | null
+          created_by: string | null
+          description_en: string | null
+          description_th: string | null
+          discount_mode: string | null
           discount_type: string | null
           discount_value: number
           end_date: string | null
+          flat_rate_discount: number | null
+          has_end_date: boolean | null
+          has_max_redemption: boolean | null
+          has_min_price: boolean | null
           id: string
+          max_redemption_value: number | null
+          min_price_requirement: number | null
           name: string
+          name_en: string | null
+          name_th: string | null
+          per_user_limit: number | null
+          per_user_mode: string | null
+          percentage_discount: number | null
           promo_code: string | null
+          same_discount_all_packages: boolean | null
           start_date: string | null
+          start_mode: string | null
           status: Database["public"]["Enums"]["promotion_status"] | null
           type: Database["public"]["Enums"]["promotion_type"] | null
+          units_mode: string | null
           updated_at: string | null
           usage_count: number | null
           usage_limit: number | null
+          usage_time_mode: string | null
+          usage_time_rules: Json | null
         }
         Insert: {
           ai_recommended_rules?: Json | null
           ai_target_segment?: Json | null
           applicable_packages?: string[] | null
+          available_units?: number | null
           created_at?: string | null
+          created_by?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          discount_mode?: string | null
           discount_type?: string | null
           discount_value: number
           end_date?: string | null
+          flat_rate_discount?: number | null
+          has_end_date?: boolean | null
+          has_max_redemption?: boolean | null
+          has_min_price?: boolean | null
           id?: string
+          max_redemption_value?: number | null
+          min_price_requirement?: number | null
           name: string
+          name_en?: string | null
+          name_th?: string | null
+          per_user_limit?: number | null
+          per_user_mode?: string | null
+          percentage_discount?: number | null
           promo_code?: string | null
+          same_discount_all_packages?: boolean | null
           start_date?: string | null
+          start_mode?: string | null
           status?: Database["public"]["Enums"]["promotion_status"] | null
           type?: Database["public"]["Enums"]["promotion_type"] | null
+          units_mode?: string | null
           updated_at?: string | null
           usage_count?: number | null
           usage_limit?: number | null
+          usage_time_mode?: string | null
+          usage_time_rules?: Json | null
         }
         Update: {
           ai_recommended_rules?: Json | null
           ai_target_segment?: Json | null
           applicable_packages?: string[] | null
+          available_units?: number | null
           created_at?: string | null
+          created_by?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          discount_mode?: string | null
           discount_type?: string | null
           discount_value?: number
           end_date?: string | null
+          flat_rate_discount?: number | null
+          has_end_date?: boolean | null
+          has_max_redemption?: boolean | null
+          has_min_price?: boolean | null
           id?: string
+          max_redemption_value?: number | null
+          min_price_requirement?: number | null
           name?: string
+          name_en?: string | null
+          name_th?: string | null
+          per_user_limit?: number | null
+          per_user_mode?: string | null
+          percentage_discount?: number | null
           promo_code?: string | null
+          same_discount_all_packages?: boolean | null
           start_date?: string | null
+          start_mode?: string | null
           status?: Database["public"]["Enums"]["promotion_status"] | null
           type?: Database["public"]["Enums"]["promotion_type"] | null
+          units_mode?: string | null
           updated_at?: string | null
           usage_count?: number | null
           usage_limit?: number | null
+          usage_time_mode?: string | null
+          usage_time_rules?: Json | null
         }
         Relationships: []
       }

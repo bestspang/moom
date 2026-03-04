@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePackages } from '@/hooks/usePackages';
-import { useUpdatePromotion } from '@/hooks/usePromotions';
+import { usePromotionPackages, useAddPromotionPackage, useRemovePromotionPackage } from '@/hooks/usePromotionPackages';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SearchBar } from '@/components/common';
 import { formatCurrency } from '@/lib/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Tables } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 interface EditPackagesDialogProps {
   open: boolean;
@@ -25,27 +25,69 @@ export const EditPackagesDialog = ({
 }: EditPackagesDialogProps) => {
   const { t, language } = useLanguage();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<string[]>(currentPackageIds);
   const { data: packages, isLoading } = usePackages(undefined, search);
-  const updatePromotion = useUpdatePromotion();
+  const { data: linkedPackages } = usePromotionPackages(promotionId);
+  const addPkg = useAddPromotionPackage();
+  const removePkg = useRemovePromotionPackage();
 
-  // Reset selection when dialog opens
+  const linkedIds = useMemo(
+    () => new Set((linkedPackages || []).map((p) => p.id)),
+    [linkedPackages],
+  );
+
+  const [pendingAdds, setPendingAdds] = useState<Set<string>>(new Set());
+  const [pendingRemoves, setPendingRemoves] = useState<Set<string>>(new Set());
+
   React.useEffect(() => {
-    if (open) setSelected(currentPackageIds);
-  }, [open, currentPackageIds]);
+    if (open) {
+      setPendingAdds(new Set());
+      setPendingRemoves(new Set());
+    }
+  }, [open]);
+
+  const isSelected = (id: string) => {
+    if (pendingRemoves.has(id)) return false;
+    if (pendingAdds.has(id)) return true;
+    return linkedIds.has(id);
+  };
 
   const togglePackage = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    if (linkedIds.has(id)) {
+      // Currently linked — toggle remove
+      setPendingRemoves((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    } else {
+      // Not linked — toggle add
+      setPendingAdds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    }
   };
 
-  const handleSave = () => {
-    updatePromotion.mutate(
-      { id: promotionId, data: { applicable_packages: selected } },
-      { onSuccess: () => onOpenChange(false) }
-    );
+  const handleSave = async () => {
+    try {
+      const ops: Promise<void>[] = [];
+      for (const pkgId of pendingAdds) {
+        ops.push(addPkg.mutateAsync({ promotionId, packageId: pkgId }));
+      }
+      for (const pkgId of pendingRemoves) {
+        ops.push(removePkg.mutateAsync({ promotionId, packageId: pkgId }));
+      }
+      await Promise.all(ops);
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update packages');
+    }
   };
+
+  const hasChanges = pendingAdds.size > 0 || pendingRemoves.size > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +115,7 @@ export const EditPackagesDialog = ({
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
               >
                 <Checkbox
-                  checked={selected.includes(pkg.id)}
+                  checked={isSelected(pkg.id)}
                   onCheckedChange={() => togglePackage(pkg.id)}
                 />
                 <div className="flex-1 min-w-0">
@@ -93,7 +135,7 @@ export const EditPackagesDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={updatePromotion.isPending}>
+          <Button onClick={handleSave} disabled={!hasChanges || addPkg.isPending || removePkg.isPending}>
             {t('common.save')}
           </Button>
         </DialogFooter>
