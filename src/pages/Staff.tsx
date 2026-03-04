@@ -32,10 +32,19 @@ const Staff = () => {
 
   const getStatusVariant = (status: string | null) => {
     switch (status) {
-      case 'active': return 'paid';
+      case 'active': return 'active';
       case 'pending': return 'pending';
-      case 'terminated': return 'voided';
+      case 'terminated': return 'inactive';
       default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'active': return t('common.active');
+      case 'pending': return t('common.pending');
+      case 'terminated': return t('staff.terminated');
+      default: return status || '';
     }
   };
 
@@ -57,7 +66,7 @@ const Staff = () => {
   const columns: Column<any>[] = [
     { 
       key: 'name', 
-      header: t('lobby.name'), 
+      header: t('common.name'), 
       cell: (row) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
@@ -69,8 +78,8 @@ const Staff = () => {
         </div>
       )
     },
-    { key: 'phone', header: t('staff.contactNumber'), cell: (row) => row.phone || '-' },
-    { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
+    { key: 'phone', header: t('common.phone'), cell: (row) => row.phone || '-' },
+    { key: 'email', header: t('common.email'), cell: (row) => row.email || '-' },
     { 
       key: 'roles', 
       header: t('staff.positions'), 
@@ -106,7 +115,7 @@ const Staff = () => {
       header: t('common.status'),
       cell: (row) => (
         <StatusBadge variant={getStatusVariant(row.status)}>
-          {row.status || 'unknown'}
+          {getStatusLabel(row.status)}
         </StatusBadge>
       ),
     },

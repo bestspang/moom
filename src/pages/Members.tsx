@@ -31,7 +31,6 @@ const Members = () => {
   const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<MemberStatus | 'all'>('active');
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -68,11 +67,21 @@ const Members = () => {
 
   const getStatusVariant = (status: string | null) => {
     switch (status) {
-      case 'active': return 'paid';
-      case 'suspended': return 'voided';
+      case 'active': return 'active';
+      case 'suspended': return 'suspended';
       case 'on_hold': return 'pending';
-      case 'inactive': return 'default';
+      case 'inactive': return 'inactive';
       default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'active': return t('common.active');
+      case 'suspended': return t('members.suspended');
+      case 'on_hold': return t('members.onHold');
+      case 'inactive': return t('common.inactive');
+      default: return t('common.active');
     }
   };
 
@@ -117,7 +126,7 @@ const Members = () => {
   const columns: Column<MemberWithLocation>[] = [
     {
       key: 'name',
-      header: t('lobby.name'),
+      header: t('common.name'),
       cell: (row) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
@@ -134,8 +143,8 @@ const Members = () => {
     },
     { key: 'nickname', header: t('form.nickname'), cell: (row) => row.nickname || '-' },
     { key: 'memberId', header: t('locations.id'), cell: (row) => row.member_id },
-    { key: 'phone', header: t('leads.contactNumber'), cell: (row) => row.phone || '-' },
-    { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
+    { key: 'phone', header: t('common.phone'), cell: (row) => row.phone || '-' },
+    { key: 'email', header: t('common.email'), cell: (row) => row.email || '-' },
     {
       key: 'location',
       header: t('lobby.location'),
@@ -146,7 +155,7 @@ const Members = () => {
       header: t('common.status'),
       cell: (row) => (
         <StatusBadge variant={getStatusVariant(row.status) as any}>
-          {row.status?.replace('_', ' ') || 'active'}
+          {getStatusLabel(row.status)}
         </StatusBadge>
       ),
     },
@@ -171,7 +180,7 @@ const Members = () => {
     {
       key: 'contract',
       header: t('members.tabs.contract'),
-      cell: (row) => enrichment?.[row.id]?.has_contract ? 'Yes' : 'No',
+      cell: (row) => enrichment?.[row.id]?.has_contract ? t('common.yes') : t('common.no'),
     },
     {
       key: 'actions',
@@ -197,20 +206,6 @@ const Members = () => {
     },
   ];
 
-  const handleSelectRow = (id: string) => {
-    setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedRows.length === members.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(members.map((m) => m.id));
-    }
-  };
-
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as MemberStatus | 'all');
     setPage(1);
@@ -227,7 +222,7 @@ const Members = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="border-primary text-primary">
                   <FileText className="h-4 w-4 mr-2" />
-                  {t('members.manage')}
+                  {t('common.manage')}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
@@ -254,7 +249,7 @@ const Members = () => {
                   URL.revokeObjectURL(url);
                 }}>
                   <FileText className="h-4 w-4 mr-2" />
-                  {t('members.import.downloadTemplate')}
+                  {t('common.downloadTemplate')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -291,14 +286,11 @@ const Members = () => {
         <DataTable
           columns={columns}
           data={members}
-          selectable
-          selectedRows={selectedRows}
-          onSelectRow={handleSelectRow}
-          onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
           pagination={{ page, perPage: 50, total }}
           onPageChange={setPage}
+          emptyMessage={t('members.searchPlaceholder')}
         />
       )}
 
