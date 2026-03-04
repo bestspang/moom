@@ -1,0 +1,1 @@
+ALTER TABLE public.class_categories ADD COLUMN IF NOT EXISTS name_th text;

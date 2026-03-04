@@ -748,8 +748,16 @@ export default {
   // Categories
   categories: {
     title: 'Class categories',
+    classCategory: 'Category name',
     searchPlaceholder: 'Search class category',
     classesInCategory: 'Classes in this category',
+    createCategory: 'Create category',
+    categoryInfo: 'Category info',
+    nameEn: 'Name (EN)',
+    nameTh: 'Name (TH)',
+    nameEnPlaceholder: 'e.g. Yoga',
+    nameThPlaceholder: 'e.g. โยคะ',
+    noClassesInCategory: 'No classes in this category yet',
   },
 
   // Staff
