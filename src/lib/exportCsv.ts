@@ -9,28 +9,20 @@ export function exportToCsv<T>(
   columns: CsvColumn<T>[],
   filename: string
 ): void {
-  // Create CSV header row
   const headers = columns.map((col) => `"${col.header}"`).join(',');
-  
-  // Create CSV data rows
+
   const rows = data.map((row) => {
     return columns
       .map((col) => {
         const value = col.accessor(row);
-        if (value === null || value === undefined) {
-          return '""';
-        }
-        // Escape quotes and wrap in quotes
+        if (value === null || value === undefined) return '""';
         const stringValue = String(value).replace(/"/g, '""');
         return `"${stringValue}"`;
       })
       .join(',');
   });
 
-  // Combine header and rows
   const csv = [headers, ...rows].join('\n');
-
-  // Create blob and download
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -43,8 +35,8 @@ export function exportToCsv<T>(
   URL.revokeObjectURL(url);
 }
 
-// Pre-configured export for members
-export function exportMembers(members: Array<{
+// Enriched member type for export
+export interface ExportableMember {
   member_id: string;
   first_name: string;
   last_name: string;
@@ -53,8 +45,13 @@ export function exportMembers(members: Array<{
   phone: string | null;
   status: string | null;
   member_since: string | null;
-}>): void {
-  const columns: CsvColumn<typeof members[0]>[] = [
+  recent_package?: string | null;
+  last_attended?: string | null;
+  has_contract?: boolean;
+}
+
+export function exportMembers(members: ExportableMember[]): void {
+  const columns: CsvColumn<ExportableMember>[] = [
     { key: 'member_id', header: 'ID', accessor: (r) => r.member_id },
     { key: 'name', header: 'Name', accessor: (r) => `${r.first_name} ${r.last_name}` },
     { key: 'nickname', header: 'Nickname', accessor: (r) => r.nickname },
@@ -62,6 +59,9 @@ export function exportMembers(members: Array<{
     { key: 'phone', header: 'Phone', accessor: (r) => r.phone },
     { key: 'status', header: 'Status', accessor: (r) => r.status },
     { key: 'member_since', header: 'Member Since', accessor: (r) => r.member_since },
+    { key: 'recent_package', header: 'Recent Package', accessor: (r) => r.recent_package ?? '' },
+    { key: 'last_attended', header: 'Last Attended', accessor: (r) => r.last_attended ? new Date(r.last_attended).toLocaleDateString() : '' },
+    { key: 'contract', header: 'Contract', accessor: (r) => r.has_contract ? 'Yes' : 'No' },
   ];
 
   const date = new Date().toISOString().split('T')[0];
