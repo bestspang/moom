@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check } from 'lucide-react';
+import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, EmptyState, type Column } from '@/components/common';
+import { useEngagementScore } from '@/hooks/useEngagementScores';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,6 +83,7 @@ const MemberDetails = () => {
   const { data: suspensions = [], isLoading: suspensionsLoading } = useMemberSuspensions(id);
   const { data: contracts = [], isLoading: contractsLoading } = useMemberContracts(id);
   const { data: summaryStats } = useMemberSummaryStats(id);
+  const { data: engagementScore } = useEngagementScore(id);
 
   const createNote = useCreateMemberNote();
   const updateMember = useUpdateMember();
@@ -382,6 +384,16 @@ const MemberDetails = () => {
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-sm text-muted-foreground">{member.member_id}</span>
                     <StatusBadge variant={getStatusVariant(member.status)}>{member.status || 'active'}</StatusBadge>
+                    {engagementScore && (
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        engagementScore.level === 'high' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                        engagementScore.level === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        <Activity className="h-3 w-3" />
+                        {engagementScore.score}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-xl font-bold mt-2">
                     {member.first_name} {member.last_name}

@@ -23,7 +23,10 @@ import {
 import { useGymCheckinsByDate, type GymCheckinItem } from '@/hooks/useDashboardAttendance';
 import { AiSuggestionsCard } from '@/components/dashboard/AiSuggestionsCard';
 import { ExpiringPackagesCard } from '@/components/dashboard/ExpiringPackagesCard';
+import { DailyBriefingCard } from '@/components/dashboard/DailyBriefingCard';
+import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
+import { useExpiringPackages } from '@/hooks/useExpiringPackages';
 import { DoorOpen } from 'lucide-react';
 
 // Skeleton component for member list items
@@ -134,9 +137,29 @@ const Dashboard = () => {
     ? t('dashboard.searchClasses')
     : t('dashboard.searchGym');
 
+  // Fetch expiring packages for briefing stats
+  const { data: expiringPkgs } = useExpiringPackages();
+  const briefingStats = useMemo(() => {
+    if (!stats) return undefined;
+    return {
+      checkinsToday: stats.checkinsToday,
+      classesToday: stats.classesToday,
+      currentlyInClass: stats.currentlyInClass,
+      expiringPackages7d: expiringPkgs?.filter(p => p.daysLeft <= 7).length || 0,
+      expiringPackages30d: expiringPkgs?.length || 0,
+      highRiskCount: highRiskMembers.length,
+      activeMembers: stats.checkinsToday, // approximate
+    };
+  }, [stats, expiringPkgs, highRiskMembers]);
+
   return (
     <div>
       <PageHeader title={t('dashboard.title')} />
+
+      {/* AI Daily Briefing */}
+      <div className="mb-6">
+        <DailyBriefingCard stats={briefingStats} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
@@ -406,6 +429,9 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+          {/* Revenue Forecast */}
+          <RevenueForecastCard />
+
           {/* Expiring Packages */}
           <ExpiringPackagesCard />
 

@@ -385,6 +385,10 @@ export default {
     manage: 'จัดการ',
     recentPackage: 'แพ็คเกจล่าสุด',
     lastAttended: 'เข้าร่วมล่าสุด',
+    engagement: 'ความผูกพัน',
+    engagementHigh: 'สูง',
+    engagementMedium: 'ปานกลาง',
+    engagementLow: 'ต่ำ',
     addInjury: 'เพิ่มการบาดเจ็บ',
     markRecovered: 'หายแล้ว',
     activeInjury: 'ยังบาดเจ็บ',
@@ -1702,5 +1706,21 @@ export default {
     people: 'บุคคล',
     quickActions: 'การดำเนินการด่วน',
     goTo: 'ไปที่',
+  },
+
+  // Daily Briefing
+  dailyBriefing: {
+    title: 'สรุปประจำวัน',
+    loading: 'กำลังสร้างสรุป...',
+    error: 'ไม่สามารถโหลดสรุปได้ ลองรีเฟรช',
+  },
+
+  // Revenue Forecast
+  revenueForecast: {
+    title: 'พยากรณ์รายได้',
+    lastMonth: 'เดือนที่แล้ว',
+    thisMonth: 'เดือนนี้',
+    nextMonth: 'เดือนหน้า',
+    projected: 'ประมาณการ',
   },
 };

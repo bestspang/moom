@@ -17,6 +17,7 @@ import { getInitials } from '@/lib/formatters';
 import { exportMembers, type ExportableMember } from '@/lib/exportCsv';
 import { useMembers, useMemberStats, type MemberWithLocation } from '@/hooks/useMembers';
 import { useMembersEnrichment } from '@/hooks/useMembersEnriched';
+import { useEngagementScores } from '@/hooks/useEngagementScores';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import { EditMemberDialog } from '@/components/members/EditMemberDialog';
 import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
@@ -50,6 +51,7 @@ const Members = () => {
 
   const memberIds = useMemo(() => members.map(m => m.id), [members]);
   const { data: enrichment } = useMembersEnrichment(memberIds);
+  const { data: engagementScores } = useEngagementScores(memberIds);
 
   const statusTabs: StatusTab[] = useMemo(() => [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
@@ -158,6 +160,25 @@ const Members = () => {
           {getStatusLabel(row.status)}
         </StatusBadge>
       ),
+    },
+    {
+      key: 'engagement',
+      header: t('members.engagement'),
+      cell: (row) => {
+        const score = engagementScores?.[row.id];
+        if (!score) return '-';
+        const colorClass = score.level === 'high'
+          ? 'bg-green-500'
+          : score.level === 'medium'
+          ? 'bg-yellow-500'
+          : 'bg-red-500';
+        return (
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${colorClass}`} />
+            <span className="text-sm">{score.score}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'memberSince',
