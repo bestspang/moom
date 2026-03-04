@@ -1,68 +1,91 @@
 
 
-# Locations CRUD with Categories, Opening Hours & Dependency Sync
+# Enhance Activity Log — Filters, Pagination, Logger & Realtime
 
 ## Current State
-- `Locations.tsx` is a read-only list with search + status tabs — no create/edit buttons, no row click
-- `useLocations.ts` has full CRUD hooks already (create/update/delete) — just not wired to UI
-- `locations` table has: `id`, `location_id`, `name`, `contact_number`, `categories` (text[]), `status` (open/closed) — **no `opening_hours` column**
-- i18n has minimal `locations.*` keys (title, searchPlaceholder, id, locationName)
-- Dependent modules already use `useLocations()`: Schedule, CreatePackage, CreateRoom, CreateLead, CreateStaff, CheckIn, Settings
+- `ActivityLog.tsx` shows a table with date range filter, hardcoded `limit(100)`, no event type filters, no pagination
+- `useActivityLog.ts` fetches from `activity_log` with date filters only
+- Only 3 places currently write to `activity_log`: `useStaff.ts` (staff_created), `PackageDetails.tsx` (package_updated), `invite-staff` edge function (staff_invited)
+- **Missing audit logging**: member create/update/delete, schedule create/update/delete, announcement, promotion, location, role changes — none of these log to `activity_log`
+- `activity_log` table already has: `event_type`, `entity_type`, `entity_id`, `activity`, `old_value`, `new_value`, `staff_id`, `member_id`
+- `activity_log` is NOT in `useRealtimeSync.ts` — no realtime updates
+- No `supabase_realtime` publication for `activity_log`
 
 ## Plan
 
-### 1. Database Migration — Add `opening_hours` column
+### 1. Database Migration — Enable realtime for `activity_log`
 
 ```sql
-ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS opening_hours jsonb DEFAULT '{}'::jsonb;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_log;
 ```
 
-Shape: `{ "monday": { "open": "06:00", "close": "22:00" }, ... }` — nullable per day means closed that day.
+### 2. Create `src/lib/activityLogger.ts`
 
-### 2. Create `CreateLocationDialog` — `src/components/locations/CreateLocationDialog.tsx`
+Centralized helper that inserts into `activity_log`:
 
-Dialog with fields:
-- `location_id` (text, required, e.g. "BR-0001")
-- `name` (text, required)
-- `contact_number` (text, optional)
-- `status` (select: open/closed, default open)
-- `categories` (multi-select checkboxes from `useClassCategories()`)
-- `opening_hours` (7 weekday rows: toggle enabled + open/close time inputs)
+```ts
+export async function logActivity(params: {
+  event_type: string;
+  activity: string;
+  entity_type?: string;
+  entity_id?: string;
+  old_value?: Record<string, unknown>;
+  new_value?: Record<string, unknown>;
+  staff_id?: string;
+  member_id?: string;
+}) { ... }
+```
 
-Uses `useCreateLocation()` mutation. Zod validation. Draft autosave to localStorage.
+Fire-and-forget (catch errors, don't block mutations).
 
-### 3. Create `EditLocationDialog` — `src/components/locations/EditLocationDialog.tsx`
+### 3. Update `useActivityLog.ts` — Add filters + server-side pagination
 
-Same form as Create but pre-populated from existing location data. Uses `useUpdateLocation()`. Includes delete button with confirmation.
+- Accept `eventTypes: string[]` filter and `page/perPage` params
+- Use `.in('event_type', eventTypes)` when filter is set
+- Use `.range()` for pagination with `{ count: 'exact' }`
+- Return `{ data, total }` for pagination controls
 
-### 4. Update `Locations.tsx`
+### 4. Update `ActivityLog.tsx` — Filter panel + pagination UI
 
-- Add "Create" button in PageHeader → opens CreateLocationDialog
-- Add `onRowClick` → opens EditLocationDialog with selected location
-- Add `opening_hours` column showing summary (e.g. "Mon-Fri 06:00-22:00")
-- Add status column with StatusBadge
+- Add collapsible/popover filter panel with event type checkboxes
+- Event type list: `member_created`, `member_updated`, `member_deleted`, `staff_created`, `staff_invited`, `package_updated`, `package_created`, `schedule_created`, `schedule_updated`, `schedule_deleted`, `promotion_created`, `promotion_updated`, `location_created`, `location_updated`, `role_updated`, `announcement_created`
+- Add pagination controls at bottom (prev/next, page X of Y)
+- Use existing `DataTable` or keep current table with added pagination
 
-### 5. i18n Keys
+### 5. Wire `logActivity` into existing mutation hooks
 
-Add to both `en.ts` and `th.ts` under `locations`:
-- `createLocation`, `editLocation`, `contactNumber`, `categories`, `openingHours`, `status`, `open`, `closed`, `createSuccess`, `updateSuccess`, `deleteSuccess`, `deleteConfirm`, `monday`-`sunday`, `openTime`, `closeTime`, `allDay`, `closedDay`
+Add `logActivity()` calls in `onSuccess` of these hooks:
+- `useMembers.ts`: `useCreateMember`, `useUpdateMember`, `useDeleteMember`
+- `useSchedule.ts`: `useCreateSchedule`/`useCreateScheduleValidated`, `useUpdateSchedule`, `useDeleteSchedule`
+- `usePromotions.ts`: `useCreatePromotion`, `useUpdatePromotion`
+- `useLocations.ts`: `useCreateLocation`, `useUpdateLocation`
+- `useRoles.ts`: role save mutations
+- `useStaff.ts`: already has staff_created — replace inline insert with `logActivity`
 
-### 6. Dependency Consistency Check
+### 6. Update `useRealtimeSync.ts`
 
-All dependent modules already consume `useLocations()` which returns live data from DB — **no code changes needed** in Schedule, Packages, Staff, etc. They already use the locations list dynamically. The only change is that locations data now includes `opening_hours` in the response, which existing consumers safely ignore (they don't reference that field).
+Add `activity_log` to the table union and invalidation map → invalidates `['activity-logs']`.
 
-No schema contract changes for existing consumers.
+### 7. i18n Keys
+
+Add filter-related keys under `activityLog`: `filterByEvent`, `allEvents`, `clearFilters`, `page`, `of`, and event type labels.
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Migration | Add `opening_hours` jsonb column to `locations` |
-| Create | `src/components/locations/CreateLocationDialog.tsx` |
-| Create | `src/components/locations/EditLocationDialog.tsx` |
-| Modify | `src/pages/Locations.tsx` — wire create/edit, add columns |
-| Modify | `src/i18n/locales/en.ts` — extend locations keys |
-| Modify | `src/i18n/locales/th.ts` — extend locations keys |
+| Migration | Enable realtime on `activity_log` |
+| Create | `src/lib/activityLogger.ts` |
+| Modify | `src/hooks/useActivityLog.ts` — filters + pagination |
+| Modify | `src/pages/ActivityLog.tsx` — filter UI + pagination |
+| Modify | `src/hooks/useMembers.ts` — add audit logging |
+| Modify | `src/hooks/useSchedule.ts` — add audit logging |
+| Modify | `src/hooks/usePromotions.ts` — add audit logging |
+| Modify | `src/hooks/useLocations.ts` — add audit logging |
+| Modify | `src/hooks/useRoles.ts` — add audit logging |
+| Modify | `src/hooks/useStaff.ts` — use centralized logger |
+| Modify | `src/hooks/useRealtimeSync.ts` — add activity_log |
+| Modify | `src/i18n/locales/en.ts` + `th.ts` — add keys |
 
-No breaking changes. Existing consumers of `useLocations()` are unaffected — additive column only.
+No schema changes needed (table already exists). Existing behavior preserved — logger is additive.
 
