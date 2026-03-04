@@ -1340,6 +1340,8 @@ export type Database = {
       members: {
         Row: {
           address: string | null
+          address_1: string | null
+          address_2: string | null
           ai_profile_summary: string | null
           ai_risk_signals: Json | null
           ai_tags: Json | null
@@ -1347,6 +1349,7 @@ export type Database = {
           consents: Json | null
           created_at: string | null
           date_of_birth: string | null
+          district: string | null
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -1368,16 +1371,21 @@ export type Database = {
           notes: string | null
           package_interest_id: string | null
           phone: string | null
+          postal_code: string | null
+          province: string | null
           register_location_id: string | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
           source: string | null
           status: Database["public"]["Enums"]["member_status"] | null
+          subdistrict: string | null
           tax_id: string | null
           total_spent: number | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           ai_profile_summary?: string | null
           ai_risk_signals?: Json | null
           ai_tags?: Json | null
@@ -1385,6 +1393,7 @@ export type Database = {
           consents?: Json | null
           created_at?: string | null
           date_of_birth?: string | null
+          district?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1406,16 +1415,21 @@ export type Database = {
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          postal_code?: string | null
+          province?: string | null
           register_location_id?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           source?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
+          subdistrict?: string | null
           tax_id?: string | null
           total_spent?: number | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           ai_profile_summary?: string | null
           ai_risk_signals?: Json | null
           ai_tags?: Json | null
@@ -1423,6 +1437,7 @@ export type Database = {
           consents?: Json | null
           created_at?: string | null
           date_of_birth?: string | null
+          district?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1444,10 +1459,13 @@ export type Database = {
           notes?: string | null
           package_interest_id?: string | null
           phone?: string | null
+          postal_code?: string | null
+          province?: string | null
           register_location_id?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           source?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
+          subdistrict?: string | null
           tax_id?: string | null
           total_spent?: number | null
           updated_at?: string | null

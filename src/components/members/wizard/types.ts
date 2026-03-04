@@ -37,7 +37,7 @@ export type MemberWizardFormData = z.infer<ReturnType<typeof createMemberWizardS
 export const STEP_FIELDS: Record<number, (keyof MemberWizardFormData)[]> = {
   1: ['firstName', 'lastName', 'nickname', 'dateOfBirth', 'gender', 'registerLocationId'],
   2: ['phone', 'email'],
-  3: ['address'],
+  3: ['address', 'address1', 'address2', 'subdistrict', 'district', 'province', 'postalCode'],
   4: ['emergencyContactName', 'emergencyContactPhone', 'emergencyRelationship'],
   5: ['hasMedicalConditions', 'medicalNotes', 'allowPhysicalContact', 'physicalContactNotes'],
   6: ['source', 'packageInterestId', 'notes'],

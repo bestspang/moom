@@ -82,28 +82,27 @@ export const useMemberStats = () => {
   return useQuery({
     queryKey: queryKeys.memberStats(),
     queryFn: async (): Promise<MemberStats> => {
-      const { data, error } = await supabase
-        .from('members')
-        .select('status');
+      // Use individual head-only count queries to avoid 1000-row limit
+      const [activeRes, suspendedRes, onHoldRes, inactiveRes, totalRes] = await Promise.all([
+        supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'suspended'),
+        supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'on_hold'),
+        supabase.from('members').select('id', { count: 'exact', head: true }).eq('status', 'inactive'),
+        supabase.from('members').select('id', { count: 'exact', head: true }),
+      ]);
 
-      if (error) throw error;
+      // Check for errors
+      for (const res of [activeRes, suspendedRes, onHoldRes, inactiveRes, totalRes]) {
+        if (res.error) throw res.error;
+      }
 
-      const stats: MemberStats = {
-        active: 0,
-        suspended: 0,
-        on_hold: 0,
-        inactive: 0,
-        total: 0,
+      return {
+        active: activeRes.count ?? 0,
+        suspended: suspendedRes.count ?? 0,
+        on_hold: onHoldRes.count ?? 0,
+        inactive: inactiveRes.count ?? 0,
+        total: totalRes.count ?? 0,
       };
-
-      (data || []).forEach((member) => {
-        stats.total++;
-        if (member.status) {
-          stats[member.status]++;
-        }
-      });
-
-      return stats;
     },
   });
 };
