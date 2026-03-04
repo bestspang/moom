@@ -6,7 +6,8 @@
 |----------|-----------|------|----------|-------|
 | Class name (EN) | `name` | text | Yes | Primary display name |
 | Class name (TH) | `name_th` | text | No | Thai name |
-| Description | `description` | text | No | Description text |
+| Description (EN) | `description` | text | No | Description text |
+| Description (TH) | `description_th` | text | No | Thai description |
 | Type | `type` | enum (`class`, `pt`) | Yes | Default: `class` |
 | Category | `category_id` | uuid FK → `class_categories.id` | For class type | Nullable for PT |
 | Level | `level` | enum (`all_levels`, `beginner`, `intermediate`, `advanced`) | For class type | Nullable for PT |

@@ -16,16 +16,18 @@ export const useClasses = (
   typeFilter?: string,
   categoryFilter?: string,
   levelFilter?: string,
+  page: number = 1,
+  perPage: number = 50,
 ) => {
   return useQuery({
-    queryKey: queryKeys.classes(status, search, typeFilter, categoryFilter, levelFilter),
+    queryKey: queryKeys.classes(status, search, typeFilter, categoryFilter, levelFilter, page, perPage),
     queryFn: async () => {
       let query = supabase
         .from('classes')
         .select(`
           *,
           category:class_categories(id, name)
-        `);
+        `, { count: 'exact' });
 
       if (status && status !== 'all') {
         query = query.eq('status', status);
@@ -47,10 +49,15 @@ export const useClasses = (
         query = query.eq('level', levelFilter as 'all_levels' | 'beginner' | 'intermediate' | 'advanced');
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      return data;
+      return { rows: data, total: count ?? 0 };
     },
   });
 };

@@ -505,6 +505,7 @@ export type Database = {
           category_id: string | null
           created_at: string | null
           description: string | null
+          description_th: string | null
           duration: number | null
           id: string
           level: Database["public"]["Enums"]["class_level"] | null
@@ -518,6 +519,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          description_th?: string | null
           duration?: number | null
           id?: string
           level?: Database["public"]["Enums"]["class_level"] | null
@@ -531,6 +533,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          description_th?: string | null
           duration?: number | null
           id?: string
           level?: Database["public"]["Enums"]["class_level"] | null
