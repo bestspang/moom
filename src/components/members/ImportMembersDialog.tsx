@@ -446,32 +446,55 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
         )}
 
         {/* Step 3: Preview */}
-        {step === 'preview' && (
+        {step === 'preview' && (() => {
+          const validCount = previewRows.filter(r => r.errors.length === 0).length;
+          const errorCount = previewRows.filter(r => r.errors.length > 0).length;
+          const totalErrorCount = csvRows.length - csvRows.slice(0, 20).filter((_, idx) => previewRows[idx]?.errors.length === 0).length;
+          const allErrors = csvRows.length > 0 && validCount === 0 && errorCount === previewRows.length;
+
+          return (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {t('members.import.previewDesc')} (showing {previewRows.length} of {csvRows.length})
             </p>
-            <ScrollArea className="h-[350px]">
+
+            {/* Summary banner */}
+            <div className="flex gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 text-xs font-medium">
+                <CheckCircle className="h-3.5 w-3.5" />
+                {validCount} valid
+              </div>
+              {errorCount > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 text-xs font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {errorCount} with errors
+                </div>
+              )}
+            </div>
+
+            <ScrollArea className="h-[300px]">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b">
-                    <th className="p-1 text-left">Row</th>
-                    <th className="p-1 text-left">Name</th>
-                    <th className="p-1 text-left">Phone</th>
-                    <th className="p-1 text-left">Status</th>
+                    <th className="p-1.5 text-left w-12">Row</th>
+                    <th className="p-1.5 text-left">Name</th>
+                    <th className="p-1.5 text-left">Contact</th>
+                    <th className="p-1.5 text-left">Errors</th>
                   </tr>
                 </thead>
                 <tbody>
                   {previewRows.map((row) => (
-                    <tr key={row.rowIndex} className="border-b">
-                      <td className="p-1">{row.rowIndex}</td>
-                      <td className="p-1">{row.data.first_name} {row.data.last_name}</td>
-                      <td className="p-1 font-mono">{row.data.phone || row.data.email || '-'}</td>
-                      <td className="p-1">
+                    <tr key={row.rowIndex} className={`border-b ${row.errors.length > 0 ? 'bg-red-50/50 dark:bg-red-950/30' : ''}`}>
+                      <td className="p-1.5">{row.rowIndex}</td>
+                      <td className="p-1.5">{row.data.first_name} {row.data.last_name}</td>
+                      <td className="p-1.5 font-mono">{row.data.phone || row.data.email || '-'}</td>
+                      <td className="p-1.5">
                         {row.errors.length > 0 ? (
-                          <Badge variant="destructive" className="text-[10px]">
-                            {row.errors[0]}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {row.errors.map((err, i) => (
+                              <Badge key={i} variant="destructive" className="text-[10px]">{err}</Badge>
+                            ))}
+                          </div>
                         ) : (
                           <Badge variant="secondary" className="text-[10px]">OK</Badge>
                         )}
@@ -481,12 +504,23 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
                 </tbody>
               </table>
             </ScrollArea>
+
+            {errorCount > 0 && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {allErrors ? 'All rows have errors. Fix your CSV and try again.' : `${errorCount} rows will be skipped during import.`}
+              </p>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('mapping')}>{t('common.back')}</Button>
-              <Button onClick={doImport}>{t('members.import.startImport')}</Button>
+              <Button onClick={doImport} disabled={allErrors}>
+                {t('members.import.startImport')}
+              </Button>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Step 4: Importing */}
         {step === 'importing' && (
@@ -519,10 +553,39 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
               </div>
             </div>
             {result.errors.length > 0 && (
-              <Button variant="outline" size="sm" onClick={downloadErrors}>
-                <Download className="h-3 w-3 mr-1" />
-                {t('members.import.downloadErrors')}
-              </Button>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-4 w-4" />
+                  Failed rows ({result.errors.length})
+                </p>
+                <ScrollArea className="h-[160px] border rounded-md">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b bg-muted/50 sticky top-0">
+                        <th className="p-1.5 text-left w-12">Row</th>
+                        <th className="p-1.5 text-left">Name</th>
+                        <th className="p-1.5 text-left">Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.errors.slice(0, 20).map((err, i) => (
+                        <tr key={i} className="border-b bg-red-50/30 dark:bg-red-950/20">
+                          <td className="p-1.5">{err.row}</td>
+                          <td className="p-1.5">{err.data.first_name || ''} {err.data.last_name || ''}</td>
+                          <td className="p-1.5 text-destructive">{err.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </ScrollArea>
+                {result.errors.length > 20 && (
+                  <p className="text-xs text-muted-foreground">Showing 20 of {result.errors.length} errors</p>
+                )}
+                <Button variant="outline" size="sm" onClick={downloadErrors}>
+                  <Download className="h-3 w-3 mr-1" />
+                  {t('members.import.downloadErrors')}
+                </Button>
+              </div>
             )}
             <div className="flex justify-end">
               <Button onClick={handleClose}>{t('members.import.done')}</Button>
