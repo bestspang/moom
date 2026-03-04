@@ -1,73 +1,60 @@
 
 
-# Member Creation Wizard — Implementation Plan
+# Convert Lead to Member — Implementation Plan
 
 ## Current State
 
-- `members` table already has: `emergency_contact_name`, `emergency_contact_phone`, `address`, `notes`, `register_location_id`, `gender`, `date_of_birth`, `nickname`
-- Missing from DB: emergency_relationship, medical/consent/AI/LINE jsonb fields, source, package_interest_id
-- `CreateMemberDialog` is a simple single-step form
-- `CreateLeadDialog` shows the draft persistence pattern we can reuse
+- **Leads table**: No `converted_member_id` column exists. Has `status` with `converted` value.
+- **Member wizard**: Uses its own Zod schema in `src/components/members/wizard/types.ts`. Lead form uses inline schema in `CreateLeadDialog.tsx`.
+- **Leads page**: DataTable has no row actions (no 3-dot menu).
+- **DataTable component**: No built-in actions column support — must add a column manually.
 
 ## Plan
 
-### 1. Database Migration — Add columns to `members`
+### 1. Database Migration
 
-Add these nullable columns (additive only, zero regression):
+Add `converted_member_id` to `leads` table:
 
 ```sql
-ALTER TABLE members ADD COLUMN emergency_relationship text;
-ALTER TABLE members ADD COLUMN medical jsonb DEFAULT '{}'::jsonb;
-ALTER TABLE members ADD COLUMN consents jsonb DEFAULT '{}'::jsonb;
-ALTER TABLE members ADD COLUMN source text;
-ALTER TABLE members ADD COLUMN package_interest_id uuid REFERENCES packages(id);
-ALTER TABLE members ADD COLUMN line_user_id text;
-ALTER TABLE members ADD COLUMN line_display_name text;
-ALTER TABLE members ADD COLUMN line_picture_url text;
-ALTER TABLE members ADD COLUMN line_link_status text DEFAULT 'unlinked';
-ALTER TABLE members ADD COLUMN ai_profile_summary text;
-ALTER TABLE members ADD COLUMN ai_tags jsonb DEFAULT '[]'::jsonb;
-ALTER TABLE members ADD COLUMN ai_risk_signals jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE leads ADD COLUMN converted_member_id uuid REFERENCES members(id);
 ```
 
-### 2. Replace `CreateMemberDialog.tsx` with Step Wizard
+### 2. Create `src/lib/personSchemas.ts`
 
-Rewrite the form body as a 6-step wizard inside the same Dialog/Drawer shell:
+Extract shared Zod schemas used by both lead and member forms:
+- `personProfileSchema(t)` — firstName, lastName, nickname, dateOfBirth, gender
+- `personContactSchema(t)` — phone, email
+- `personAddressSchema()` — address
+- `emergencyContactSchema()` — name, phone, relationship
+- `medicalInfoSchema()` — hasMedicalConditions, medicalNotes
+- `consentInfoSchema()` — allowPhysicalContact, physicalContactNotes
 
-- **Step indicator**: numbered progress dots (1–6) at the top
-- **Step 1 — Profile**: photo placeholder, first_name*, last_name*, nickname, dob, gender, register_location_id*
-- **Step 2 — Contact**: phone, email (at least one required), line_id field + disabled "Link LINE" button with tooltip
-- **Step 3 — Address**: address (single text field — matches existing column)
-- **Step 4 — Emergency**: emergency_contact_name, emergency_contact_phone, emergency_relationship
-- **Step 5 — Medical & Consent**: has_medical_conditions toggle + medical_notes, allow_physical_contact toggle + physical_contact_notes
-- **Step 6 — Other**: source, package_interest_id, internal notes
+### 3. Refactor `CreateLeadDialog.tsx` schema
 
-**Bottom bar**: Back / Next buttons, with "Create" on final step. Error banner when required fields incomplete.
+Replace inline `leadSchema` with composition from `personSchemas` + lead-specific fields (source, registerLocationId, notes). Behavior stays identical.
 
-### 3. Draft Persistence
+### 4. Refactor `wizard/types.ts` schema
 
-- localStorage key `member-create-draft`, debounced save on every change (same pattern as CreateLeadDialog)
-- Restore on open, "Discard" button clears and closes
+Replace `createMemberWizardSchema` with composition from `personSchemas` + member-specific fields (registerLocationId required). Behavior stays identical.
 
-### 4. Validation (Zod)
+### 5. Add "Convert to member" action to Leads table
 
-- `first_name`, `last_name` required
-- `register_location_id` required
-- `.refine()`: phone OR email at least one
-- Per-step validation on "Next" click (only validate current step's fields)
+- Add an actions column to the DataTable in `Leads.tsx` with a DropdownMenu (3-dot icon) per row.
+- "Convert to member" menu item opens `CreateMemberDialog` with `initialData` prefilled from the lead record.
 
-### 5. Submit Mapping
+### 6. Update `CreateMemberDialog` to accept `initialData` + `onConvertLead` callback
 
-Insert into `members` table with:
-- Profile fields → direct columns
-- Emergency → `emergency_contact_name`, `emergency_contact_phone`, `emergency_relationship`
-- Medical/Consent → `medical` jsonb, `consents` jsonb (typed Zod shapes)
-- Other → `source`, `package_interest_id`, `notes`
-- AI/LINE fields left null on creation
+- Add optional prop `initialData?: Partial<MemberWizardFormData>` to prefill form fields from a lead.
+- Add optional prop `convertLeadId?: string` — when set, on successful member creation, call `useUpdateLead` to set `status = 'converted'` and `converted_member_id = newMemberId`.
+- Invalidate both `leads` and `members` queries on success.
 
-### 6. i18n Keys
+### 7. Add `useConvertLeadToMember` hook (in `useLeads.ts`)
 
-Add wizard step labels, emergency/medical/consent field labels, LINE tooltip text to both `en.ts` and `th.ts`.
+A simple wrapper that updates the lead with `status: 'converted'` and `converted_member_id`. Called from `CreateMemberDialog` after successful member insert.
+
+### 8. i18n keys
+
+Add `leads.convertToMember`, `leads.convertSuccess` to both `en.ts` and `th.ts`.
 
 ---
 
@@ -75,10 +62,14 @@ Add wizard step labels, emergency/medical/consent field labels, LINE tooltip tex
 
 | Action | File |
 |--------|------|
-| Migration | Add ~13 nullable columns to `members` table |
-| Rewrite | `src/components/members/CreateMemberDialog.tsx` — wizard stepper |
-| Modify | `src/i18n/locales/en.ts` — wizard + medical/emergency labels |
-| Modify | `src/i18n/locales/th.ts` — matching translations |
+| Migration | Add `converted_member_id uuid` to `leads` |
+| Create | `src/lib/personSchemas.ts` — shared Zod schemas |
+| Modify | `src/components/leads/CreateLeadDialog.tsx` — use shared schemas |
+| Modify | `src/components/members/wizard/types.ts` — use shared schemas |
+| Modify | `src/components/members/CreateMemberDialog.tsx` — accept `initialData` + `convertLeadId` |
+| Modify | `src/pages/Leads.tsx` — add actions column with convert option |
+| Modify | `src/hooks/useLeads.ts` — add convert mutation |
+| Modify | `src/i18n/locales/en.ts` + `th.ts` — add convert keys |
 
-No changes to `Members.tsx`, `useMembers.ts`, or any other existing files. The mutation (`useCreateMember`) already accepts `MemberInsert` which will auto-include new columns after migration.
+No breaking changes. All existing form behavior preserved. Schema refactor is purely structural — same validation rules, same field names.
 
