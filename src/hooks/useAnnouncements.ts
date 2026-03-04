@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 import { logActivity } from '@/lib/activityLogger';
 
@@ -12,9 +13,22 @@ export interface AnnouncementChannels {
   line: boolean;
 }
 
+/** Compute status from dates — single source of truth */
+export function computeAnnouncementStatus(
+  publishDate: string | null,
+  endDate: string | null,
+): AnnouncementStatus {
+  const now = new Date();
+  if (!publishDate || now < new Date(publishDate)) return 'scheduled';
+  if (!endDate || now <= new Date(endDate)) return 'active';
+  return 'completed';
+}
+
 export interface Announcement {
   id: string;
   message: string;
+  message_en: string | null;
+  message_th: string | null;
   publish_date: string | null;
   end_date: string | null;
   status: AnnouncementStatus | null;
@@ -24,6 +38,9 @@ export interface Announcement {
   channels: AnnouncementChannels | null;
   target_mode: string | null;
   target_location_ids: string[] | null;
+  line_broadcast_status: Record<string, unknown> | null;
+  /** Computed client-side from dates */
+  computed_status: AnnouncementStatus;
   staff?: {
     id: string;
     first_name: string;
@@ -32,24 +49,29 @@ export interface Announcement {
 }
 
 export interface AnnouncementFormData {
-  message: string;
+  message_en: string;
+  message_th: string;
   publish_date: string;
   end_date: string;
-  status: AnnouncementStatus;
   channels: AnnouncementChannels;
   target_mode: string;
   target_location_ids: string[];
 }
 
 export const useAnnouncements = (status?: AnnouncementStatus | null, search?: string) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['announcements', status, search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('announcements')
         .select(`
           id,
           message,
+          message_en,
+          message_th,
           publish_date,
           end_date,
           status,
@@ -59,6 +81,7 @@ export const useAnnouncements = (status?: AnnouncementStatus | null, search?: st
           channels,
           target_mode,
           target_location_ids,
+          line_broadcast_status,
           staff:created_by (
             id,
             first_name,
@@ -67,45 +90,66 @@ export const useAnnouncements = (status?: AnnouncementStatus | null, search?: st
         `)
         .order('created_at', { ascending: false });
 
-      if (status) {
-        query = query.eq('status', status);
+      // Date-based filtering instead of status column
+      if (status === 'scheduled') {
+        query = query.gt('publish_date', new Date().toISOString());
+      } else if (status === 'active') {
+        const now = new Date().toISOString();
+        query = query.lte('publish_date', now).gte('end_date', now);
+      } else if (status === 'completed') {
+        query = query.lt('end_date', new Date().toISOString());
       }
 
       if (search) {
-        query = query.ilike('message', `%${search}%`);
+        query = query.or(`message_en.ilike.%${search}%,message_th.ilike.%${search}%,message.ilike.%${search}%`);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as unknown as Announcement[];
+
+      // Enrich with computed status
+      return (data as unknown as Omit<Announcement, 'computed_status'>[]).map((row) => ({
+        ...row,
+        computed_status: computeAnnouncementStatus(row.publish_date, row.end_date),
+      })) as Announcement[];
     },
   });
 };
 
 export const useAnnouncementStats = () => {
+  const { user } = useAuth();
+  const now = new Date().toISOString();
+
   return useQuery({
     queryKey: ['announcement-stats'],
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('status');
+      const [scheduledRes, activeRes, completedRes] = await Promise.all([
+        supabase
+          .from('announcements')
+          .select('id', { count: 'exact', head: true })
+          .gt('publish_date', now),
+        supabase
+          .from('announcements')
+          .select('id', { count: 'exact', head: true })
+          .lte('publish_date', now)
+          .gte('end_date', now),
+        supabase
+          .from('announcements')
+          .select('id', { count: 'exact', head: true })
+          .lt('end_date', now),
+      ]);
 
-      if (error) throw error;
+      if (scheduledRes.error) throw scheduledRes.error;
+      if (activeRes.error) throw activeRes.error;
+      if (completedRes.error) throw completedRes.error;
 
-      const stats = {
-        active: 0,
-        scheduled: 0,
-        completed: 0,
+      return {
+        scheduled: scheduledRes.count ?? 0,
+        active: activeRes.count ?? 0,
+        completed: completedRes.count ?? 0,
       };
-
-      data?.forEach((item) => {
-        if (item.status && item.status in stats) {
-          stats[item.status as keyof typeof stats]++;
-        }
-      });
-
-      return stats;
     },
   });
 };
@@ -116,13 +160,18 @@ export const useCreateAnnouncement = () => {
 
   return useMutation({
     mutationFn: async (data: AnnouncementFormData) => {
+      // Auto-compute status from dates
+      const status = computeAnnouncementStatus(data.publish_date, data.end_date);
+
       const { data: result, error } = await supabase
         .from('announcements')
         .insert([{
-          message: data.message,
+          message: data.message_en, // keep legacy column populated
+          message_en: data.message_en,
+          message_th: data.message_th || null,
           publish_date: data.publish_date,
           end_date: data.end_date,
-          status: data.status,
+          status,
           channels: data.channels as unknown as Database['public']['Tables']['announcements']['Insert']['channels'],
           target_mode: data.target_mode,
           target_location_ids: data.target_location_ids,
@@ -158,9 +207,24 @@ export const useUpdateAnnouncement = () => {
     mutationFn: async ({ id, data }: { id: string; data: Partial<AnnouncementFormData> }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = { ...data };
+
+      // Sync legacy message column
+      if (data.message_en !== undefined) {
+        updateData.message = data.message_en;
+      }
+
       if (data.channels) {
         updateData.channels = data.channels;
       }
+
+      // Re-compute status if dates changed
+      if (data.publish_date || data.end_date) {
+        updateData.status = computeAnnouncementStatus(
+          data.publish_date ?? null,
+          data.end_date ?? null,
+        );
+      }
+
       const { data: result, error } = await supabase
         .from('announcements')
         .update(updateData)

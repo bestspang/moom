@@ -257,7 +257,10 @@ export type Database = {
           created_by: string | null
           end_date: string | null
           id: string
+          line_broadcast_status: Json | null
           message: string
+          message_en: string | null
+          message_th: string | null
           publish_date: string | null
           status: Database["public"]["Enums"]["announcement_status"] | null
           target_location_ids: string[] | null
@@ -270,7 +273,10 @@ export type Database = {
           created_by?: string | null
           end_date?: string | null
           id?: string
+          line_broadcast_status?: Json | null
           message: string
+          message_en?: string | null
+          message_th?: string | null
           publish_date?: string | null
           status?: Database["public"]["Enums"]["announcement_status"] | null
           target_location_ids?: string[] | null
@@ -283,7 +289,10 @@ export type Database = {
           created_by?: string | null
           end_date?: string | null
           id?: string
+          line_broadcast_status?: Json | null
           message?: string
+          message_en?: string | null
+          message_th?: string | null
           publish_date?: string | null
           status?: Database["public"]["Enums"]["announcement_status"] | null
           target_location_ids?: string[] | null
