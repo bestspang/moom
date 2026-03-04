@@ -1521,4 +1521,19 @@ export default {
     suggestionError: 'ไม่สามารถอัปเดตคำแนะนำได้',
     confidence: 'ความมั่นใจ',
   },
+
+  // Check-in Redemption Page
+  checkinRedeem: {
+    title: 'เช็คอินยิม',
+    enterIdentifier: 'เบอร์โทรศัพท์หรือรหัสสมาชิก',
+    identifierPlaceholder: 'เช่น 0812345678 หรือ M001',
+    checkInButton: 'เช็คอิน',
+    successMessage: 'เช็คอินที่ {{location}} เรียบร้อย! 🎉',
+    expired: 'QR Code นี้หมดอายุแล้ว',
+    alreadyUsed: 'QR Code นี้ถูกใช้งานแล้ว',
+    invalid: 'QR Code ไม่ถูกต้อง',
+    noToken: 'ไม่พบ token สำหรับเช็คอิน',
+    memberNotFound: 'ไม่พบสมาชิก กรุณาตรวจสอบเบอร์โทรหรือรหัสสมาชิก',
+    error: 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
+  },
 };

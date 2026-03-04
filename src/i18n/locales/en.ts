@@ -1521,4 +1521,19 @@ export default {
     suggestionError: 'Failed to update suggestion',
     confidence: 'Confidence',
   },
+
+  // Check-in Redemption Page
+  checkinRedeem: {
+    title: 'Gym Check-in',
+    enterIdentifier: 'Phone number or Member ID',
+    identifierPlaceholder: 'e.g. 0812345678 or M001',
+    checkInButton: 'Check in',
+    successMessage: "You're checked in at {{location}}! 🎉",
+    expired: 'This QR code has expired.',
+    alreadyUsed: 'This QR code has already been used.',
+    invalid: 'Invalid QR code.',
+    noToken: 'No check-in token provided.',
+    memberNotFound: 'Member not found. Please check your phone number or ID.',
+    error: 'Something went wrong. Please try again.',
+  },
 };

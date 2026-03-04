@@ -61,6 +61,7 @@ import LiffMemberApp from "./pages/liff/LiffMemberApp";
 import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
+import CheckinRedeem from "./pages/CheckinRedeem";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,9 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              
+              {/* QR Check-in redemption (public) */}
+              <Route path="/checkin" element={<CheckinRedeem />} />
               
               {/* LIFF public routes */}
               <Route path="/liff/member" element={<LiffMemberApp />} />
