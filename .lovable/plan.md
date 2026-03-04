@@ -1,172 +1,207 @@
 
 
-# System-Wide Hardening & Integration Plan
+# UX/UI Comprehensive Audit & Improvement Plan
 
-## 1. Detected Mismatches / Drift
+## Current State Assessment
 
-After auditing schema, types, hooks, pages, and realtime sync:
-
-### A. Schema vs Runtime Usage Mismatches
-- **`members` table**: Has both legacy JSONB (`medical`, `consents`) AND new flat columns (`has_medical_conditions`, `medical_notes`, `allow_physical_contact`). The `EditMemberDialog` reads flat columns but `CreateMemberDialog` still writes BOTH (dual-write). Some export paths use `(m as any).has_medical_conditions` — indicating type awareness gaps.
-- **`members.emergency_*`**: Legacy `emergency_contact_name`/`emergency_contact_phone` coexist with new `emergency_first_name`/`emergency_last_name`/`emergency_phone`. Export uses fallback chain `(m as any).emergency_first_name ?? m.emergency_contact_name`. This works but is fragile.
-- **`training_templates`**: `description` column was added via migration but the `useTrainingTemplates` hook doesn't use `description` in insert/update.
-- **`leads.status` enum**: DB enum is `new|contacted|interested|not_interested|converted`. The `useConvertLeadToMember` casts `'converted' as any` — this suggests `converted` may not be in the TS enum, OR the dev wasn't sure. Checking types: `lead_status` enum in types.ts DOES include `converted`, so the `as any` cast is unnecessary and masks type safety.
-
-### B. Type Drift
-- **`src/types/domain.ts`** exists but is NOT imported by most hooks/pages. Hooks still import directly from `@/integrations/supabase/types`. The domain types file is orphaned.
-- **`ExportableMember` in `exportCsv.ts`** has `member_since` but the DB column is also `member_since`. No drift, but the CSV header says `joined_date` (display alias) — this is fine.
-- **`useClassBookings` defines local interfaces** (`ClassBooking`, `ClassWaitlist`) instead of using generated types. These could drift if columns are added.
-
-### C. Permission / UI Mismatches
-- **Sidebar filters by `can(resource, 'read')`** but individual row actions (edit, delete) don't check `can(resource, 'write')` or `can(resource, 'delete')`. Users can see edit buttons they can't use — the server will reject, but UX is confusing.
-- **`DiagnosticsDataAudit` page** has no access level guard in routing (`App.tsx`). Any authenticated user can access it.
-- **Activity log `logActivity()` is fire-and-forget** — if it fails, no retry. The `console.warn` is the only signal. This is acceptable for now but means audit completeness is not guaranteed.
-
-### D. Realtime Sync Gaps
-- **`notifications` table** is NOT in `useRealtimeSync`'s `TABLE_INVALIDATION_MAP`. Notifications won't auto-refresh.
-- **`roles` table** is NOT in the realtime sync map. Role changes require page refresh.
-- **`user_roles` table** is NOT in realtime sync. If an admin changes a user's role, the affected user won't see it until they re-login.
-- **`checkin_qr_tokens` table** is NOT in realtime sync. QR token expiry/usage won't reflect in real-time.
-
-### E. Missing Idempotency Guards
-- **`useMarkAttendance`**: No check for duplicate attendance records. If called twice for the same booking, it will insert 2 `member_attendance` rows and deduct 2 sessions from the package.
-- **`useBatchMarkAttendance`**: Same issue at scale.
-- **`useCreateCheckIn` (lobby)**: The `useCheckDuplicate` hook exists and is used in the UI, but the server (RLS/trigger) doesn't enforce uniqueness — it's client-side only.
-
-### F. Missing Cross-Module Links
-- **Finance transactions** don't have a `staff` join in the query despite `staff_id` being on the table. The `staff` relation is available but not fetched.
-- **Lead conversion** copies basic fields but doesn't copy address/emergency/medical data from the lead to the new member.
-- **Schedule cancellation** cancels bookings but doesn't refund sessions to `member_packages` or write ledger reversal entries.
-
-### G. Default Data / Config Assumptions
-- **No default location** check. If `locations` table is empty, many forms break silently (location dropdowns empty, check-ins fail).
-- **No default role** check. If `roles` table is empty, staff creation with positions fails.
-- **`handle_new_user` trigger** creates staff with `status: 'pending'` and `role: 'front_desk'` but doesn't assign a `role_id` from the `roles` table. The `staff.role_id` stays null until manually set.
+After reviewing 20+ pages, the sidebar, header, mobile viewport, i18n files, and session replay, this is a well-structured gym management admin app. The foundation is solid but several UX friction points, copy inconsistencies, and mobile gaps exist.
 
 ---
 
-## 2. Fix Plan (prioritized by impact)
+## 1. Navigation & Information Architecture Issues
 
-### Phase 1: Critical Data Integrity Fixes
+### Problem: Sidebar has too many top-level groups (6 groups + 3 standalone items = 9 sections)
+Users must scan 15+ items. "Your gym" is vague. "Coming Soon" doesn't belong in primary nav.
 
-**File: `src/hooks/useClassBookings.ts`**
-- Add idempotency guard to `useMarkAttendance`: before inserting `member_attendance`, check if a record already exists for this `(member_id, schedule_id)`. If yes, skip insert + ledger deduction.
-- Same for `useBatchMarkAttendance`.
+**Fix:**
+- Rename "Your gym" to "Admin" (clearer, universal)
+- Move "Coming Soon" (roadmap) out of main nav — put it in Settings or as a footer link
+- Collapse "Finance" into a single page with tabs (Transfer slips + Finance are nearly identical tables) instead of 2 nav items
+- The sidebar route `/admin` for Staff is confusing — the URL says "admin" but the label says "Staff". Keep the nav label but fix URL for semantic clarity
 
-**File: `src/hooks/useRealtimeSync.ts`**
-- Add missing tables to `TABLE_INVALIDATION_MAP`:
-  - `notifications` → `['notifications']`
-  - `roles` → `['roles', 'role-permissions', 'my-permissions']`
-  - `user_roles` → `['my-permissions', 'user-roles']`
-  - `checkin_qr_tokens` → `['checkin-qr-tokens', 'check-ins']`
+### Problem: Sidebar group labels have no icons, creating visual inconsistency
+Top-level items (Dashboard, Lobby) have icons but group headers (Class, Client, Package) don't.
 
-**File: `src/hooks/useLobby.ts` (useCancelSchedule in useSchedule.ts)**
-- When cancelling a schedule with booked members who have `member_package_id`, refund sessions: insert positive ledger entry and increment `sessions_remaining`.
-
-### Phase 2: Type & Contract Alignment
-
-**File: `src/hooks/useLeads.ts`**
-- Remove `as any` cast in `useConvertLeadToMember` — the `converted` status IS in the enum.
-
-**File: `src/hooks/useClassBookings.ts`**
-- Replace local `ClassBooking`/`ClassWaitlist` interfaces with `Tables<'class_bookings'>` and `Tables<'class_waitlist'>` from generated types.
-
-**File: Multiple hooks**
-- Where hooks still import directly from `@/integrations/supabase/types`, that's fine — the `src/types/domain.ts` file serves as optional convenience, not mandatory. No forced migration needed.
-
-### Phase 3: Permission UX Alignment
-
-**File: `src/pages/Members.tsx`**
-- Wrap the Edit dropdown action with `can('members', 'write')` check — hide if user lacks write permission.
-
-**File: `src/pages/Leads.tsx`**
-- Wrap Convert action with `can('leads', 'write')` check.
-
-**File: `src/App.tsx`**
-- Add `minAccessLevel="level_4_master"` to the DiagnosticsDataAudit route.
-
-### Phase 4: Cross-Module Integration
-
-**File: `src/hooks/useLeads.ts` — `useConvertLeadToMember`**
-- After converting, copy address/emergency/medical fields from lead to the new member record (or document that this is the caller's responsibility and verify the caller does it).
-
-**File: `src/hooks/useFinance.ts`**
-- Add `staff:staff(id, first_name, last_name)` to the finance transactions query for display.
-
-**File: `src/hooks/useTrainingTemplates.ts`**
-- Accept `description` field in create/update mutations.
-
-### Phase 5: System Health / Diagnostics
-
-**File: `src/pages/DiagnosticsDataAudit.tsx`**
-- Expand checks to include:
-  - At least 1 location exists
-  - At least 1 role exists
-  - `handle_new_user` trigger exists (can check via RPC or just document)
-  - Realtime subscription count matches expected tables
-  - Secrets configured (already in context)
-
-### Phase 6: Documentation
-
-**File: `docs/INTEGRATION_NOTES.md`**
-- Update with new invariants, idempotency rules, and realtime coverage map.
+**Fix:** Add icons to group headers for visual consistency.
 
 ---
 
-## 3. Final Invariants List
+## 2. Dashboard UX Issues
 
-| Invariant | Enforcement |
-|-----------|------------|
-| Attendance is recorded at most once per (member, schedule) | Check before insert in `useMarkAttendance` |
-| Package sessions are decremented atomically with ledger entry | Same transaction in `useMarkAttendance` |
-| Schedule cancellation refunds sessions | Ledger reversal in `useCancelSchedule` |
-| Lead conversion copies all profile data | Caller responsibility (CreateMemberDialog) |
-| Notifications refresh in real-time | Added to realtime sync map |
-| Role changes reflect immediately | Added `roles`/`user_roles` to realtime sync |
-| Only master-level users access diagnostics | Route guard in App.tsx |
-| Edit/delete buttons hidden when user lacks permission | `can()` checks in UI |
-| Audit log written for every mutation | `logActivity()` in every mutation's `onSuccess` |
-| At least 1 location and 1 role must exist | Diagnostics page checks |
+### Problem: Empty state is just "No data to show" — unhelpful for new users
+When a gym admin first logs in, every card shows 0 and "No data to show". No onboarding guidance.
 
----
+**Fix:**
+- Add a first-time "Welcome" card or onboarding checklist when all stats are 0: "Create your first location", "Add a class", "Register your first member"
+- Each empty state in sidebar cards should have an action: "High risk members — No members at risk right now" (positive framing)
+- "Hot leads — No hot leads yet. Create a lead to get started" with CTA button
 
-## 4. Golden-Path Test Checklist
+### Problem: "MOOM CLUB Main" subtitle on the check-in stat is hardcoded text from data
+This text comes from the location name which may not always be meaningful context on the stat card.
 
-1. **Sign up** → verify staff record created with `pending` status and `front_desk` role
-2. **Log in** → verify dashboard loads with KPIs (0 if empty)
-3. **Create location** → verify it appears in dropdowns
-4. **Create role** → verify it appears in staff position assignment
-5. **Create member** → verify all fields persisted (profile, contact, address, emergency, medical)
-6. **Import members via CSV** → verify upsert, per-row activity log, error reporting
-7. **Export members** → verify all 28+ columns present including computed
-8. **Create class + schedule** → verify room capacity validation
-9. **Book member into class** → verify booking created, session count unchanged
-10. **Mark attendance** → verify session decremented, ledger entry created, attendance record created
-11. **Mark attendance again (idempotency)** → verify NO duplicate deduction
-12. **Cancel schedule** → verify all bookings cancelled, sessions refunded
-13. **Check in via lobby** → verify attendance recorded, duplicate check works
-14. **Create lead → convert to member** → verify all data carried over
-15. **Change user role (as admin)** → verify sidebar updates via realtime
-16. **Access diagnostics as non-master** → verify redirect
+### Problem: Right sidebar cards are not actionable enough
+Birthday card shows names but doesn't suggest actions (send birthday message, offer discount).
 
 ---
 
-## 5. Implementation Summary
+## 3. Copy & Labeling Issues
 
-**Files to modify:**
-| File | Change | Risk |
-|------|--------|------|
-| `src/hooks/useClassBookings.ts` | Idempotency guards on attendance marking | Medium — core flow |
-| `src/hooks/useRealtimeSync.ts` | Add 4 missing tables | Low — additive |
-| `src/hooks/useSchedule.ts` | Session refund on cancel | Medium — financial |
-| `src/hooks/useLeads.ts` | Remove `as any` cast | Low — type fix |
-| `src/hooks/useFinance.ts` | Add staff join | Low — additive |
-| `src/hooks/useTrainingTemplates.ts` | Accept description field | Low — additive |
-| `src/pages/Members.tsx` | Permission-gated edit button | Low — UI only |
-| `src/pages/Leads.tsx` | Permission-gated convert button | Low — UI only |
-| `src/App.tsx` | Access guard on diagnostics route | Low — security |
-| `src/pages/DiagnosticsDataAudit.tsx` | Add system health checks | Low — additive |
-| `docs/INTEGRATION_NOTES.md` | Update invariants | None |
+### Problem: Inconsistent column header reuse across pages
+- `t('lobby.name')` is used as column header for "Name" in Members, Leads, Staff, Packages — but the key is `lobby.name`. This makes i18n maintenance confusing. Should be `common.name`.
+- `t('leads.contactNumber')` used in Members page for phone — should be `common.phone` or `members.phone`
+- `t('leads.email')` used in Staff page — should be `common.email`
 
-No DB migrations needed — all schema is already aligned.
+**Fix:** Create proper `common.name`, `common.phone`, `common.email` keys and use them consistently.
+
+### Problem: Status labels use `replace('_', ' ')` for display
+`on_hold` becomes "on hold" (lowercase, unpolished). Should map to proper translated labels like "On Hold".
+
+**Fix:** Create a `getStatusLabel(status)` utility that returns properly capitalized, translated labels instead of raw string manipulation.
+
+### Problem: "No data to show" is used everywhere — generic and uninformative
+Different contexts need different empty messages: "No classes scheduled today", "No check-ins yet", "No members found matching your search".
+
+**Fix:** Pass contextual empty messages to each DataTable instance.
+
+### Problem: Mixed language in UI
+Some labels like "Class", "PT", "All" appear in English even in Thai mode because they're hardcoded strings not wrapped in `t()`.
+
+---
+
+## 4. Mobile Responsiveness Issues
+
+### Problem: Members table has 11 columns — overflows badly on mobile
+Even with horizontal scroll, 11 columns on mobile is unusable. Users can't find important info.
+
+**Fix:**
+- On mobile, switch Members list to a card/list layout instead of table
+- Show only: name + avatar, status badge, and phone — with expand/tap for details
+- Same approach for Leads (9 columns)
+
+### Problem: Lobby page actions overflow on mobile
+Date picker + search + QR button + Check-in button in one row — wraps but not gracefully.
+
+**Fix:** Stack vertically on mobile. Primary action (Check-in) should be a floating action button (FAB) or sticky bottom bar on mobile.
+
+### Problem: Header has too many items competing for space on mobile
+Hamburger + logo + support phone + bell + language + avatar = 6 items in 375px.
+
+**Fix:** 
+- Hide support phone number on mobile (already done with `hidden md:block`)
+- Consider moving language toggle into the user dropdown menu to save space
+
+---
+
+## 5. Functional & Interaction Issues
+
+### Problem: Packages page Export button does nothing
+The Export button on Packages page is just `<Button variant="outline">` with no onClick handler.
+
+**Fix:** Wire it to actual export function or remove it until functional (no-stub policy).
+
+### Problem: Members page has checkbox selection but no bulk actions
+Users can select members but there's no "Delete selected", "Export selected", or "Change status" action.
+
+**Fix:** Either remove checkboxes or add a bulk action bar that appears when rows are selected.
+
+### Problem: Leads page StatusTabs appear BEFORE SearchBar
+On every other page (Members, Staff, Packages), search comes first then tabs. Leads reverses this order, breaking consistency.
+
+**Fix:** Move SearchBar above StatusTabs in Leads page to match other pages.
+
+### Problem: Leads "Manage" dropdown uses Settings icon
+The gear icon implies settings/configuration, not data management. Members page correctly uses FileText icon.
+
+**Fix:** Use FileText icon for Leads manage dropdown too.
+
+### Problem: Leads download template uses Download icon (same as Export CSV)
+Two dropdown items with the same icon — confusing. Template should have a distinct icon.
+
+**Fix:** Use FileText for template download (it's a file template, not a data export).
+
+---
+
+## 6. Empty State & Onboarding Improvements
+
+### Problem: First-time user experience is cold
+No guidance, no setup wizard, no contextual help. A new gym owner sees 0 everywhere.
+
+**Fix:** Add a setup progress banner on Dashboard that shows:
+- Location created? (required first)
+- At least 1 class created?
+- At least 1 package created?
+- At least 1 member registered?
+Show completion percentage. Dismiss when all done.
+
+---
+
+## 7. Color & Visual Hierarchy
+
+### Problem: StatCard comparison indicators lack visual weight
+The "+2 compared to yesterday" text is small and easy to miss.
+
+### Problem: StatusBadge variant names don't match their semantic meaning
+`variant="paid"` is used for "active" status, `variant="voided"` for "suspended". The variant names should be semantic (`success`, `warning`, `danger`, `neutral`) not domain-specific.
+
+---
+
+## 8. Page-Specific Fixes
+
+### Finance Page
+- 4 filter dropdowns on one row overflow on mobile — stack them
+- KPI cards (Transactions, Total Sales, Net Income, Refunds) are great
+
+### Schedule Page  
+- Trainer filter pills are well-done with horizontal scroll
+- Missing: visual indicator for "class is full" vs "has spots"
+
+### Profile Page
+- Very basic — only name + email. Missing: password change, notification preferences, theme/language settings
+
+### Notifications Page
+- Checkbox filters for notification types are functional but visually heavy
+- Consider using pill/tag toggle instead of checkboxes
+
+---
+
+## Implementation Plan (Prioritized)
+
+### Phase 1: Quick Wins (Low risk, high impact)
+1. **Fix Packages Export button** — wire to real handler or remove
+2. **Fix Leads page order** — move SearchBar above StatusTabs
+3. **Fix Leads manage icon** — FileText instead of Settings
+4. **Fix status label display** — proper `getStatusLabel()` utility instead of `replace('_', ' ')`
+5. **Contextual empty messages** — replace generic "No data to show"
+6. **Remove member table checkboxes** or add bulk action bar
+
+### Phase 2: Mobile UX (Medium effort)
+7. **Members/Leads mobile card layout** — switch from table to cards on mobile
+8. **Lobby mobile layout** — stack filters, FAB for check-in
+9. **Move language toggle** into user dropdown on mobile
+
+### Phase 3: Onboarding & First-Time Experience
+10. **Dashboard setup checklist** — show when stats are all 0
+11. **Contextual empty states with CTAs** — "No members yet, create one"
+12. **Rename "Your gym" to "Admin"** in sidebar
+
+### Phase 4: Copy & i18n Consistency
+13. **Create common.name/phone/email keys** — stop reusing `lobby.name` everywhere
+14. **Fix hardcoded English strings** in Thai mode
+
+### Files to Touch
+
+| File | Changes |
+|------|---------|
+| `src/pages/Members.tsx` | Remove checkboxes or add bulk actions; mobile card layout |
+| `src/pages/Leads.tsx` | Swap search/tabs order; fix manage icon |
+| `src/pages/Packages.tsx` | Wire or remove Export button |
+| `src/pages/Dashboard.tsx` | Onboarding checklist; better empty states |
+| `src/pages/Lobby.tsx` | Mobile layout improvements |
+| `src/components/layout/Sidebar.tsx` | Rename "Your gym"; remove "Coming Soon" from nav |
+| `src/components/common/StatusBadge.tsx` | Add semantic variant aliases |
+| `src/lib/formatters.ts` | Add `getStatusLabel()` utility |
+| `src/i18n/locales/en.ts` | Add common keys, contextual empty messages |
+| `src/i18n/locales/th.ts` | Same |
+
+No DB changes needed. No security changes. All UI/UX only.
 
