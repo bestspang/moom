@@ -4,37 +4,10 @@ import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Tables } from '@/integrations/supabase/types';
 
-// Types based on database schema
+// Use generated types instead of hand-rolled interfaces
 type BookingStatus = 'booked' | 'cancelled' | 'attended' | 'no_show';
-type WaitlistStatus = 'waiting' | 'promoted' | 'expired' | 'cancelled';
-
-interface ClassBooking {
-  id: string;
-  schedule_id: string;
-  member_id: string;
-  member_package_id: string | null;
-  status: BookingStatus;
-  booked_at: string;
-  cancelled_at: string | null;
-  attended_at: string | null;
-  cancelled_by: string | null;
-  cancellation_reason: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ClassWaitlist {
-  id: string;
-  schedule_id: string;
-  member_id: string;
-  position: number;
-  status: WaitlistStatus;
-  created_at: string;
-  promoted_at: string | null;
-  expired_at: string | null;
-}
 
 // Fetch bookings for a specific schedule
 export const useClassBookings = (scheduleId?: string) => {
@@ -201,7 +174,17 @@ export const useCancelBooking = () => {
   });
 };
 
-// Mark attendance for a booking
+// ── Idempotent helper: check if attendance already recorded ──
+async function hasExistingAttendance(memberId: string, scheduleId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('member_attendance')
+    .select('*', { count: 'exact', head: true })
+    .eq('member_id', memberId)
+    .eq('schedule_id', scheduleId);
+  return (count ?? 0) > 0;
+}
+
+// Mark attendance for a booking (with idempotency guard)
 export const useMarkAttendance = () => {
   const queryClient = useQueryClient();
 
@@ -213,7 +196,7 @@ export const useMarkAttendance = () => {
       bookingId: string;
       status: 'attended' | 'no_show';
     }) => {
-      const updates: Partial<ClassBooking> = { status };
+      const updates: Record<string, unknown> = { status };
       if (status === 'attended') {
         updates.attended_at = new Date().toISOString();
       }
@@ -232,6 +215,12 @@ export const useMarkAttendance = () => {
 
       if (status === 'attended' && data) {
         const schedule = (data as any).schedule;
+
+        // ── IDEMPOTENCY GUARD: skip if attendance already recorded ──
+        const alreadyRecorded = await hasExistingAttendance(data.member_id, data.schedule_id);
+        if (alreadyRecorded) {
+          return data; // Already recorded — no duplicate insert or session deduction
+        }
 
         await supabase.from('member_attendance').insert({
           member_id: data.member_id,
@@ -302,7 +291,7 @@ export const useMarkAttendance = () => {
   });
 };
 
-// Batch mark attendance for multiple bookings
+// Batch mark attendance for multiple bookings (with idempotency guard)
 export const useBatchMarkAttendance = () => {
   const queryClient = useQueryClient();
 
@@ -314,7 +303,7 @@ export const useBatchMarkAttendance = () => {
       bookingIds: string[];
       status: 'attended' | 'no_show';
     }) => {
-      const updates: Partial<ClassBooking> = { status };
+      const updates: Record<string, unknown> = { status };
       if (status === 'attended') {
         updates.attended_at = new Date().toISOString();
       }
@@ -333,6 +322,10 @@ export const useBatchMarkAttendance = () => {
       if (status === 'attended' && data) {
         for (const booking of data) {
           const schedule = (booking as any).schedule;
+
+          // ── IDEMPOTENCY GUARD ──
+          const alreadyRecorded = await hasExistingAttendance(booking.member_id, booking.schedule_id);
+          if (alreadyRecorded) continue;
 
           await supabase.from('member_attendance').insert({
             member_id: booking.member_id,

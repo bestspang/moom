@@ -28,7 +28,8 @@ export const useFinanceTransactions = (filters: FinanceFilters) => {
           *,
           member:members(id, first_name, last_name, phone),
           package:packages(id, name_en, name_th, type),
-          location:locations(id, name)
+          location:locations(id, name),
+          staff:staff(id, first_name, last_name)
         `);
       
       if (filters.startDate) {

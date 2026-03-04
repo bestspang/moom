@@ -33,7 +33,12 @@ type TableName =
   | 'member_injuries'
   | 'member_suspensions'
   | 'member_contracts'
-  | 'member_billing';
+  | 'member_billing'
+  // ── Added missing tables ──
+  | 'notifications'
+  | 'roles'
+  | 'user_roles'
+  | 'checkin_qr_tokens';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -66,6 +71,11 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   member_suspensions: ['member-suspensions'],
   member_contracts: ['member-contracts', 'members-enrichment'],
   member_billing: ['member-billing', 'member-summary-stats'],
+  // ── Added missing tables ──
+  notifications: ['notifications'],
+  roles: ['roles', 'role-permissions', 'my-permissions'],
+  user_roles: ['my-permissions', 'user-roles'],
+  checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
