@@ -28,7 +28,7 @@ const CreateClassCategoryDialog = ({ open, onOpenChange }: Props) => {
     if (!name.trim()) return;
 
     createMutation.mutate(
-      { name: name.trim(), name_th: nameTh.trim() || null } as any,
+      { name: name.trim(), name_th: nameTh.trim() || null },
       {
         onSuccess: () => {
           setName('');

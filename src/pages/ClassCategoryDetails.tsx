@@ -28,7 +28,7 @@ const ClassCategoryDetails = () => {
   const startEditing = () => {
     if (!category) return;
     setEditName(category.name);
-    setEditNameTh((category as any).name_th || '');
+    setEditNameTh(category.name_th || '');
     setIsEditing(true);
   };
 
@@ -39,7 +39,8 @@ const ClassCategoryDetails = () => {
     updateMutation.mutate(
       {
         id,
-        data: { name: editName.trim(), name_th: editNameTh.trim() || null } as any,
+        data: { name: editName.trim(), name_th: editNameTh.trim() || null },
+        oldData: { name: category!.name, name_th: category!.name_th },
       },
       { onSuccess: () => setIsEditing(false) }
     );
@@ -72,8 +73,8 @@ const ClassCategoryDetails = () => {
     return <div className="p-8 text-center text-muted-foreground">{t('common.noData')}</div>;
   }
 
-  const displayName = language === 'th' && (category as any).name_th
-    ? (category as any).name_th
+  const displayName = language === 'th' && category.name_th
+    ? category.name_th
     : category.name;
 
   return (
@@ -125,7 +126,7 @@ const ClassCategoryDetails = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('categories.nameTh')}</p>
-                <p className="font-medium">{(category as any).name_th || '-'}</p>
+                <p className="font-medium">{category.name_th || '-'}</p>
               </div>
             </div>
           )}
