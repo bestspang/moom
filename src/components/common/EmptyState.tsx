@@ -18,15 +18,15 @@ interface EmptyStateProps {
 
 const variantIcons: Record<EmptyStateVariant, React.ReactNode> = {
   default: null,
-  members: <Users className="h-16 w-16" />,
-  schedule: <Calendar className="h-16 w-16" />,
-  packages: <Package className="h-16 w-16" />,
-  finance: <DollarSign className="h-16 w-16" />,
-  notifications: <Bell className="h-16 w-16" />,
-  notes: <FileText className="h-16 w-16" />,
-  workouts: <Dumbbell className="h-16 w-16" />,
-  locations: <MapPin className="h-16 w-16" />,
-  activity: <ClipboardList className="h-16 w-16" />,
+  members: <Users className="h-12 w-12" />,
+  schedule: <Calendar className="h-12 w-12" />,
+  packages: <Package className="h-12 w-12" />,
+  finance: <DollarSign className="h-12 w-12" />,
+  notifications: <Bell className="h-12 w-12" />,
+  notes: <FileText className="h-12 w-12" />,
+  workouts: <Dumbbell className="h-12 w-12" />,
+  locations: <MapPin className="h-12 w-12" />,
+  activity: <ClipboardList className="h-12 w-12" />,
 };
 
 export const EmptyState = ({
@@ -44,7 +44,7 @@ export const EmptyState = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 px-4 text-center',
+        'flex flex-col items-center justify-center py-8 px-4 text-center',
         className
       )}
     >
@@ -53,7 +53,7 @@ export const EmptyState = ({
           {displayIcon}
         </div>
       )}
-      <p className="text-muted-foreground font-medium text-lg">{message}</p>
+      <p className="text-muted-foreground font-medium text-base">{message}</p>
       {description && (
         <p className="text-sm text-muted-foreground/70 mt-1 max-w-sm">{description}</p>
       )}

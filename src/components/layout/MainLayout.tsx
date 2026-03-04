@@ -27,13 +27,13 @@ export const MainLayout = () => {
       <main
         id="main-content"
         className={cn(
-          'pt-16 min-h-screen transition-all duration-300',
-          'lg:pl-[220px]'
+          'pt-14 min-h-screen transition-all duration-300',
+          'lg:pl-[200px]'
         )}
       >
         <div 
           key={location.pathname}
-          className="p-4 md:p-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
+          className="p-3 md:p-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
         >
           <Outlet />
         </div>

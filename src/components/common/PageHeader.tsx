@@ -22,7 +22,7 @@ export const PageHeader = ({
   actions,
 }: PageHeaderProps) => {
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       {/* Breadcrumbs */}
       {breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
@@ -47,7 +47,7 @@ export const PageHeader = ({
       {/* Title and actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
           {updatedAt && (
             <p className="text-sm text-muted-foreground mt-1">
               Updated {updatedAt}
