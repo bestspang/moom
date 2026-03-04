@@ -17,6 +17,7 @@ import MemberDetails from "./pages/MemberDetails";
 import Leads from "./pages/Leads";
 import Packages from "./pages/Packages";
 import CreatePackage from "./pages/CreatePackage";
+import PackageDetails from "./pages/PackageDetails";
 import Promotions from "./pages/Promotions";
 import Schedule from "./pages/Schedule";
 import Rooms from "./pages/Rooms";
@@ -94,6 +95,7 @@ const App = () => (
                 <Route path="leads" element={<Leads />} />
                 <Route path="package" element={<Packages />} />
                 <Route path="package/create" element={<CreatePackage />} />
+                <Route path="package/:id" element={<PackageDetails />} />
                 <Route path="promotion" element={<Promotions />} />
                 <Route path="calendar" element={<Schedule />} />
                 <Route path="room" element={<Rooms />} />
