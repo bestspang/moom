@@ -825,12 +825,15 @@ export type Database = {
           created_at: string | null
           id: string
           last_login_at: string | null
+          lead_id: string | null
           line_display_name: string | null
           line_id_token: string | null
           line_picture_url: string | null
           line_user_id: string
           linked_at: string | null
           member_id: string | null
+          staff_id: string | null
+          status: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -838,12 +841,15 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_login_at?: string | null
+          lead_id?: string | null
           line_display_name?: string | null
           line_id_token?: string | null
           line_picture_url?: string | null
           line_user_id: string
           linked_at?: string | null
           member_id?: string | null
+          staff_id?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -851,21 +857,38 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_login_at?: string | null
+          lead_id?: string | null
           line_display_name?: string | null
           line_id_token?: string | null
           line_picture_url?: string | null
           line_user_id?: string
           linked_at?: string | null
           member_id?: string | null
+          staff_id?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "line_users_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "line_users_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_users_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
