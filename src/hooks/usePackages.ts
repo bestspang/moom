@@ -34,26 +34,23 @@ export const usePackageStats = () => {
   return useQuery({
     queryKey: ['package-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('packages')
-        .select('status');
-      
-      if (error) throw error;
-      
-      const stats = {
-        on_sale: 0,
-        scheduled: 0,
-        drafts: 0,
-        archive: 0,
-      };
-      
-      data?.forEach((pkg) => {
-        if (pkg.status && stats.hasOwnProperty(pkg.status)) {
-          stats[pkg.status as keyof typeof stats]++;
-        }
+      const statuses = ['on_sale', 'scheduled', 'drafts', 'archive'] as const;
+      const results = await Promise.all(
+        statuses.map((status) =>
+          supabase
+            .from('packages')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', status)
+        )
+      );
+
+      const stats: Record<string, number> = {};
+      statuses.forEach((status, i) => {
+        if (results[i].error) throw results[i].error;
+        stats[status] = results[i].count ?? 0;
       });
-      
-      return stats;
+
+      return stats as { on_sale: number; scheduled: number; drafts: number; archive: number };
     },
   });
 };
