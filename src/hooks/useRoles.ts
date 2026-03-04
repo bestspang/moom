@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import type { PermissionRow, ResourceKey } from './usePermissions';
 
 type Role = Tables<'roles'>;
 type RoleInsert = TablesInsert<'roles'>;
@@ -15,38 +16,40 @@ export const useRoles = (search?: string) => {
   return useQuery({
     queryKey: ['roles', search],
     queryFn: async () => {
-      // First get all roles
       let query = supabase.from('roles').select('*');
-      
       if (search) {
         query = query.ilike('name', `%${search}%`);
       }
-      
       const { data: roles, error } = await query.order('access_level', { ascending: false });
-      
       if (error) throw error;
-      
-      // Then get staff counts per role
-      const { data: staffCounts, error: countError } = await supabase
+
+      // Count staff per role from staff_positions
+      const { data: staffPositions, error: posError } = await supabase
+        .from('staff_positions')
+        .select('role_id');
+      if (posError) throw posError;
+
+      const counts: Record<string, number> = {};
+      staffPositions?.forEach((sp) => {
+        counts[sp.role_id] = (counts[sp.role_id] || 0) + 1;
+      });
+
+      // Also count from staff.role_id (legacy)
+      const { data: staffDirect, error: sdError } = await supabase
         .from('staff')
         .select('role_id');
-      
-      if (countError) throw countError;
-      
-      // Count staff per role
-      const counts: Record<string, number> = {};
-      staffCounts?.forEach((staff) => {
-        if (staff.role_id) {
-          counts[staff.role_id] = (counts[staff.role_id] || 0) + 1;
+      if (sdError) throw sdError;
+      staffDirect?.forEach((s) => {
+        if (s.role_id) {
+          counts[s.role_id] = (counts[s.role_id] || 0) + 1;
         }
       });
-      
-      // Merge counts with roles
+
       const rolesWithCounts: RoleWithCount[] = (roles || []).map((role) => ({
         ...role,
         accounts_count: counts[role.id] || 0,
       }));
-      
+
       return rolesWithCounts;
     },
   });
@@ -61,7 +64,6 @@ export const useRole = (id: string) => {
         .select('*')
         .eq('id', id)
         .single();
-      
       if (error) throw error;
       return data as Role;
     },
@@ -69,17 +71,87 @@ export const useRole = (id: string) => {
   });
 };
 
+export const useRolePermissions = (roleId: string) => {
+  return useQuery({
+    queryKey: ['role-permissions', roleId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('resource, can_read, can_write, can_delete')
+        .eq('role_id', roleId);
+      if (error) throw error;
+      return data as { resource: string; can_read: boolean | null; can_write: boolean | null; can_delete: boolean | null }[];
+    },
+    enabled: !!roleId,
+  });
+};
+
+export const useSaveRoleWithPermissions = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ role, permissions }: { role: { id?: string; name: string; access_level: string }; permissions: PermissionRow[] }) => {
+      let roleId = role.id;
+
+      if (roleId) {
+        // Update existing role
+        const { error } = await supabase
+          .from('roles')
+          .update({ name: role.name, access_level: role.access_level as any })
+          .eq('id', roleId);
+        if (error) throw error;
+      } else {
+        // Insert new role
+        const { data, error } = await supabase
+          .from('roles')
+          .insert({ name: role.name, access_level: role.access_level as any })
+          .select('id')
+          .single();
+        if (error) throw error;
+        roleId = data.id;
+      }
+
+      // Delete old permissions
+      const { error: delError } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role_id', roleId);
+      if (delError) throw delError;
+
+      // Insert new permissions
+      const rows = permissions.map((p) => ({
+        role_id: roleId!,
+        resource: p.resource,
+        can_read: p.can_read,
+        can_write: p.can_write,
+        can_delete: p.can_delete,
+      }));
+
+      if (rows.length > 0) {
+        const { error: insError } = await supabase
+          .from('role_permissions')
+          .insert(rows);
+        if (insError) throw insError;
+      }
+
+      return roleId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['my-permissions'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to save role: ${error.message}`);
+    },
+  });
+};
+
 export const useCreateRole = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (data: RoleInsert) => {
-      const { data: newRole, error } = await supabase
-        .from('roles')
-        .insert(data)
-        .select()
-        .single();
-      
+      const { data: newRole, error } = await supabase.from('roles').insert(data).select().single();
       if (error) throw error;
       return newRole;
     },
@@ -95,16 +167,9 @@ export const useCreateRole = () => {
 
 export const useUpdateRole = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: RoleUpdate }) => {
-      const { data: updated, error } = await supabase
-        .from('roles')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      
+      const { data: updated, error } = await supabase.from('roles').update(data).eq('id', id).select().single();
       if (error) throw error;
       return updated;
     },
@@ -121,14 +186,9 @@ export const useUpdateRole = () => {
 
 export const useDeleteRole = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('roles')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from('roles').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

@@ -1629,9 +1629,48 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_write: boolean | null
+          created_at: string | null
+          id: string
+          resource: string
+          role_id: string
+        }
+        Insert: {
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource: string
+          role_id: string
+        }
+        Update: {
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roles: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level"]
+          ai_policy: Json | null
           created_at: string | null
           description: string | null
           id: string
@@ -1641,6 +1680,7 @@ export type Database = {
         }
         Insert: {
           access_level: Database["public"]["Enums"]["access_level"]
+          ai_policy?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -1650,6 +1690,7 @@ export type Database = {
         }
         Update: {
           access_level?: Database["public"]["Enums"]["access_level"]
+          ai_policy?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string

@@ -51,4 +51,10 @@ export const queryKeys = {
   staffMember: (id: string) => ['staff', id] as const,
   staffStats: () => ['staff-stats'] as const,
   staffPositions: (staffId: string) => ['staff-positions', staffId] as const,
+
+  // Roles & Permissions
+  roles: (search?: string) => ['roles', search] as const,
+  role: (id: string) => ['roles', id] as const,
+  rolePermissions: (roleId: string) => ['role-permissions', roleId] as const,
+  myPermissions: (userId?: string) => ['my-permissions', userId] as const,
 };

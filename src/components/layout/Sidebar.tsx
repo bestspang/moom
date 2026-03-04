@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions, type ResourceKey } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -48,6 +49,7 @@ interface NavItem {
   path: string;
   icon: React.ElementType;
   minLevel?: AccessLevel;
+  resource?: ResourceKey;
 }
 
 interface NavGroup {
@@ -66,6 +68,7 @@ const accessLevelOrder: Record<AccessLevel, number> = {
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { t } = useLanguage();
   const { accessLevel } = useAuth();
+  const { can, hasCustomPermissions } = usePermissions();
   const location = useLocation();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['class', 'client', 'package', 'yourGym', 'finance']);
 
@@ -75,64 +78,69 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
-  // Check if user has minimum access level
-  const hasAccess = (minLevel?: AccessLevel) => {
+  // Check if user has access — uses permissions if available, else access_level fallback
+  const hasAccess = (minLevel?: AccessLevel, resource?: ResourceKey) => {
+    // If custom permissions exist, check resource-level read permission
+    if (hasCustomPermissions && resource) {
+      return can(resource, 'read');
+    }
+    // Fallback to access_level
     if (!minLevel) return true;
     if (!accessLevel) return false;
     return accessLevelOrder[accessLevel] >= accessLevelOrder[minLevel];
   };
 
   const navItems: (NavItem | NavGroup)[] = [
-    { label: t('nav.dashboard'), path: '/', icon: Home },
-    { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen },
+    { label: t('nav.dashboard'), path: '/', icon: Home, resource: 'dashboard' },
+    { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen, resource: 'lobby' },
     {
       label: t('nav.class'),
       minLevel: 'level_2_operator',
       items: [
-        { label: t('nav.schedule'), path: '/calendar', icon: Calendar },
-        { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid },
-        { label: t('nav.classList'), path: '/class', icon: List },
-        { label: t('nav.classCategories'), path: '/class-category', icon: Grid3X3 },
+        { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
+        { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid, resource: 'rooms' },
+        { label: t('nav.classList'), path: '/class', icon: List, resource: 'classes' },
+        { label: t('nav.classCategories'), path: '/class-category', icon: Grid3X3, resource: 'class_categories' },
       ],
     },
     {
       label: t('nav.client'),
       items: [
-        { label: t('nav.members'), path: '/members', icon: Users },
-        { label: t('nav.leads'), path: '/leads', icon: Star },
+        { label: t('nav.members'), path: '/members', icon: Users, resource: 'members' },
+        { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
       ],
     },
     {
       label: t('nav.package'),
       minLevel: 'level_2_operator',
       items: [
-        { label: t('nav.packages'), path: '/package', icon: Tag },
-        { label: t('nav.promotions'), path: '/promotion', icon: Gift },
+        { label: t('nav.packages'), path: '/package', icon: Tag, resource: 'packages' },
+        { label: t('nav.promotions'), path: '/promotion', icon: Gift, resource: 'promotions' },
       ],
     },
     {
       label: t('nav.yourGym'),
       minLevel: 'level_3_manager',
       items: [
-        { label: t('nav.staff'), path: '/admin', icon: UserCheck },
-        { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master' },
-        { label: t('nav.locations'), path: '/location', icon: MapPin },
-        { label: t('nav.activityLog'), path: '/activity-log', icon: FileText },
-        { label: t('nav.announcements'), path: '/announcement', icon: Megaphone },
-        { label: t('nav.workoutList'), path: '/workout-list', icon: Dumbbell },
+        { label: t('nav.staff'), path: '/admin', icon: UserCheck, resource: 'staff' },
+        { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master', resource: 'roles' },
+        { label: t('nav.locations'), path: '/location', icon: MapPin, resource: 'locations' },
+        { label: t('nav.activityLog'), path: '/activity-log', icon: FileText, resource: 'activity_log' },
+        { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
+        { label: t('nav.workoutList'), path: '/workout-list', icon: Dumbbell, resource: 'workout_list' },
       ],
     },
     {
       label: t('nav.finance'),
       minLevel: 'level_3_manager',
       items: [
-        { label: t('nav.transferSlips'), path: '/transfer-slip', icon: Receipt },
-        { label: t('nav.finance'), path: '/finance', icon: DollarSign },
+        { label: t('nav.transferSlips'), path: '/transfer-slip', icon: Receipt, resource: 'transfer_slips' },
+        { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance' },
       ],
     },
-    { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator' },
+    { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator', resource: 'reports' },
     { label: t('nav.comingSoon'), path: '/coming-soon', icon: Rocket, minLevel: 'level_2_operator' },
-    { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager' },
+    { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
   ];
 
   const isNavItem = (item: NavItem | NavGroup): item is NavItem => {
@@ -145,7 +153,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const renderNavItem = (item: NavItem) => {
-    if (!hasAccess(item.minLevel)) return null;
+    if (!hasAccess(item.minLevel, item.resource)) return null;
     
     const Icon = item.icon;
     const isActive = isActiveRoute(item.path);
@@ -171,8 +179,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const renderNavGroup = (group: NavGroup, groupKey: string) => {
     if (!hasAccess(group.minLevel)) return null;
     
-    // Filter items by access level
-    const visibleItems = group.items.filter((item) => hasAccess(item.minLevel));
+    // Filter items by access level and permissions
+    const visibleItems = group.items.filter((item) => hasAccess(item.minLevel, item.resource));
     if (visibleItems.length === 0) return null;
     
     const isOpen = openGroups.includes(groupKey);
