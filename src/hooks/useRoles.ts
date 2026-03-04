@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 import type { PermissionRow, ResourceKey } from './usePermissions';
 
 type Role = Tables<'roles'>;
@@ -136,10 +137,16 @@ export const useSaveRoleWithPermissions = () => {
 
       return roleId;
     },
-    onSuccess: () => {
+    onSuccess: (roleId, variables) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
       queryClient.invalidateQueries({ queryKey: ['my-permissions'] });
+      logActivity({
+        event_type: 'role_updated',
+        activity: `Role "${variables.role.name}" saved`,
+        entity_type: 'role',
+        entity_id: roleId ?? undefined,
+      });
     },
     onError: (error) => {
       toast.error(`Failed to save role: ${error.message}`);

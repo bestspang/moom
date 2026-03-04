@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 export type ScheduleWithRelations = Tables<'schedule'> & {
   class: Tables<'classes'> | null;
@@ -199,6 +200,12 @@ export function useCreateSchedule() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      logActivity({
+        event_type: 'schedule_created',
+        activity: `Schedule created for ${data.scheduled_date}`,
+        entity_type: 'schedule',
+        entity_id: data.id,
+      });
       toast({
         title: 'Success',
         description: 'Class scheduled successfully',
@@ -229,9 +236,16 @@ export function useUpdateSchedule() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      logActivity({
+        event_type: 'schedule_updated',
+        activity: `Schedule updated`,
+        entity_type: 'schedule',
+        entity_id: variables.id,
+        new_value: variables as Record<string, unknown>,
+      });
       toast({
         title: 'Success',
         description: 'Schedule updated successfully',
@@ -259,9 +273,15 @@ export function useDeleteSchedule() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      logActivity({
+        event_type: 'schedule_deleted',
+        activity: `Schedule deleted`,
+        entity_type: 'schedule',
+        entity_id: id,
+      });
       toast({
         title: 'Success',
         description: 'Schedule deleted successfully',
@@ -323,11 +343,16 @@ export function useCreateScheduleValidated() {
 
       return result;
     },
-    onSuccess: (_data, variables) => {
-      // Targeted invalidation for the specific date
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.schedule(variables.p_scheduled_date) });
       queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      logActivity({
+        event_type: 'schedule_created',
+        activity: `Schedule created for ${variables.p_scheduled_date}`,
+        entity_type: 'schedule',
+        entity_id: (result as any)?.id,
+      });
       toast({
         title: 'Success',
         description: 'Class scheduled successfully',

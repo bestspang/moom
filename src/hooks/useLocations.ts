@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 type Location = Tables<'locations'>;
 type LocationInsert = TablesInsert<'locations'>;
@@ -87,9 +88,15 @@ export const useCreateLocation = () => {
       if (error) throw error;
       return newLocation;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      logActivity({
+        event_type: 'location_created',
+        activity: `Location "${data.name}" created`,
+        entity_type: 'location',
+        entity_id: data.id,
+      });
       toast.success('Location created successfully');
     },
     onError: (error) => {
@@ -113,9 +120,16 @@ export const useUpdateLocation = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      logActivity({
+        event_type: 'location_updated',
+        activity: `Location "${data.name}" updated`,
+        entity_type: 'location',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Location updated successfully');
     },
     onError: (error) => {
