@@ -1,60 +1,60 @@
 
 
-# Convert Lead to Member — Implementation Plan
+# LINE Linking Architecture — Implementation Plan
 
 ## Current State
 
-- **Leads table**: No `converted_member_id` column exists. Has `status` with `converted` value.
-- **Member wizard**: Uses its own Zod schema in `src/components/members/wizard/types.ts`. Lead form uses inline schema in `CreateLeadDialog.tsx`.
-- **Leads page**: DataTable has no row actions (no 3-dot menu).
-- **DataTable component**: No built-in actions column support — must add a column manually.
+- **`line_users` table** already exists with: `id`, `user_id`, `member_id`, `line_user_id` (unique), `line_display_name`, `line_picture_url`, `linked_at`, `last_login_at`. No `owner_type` or `lead_id` support — it only links to members.
+- **`members` table** has `line_user_id`, `line_display_name`, `line_picture_url`, `line_link_status` columns (denormalized).
+- **`leads` table** has the same LINE columns.
+- **`useLineUsers.ts`** hook exists with member-focused queries only.
+- **MemberDetails page** has no LINE section in the sidebar.
+- **Leads page** has no detail view (only table rows).
+
+## Problem
+
+The `line_users` table only supports member linking (`member_id`). To support leads and staff, we need to extend it with a polymorphic owner pattern OR add a `lead_id` column. The request asks for `owner_type` enum + `owner_id` — but that breaks FK integrity. A simpler approach: add `lead_id` and `staff_id` nullable columns to `line_users`, matching the existing `member_id` pattern.
 
 ## Plan
 
-### 1. Database Migration
-
-Add `converted_member_id` to `leads` table:
+### 1. Database Migration — Extend `line_users`
 
 ```sql
-ALTER TABLE leads ADD COLUMN converted_member_id uuid REFERENCES members(id);
+ALTER TABLE line_users ADD COLUMN lead_id uuid REFERENCES leads(id) ON DELETE SET NULL;
+ALTER TABLE line_users ADD COLUMN staff_id uuid REFERENCES staff(id) ON DELETE SET NULL;
+ALTER TABLE line_users ADD COLUMN status text DEFAULT 'unlinked';
+-- Add RLS for managers to link/unlink
 ```
 
-### 2. Create `src/lib/personSchemas.ts`
+Add RLS policy: managers+ can manage all LINE identity records (already partially covered by existing policies, but we add explicit manager-level for link/unlink operations).
 
-Extract shared Zod schemas used by both lead and member forms:
-- `personProfileSchema(t)` — firstName, lastName, nickname, dateOfBirth, gender
-- `personContactSchema(t)` — phone, email
-- `personAddressSchema()` — address
-- `emergencyContactSchema()` — name, phone, relationship
-- `medicalInfoSchema()` — hasMedicalConditions, medicalNotes
-- `consentInfoSchema()` — allowPhysicalContact, physicalContactNotes
+### 2. Create `src/hooks/useLineIdentity.ts`
 
-### 3. Refactor `CreateLeadDialog.tsx` schema
+New hook file with:
+- **`useLineIdentity(ownerType: 'member'|'lead'|'staff', ownerId: string)`** — fetches from `line_users` where the matching `_id` column equals `ownerId`
+- **`useRequestLineLink(ownerType, ownerId)`** — mutation that upserts a `line_users` row with `status: 'pending'` (stub — no actual LINE OAuth yet, just sets the status)
+- **`useUnlinkLineIdentity(ownerType, ownerId)`** — deletes the `line_users` row
 
-Replace inline `leadSchema` with composition from `personSchemas` + lead-specific fields (source, registerLocationId, notes). Behavior stays identical.
+### 3. Create `src/components/common/LineIdentityCard.tsx`
 
-### 4. Refactor `wizard/types.ts` schema
+Reusable card component:
+- Props: `ownerType`, `ownerId`
+- Uses `useLineIdentity` to fetch status
+- Shows: status badge (unlinked/pending/linked), display name + picture if linked, "Link LINE" button (sets to pending), "Unlink" if linked
+- Disabled state with tooltip for future OAuth flow
 
-Replace `createMemberWizardSchema` with composition from `personSchemas` + member-specific fields (registerLocationId required). Behavior stays identical.
+### 4. Add LINE section to MemberDetails sidebar
 
-### 5. Add "Convert to member" action to Leads table
+In `src/pages/MemberDetails.tsx`, after the Contact card (~line 296), add `<LineIdentityCard ownerType="member" ownerId={member.id} />`.
 
-- Add an actions column to the DataTable in `Leads.tsx` with a DropdownMenu (3-dot icon) per row.
-- "Convert to member" menu item opens `CreateMemberDialog` with `initialData` prefilled from the lead record.
+### 5. Leads page — no detail page exists
 
-### 6. Update `CreateMemberDialog` to accept `initialData` + `onConvertLead` callback
+Since there's no Lead detail page, we skip adding LINE UI to leads for now. The data model supports it via `lead_id` on `line_users`.
 
-- Add optional prop `initialData?: Partial<MemberWizardFormData>` to prefill form fields from a lead.
-- Add optional prop `convertLeadId?: string` — when set, on successful member creation, call `useUpdateLead` to set `status = 'converted'` and `converted_member_id = newMemberId`.
-- Invalidate both `leads` and `members` queries on success.
+### 6. i18n keys
 
-### 7. Add `useConvertLeadToMember` hook (in `useLeads.ts`)
-
-A simple wrapper that updates the lead with `status: 'converted'` and `converted_member_id`. Called from `CreateMemberDialog` after successful member insert.
-
-### 8. i18n keys
-
-Add `leads.convertToMember`, `leads.convertSuccess` to both `en.ts` and `th.ts`.
+Add to both `en.ts` and `th.ts`:
+- `line.status`, `line.linked`, `line.pending`, `line.unlinked`, `line.linkLine`, `line.unlinkLine`, `line.linkRequested`, `line.displayName`, `line.comingSoon`
 
 ---
 
@@ -62,14 +62,12 @@ Add `leads.convertToMember`, `leads.convertSuccess` to both `en.ts` and `th.ts`.
 
 | Action | File |
 |--------|------|
-| Migration | Add `converted_member_id uuid` to `leads` |
-| Create | `src/lib/personSchemas.ts` — shared Zod schemas |
-| Modify | `src/components/leads/CreateLeadDialog.tsx` — use shared schemas |
-| Modify | `src/components/members/wizard/types.ts` — use shared schemas |
-| Modify | `src/components/members/CreateMemberDialog.tsx` — accept `initialData` + `convertLeadId` |
-| Modify | `src/pages/Leads.tsx` — add actions column with convert option |
-| Modify | `src/hooks/useLeads.ts` — add convert mutation |
-| Modify | `src/i18n/locales/en.ts` + `th.ts` — add convert keys |
+| Migration | Add `lead_id`, `staff_id`, `status` to `line_users` + manager RLS |
+| Create | `src/hooks/useLineIdentity.ts` |
+| Create | `src/components/common/LineIdentityCard.tsx` |
+| Modify | `src/pages/MemberDetails.tsx` — add LINE card to sidebar |
+| Modify | `src/i18n/locales/en.ts` — LINE keys |
+| Modify | `src/i18n/locales/th.ts` — LINE keys |
 
-No breaking changes. All existing form behavior preserved. Schema refactor is purely structural — same validation rules, same field names.
+No breaking changes. Existing `line_users` data preserved. All new columns nullable.
 
