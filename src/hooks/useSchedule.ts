@@ -35,8 +35,8 @@ export function mapScheduleToItem(s: ScheduleWithRelations): ScheduleItem {
     trainer: s.trainer ? `${s.trainer.first_name} ${s.trainer.last_name}` : '-',
     location: (s.location as any)?.name || '-',
     room: (s.room as any)?.name || '-',
-    availability: `${s.booked_count ?? s.checked_in ?? 0}/${s.capacity || 0}`,
-    checkedIn: s.attended_count ?? s.checked_in ?? 0,
+    availability: `${s.booked_count ?? 0}/${s.capacity || 0}`,
+    checkedIn: s.attended_count ?? 0,
     capacity: s.capacity || 0,
   };
 }
