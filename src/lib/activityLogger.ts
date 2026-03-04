@@ -9,6 +9,7 @@ export interface LogActivityParams {
   new_value?: Record<string, unknown>;
   staff_id?: string;
   member_id?: string;
+  location_id?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export function logActivity(params: LogActivityParams): void {
       new_value: (params.new_value as any) ?? null,
       staff_id: params.staff_id ?? null,
       member_id: params.member_id ?? null,
+      location_id: params.location_id ?? null,
     })
     .then(({ error }) => {
       if (error) {
