@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, DataTable, EmptyState, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,20 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   useTrainingTemplates,
   useUpdateTraining,
+  useDeleteTraining,
+  useDeleteWorkoutItem,
   type TrainingTemplateRow,
   type WorkoutItemRow,
 } from '@/hooks/useTrainingTemplates';
 import { CreateTrainingDialog } from '@/components/workouts/CreateTrainingDialog';
+import { EditWorkoutItemDialog } from '@/components/workouts/EditWorkoutItemDialog';
+import { EditTrainingNameDialog } from '@/components/workouts/EditTrainingNameDialog';
 
 const WorkoutList = () => {
   const { t } = useLanguage();
@@ -23,10 +31,19 @@ const WorkoutList = () => {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Fetch all trainings (unfiltered) for the dropdown, and filtered for display
+  // Edit states
+  const [editItem, setEditItem] = useState<WorkoutItemRow | null>(null);
+  const [editTraining, setEditTraining] = useState<TrainingTemplateRow | null>(null);
+
+  // Delete states
+  const [deleteItem, setDeleteItem] = useState<WorkoutItemRow | null>(null);
+  const [deleteTraining, setDeleteTraining] = useState<TrainingTemplateRow | null>(null);
+
   const { data: allTrainings } = useTrainingTemplates();
   const { data: trainings, isLoading } = useTrainingTemplates(search, filterTrainingId);
   const updateTraining = useUpdateTraining();
+  const deleteTrainingMutation = useDeleteTraining();
+  const deleteWorkoutItemMutation = useDeleteWorkoutItem();
 
   const toggleSection = (id: string) =>
     setOpenSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -37,6 +54,21 @@ const WorkoutList = () => {
     { key: 'unit', header: t('workouts.unit'), cell: (row) => row.unit ?? '—' },
     { key: 'goal_type', header: t('workouts.goalType'), cell: (row) => row.goal_type ?? '—' },
     { key: 'description', header: t('workouts.description'), cell: (row) => row.description ?? '—' },
+    {
+      key: 'actions',
+      header: '',
+      cell: (row) => (
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditItem(row)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteItem(row)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+      className: 'w-20',
+    },
   ];
 
   return (
@@ -115,6 +147,12 @@ const WorkoutList = () => {
                   <span className="text-xs text-muted-foreground">
                     {training.is_active ? t('workouts.active') : t('workouts.inactive')}
                   </span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTraining(training)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTraining(training)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <CollapsibleContent>
                   <DataTable
@@ -130,6 +168,76 @@ const WorkoutList = () => {
       )}
 
       <CreateTrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      {/* Edit workout item dialog */}
+      {editItem && (
+        <EditWorkoutItemDialog
+          open={!!editItem}
+          onOpenChange={(v) => { if (!v) setEditItem(null); }}
+          item={editItem}
+        />
+      )}
+
+      {/* Edit training name dialog */}
+      {editTraining && (
+        <EditTrainingNameDialog
+          open={!!editTraining}
+          onOpenChange={(v) => { if (!v) setEditTraining(null); }}
+          training={editTraining}
+        />
+      )}
+
+      {/* Delete workout item confirmation */}
+      <AlertDialog open={!!deleteItem} onOpenChange={(v) => { if (!v) setDeleteItem(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('workouts.deleteWorkoutTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('workouts.deleteWorkoutDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteItem) {
+                  deleteWorkoutItemMutation.mutate({ id: deleteItem.id, name: deleteItem.name });
+                  setDeleteItem(null);
+                }
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete training confirmation */}
+      <AlertDialog open={!!deleteTraining} onOpenChange={(v) => { if (!v) setDeleteTraining(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('workouts.deleteTrainingTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('workouts.deleteTrainingDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTraining) {
+                  deleteTrainingMutation.mutate({ id: deleteTraining.id, name: deleteTraining.name });
+                  setDeleteTraining(null);
+                }
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1023,6 +1023,17 @@ export default {
     noTrainings: 'ยังไม่มีการฝึก',
     noTrainingsDesc: 'สร้างการฝึกแรกเพื่อเริ่มต้น',
     filterByTraining: 'กรองตามการฝึก',
+    editWorkout: 'แก้ไขออกกำลังกาย',
+    editWorkoutDesc: 'อัปเดตรายละเอียดออกกำลังกาย',
+    editTraining: 'แก้ไขการฝึก',
+    editTrainingDesc: 'อัปเดตชื่อการฝึก',
+    updateSuccess: 'อัปเดตสำเร็จ',
+    deleteSuccess: 'ลบสำเร็จ',
+    deleteTrainingSuccess: 'ลบการฝึกสำเร็จ',
+    deleteWorkoutTitle: 'ลบออกกำลังกาย',
+    deleteWorkoutDesc: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการออกกำลังกายนี้? ไม่สามารถย้อนกลับได้',
+    deleteTrainingTitle: 'ลบการฝึก',
+    deleteTrainingDesc: 'คุณแน่ใจหรือไม่ว่าต้องการลบการฝึกนี้และออกกำลังกายทั้งหมด? ไม่สามารถย้อนกลับได้',
   },
 
   // Transfer Slips

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 
 export interface WorkoutItemRow {
@@ -31,8 +32,11 @@ export interface TrainingTemplateRow {
 
 // ── List ──
 export function useTrainingTemplates(search?: string, filterTrainingId?: string) {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: queryKeys.trainingTemplates(search, filterTrainingId),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase
         .from('training_templates')
@@ -67,7 +71,7 @@ export function useTrainingTemplates(search?: string, filterTrainingId?: string)
                 w.name.toLowerCase().includes(q) ||
                 (w.description ?? '').toLowerCase().includes(q)
             );
-            if (trainingMatch) return t; // show all items if training name matches
+            if (trainingMatch) return t;
             if (matchedItems.length > 0) return { ...t, workout_items: matchedItems };
             return null;
           })
@@ -97,7 +101,6 @@ export function useCreateTraining() {
 
   return useMutation({
     mutationFn: async (input: CreateTrainingInput) => {
-      // 1. Insert training template
       const { data: training, error: tErr } = await supabase
         .from('training_templates')
         .insert({ name: input.name })
@@ -105,7 +108,6 @@ export function useCreateTraining() {
         .single();
       if (tErr) throw tErr;
 
-      // 2. Batch insert workout items
       if (input.items.length > 0) {
         const rows = input.items.map((item, idx) => ({
           training_id: training.id,
@@ -125,7 +127,6 @@ export function useCreateTraining() {
     onSuccess: (training) => {
       qc.invalidateQueries({ queryKey: ['training-templates'] });
       toast.success(t('workouts.createSuccess'));
-
       logActivity({
         event_type: 'training_created',
         activity: `Training template "${training.name}" created`,
@@ -139,7 +140,7 @@ export function useCreateTraining() {
   });
 }
 
-// ── Update (name / is_active) ──
+// ── Update training (name / is_active) ──
 export function useUpdateTraining() {
   const qc = useQueryClient();
 
@@ -157,13 +158,108 @@ export function useUpdateTraining() {
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['training-templates'] });
-
       logActivity({
         event_type: 'training_updated',
         activity: `Training template updated`,
         entity_type: 'training',
         entity_id: variables.id,
         new_value: variables as Record<string, unknown>,
+      });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+}
+
+// ── Update workout item ──
+export function useUpdateWorkoutItem() {
+  const qc = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name?: string;
+      track_metric?: string;
+      unit?: string;
+      goal_type?: string;
+      description?: string;
+    }) => {
+      const { id, ...updates } = input;
+      const { error } = await supabase
+        .from('workout_items')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      toast.success(t('workouts.updateSuccess'));
+      logActivity({
+        event_type: 'workout_item_updated',
+        activity: `Workout item updated`,
+        entity_type: 'workout_item',
+        entity_id: variables.id,
+        new_value: variables as Record<string, unknown>,
+      });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+}
+
+// ── Delete workout item ──
+export function useDeleteWorkoutItem() {
+  const qc = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await supabase
+        .from('workout_items')
+        .delete()
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      toast.success(t('workouts.deleteSuccess'));
+      logActivity({
+        event_type: 'workout_item_deleted',
+        activity: `Workout item "${variables.name}" deleted`,
+        entity_type: 'workout_item',
+        entity_id: variables.id,
+      });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+}
+
+// ── Delete training (cascade) ──
+export function useDeleteTraining() {
+  const qc = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await supabase
+        .from('training_templates')
+        .delete()
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      toast.success(t('workouts.deleteTrainingSuccess'));
+      logActivity({
+        event_type: 'training_deleted',
+        activity: `Training template "${variables.name}" deleted`,
+        entity_type: 'training',
+        entity_id: variables.id,
       });
     },
     onError: (err: Error) => {
