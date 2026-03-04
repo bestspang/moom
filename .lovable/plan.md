@@ -1,114 +1,114 @@
 
 
-# Staff Management — Full Implementation Plan
+# Roles Management with Permission Matrix
 
 ## Current State
-- `Staff.tsx` lists staff with status tabs (active/terminated) and search — works correctly
-- `useStaff.ts` has CRUD hooks (create/update/delete/stats) — functional
-- Staff table has: id, user_id, role_id, status (active/pending/terminated), first_name, last_name, nickname, phone, email, avatar_url, location_id
-- Staff currently has a single `role_id` FK → `roles` — supports only ONE role per staff
-- No staff detail page, no create dialog, no `staff_positions` table
-- `line_users` table already has `staff_id` column — LINE identity linking is ready
-- `LineIdentityCard` component already supports `ownerType='staff'`
-- Route is `/admin` for Staff list — no `/admin/:id` detail route
+- `roles` table exists with `name`, `access_level`, `permissions` (jsonb, unused), `description`
+- `Roles.tsx` list page shows roles with counts — functional but no create/edit wiring
+- Access control is purely `access_level`-based via `has_min_access_level()` in Sidebar and ProtectedRoute
+- No `role_permissions` table, no permission matrix, no per-resource enforcement
+- `useRoles.ts` has CRUD hooks but Create button not wired to anything
 
 ## Plan
 
-### 1. Database Migration — `staff_positions` table
+### 1. Database Migration
 
 ```sql
-CREATE TABLE public.staff_positions (
+-- role_permissions table
+CREATE TABLE public.role_permissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  staff_id uuid NOT NULL REFERENCES public.staff(id) ON DELETE CASCADE,
   role_id uuid NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
-  scope_all_locations boolean DEFAULT true,
-  location_ids uuid[] DEFAULT '{}',
-  created_at timestamptz DEFAULT now()
+  resource text NOT NULL,
+  can_read boolean DEFAULT false,
+  can_write boolean DEFAULT false,
+  can_delete boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(role_id, resource)
 );
 
-ALTER TABLE public.staff_positions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Staff can read positions" ON public.staff_positions
-  FOR SELECT USING (has_min_access_level(auth.uid(), 'level_1_minimum'::access_level));
+CREATE POLICY "All can read role_permissions" ON public.role_permissions
+  FOR SELECT USING (true);
 
-CREATE POLICY "Managers can manage positions" ON public.staff_positions
-  FOR ALL USING (has_min_access_level(auth.uid(), 'level_3_manager'::access_level));
+CREATE POLICY "Masters can manage role_permissions" ON public.role_permissions
+  FOR ALL USING (has_min_access_level(auth.uid(), 'level_4_master'::access_level));
+
+-- AI-ready field on roles
+ALTER TABLE public.roles ADD COLUMN IF NOT EXISTS ai_policy jsonb DEFAULT '{}'::jsonb;
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.role_permissions;
 ```
 
-Also add `address` column to `staff` table (currently missing):
-```sql
-ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS address text;
-```
+Resource keys (predefined list): `dashboard`, `lobby`, `schedule`, `rooms`, `classes`, `class_categories`, `members`, `leads`, `packages`, `promotions`, `staff`, `roles`, `locations`, `activity_log`, `announcements`, `workout_list`, `transfer_slips`, `finance`, `reports`, `settings`, `notifications`.
 
-### 2. Edge Function Stub — `invite-staff`
+### 2. Create `usePermissions` Hook — `src/hooks/usePermissions.ts`
 
-Create `supabase/functions/invite-staff/index.ts`:
-- Accepts `{ staff_id, email }` via POST
-- Sets `staff.status = 'pending'` using service role client
-- Inserts `activity_log` entry with `event_type = 'staff_invited'`
-- Returns `{ ok: true }`
-- Stub — does NOT send email/LINE yet (ready for future integration)
+- Fetches `role_permissions` for the current user's staff `role_id` (from `user_roles` → `staff` → `staff_positions` or direct `role_id`)
+- Returns `{ can(resource, action): boolean, permissions, loading }`
+- Caches in React Query with key `['my-permissions']`
+- Falls back to access_level-based defaults when no role_permissions rows exist (backward compat)
 
-### 3. Create `CreateStaffDialog` — `src/components/staff/CreateStaffDialog.tsx`
+### 3. Update `useRoles.ts`
 
-Dialog/Drawer (responsive) with sections:
-- **Profile**: first_name (required), last_name (required), nickname, date of birth (optional)
-- **Contact**: phone, email
-- **Address**: address text
-- **Positions**: dynamic rows — each row has role select + "All locations" toggle + location multi-select when specific
-- "Add position" button for multiple roles
-- Draft autosave to `localStorage` key `staff-create-draft`
-- Bottom bar: Discard + Create buttons
-- On create: insert staff → insert staff_positions → insert activity_log → optionally invoke `invite-staff` edge function
+- Add `useRolePermissions(roleId)` — fetches permissions for a specific role
+- Add `useSaveRoleWithPermissions()` — mutation that upserts role + deletes old permissions + inserts new permissions
+- Add `useDefaultPermissions(accessLevel)` — returns default permission matrix for a given access level
 
-### 4. Create `StaffDetails` page — `src/pages/StaffDetails.tsx`
+### 4. Create `RoleEditorPage` — `src/pages/RoleEditor.tsx`
 
-Tabs: Profile | Positions & Availability
-- **Profile tab**: Info card (avatar, name, contact, address) with inline edit (pencil icons), status badge, LINE identity card (`LineIdentityCard ownerType="staff"`)
-- **Positions tab**: List of positions with role name, location scope, edit/remove actions
-- **Resend Invitation** button visible when status = 'pending' (calls `invite-staff` edge function)
-- Back navigation to staff list
+- Routes: `/roles/create` and `/roles/:id`
+- Sections:
+  - Role name input (required)
+  - Access level selector (4 cards: Master/Manager/Operator/Minimum)
+  - Permission matrix table: rows = resources, columns = All/Read/Write/Delete checkboxes
+  - "All" column toggles all 3 permissions for that resource
+  - "Restore default settings" button resets matrix to access-level defaults
+- Footer: Discard + Save buttons
+- On save: upserts role → deletes old role_permissions → inserts new ones → navigates back to `/roles`
 
-### 5. Update Hooks — `src/hooks/useStaff.ts`
+### 5. Update `Roles.tsx`
 
-- Add `useStaffPositions(staffId)` — fetches positions with joined role and location data
-- Add `useCreateStaffWithPositions()` — mutation that inserts staff + positions in sequence
-- Add `useInviteStaff()` — calls `invite-staff` edge function
-- Update `useStaffMember` select to include `staff_positions(*, role:roles(*))`
+- Wire Create button → navigate to `/roles/create`
+- Add row click → navigate to `/roles/:id`
+- Show accounts count from staff_positions (already done via useRoles)
 
-### 6. Route & Navigation Updates — `src/App.tsx` + `Staff.tsx`
+### 6. Update Sidebar — Permission-based Nav Filtering
 
-- Add route: `<Route path="admin/:id" element={<StaffDetails />} />`
-- `Staff.tsx`: wire Create button → open `CreateStaffDialog`
-- `Staff.tsx`: add `onRowClick` → navigate to `/admin/${row.id}`
-- Update columns to show positions from `staff_positions` instead of single `role_id`
+- Import `usePermissions` hook
+- Each nav item gets a `resource` key mapping
+- `hasAccess()` checks both `minLevel` (existing) AND `permissions.can(resource, 'read')`
+- Backward compatible: if no permissions loaded, fall back to access_level only
 
-### 7. Realtime — `src/hooks/useRealtimeSync.ts`
+### 7. Update Routes — `App.tsx`
 
-Add `staff` and `staff_positions` to `TableName` union and invalidation map:
-- `staff` → `['staff', 'staff-stats']`
-- `staff_positions` → `['staff', 'staff-positions']`
+- Add `/roles/create` and `/roles/:id` routes pointing to `RoleEditorPage`
 
-### 8. i18n Keys
+### 8. Update Realtime — `useRealtimeSync.ts`
 
-Add to `en.ts` and `th.ts` under `staff`:
-- `createSuccess`, `positions`, `addPosition`, `allLocations`, `specificLocations`, `resendInvitation`, `invitationSent`, `profile`, `positionsAndAvailability`, `address`, `invitePending`, `lineComingSoon`, `discardDraft`, `staffDetails`
+- Add `role_permissions` → invalidates `['roles', 'my-permissions']`
+
+### 9. i18n Keys
+
+Add under `roles`:
+- `editRole`, `permissionMatrix`, `resource`, `read`, `write`, `deleteAction`, `allPermissions`, `restoreDefaults`, `saveRole`, `createSuccess`, `updateSuccess`, `accessLevelDescription.*`, `resources.*` (all 21 resource labels)
 
 ## Files Summary
 
 | Action | File |
 |--------|------|
-| Migration | Add `staff_positions` table + `address` column on `staff` |
-| Create | `supabase/functions/invite-staff/index.ts` |
-| Create | `src/components/staff/CreateStaffDialog.tsx` |
-| Create | `src/pages/StaffDetails.tsx` |
-| Modify | `src/hooks/useStaff.ts` — add position hooks + invite |
-| Modify | `src/pages/Staff.tsx` — wire create dialog + row click |
-| Modify | `src/App.tsx` — add detail route |
-| Modify | `src/hooks/useRealtimeSync.ts` — add staff tables |
-| Modify | `src/lib/queryKeys.ts` — add staff keys |
-| Modify | `src/i18n/locales/en.ts` — extend staff keys |
-| Modify | `src/i18n/locales/th.ts` — extend staff keys |
+| Migration | `role_permissions` table + `ai_policy` column + RLS + realtime |
+| Create | `src/hooks/usePermissions.ts` |
+| Create | `src/pages/RoleEditor.tsx` |
+| Modify | `src/hooks/useRoles.ts` — add permission hooks |
+| Modify | `src/pages/Roles.tsx` — wire navigation |
+| Modify | `src/components/layout/Sidebar.tsx` — permission filtering |
+| Modify | `src/App.tsx` — add routes |
+| Modify | `src/hooks/useRealtimeSync.ts` — add table |
+| Modify | `src/lib/queryKeys.ts` — add keys |
+| Modify | `src/i18n/locales/en.ts` — extend roles keys |
+| Modify | `src/i18n/locales/th.ts` — extend roles keys |
 
-No breaking changes. Existing staff list continues to work. `staff.role_id` remains for backward compat but `staff_positions` becomes the source of truth for multi-role assignments.
+No breaking changes. Existing access_level enforcement remains as fallback. Permission-based filtering is additive — if no `role_permissions` rows exist for a role, behavior defaults to current access_level logic.
 
