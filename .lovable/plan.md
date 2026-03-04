@@ -1,110 +1,85 @@
 
 
-# Recheck: Class Module — Gap Analysis
+# Class Categories — Gap Analysis & Implementation Plan
 
-## Summary
+## Current State
 
-The implementation is **largely complete and correct**. Most acceptance criteria are met. Below are the specific gaps found, categorized by severity.
+### What exists:
+- `class_categories` table with columns: `id`, `name`, `class_count` (static int), `description`, `created_at`, `updated_at`
+- Basic CRUD hooks in `useClassCategories.ts`
+- Simple list page at `/class-category` with search + table
+- `classes.category_id` FK to `class_categories` (correct)
+- Route registered in App.tsx
 
----
+### Gaps Found:
 
-## What's Working Correctly
+**GAP 1: No bilingual support** — Table has single `name` column, no `name_th`. Spec requires `name_en` + `name_th`.
 
-- **DB schema**: `classes` table has `name_th`, correct enums for `type`, `level`, `status`. FK to `class_categories`. Migration was applied.
-- **Query keys**: `classDetail(id)`, `classPerformance(id)`, `classStats()` all properly defined and used — no collision.
-- **Class list page**: Search (both `name` + `name_th`), tabs (All/Drafts/Archive), Type/Category/Level filters, row click navigation to `/class/:id`, create button → `/class/create`.
-- **Create class page**: react-hook-form + zod, type selector, all fields, Save as Draft / Publish actions, activity logging.
-- **Class details page**: Performance cards computed from `schedule` + `class_bookings`, inline edit with activity logging (old/new values).
-- **Hooks**: `useClasses` with server-side filtering, `useClassPerformance`, `useCreateClass`, `useUpdateClass`, `useDeleteClass` — all with activity logging and cache invalidation.
-- **Routes**: `/class`, `/class/create`, `/class/:id` all registered.
-- **Realtime**: `classes` and `class_categories` in `useRealtimeSync`.
-- **Data contract**: `docs/data-contract-classes.md` created and accurate.
+**GAP 2: Class count is a static column** — `class_count` is a manually stored integer (always 0). Should be computed from actual `classes` rows via JOIN/subquery.
 
----
+**GAP 3: No category details page** — No route `/class-category/:id`, no page component. Spec requires inline edit + "classes in this category" table.
 
-## Gaps Found
+**GAP 4: Create button is not wired** — The create button on the list page has no onClick handler or dialog.
 
-### GAP 1: Spec asks for `description_th` but DB only has `description` (single column)
-**Severity**: Medium  
-**Spec says**: `description_en` + `description_th` as separate columns  
-**Current**: DB has single `description` column (text, nullable). No `description_th`.  
-**Impact**: Thai description cannot be stored separately.  
-**Fix**: Add `description_th` column to `classes` table. Update Create and Details pages to include the field. Update data contract.
+**GAP 5: No row click navigation** — List page doesn't navigate to detail on row click.
 
-### GAP 2: Realtime invalidation for `class_bookings` missing `class-performance` key
-**Severity**: Low  
-**Current**: `class_bookings` changes invalidate `['class-bookings', 'member-bookings', 'booking-count', 'schedule']` but NOT `['class-performance']`.  
-**Impact**: Performance cards on ClassDetails won't auto-update when bookings change via realtime.  
-**Fix**: Add `'class-performance'` to `class_bookings` entry in `TABLE_INVALIDATION_MAP`.
+**GAP 6: Rooms use free-text `categories text[]`** — Stores category names as strings, not UUIDs. The schedule validation RPC also compares by name string. This is fragile but changing to a join table is a large migration that affects rooms CRUD, schedule validation RPC, and room details page. **Recommend deferring join table migration** — current name-based approach works and is consistent across the system. Changing it risks breaking rooms/schedule.
 
-### GAP 3: `classes` realtime invalidation missing `class-performance` key
-**Severity**: Low  
-**Current**: `classes` changes invalidate `['classes', 'class-stats']` but not `['class-performance']`.  
-**Impact**: Minor — class details performance won't refresh on class changes (though class detail query itself does refresh).  
-**Fix**: Add `'class-performance'` to `classes` entry in `TABLE_INVALIDATION_MAP`.
+**GAP 7: Packages use free-text `categories text[]`** — Same as rooms. Consistent with current pattern. **Recommend deferring** for same reasons.
 
-### GAP 4: ClassDetails uses `(classData as any).name_th` — type cast
-**Severity**: Low  
-**Current**: `name_th` exists in the types file (`string | null`), so `as any` is unnecessary.  
-**Impact**: No runtime issue, just code quality.  
-**Fix**: Remove `as any` casts for `name_th` in ClassDetails.
-
-### GAP 5: No pagination on Class list
-**Severity**: Medium  
-**Spec says**: "show 1–10 of N like your UI" with pagination  
-**Current**: `DataTable` receives all rows, no server-side pagination.  
-**Impact**: Works fine for small datasets but won't scale. No pagination controls visible.  
-**Fix**: Add `page`/`perPage` state, use `.range()` in Supabase query, pass `pagination` prop to `DataTable`.
-
-### GAP 6: Filter "all" value bug
-**Severity**: Medium  
-**Current**: When user selects "All" in Type/Category/Level filters, the value `"all"` is passed. In `useClasses`, the hook passes this to Supabase as `typeFilter="all"` → `query.eq('type', 'all')` which matches nothing.  
-**Fix**: In `Classes.tsx`, when filter value is `"all"`, pass `undefined` (or empty string). Currently `typeFilter || undefined` handles empty string but NOT `"all"`. Need to add: `typeFilter === 'all' ? undefined : typeFilter`.
-
-### GAP 7: Create class form missing `description_th` field
-**Severity**: Medium (related to GAP 1)  
-**Current**: Only `description` (EN) field exists. No Thai description input.  
-**Fix**: Depends on GAP 1. After adding `description_th` column, add the field to CreateClass and ClassDetails forms.
+**GAP 8: Realtime invalidation** — `class_categories` entry in `TABLE_INVALIDATION_MAP` only invalidates `['class-stats', 'classes']`, not `['class-categories']`.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: DB Migration — Add `description_th` column
-```sql
-ALTER TABLE classes ADD COLUMN IF NOT EXISTS description_th text;
-```
+### Step 1: DB Migration
+- Add `name_th text` column to `class_categories`
+- No need to rename `name` to `name_en` (would break all existing references). Keep `name` as the EN name, add `name_th` alongside.
 
-### Step 2: Fix filter "all" value bug in Classes.tsx
-Change filter passing to convert `"all"` → `undefined` for all three filter selects.
+### Step 2: Fix class count — use computed query
+- Update `useClassCategories` hook to join with `classes` table and compute count:
+  ```
+  select *, classes(count) from class_categories
+  ```
+  Or use a left join with count. Remove reliance on static `class_count` column.
 
-### Step 3: Add `description_th` to CreateClass + ClassDetails
-- CreateClass: Add textarea field for Thai description, include in submit payload.
-- ClassDetails: Add to view mode and edit mode, include in save payload.
+### Step 3: Create category dialog
+- Add `CreateClassCategoryDialog` component with `name` (required) and `name_th` (optional) fields.
+- Wire it to the create button on ClassCategories page.
 
-### Step 4: Fix realtime invalidation map
-Add `'class-performance'` to both `class_bookings` and `classes` entries.
+### Step 4: Category details page
+- Create `ClassCategoryDetails.tsx` at `/class-category/:id`
+- Show category info with inline edit for name/name_th
+- Show "Classes in this category" table querying `classes` where `category_id = id`
+- Register route in App.tsx
 
-### Step 5: Add pagination to Class list
-- Add `page`/`perPage` state to `Classes.tsx`
-- Update `useClasses` to accept pagination params and use `.range()` + `count: 'exact'`
-- Pass `pagination` prop to `DataTable`
+### Step 5: Wire list page
+- Add row click → navigate to `/class-category/:id`
+- Display `name_th` in the table if language is Thai
 
-### Step 6: Remove unnecessary `as any` casts
-Clean up `(classData as any).name_th` → `classData.name_th` since types already include it.
+### Step 6: Fix realtime invalidation
+- Add `'class-categories'` to the `class_categories` entry in `TABLE_INVALIDATION_MAP`
 
-### Step 7: Update data contract
-Add `description_th` to docs.
+### Step 7: Update hooks for bilingual search
+- Update `useClassCategories` search to also match `name_th`
+
+### Step 8: Update data contract + i18n keys
 
 ### Files to Touch
 
 | File | Change |
 |------|--------|
-| DB migration | Add `description_th` column |
-| `src/pages/Classes.tsx` | Fix filter bug, add pagination |
-| `src/pages/CreateClass.tsx` | Add `description_th` field |
-| `src/pages/ClassDetails.tsx` | Add `description_th` view/edit, remove `as any` |
-| `src/hooks/useClasses.ts` | Add pagination support to `useClasses` |
-| `src/hooks/useRealtimeSync.ts` | Add `class-performance` to invalidation map |
-| `docs/data-contract-classes.md` | Add `description_th` |
+| DB migration | Add `name_th` column |
+| `src/hooks/useClassCategories.ts` | Compute class count via join; bilingual search |
+| `src/pages/ClassCategories.tsx` | Wire create dialog, row click, bilingual display |
+| `src/pages/ClassCategoryDetails.tsx` (new) | Details page with inline edit + classes table |
+| `src/components/categories/CreateClassCategoryDialog.tsx` (new) | Create dialog |
+| `src/App.tsx` | Add route `/class-category/:id` |
+| `src/hooks/useRealtimeSync.ts` | Fix invalidation keys |
+| `src/i18n/locales/en.ts` + `th.ts` | Add category detail i18n keys |
+| `docs/data-contract-class-categories.md` (new) | Data contract |
+
+### Out of Scope (deferred)
+- Migrating rooms/packages from `categories text[]` to join tables with UUIDs. Current name-based approach is consistent across the entire system and changing it would require updating: rooms CRUD, room details, create room dialog, schedule validation RPC, packages CRUD, create package page, package details. Risk is too high for this task.
 
