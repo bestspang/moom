@@ -92,18 +92,6 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
 
       {/* Right side - Actions */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* Support button */}
-        <a href="tel:0996163666" className="hidden md:block">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-          >
-            <Phone className="h-4 w-4" />
-            <span>{t('common.support')}: 099-616-3666</span>
-          </Button>
-        </a>
-
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
