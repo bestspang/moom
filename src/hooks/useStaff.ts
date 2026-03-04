@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 type Staff = Tables<'staff'>;
 type StaffInsert = TablesInsert<'staff'>;
@@ -176,7 +177,7 @@ export const useCreateStaffWithPositions = () => {
       }
 
       // Log activity
-      await supabase.from('activity_log').insert({
+      logActivity({
         event_type: 'staff_created',
         activity: `Staff member ${staff.first_name} ${staff.last_name} created`,
         entity_type: 'staff',

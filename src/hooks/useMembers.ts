@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberInsert = Database['public']['Tables']['members']['Insert'];
@@ -121,9 +122,16 @@ export const useCreateMember = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
       queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      logActivity({
+        event_type: 'member_created',
+        activity: `Member ${data.first_name} ${data.last_name} created`,
+        entity_type: 'member',
+        entity_id: data.id,
+        member_id: data.id,
+      });
     },
   });
 };
@@ -143,10 +151,18 @@ export const useUpdateMember = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
       queryClient.invalidateQueries({ queryKey: ['member', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      logActivity({
+        event_type: 'member_updated',
+        activity: `Member ${result.first_name} ${result.last_name} updated`,
+        entity_type: 'member',
+        entity_id: variables.id,
+        member_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
     },
   });
 };
@@ -163,9 +179,15 @@ export const useDeleteMember = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
       queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      logActivity({
+        event_type: 'member_deleted',
+        activity: `Member deleted`,
+        entity_type: 'member',
+        entity_id: id,
+      });
     },
   });
 };

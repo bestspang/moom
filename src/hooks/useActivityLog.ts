@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export interface ActivityLogEntry {
   id: string;
@@ -23,9 +23,45 @@ export interface ActivityLogEntry {
   } | null;
 }
 
-export const useActivityLogs = (startDate?: Date, endDate?: Date) => {
+export interface UseActivityLogsParams {
+  startDate?: Date;
+  endDate?: Date;
+  eventTypes?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+export const ALL_EVENT_TYPES = [
+  'member_created',
+  'member_updated',
+  'member_deleted',
+  'staff_created',
+  'staff_invited',
+  'package_created',
+  'package_updated',
+  'schedule_created',
+  'schedule_updated',
+  'schedule_deleted',
+  'promotion_created',
+  'promotion_updated',
+  'location_created',
+  'location_updated',
+  'role_updated',
+  'announcement_created',
+  'check_in',
+] as const;
+
+export type EventType = (typeof ALL_EVENT_TYPES)[number];
+
+export const useActivityLogs = ({
+  startDate,
+  endDate,
+  eventTypes = [],
+  page = 1,
+  perPage = 25,
+}: UseActivityLogsParams = {}) => {
   return useQuery({
-    queryKey: ['activity-logs', startDate?.toISOString(), endDate?.toISOString()],
+    queryKey: ['activity-logs', startDate?.toISOString(), endDate?.toISOString(), eventTypes, page, perPage],
     queryFn: async () => {
       let query = supabase
         .from('activity_log')
@@ -48,7 +84,7 @@ export const useActivityLogs = (startDate?: Date, endDate?: Date) => {
             first_name,
             last_name
           )
-        `)
+        `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (startDate) {
@@ -57,11 +93,21 @@ export const useActivityLogs = (startDate?: Date, endDate?: Date) => {
       if (endDate) {
         query = query.lte('created_at', endOfDay(endDate).toISOString());
       }
+      if (eventTypes.length > 0) {
+        query = query.in('event_type', eventTypes);
+      }
 
-      const { data, error } = await query.limit(100);
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      query = query.range(from, to);
+
+      const { data, count, error } = await query;
 
       if (error) throw error;
-      return data as unknown as ActivityLogEntry[];
+      return {
+        data: data as unknown as ActivityLogEntry[],
+        total: count || 0,
+      };
     },
   });
 };

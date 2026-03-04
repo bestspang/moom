@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 type Promotion = Tables<'promotions'>;
 type PromotionInsert = TablesInsert<'promotions'>;
@@ -88,9 +89,15 @@ export const useCreatePromotion = () => {
       if (error) throw error;
       return newPromo;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotion_created',
+        activity: `Promotion "${data.name}" created`,
+        entity_type: 'promotion',
+        entity_id: data.id,
+      });
       toast.success('Promotion created successfully');
     },
     onError: (error) => {
@@ -114,10 +121,17 @@ export const useUpdatePromotion = () => {
       if (error) throw error;
       return updated;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       queryClient.invalidateQueries({ queryKey: ['promotions', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotion_updated',
+        activity: `Promotion "${data.name}" updated`,
+        entity_type: 'promotion',
+        entity_id: variables.id,
+        new_value: variables.data as Record<string, unknown>,
+      });
       toast.success('Promotion updated successfully');
     },
     onError: (error) => {
