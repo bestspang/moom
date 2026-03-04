@@ -1876,6 +1876,36 @@ export type Database = {
           },
         ]
       }
+      training_templates: {
+        Row: {
+          ai_tags: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_tags?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_tags?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -1990,6 +2020,53 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_items: {
+        Row: {
+          ai_cues: Json | null
+          created_at: string | null
+          description: string | null
+          goal_type: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          track_metric: string | null
+          training_id: string
+          unit: string | null
+        }
+        Insert: {
+          ai_cues?: Json | null
+          created_at?: string | null
+          description?: string | null
+          goal_type?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          track_metric?: string | null
+          training_id: string
+          unit?: string | null
+        }
+        Update: {
+          ai_cues?: Json | null
+          created_at?: string | null
+          description?: string | null
+          goal_type?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          track_metric?: string | null
+          training_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_items_training_id_fkey"
+            columns: ["training_id"]
+            isOneToOne: false
+            referencedRelation: "training_templates"
             referencedColumns: ["id"]
           },
         ]
