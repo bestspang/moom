@@ -748,8 +748,16 @@ export default {
   // Categories
   categories: {
     title: 'หมวดหมู่คลาส',
+    classCategory: 'ชื่อหมวดหมู่',
     searchPlaceholder: 'ค้นหาหมวดหมู่คลาส',
     classesInCategory: 'คลาสในหมวดหมู่นี้',
+    createCategory: 'สร้างหมวดหมู่',
+    categoryInfo: 'ข้อมูลหมวดหมู่',
+    nameEn: 'ชื่อ (EN)',
+    nameTh: 'ชื่อ (TH)',
+    nameEnPlaceholder: 'เช่น Yoga',
+    nameThPlaceholder: 'เช่น โยคะ',
+    noClassesInCategory: 'ยังไม่มีคลาสในหมวดหมู่นี้',
   },
 
   // Staff

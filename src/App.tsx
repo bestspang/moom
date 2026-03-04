@@ -27,6 +27,7 @@ import Classes from "./pages/Classes";
 import CreateClass from "./pages/CreateClass";
 import ClassDetails from "./pages/ClassDetails";
 import ClassCategories from "./pages/ClassCategories";
+import ClassCategoryDetails from "./pages/ClassCategoryDetails";
 import Staff from "./pages/Staff";
 import StaffDetails from "./pages/StaffDetails";
 import Roles from "./pages/Roles";
@@ -117,6 +118,7 @@ const App = () => (
                 <Route path="class/create" element={<CreateClass />} />
                 <Route path="class/:id" element={<ClassDetails />} />
                 <Route path="class-category" element={<ClassCategories />} />
+                <Route path="class-category/:id" element={<ClassCategoryDetails />} />
                 <Route path="admin" element={<Staff />} />
                 <Route path="admin/:id" element={<StaffDetails />} />
                 <Route path="roles" element={<Roles />} />

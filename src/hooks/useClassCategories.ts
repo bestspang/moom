@@ -8,20 +8,32 @@ type ClassCategory = Tables<'class_categories'>;
 type ClassCategoryInsert = TablesInsert<'class_categories'>;
 type ClassCategoryUpdate = TablesUpdate<'class_categories'>;
 
+export type ClassCategoryWithCount = ClassCategory & {
+  name_th: string | null;
+  computed_class_count: number;
+};
+
 export const useClassCategories = (search?: string) => {
   return useQuery({
     queryKey: ['class-categories', search],
     queryFn: async () => {
-      let query = supabase.from('class_categories').select('*');
-      
+      let query = supabase
+        .from('class_categories')
+        .select('*, classes(count)');
+
       if (search) {
-        query = query.ilike('name', `%${search}%`);
+        query = query.or(`name.ilike.%${search}%,name_th.ilike.%${search}%`);
       }
-      
+
       const { data, error } = await query.order('name', { ascending: true });
-      
+
       if (error) throw error;
-      return data as ClassCategory[];
+
+      // Map the joined count into a flat field
+      return (data as any[]).map((row) => ({
+        ...row,
+        computed_class_count: row.classes?.[0]?.count ?? 0,
+      })) as ClassCategoryWithCount[];
     },
   });
 };
@@ -35,7 +47,7 @@ export const useClassCategory = (id: string) => {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
       return data as ClassCategory;
     },
@@ -43,9 +55,26 @@ export const useClassCategory = (id: string) => {
   });
 };
 
+export const useCategoryClasses = (categoryId: string) => {
+  return useQuery({
+    queryKey: ['class-categories', categoryId, 'classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, name_th, type, level, status, updated_at')
+        .eq('category_id', categoryId)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!categoryId,
+  });
+};
+
 export const useCreateClassCategory = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: ClassCategoryInsert) => {
       const { data: newCategory, error } = await supabase
@@ -53,7 +82,7 @@ export const useCreateClassCategory = () => {
         .insert(data)
         .select()
         .single();
-      
+
       if (error) throw error;
       return newCategory;
     },
@@ -75,7 +104,7 @@ export const useCreateClassCategory = () => {
 
 export const useUpdateClassCategory = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ClassCategoryUpdate }) => {
       const { data: updated, error } = await supabase
@@ -84,7 +113,7 @@ export const useUpdateClassCategory = () => {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return updated;
     },
@@ -108,14 +137,14 @@ export const useUpdateClassCategory = () => {
 
 export const useDeleteClassCategory = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('class_categories')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       return id;
     },

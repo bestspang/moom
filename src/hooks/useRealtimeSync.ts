@@ -41,7 +41,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   rooms: ['rooms', 'room-stats'],
   locations: ['locations', 'location-stats'],
   classes: ['classes', 'class-stats', 'class-performance'],
-  class_categories: ['class-stats', 'classes'],
+  class_categories: ['class-categories', 'class-stats', 'classes'],
   members: ['members', 'member', 'member-stats', 'high-risk-members', 'upcoming-birthdays'],
   member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages'],
   package_usage_ledger: ['member-bookings', 'package-usage', 'package-usage-summary', 'package-metrics'],
