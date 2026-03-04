@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 import type { PermissionRow, ResourceKey } from './usePermissions';
 
 type Role = Tables<'roles'>;
@@ -14,8 +15,10 @@ export interface RoleWithCount extends Role {
 }
 
 export const useRoles = (search?: string) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['roles', search],
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('roles').select('*');
       if (search) {

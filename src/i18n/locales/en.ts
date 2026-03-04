@@ -845,6 +845,11 @@ export default {
     locationScope: 'Location scope',
     selectGender: 'Select gender',
     demographics: 'Demographics',
+    emergencyContact: 'Emergency Contact',
+    emergencyFirstName: 'Emergency first name',
+    emergencyLastName: 'Emergency last name',
+    emergencyPhone: 'Emergency phone',
+    emergencyRelationship: 'Relationship',
   },
 
   // Roles
