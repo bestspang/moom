@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useStaffMember, useUpdateStaff, useStaffPositions, useInviteStaff } from '@/hooks/useStaff';
+import { useStaffMember, useUpdateStaff, useStaffPositions, useInviteStaff, useAddStaffPosition, useRemoveStaffPosition } from '@/hooks/useStaff';
+import { useRoles } from '@/hooks/useRoles';
 import { useLocations } from '@/hooks/useLocations';
 import { PageHeader } from '@/components/common';
 import { StatusBadge } from '@/components/common';
@@ -13,7 +14,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Pencil, Check, X, Send, ArrowLeft, MapPin, Globe } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Pencil, Check, X, Send, ArrowLeft, MapPin, Globe, Plus, Trash2 } from 'lucide-react';
 import { getInitials } from '@/lib/formatters';
 import { toast } from 'sonner';
 
@@ -24,11 +29,20 @@ const StaffDetails = () => {
   const { data: staff, isLoading } = useStaffMember(id!);
   const { data: positions, isLoading: positionsLoading } = useStaffPositions(id!);
   const { data: locations } = useLocations();
+  const { data: roles } = useRoles();
   const updateStaff = useUpdateStaff();
   const inviteStaff = useInviteStaff();
+  const addPosition = useAddStaffPosition();
+  const removePosition = useRemoveStaffPosition();
 
   const [editField, setEditField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+
+  // Add position form state
+  const [showAddPosition, setShowAddPosition] = useState(false);
+  const [newRoleId, setNewRoleId] = useState('');
+  const [newScopeAll, setNewScopeAll] = useState(true);
+  const [newLocationIds, setNewLocationIds] = useState<string[]>([]);
 
   if (isLoading) {
     return (
@@ -65,6 +79,27 @@ const StaffDetails = () => {
   const handleResendInvitation = async () => {
     await inviteStaff.mutateAsync({ staff_id: id!, email: staff.email || undefined });
     toast.success(t('staff.invitationSent'));
+  };
+
+  const handleAddPosition = async () => {
+    if (!newRoleId) {
+      toast.error('Please select a role');
+      return;
+    }
+    await addPosition.mutateAsync({
+      staff_id: id!,
+      role_id: newRoleId,
+      scope_all_locations: newScopeAll,
+      location_ids: newScopeAll ? [] : newLocationIds,
+    });
+    setShowAddPosition(false);
+    setNewRoleId('');
+    setNewScopeAll(true);
+    setNewLocationIds([]);
+  };
+
+  const handleRemovePosition = async (posId: string) => {
+    await removePosition.mutateAsync({ id: posId, staff_id: id! });
   };
 
   const getStatusVariant = (status: string | null) => {
@@ -192,10 +227,68 @@ const StaffDetails = () => {
 
         <TabsContent value="positions" className="mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t('staff.positions')}</CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setShowAddPosition(!showAddPosition)}>
+                <Plus className="h-4 w-4 mr-1" />
+                {t('common.add')}
+              </Button>
             </CardHeader>
             <CardContent>
+              {/* Add position form */}
+              {showAddPosition && (
+                <div className="mb-4 p-4 rounded-lg border bg-muted/20 space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('staff.role')}</Label>
+                    <Select value={newRoleId} onValueChange={setNewRoleId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('staff.selectRole')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles?.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Switch checked={newScopeAll} onCheckedChange={setNewScopeAll} />
+                    <Label>{t('staff.allLocations')}</Label>
+                  </div>
+
+                  {!newScopeAll && (
+                    <div className="space-y-2">
+                      <Label>{t('staff.specificLocations')}</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {locations?.map((loc) => (
+                          <div key={loc.id} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={newLocationIds.includes(loc.id)}
+                              onCheckedChange={(checked) => {
+                                setNewLocationIds(prev =>
+                                  checked ? [...prev, loc.id] : prev.filter(id => id !== loc.id)
+                                );
+                              }}
+                            />
+                            <span className="text-sm">{loc.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleAddPosition} disabled={addPosition.isPending}>
+                      {t('common.save')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowAddPosition(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {positionsLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}
@@ -222,6 +315,15 @@ const StaffDetails = () => {
                           )}
                         </div>
                       </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleRemovePosition(pos.id)}
+                        disabled={removePosition.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>

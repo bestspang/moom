@@ -24,27 +24,17 @@ export const useRoles = (search?: string) => {
       const { data: roles, error } = await query.order('access_level', { ascending: false });
       if (error) throw error;
 
-      // Count staff per role from staff_positions
-      const { data: staffPositions, error: posError } = await supabase
-        .from('staff_positions')
-        .select('role_id');
-      if (posError) throw posError;
-
+      // Count staff per role using head-only count queries (avoids 1000-row limit)
       const counts: Record<string, number> = {};
-      staffPositions?.forEach((sp) => {
-        counts[sp.role_id] = (counts[sp.role_id] || 0) + 1;
-      });
-
-      // Also count from staff.role_id (legacy)
-      const { data: staffDirect, error: sdError } = await supabase
-        .from('staff')
-        .select('role_id');
-      if (sdError) throw sdError;
-      staffDirect?.forEach((s) => {
-        if (s.role_id) {
-          counts[s.role_id] = (counts[s.role_id] || 0) + 1;
-        }
-      });
+      await Promise.all(
+        (roles || []).map(async (role) => {
+          const { count } = await supabase
+            .from('staff_positions')
+            .select('*', { count: 'exact', head: true })
+            .eq('role_id', role.id);
+          counts[role.id] = count ?? 0;
+        })
+      );
 
       const rolesWithCounts: RoleWithCount[] = (roles || []).map((role) => ({
         ...role,
