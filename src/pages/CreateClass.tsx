@@ -22,6 +22,7 @@ const classSchema = z.object({
   name: z.string().min(1, 'Required'),
   name_th: z.string().optional(),
   description: z.string().min(1, 'Required'),
+  description_th: z.string().optional(),
   category_id: z.string().optional(),
   duration: z.number().min(1),
   level: z.enum(['all_levels', 'beginner', 'intermediate', 'advanced']).optional().nullable(),
@@ -45,6 +46,7 @@ const CreateClass = () => {
       name: '',
       name_th: '',
       description: '',
+      description_th: '',
       category_id: '',
       duration: 60,
       level: 'all_levels',
@@ -58,6 +60,7 @@ const CreateClass = () => {
       name: values.name,
       name_th: values.name_th || null,
       description: values.description,
+      description_th: values.description_th || null,
       type: values.type as any,
       category_id: values.category_id || null,
       duration: values.duration,
@@ -154,6 +157,11 @@ const CreateClass = () => {
               <Label>{t('classes.descriptionEn')} <span className="text-destructive">*</span></Label>
               <Textarea {...register('description')} rows={3} />
               {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('classes.descriptionTh')}</Label>
+              <Textarea {...register('description_th')} rows={3} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

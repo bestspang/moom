@@ -59,7 +59,8 @@ function addMinutesToTime(time: string, minutes: number): string {
 export function ScheduleClassDialog({ open, onOpenChange, defaultDate = new Date() }: ScheduleClassDialogProps) {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
-  const { data: classes = [], isLoading: classesLoading } = useClasses();
+  const { data: classesResult, isLoading: classesLoading } = useClasses();
+  const classes = classesResult?.rows ?? [];
   const { data: trainers = [], isLoading: trainersLoading } = useTrainers();
   const { data: rooms = [], isLoading: roomsLoading } = useRooms();
   const { data: locations = [], isLoading: locationsLoading } = useLocations();

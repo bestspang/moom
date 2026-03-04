@@ -19,14 +19,24 @@ const Classes = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
-  const { data: classes, isLoading } = useClasses(
+  const effectiveType = typeFilter && typeFilter !== 'all' ? typeFilter : undefined;
+  const effectiveCategory = categoryFilter && categoryFilter !== 'all' ? categoryFilter : undefined;
+  const effectiveLevel = levelFilter && levelFilter !== 'all' ? levelFilter : undefined;
+
+  const { data: classesResult, isLoading } = useClasses(
     activeTab === 'all' ? undefined : activeTab,
     search,
-    typeFilter || undefined,
-    categoryFilter || undefined,
-    levelFilter || undefined,
+    effectiveType,
+    effectiveCategory,
+    effectiveLevel,
+    page,
+    perPage,
   );
+  const classes = classesResult?.rows;
+  const total = classesResult?.total ?? 0;
   const { data: stats } = useClassStats();
   const { data: categories } = useClassCategories();
 
@@ -125,7 +135,7 @@ const Classes = () => {
         </Select>
       </div>
 
-      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
+      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setPage(1); }} />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -140,6 +150,8 @@ const Classes = () => {
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/class/${row.id}`)}
           emptyMessage={t('common.noData')}
+          pagination={{ page, perPage, total }}
+          onPageChange={setPage}
         />
       )}
     </div>

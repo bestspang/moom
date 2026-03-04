@@ -28,6 +28,7 @@ const ClassDetails = () => {
   const [name, setName] = useState('');
   const [nameTh, setNameTh] = useState('');
   const [description, setDescription] = useState('');
+  const [descriptionTh, setDescriptionTh] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [duration, setDuration] = useState(60);
   const [level, setLevel] = useState('all_levels');
@@ -35,8 +36,9 @@ const ClassDetails = () => {
   useEffect(() => {
     if (classData) {
       setName(classData.name || '');
-      setNameTh((classData as any).name_th || '');
+      setNameTh(classData.name_th || '');
       setDescription(classData.description || '');
+      setDescriptionTh(classData.description_th || '');
       setCategoryId(classData.category_id || '');
       setDuration(classData.duration || 60);
       setLevel(classData.level || 'all_levels');
@@ -46,8 +48,9 @@ const ClassDetails = () => {
   const startEdit = () => {
     if (classData) {
       setName(classData.name || '');
-      setNameTh((classData as any).name_th || '');
+      setNameTh(classData.name_th || '');
       setDescription(classData.description || '');
+      setDescriptionTh(classData.description_th || '');
       setCategoryId(classData.category_id || '');
       setDuration(classData.duration || 60);
       setLevel(classData.level || 'all_levels');
@@ -61,8 +64,9 @@ const ClassDetails = () => {
     if (!id || !name.trim()) return;
     const oldData = classData ? {
       name: classData.name,
-      name_th: (classData as any).name_th,
+      name_th: classData.name_th,
       description: classData.description,
+      description_th: classData.description_th,
       category_id: classData.category_id,
       duration: classData.duration,
       level: classData.level,
@@ -74,6 +78,7 @@ const ClassDetails = () => {
         name: name.trim(),
         name_th: nameTh.trim() || null,
         description: description.trim(),
+        description_th: descriptionTh.trim() || null,
         category_id: categoryId || null,
         duration,
         level: (classData?.type === 'class' ? level : null) as any,
@@ -185,6 +190,10 @@ const ClassDetails = () => {
                 <Label>{t('classes.descriptionEn')}</Label>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
+              <div className="space-y-2">
+                <Label>{t('classes.descriptionTh')}</Label>
+                <Textarea value={descriptionTh} onChange={(e) => setDescriptionTh(e.target.value)} rows={3} />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('packages.categories')}</Label>
@@ -233,11 +242,15 @@ const ClassDetails = () => {
               </div>
               <div>
                 <p className="text-muted-foreground mb-1">{t('classes.classNameTh')}</p>
-                <p className="font-medium">{(classData as any).name_th || '-'}</p>
+                <p className="font-medium">{classData.name_th || '-'}</p>
               </div>
               <div className="col-span-2">
                 <p className="text-muted-foreground mb-1">{t('classes.descriptionEn')}</p>
                 <p className="font-medium">{classData.description || '-'}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-muted-foreground mb-1">{t('classes.descriptionTh')}</p>
+                <p className="font-medium">{classData.description_th || '-'}</p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-1">{t('packages.categories')}</p>
