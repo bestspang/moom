@@ -45,4 +45,10 @@ export const queryKeys = {
 
   // Training / Workouts
   trainingTemplates: (search?: string, filter?: string) => ['training-templates', search, filter] as const,
+
+  // Staff
+  staff: (status?: string, search?: string) => ['staff', status, search] as const,
+  staffMember: (id: string) => ['staff', id] as const,
+  staffStats: () => ['staff-stats'] as const,
+  staffPositions: (staffId: string) => ['staff-positions', staffId] as const,
 };

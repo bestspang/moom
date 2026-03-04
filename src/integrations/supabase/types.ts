@@ -1815,6 +1815,7 @@ export type Database = {
       }
       staff: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string | null
           email: string | null
@@ -1830,6 +1831,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -1845,6 +1847,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -1872,6 +1875,48 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_positions: {
+        Row: {
+          created_at: string | null
+          id: string
+          location_ids: string[] | null
+          role_id: string
+          scope_all_locations: boolean | null
+          staff_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          location_ids?: string[] | null
+          role_id: string
+          scope_all_locations?: boolean | null
+          staff_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          location_ids?: string[] | null
+          role_id?: string
+          scope_all_locations?: boolean | null
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_positions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_positions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]

@@ -25,6 +25,7 @@ import Rooms from "./pages/Rooms";
 import Classes from "./pages/Classes";
 import ClassCategories from "./pages/ClassCategories";
 import Staff from "./pages/Staff";
+import StaffDetails from "./pages/StaffDetails";
 import Roles from "./pages/Roles";
 import Locations from "./pages/Locations";
 import ActivityLog from "./pages/ActivityLog";
@@ -105,6 +106,7 @@ const App = () => (
                 <Route path="class" element={<Classes />} />
                 <Route path="class-category" element={<ClassCategories />} />
                 <Route path="admin" element={<Staff />} />
+                <Route path="admin/:id" element={<StaffDetails />} />
                 <Route path="roles" element={<Roles />} />
                 <Route path="location" element={<Locations />} />
                 <Route path="activity-log" element={<ActivityLog />} />
