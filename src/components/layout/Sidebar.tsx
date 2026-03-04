@@ -168,13 +168,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         to={item.path}
         onClick={() => onClose()}
         className={cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+          'flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors',
           isActive
             ? 'bg-primary text-primary-foreground'
             : 'text-sidebar-foreground hover:bg-sidebar-accent'
         )}
       >
-        <Icon className="h-5 w-5 flex-shrink-0" />
+        <Icon className="h-4 w-4 flex-shrink-0" />
         <span>{item.label}</span>
       </NavLink>
     );
@@ -198,13 +198,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       >
         <CollapsibleTrigger
           className={cn(
-            'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            'flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors',
             hasActiveChild
               ? 'text-primary'
               : 'text-sidebar-foreground hover:bg-sidebar-accent'
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <GroupIcon className="h-4 w-4 flex-shrink-0" />
             <span>{group.label}</span>
           </div>
@@ -234,7 +234,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-16 left-0 bottom-0 w-[220px] bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-200',
+          'fixed top-14 left-0 bottom-0 w-[200px] bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-200',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}

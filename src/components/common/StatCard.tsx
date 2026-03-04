@@ -54,11 +54,11 @@ export const StatCard = ({
 
   return (
     <Card className={cn('shadow-card', getColorClasses())}>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-xl font-bold mt-1">{value}</p>
             {subtitle && (
               <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
             )}
