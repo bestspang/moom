@@ -1066,4 +1066,35 @@ export default {
     linkSuccess: 'เชื่อมบัญชี LINE สำเร็จ',
     unlinkSuccess: 'ยกเลิกการเชื่อมบัญชี LINE แล้ว',
   },
+
+  // LIFF App
+  liff: {
+    comingSoonDescription: 'ฟีเจอร์นี้กำลังมาเร็วๆ นี้ รอติดตามนะ!',
+    loggingIn: 'กำลังเข้าสู่ระบบ...',
+    callbackError: 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
+    backToApp: 'กลับไปที่แอป',
+    notConfigured: 'ยังไม่ได้ตั้งค่า LINE Login',
+    nav: {
+      home: 'หน้าแรก',
+      booking: 'จองคลาส',
+      packages: 'แพ็กเกจ',
+      checkin: 'เช็คอิน',
+      profile: 'โปรไฟล์',
+    },
+    trainerNav: {
+      schedule: 'ตารางวันนี้',
+      attendance: 'เช็คชื่อ',
+      ptLog: 'PT Log',
+      members: 'สมาชิก',
+    },
+    member: {
+      welcome: 'สวัสดี {{name}} 👋',
+      guest: 'ผู้เยี่ยมชม',
+      linked: 'เชื่อมบัญชีแล้ว',
+      notLinked: 'ยังไม่ได้เชื่อมบัญชี',
+      memberId: 'รหัสสมาชิก',
+      nextClass: 'คลาสถัดไป',
+      linkPrompt: 'เชื่อมบัญชี LINE กับสมาชิกของคุณเพื่อเข้าถึงฟีเจอร์ทั้งหมด',
+    },
+  },
 };
