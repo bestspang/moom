@@ -290,6 +290,10 @@ export default {
     hotLeads: 'ลีดร้อน',
     upcomingBirthdays: 'วันเกิดที่จะมาถึง',
     comparedToYesterday: 'เทียบกับเมื่อวาน',
+    searchClasses: 'ค้นหาคลาส, เทรนเนอร์, หรือห้อง',
+    searchGym: 'ค้นหาชื่อหรือเบอร์โทร',
+    goToLobby: 'ไปที่ล็อบบี้',
+    checkInMethod: 'วิธี',
   },
 
   // Lobby

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, type Column } from '@/components/common';
+import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, SearchBar, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   mapScheduleToItem,
   type ScheduleItem,
 } from '@/hooks/useSchedule';
+import { useGymCheckinsByDate, type GymCheckinItem } from '@/hooks/useDashboardAttendance';
 import { AiSuggestionsCard } from '@/components/dashboard/AiSuggestionsCard';
 
 // Skeleton component for member list items
@@ -63,6 +64,21 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('classes');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reset search on tab change
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchInput('');
+    setDebouncedSearch('');
+  };
 
   // Fetch real data
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -70,7 +86,22 @@ const Dashboard = () => {
   const { data: hotLeads = [], isLoading: leadsLoading } = useHotLeads();
   const { data: upcomingBirthdays = [], isLoading: birthdaysLoading } = useUpcomingBirthdays();
   const { data: rawScheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
-  const scheduleData = rawScheduleData.map(mapScheduleToItem);
+  const { data: gymCheckins = [], isLoading: gymLoading } = useGymCheckinsByDate(selectedDate, debouncedSearch);
+
+  const scheduleData = useMemo(() => rawScheduleData.map(mapScheduleToItem), [rawScheduleData]);
+
+  // Client-side filter for classes tab
+  const filteredSchedule = useMemo(() => {
+    if (!debouncedSearch || debouncedSearch.length < 2) return scheduleData;
+    const q = debouncedSearch.toLowerCase();
+    return scheduleData.filter(
+      (s) =>
+        s.className.toLowerCase().includes(q) ||
+        s.trainer.toLowerCase().includes(q) ||
+        s.location.toLowerCase().includes(q) ||
+        s.room.toLowerCase().includes(q)
+    );
+  }, [scheduleData, debouncedSearch]);
 
   const scheduleColumns: Column<ScheduleItem>[] = [
     { key: 'time', header: t('schedule.time'), cell: (row) => row.time },
@@ -82,10 +113,22 @@ const Dashboard = () => {
     { key: 'checkedIn', header: t('lobby.checkedIn'), cell: (row) => row.checkedIn },
   ];
 
+  const gymColumns: Column<GymCheckinItem>[] = [
+    { key: 'time', header: t('lobby.time'), cell: (row) => row.time },
+    { key: 'name', header: t('lobby.name'), cell: (row) => row.name },
+    { key: 'package', header: t('lobby.packageUsed'), cell: (row) => row.packageName },
+    { key: 'location', header: t('lobby.location'), cell: (row) => row.location },
+    { key: 'method', header: t('dashboard.checkInMethod'), cell: (row) => row.checkInType },
+  ];
+
   // Calculate comparison
   const checkinComparison = stats
     ? stats.checkinsToday - stats.checkinsYesterday
     : 0;
+
+  const searchPlaceholder = activeTab === 'classes'
+    ? t('dashboard.searchClasses')
+    : t('dashboard.searchGym');
 
   return (
     <div>
@@ -141,7 +184,7 @@ const Dashboard = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
                   <TabsList>
                     <TabsTrigger value="classes">{t('dashboard.classes')}</TabsTrigger>
                     <TabsTrigger value="gym">{t('dashboard.gymCheckin')}</TabsTrigger>
@@ -151,6 +194,12 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
+              <SearchBar
+                placeholder={searchPlaceholder}
+                value={searchInput}
+                onChange={setSearchInput}
+                className="mb-4"
+              />
               <Tabs value={activeTab}>
                 <TabsContent value="classes" className="mt-0">
                   {scheduleLoading ? (
@@ -162,14 +211,34 @@ const Dashboard = () => {
                   ) : (
                     <DataTable
                       columns={scheduleColumns}
-                      data={scheduleData}
+                      data={filteredSchedule}
                       rowKey={(row) => row.id}
                       emptyMessage={t('common.noData')}
                     />
                   )}
                 </TabsContent>
                 <TabsContent value="gym" className="mt-0">
-                  <EmptyState message={t('common.noData')} />
+                  {gymLoading ? (
+                    <div className="space-y-0">
+                      <TableRowSkeleton />
+                      <TableRowSkeleton />
+                      <TableRowSkeleton />
+                    </div>
+                  ) : (
+                    <>
+                      <DataTable
+                        columns={gymColumns}
+                        data={gymCheckins}
+                        rowKey={(row) => row.id}
+                        emptyMessage={t('common.noData')}
+                      />
+                      <div className="mt-4 flex justify-end">
+                        <Button variant="outline" size="sm" onClick={() => navigate('/lobby')}>
+                          {t('dashboard.goToLobby')} →
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

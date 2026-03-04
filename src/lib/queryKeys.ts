@@ -57,4 +57,7 @@ export const queryKeys = {
   role: (id: string) => ['roles', id] as const,
   rolePermissions: (roleId: string) => ['role-permissions', roleId] as const,
   myPermissions: (userId?: string) => ['my-permissions', userId] as const,
+
+  // Dashboard
+  gymCheckins: (dateStr: string, search?: string) => ['gym-checkins', dateStr, search] as const,
 };
