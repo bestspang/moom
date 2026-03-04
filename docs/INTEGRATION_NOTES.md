@@ -42,12 +42,13 @@
 
 | Invariant | Enforcement | File |
 |-----------|------------|------|
-| Attendance at most once per (member, schedule) | `hasExistingAttendance()` check before insert | `useClassBookings.ts` |
+| Attendance at most once per (member, schedule) | `hasExistingAttendance()` check + DB unique index `idx_member_attendance_idempotent` | `useClassBookings.ts` + migration |
 | Package sessions decremented atomically with ledger entry | Same mutation in `useMarkAttendance` | `useClassBookings.ts` |
 | Schedule cancellation refunds sessions | Ledger reversal + `sessions_remaining` increment | `useSchedule.ts` |
 | Notifications refresh in real-time | Added to `TABLE_INVALIDATION_MAP` | `useRealtimeSync.ts` |
 | Role/permission changes reflect immediately | `roles`, `user_roles` in realtime sync | `useRealtimeSync.ts` |
 | Only master-level users access diagnostics | `ProtectedRoute minAccessLevel="level_4_master"` | `App.tsx` |
+| Edit/delete buttons hidden when user lacks permission | `can()` checks in row action cells | `Members.tsx`, `Leads.tsx` |
 | Audit log written for every mutation | `logActivity()` in every mutation's `onSuccess` | All hooks |
 
 ---
@@ -112,6 +113,14 @@ All stats hooks use `{ count: 'exact', head: true }` to avoid fetching full row 
 ---
 
 ## Idempotency Rules
-- **Attendance marking**: Checks `member_attendance` for existing `(member_id, schedule_id)` before insert
+- **Attendance marking**: Checks `member_attendance` for existing `(member_id, schedule_id)` before insert. Also enforced by DB unique index `idx_member_attendance_idempotent`
 - **Schedule cancellation**: Fetches bookings before bulk cancel, refunds only packages that had sessions deducted
 - **Booking creation**: DB unique constraint on `(schedule_id, member_id)` prevents duplicates at DB level
+
+---
+
+## Permission UX Alignment
+- **Members page**: Edit button hidden if `can('members', 'write')` is false
+- **Leads page**: Convert button hidden if `can('leads', 'write')` is false
+- **Diagnostics**: Route guarded with `minAccessLevel="level_4_master"`
+- Server-side: RLS policies enforce the same boundaries regardless of UI

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Download, Upload, Edit, MoreVertical, FileText, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
@@ -27,6 +28,7 @@ type MemberStatus = Database['public']['Enums']['member_status'];
 const Members = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<MemberStatus | 'all'>('active');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -174,21 +176,24 @@ const Members = () => {
     {
       key: 'actions',
       header: '',
-      cell: (row) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => handleEdit(e as any, row)}>
-              <Edit className="h-4 w-4 mr-2" />
-              {t('common.edit')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: (row) => {
+        if (!can('members', 'write')) return null;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => handleEdit(e as any, row)}>
+                <Edit className="h-4 w-4 mr-2" />
+                {t('common.edit')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 

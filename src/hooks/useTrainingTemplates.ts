@@ -86,6 +86,7 @@ export function useTrainingTemplates(search?: string, filterTrainingId?: string)
 // ── Create ──
 export interface CreateTrainingInput {
   name: string;
+  description?: string;
   items: {
     name: string;
     track_metric?: string;
@@ -103,7 +104,7 @@ export function useCreateTraining() {
     mutationFn: async (input: CreateTrainingInput) => {
       const { data: training, error: tErr } = await supabase
         .from('training_templates')
-        .insert({ name: input.name })
+        .insert({ name: input.name, description: input.description || null })
         .select()
         .single();
       if (tErr) throw tErr;
@@ -145,10 +146,11 @@ export function useUpdateTraining() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; name?: string; is_active?: boolean }) => {
+    mutationFn: async (input: { id: string; name?: string; is_active?: boolean; description?: string }) => {
       const updates: Record<string, unknown> = {};
       if (input.name !== undefined) updates.name = input.name;
       if (input.is_active !== undefined) updates.is_active = input.is_active;
+      if (input.description !== undefined) updates.description = input.description;
 
       const { error } = await supabase
         .from('training_templates')

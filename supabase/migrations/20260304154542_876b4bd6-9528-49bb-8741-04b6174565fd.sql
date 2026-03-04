@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_member_attendance_idempotent ON public.member_attendance (member_id, schedule_id) WHERE schedule_id IS NOT NULL;
