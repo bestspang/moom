@@ -7,9 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getDateLocale } from '@/lib/formatters';
 import { useLeads, type LeadWithLocation } from '@/hooks/useLeads';
-// useLocations no longer needed - location joined in useLeads
 import { format } from 'date-fns';
-import type { Tables } from '@/integrations/supabase/types';
 import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
 import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
@@ -20,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Upload, Download, Settings } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Upload, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportLeads } from '@/lib/exportCsv';
 
@@ -57,10 +55,21 @@ const Leads = () => {
     switch (status) {
       case 'new': return 'new';
       case 'contacted': return 'pending';
-      case 'interested': return 'paid';
-      case 'not_interested': return 'voided';
-      case 'converted': return 'paid';
+      case 'interested': return 'active';
+      case 'not_interested': return 'inactive';
+      case 'converted': return 'active';
       default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'new': return t('leads.statusNew');
+      case 'contacted': return t('leads.statusContacted');
+      case 'interested': return t('leads.statusInterested');
+      case 'not_interested': return t('leads.statusNotInterested');
+      case 'converted': return t('leads.statusConverted');
+      default: return t('leads.statusNew');
     }
   };
 
@@ -100,7 +109,7 @@ const Leads = () => {
   const columns: Column<Lead>[] = [
     {
       key: 'name',
-      header: t('lobby.name'),
+      header: t('common.name'),
       cell: (row) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
@@ -112,14 +121,14 @@ const Leads = () => {
         </div>
       ),
     },
-    { key: 'phone', header: t('leads.contactNumber'), cell: (row) => row.phone || '-' },
-    { key: 'email', header: t('leads.email'), cell: (row) => row.email || '-' },
+    { key: 'phone', header: t('common.phone'), cell: (row) => row.phone || '-' },
+    { key: 'email', header: t('common.email'), cell: (row) => row.email || '-' },
     {
       key: 'status',
       header: t('common.status'),
       cell: (row) => (
         <StatusBadge variant={getStatusVariant(row.status) as any}>
-          {row.status?.replace('_', ' ') || 'new'}
+          {getStatusLabel(row.status)}
         </StatusBadge>
       ),
     },
@@ -177,7 +186,7 @@ const Leads = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  <Settings className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4" />
                   {t('common.manage')}
                 </Button>
               </DropdownMenuTrigger>
@@ -203,8 +212,8 @@ const Leads = () => {
                   document.body.removeChild(link);
                   URL.revokeObjectURL(url);
                 }}>
-                  <Download className="mr-2 h-4 w-4" />
-                  {t('leads.downloadTemplate')}
+                  <FileText className="mr-2 h-4 w-4" />
+                  {t('common.downloadTemplate')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -215,8 +224,6 @@ const Leads = () => {
         }
       />
 
-      <StatusTabs tabs={tabsWithCounts} activeTab={statusFilter} onChange={setStatusFilter} />
-
       <div className="mb-6">
         <SearchBar
           placeholder={t('leads.searchPlaceholder')}
@@ -225,6 +232,8 @@ const Leads = () => {
           className="max-w-md"
         />
       </div>
+
+      <StatusTabs tabs={tabsWithCounts} activeTab={statusFilter} onChange={setStatusFilter} />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -237,7 +246,7 @@ const Leads = () => {
           columns={columns}
           data={displayLeads}
           rowKey={(row) => row.id}
-          emptyMessage={t('common.noData')}
+          emptyMessage={t('leads.searchPlaceholder')}
         />
       )}
 

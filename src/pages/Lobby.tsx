@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCheckIns, type CheckInWithRelations } from '@/hooks/useLobby';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
 import { CheckInQRCodeDialog } from '@/components/lobby/CheckInQRCodeDialog';
-import { QrCode } from 'lucide-react';
+import { QrCode, Plus } from 'lucide-react';
 
 const Lobby = () => {
   const { t } = useLanguage();
@@ -23,7 +23,7 @@ const Lobby = () => {
     switch (method) {
       case 'qr': return 'active' as const;
       case 'liff': return 'new' as const;
-      default: return 'paid' as const;
+      default: return 'pending' as const;
     }
   };
 
@@ -31,7 +31,7 @@ const Lobby = () => {
     switch (method) {
       case 'qr': return 'QR';
       case 'liff': return 'LIFF';
-      default: return 'Manual';
+      default: return t('lobby.manual');
     }
   };
 
@@ -43,7 +43,7 @@ const Lobby = () => {
     },
     {
       key: 'name',
-      header: t('lobby.name'),
+      header: t('common.name'),
       cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : '-',
     },
     {
@@ -83,19 +83,32 @@ const Lobby = () => {
         breadcrumbs={[{ label: t('lobby.title') }]}
       />
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <DatePicker
-          date={selectedDate}
-          onChange={setSelectedDate}
-          showNavigation={false}
-        />
-        <div className="flex items-center gap-4">
+      {/* Filters — stack on mobile */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <DatePicker
+            date={selectedDate}
+            onChange={setSelectedDate}
+            showNavigation={false}
+          />
           <SearchBar
             placeholder={t('lobby.searchPlaceholder')}
             value={search}
             onChange={setSearch}
-            className="w-64"
+            className="flex-1 max-w-md"
           />
+        </div>
+        <div className="flex items-center gap-2 sm:hidden">
+          <Button variant="outline" className="flex-1" onClick={() => setQrDialogOpen(true)}>
+            <QrCode className="h-4 w-4 mr-1" />
+            {t('lobby.qrCode')}
+          </Button>
+          <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            {t('lobby.checkIn')}
+          </Button>
+        </div>
+        <div className="hidden sm:flex sm:items-center sm:gap-2 sm:self-end sm:-mt-[52px]">
           <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
             <QrCode className="h-4 w-4 mr-1" />
             {t('lobby.qrCode')}

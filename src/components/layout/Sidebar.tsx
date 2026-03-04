@@ -23,7 +23,9 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  Rocket,
+  GraduationCap,
+  Briefcase,
+  Wallet,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +56,7 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  icon: React.ElementType;
   items: NavItem[];
   minLevel?: AccessLevel;
 }
@@ -70,7 +73,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { accessLevel } = useAuth();
   const { can, hasCustomPermissions } = usePermissions();
   const location = useLocation();
-  const [openGroups, setOpenGroups] = React.useState<string[]>(['class', 'client', 'package', 'yourGym', 'finance']);
+  const [openGroups, setOpenGroups] = React.useState<string[]>(['class', 'client', 'package', 'admin', 'finance']);
 
   const toggleGroup = (group: string) => {
     setOpenGroups((prev) =>
@@ -78,13 +81,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
-  // Check if user has access — uses permissions if available, else access_level fallback
   const hasAccess = (minLevel?: AccessLevel, resource?: ResourceKey) => {
-    // If custom permissions exist, check resource-level read permission
     if (hasCustomPermissions && resource) {
       return can(resource, 'read');
     }
-    // Fallback to access_level
     if (!minLevel) return true;
     if (!accessLevel) return false;
     return accessLevelOrder[accessLevel] >= accessLevelOrder[minLevel];
@@ -95,6 +95,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen, resource: 'lobby' },
     {
       label: t('nav.class'),
+      icon: GraduationCap,
       minLevel: 'level_2_operator',
       items: [
         { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
@@ -105,6 +106,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.client'),
+      icon: Users,
       items: [
         { label: t('nav.members'), path: '/members', icon: Users, resource: 'members' },
         { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
@@ -112,6 +114,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.package'),
+      icon: Tag,
       minLevel: 'level_2_operator',
       items: [
         { label: t('nav.packages'), path: '/package', icon: Tag, resource: 'packages' },
@@ -120,6 +123,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.yourGym'),
+      icon: Briefcase,
       minLevel: 'level_3_manager',
       items: [
         { label: t('nav.staff'), path: '/admin', icon: UserCheck, resource: 'staff' },
@@ -132,6 +136,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     },
     {
       label: t('nav.finance'),
+      icon: Wallet,
       minLevel: 'level_3_manager',
       items: [
         { label: t('nav.transferSlips'), path: '/transfer-slip', icon: Receipt, resource: 'transfer_slips' },
@@ -139,7 +144,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       ],
     },
     { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator', resource: 'reports' },
-    { label: t('nav.comingSoon'), path: '/coming-soon', icon: Rocket, minLevel: 'level_2_operator' },
     { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
   ];
 
@@ -179,12 +183,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const renderNavGroup = (group: NavGroup, groupKey: string) => {
     if (!hasAccess(group.minLevel)) return null;
     
-    // Filter items by access level and permissions
     const visibleItems = group.items.filter((item) => hasAccess(item.minLevel, item.resource));
     if (visibleItems.length === 0) return null;
     
     const isOpen = openGroups.includes(groupKey);
     const hasActiveChild = visibleItems.some((item) => isActiveRoute(item.path));
+    const GroupIcon = group.icon;
 
     return (
       <Collapsible
@@ -200,7 +204,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               : 'text-sidebar-foreground hover:bg-sidebar-accent'
           )}
         >
-          <span>{group.label}</span>
+          <div className="flex items-center gap-3">
+            <GroupIcon className="h-4 w-4 flex-shrink-0" />
+            <span>{group.label}</span>
+          </div>
           {isOpen ? (
             <ChevronDown className="h-4 w-4" />
           ) : (

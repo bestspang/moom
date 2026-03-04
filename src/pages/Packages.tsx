@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/formatters';
 import { usePackages, usePackageStats } from '@/hooks/usePackages';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Package = Tables<'packages'>;
@@ -16,7 +18,6 @@ const Packages = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   const { data: packages, isLoading } = usePackages(activeTab, search);
   const { data: stats } = usePackageStats();
@@ -46,10 +47,30 @@ const Packages = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!packages?.length) {
+      toast.info(t('common.noData'));
+      return;
+    }
+    const csvColumns: CsvColumn<Package>[] = [
+      { key: 'name_en', header: 'Name (EN)', accessor: (r) => r.name_en },
+      { key: 'name_th', header: 'Name (TH)', accessor: (r) => r.name_th },
+      { key: 'type', header: 'Type', accessor: (r) => r.type },
+      { key: 'term_days', header: 'Term (Days)', accessor: (r) => r.term_days },
+      { key: 'sessions', header: 'Sessions', accessor: (r) => r.sessions },
+      { key: 'price', header: 'Price', accessor: (r) => r.price },
+      { key: 'usage_type', header: 'Usage Type', accessor: (r) => r.usage_type },
+      { key: 'is_popular', header: 'Popular', accessor: (r) => r.is_popular ? 'Yes' : 'No' },
+      { key: 'status', header: 'Status', accessor: (r) => r.status },
+    ];
+    exportToCsv(packages, csvColumns, 'packages');
+    toast.success(t('common.export'));
+  };
+
   const columns: Column<Package>[] = [
     { 
       key: 'name', 
-      header: t('lobby.name'), 
+      header: t('common.name'), 
       cell: (row) => language === 'th' && row.name_th ? row.name_th : row.name_en 
     },
     {
@@ -71,7 +92,7 @@ const Packages = () => {
     { 
       key: 'categories', 
       header: t('packages.categories'), 
-      cell: (row) => row.all_categories ? 'All' : (row.categories?.join(', ') || '-')
+      cell: (row) => row.all_categories ? t('common.all') : (row.categories?.join(', ') || '-')
     },
     { 
       key: 'access', 
@@ -88,21 +109,6 @@ const Packages = () => {
     },
   ];
 
-  const handleSelectRow = (id: string) => {
-    setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (!packages) return;
-    if (selectedRows.length === packages.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(packages.map((p) => p.id));
-    }
-  };
-
   return (
     <div>
       <PageHeader
@@ -110,7 +116,7 @@ const Packages = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               {t('common.export')}
             </Button>
@@ -145,10 +151,6 @@ const Packages = () => {
         <DataTable
           columns={columns}
           data={packages || []}
-          selectable
-          selectedRows={selectedRows}
-          onSelectRow={handleSelectRow}
-          onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           emptyMessage={t('common.noData')}
           onRowClick={(row) => navigate(`/package/${row.id}`)}
