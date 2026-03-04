@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface WorkoutItemRow {
   id: string;
@@ -121,9 +122,16 @@ export function useCreateTraining() {
 
       return training;
     },
-    onSuccess: () => {
+    onSuccess: (training) => {
       qc.invalidateQueries({ queryKey: ['training-templates'] });
       toast.success(t('workouts.createSuccess'));
+
+      logActivity({
+        event_type: 'training_created',
+        activity: `Training template "${training.name}" created`,
+        entity_type: 'training',
+        entity_id: training.id,
+      });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -147,8 +155,16 @@ export function useUpdateTraining() {
         .eq('id', input.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['training-templates'] });
+
+      logActivity({
+        event_type: 'training_updated',
+        activity: `Training template updated`,
+        entity_type: 'training',
+        entity_id: variables.id,
+        new_value: variables as Record<string, unknown>,
+      });
     },
     onError: (err: Error) => {
       toast.error(err.message);

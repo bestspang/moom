@@ -1869,49 +1869,73 @@ export type Database = {
       staff: {
         Row: {
           address: string | null
+          address_1: string | null
+          address_2: string | null
           avatar_url: string | null
           created_at: string | null
+          date_of_birth: string | null
+          district: string | null
           email: string | null
           first_name: string
+          gender: string | null
           id: string
           last_name: string
           location_id: string | null
           nickname: string | null
           phone: string | null
+          postal_code: string | null
+          province: string | null
           role_id: string | null
           status: Database["public"]["Enums"]["staff_status"] | null
+          subdistrict: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          district?: string | null
           email?: string | null
           first_name: string
+          gender?: string | null
           id?: string
           last_name: string
           location_id?: string | null
           nickname?: string | null
           phone?: string | null
+          postal_code?: string | null
+          province?: string | null
           role_id?: string | null
           status?: Database["public"]["Enums"]["staff_status"] | null
+          subdistrict?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string | null
+          address_1?: string | null
+          address_2?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          district?: string | null
           email?: string | null
           first_name?: string
+          gender?: string | null
           id?: string
           last_name?: string
           location_id?: string | null
           nickname?: string | null
           phone?: string | null
+          postal_code?: string | null
+          province?: string | null
           role_id?: string | null
           status?: Database["public"]["Enums"]["staff_status"] | null
+          subdistrict?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

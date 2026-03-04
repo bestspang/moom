@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useStaff, useStaffStats } from '@/hooks/useStaff';
+import { useLocations } from '@/hooks/useLocations';
 import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { getInitials } from '@/lib/formatters';
 
@@ -19,9 +20,13 @@ const Staff = () => {
 
   const { data: staff, isLoading } = useStaff(activeTab, search);
   const { data: stats } = useStaffStats();
+  const { data: locations } = useLocations();
+
+  const locationMap = new Map(locations?.map(l => [l.id, l.name]) || []);
 
   const statusTabs: StatusTab[] = [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
+    { key: 'pending', label: t('common.pending'), count: stats?.pending || 0 },
     { key: 'terminated', label: t('staff.terminated'), count: stats?.terminated || 0 },
   ];
 
@@ -32,6 +37,21 @@ const Staff = () => {
       case 'terminated': return 'voided';
       default: return 'default';
     }
+  };
+
+  const getLocationScopeLabel = (row: any): string => {
+    const positions = row.staff_positions;
+    if (!positions?.length) return '-';
+    const allScope = positions.every((p: any) => p.scope_all_locations);
+    if (allScope) return t('staff.allLocations');
+    const ids = new Set<string>();
+    positions.forEach((p: any) => {
+      if (!p.scope_all_locations && p.location_ids) {
+        p.location_ids.forEach((id: string) => ids.add(id));
+      }
+    });
+    if (ids.size === 0) return t('staff.allLocations');
+    return Array.from(ids).map(id => locationMap.get(id) || id).join(', ');
   };
 
   const columns: Column<any>[] = [
@@ -45,12 +65,7 @@ const Staff = () => {
               {getInitials(row.first_name, row.last_name)}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <span className="font-medium">{row.first_name} {row.last_name}</span>
-            {row.status === 'pending' && (
-              <StatusBadge variant="pending" className="ml-2">Pending</StatusBadge>
-            )}
-          </div>
+          <span className="font-medium">{row.first_name} {row.last_name}</span>
         </div>
       )
     },
@@ -78,6 +93,22 @@ const Staff = () => {
           </Badge>
         );
       }
+    },
+    {
+      key: 'location_scope',
+      header: t('staff.locationScope'),
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">{getLocationScopeLabel(row)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('common.status'),
+      cell: (row) => (
+        <StatusBadge variant={getStatusVariant(row.status)}>
+          {row.status || 'unknown'}
+        </StatusBadge>
+      ),
     },
   ];
 
