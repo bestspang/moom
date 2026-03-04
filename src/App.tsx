@@ -152,7 +152,7 @@ const App = () => (
                   <Route path="member-contracts" element={<SettingsContracts />} />
                   <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                 </Route>
-                <Route path="diagnostics/data-audit" element={<DiagnosticsDataAudit />} />
+                <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

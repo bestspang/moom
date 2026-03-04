@@ -7,7 +7,7 @@
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS + shadcn/ui
 - **Backend**: Lovable Cloud (Supabase) — Postgres + Auth + Edge Functions + Realtime
 - **State**: React Query (TanStack) with centralized query keys (`src/lib/queryKeys.ts`)
-- **Realtime**: Global `useRealtimeSync` hook subscribes to 30+ tables and auto-invalidates query caches
+- **Realtime**: Global `useRealtimeSync` hook subscribes to 34 tables and auto-invalidates query caches
 - **Auth**: Supabase Auth with `user_roles` table → `app_role` enum → `access_level` enum
 - **Activity Log**: Append-only `activity_log` table; every mutation calls `logActivity()`
 
@@ -34,6 +34,28 @@
 | Announcements | `useAnnouncements` | `announcements` | ✅ | ✅ |
 | Activity Log | `useActivityLog` | `activity_log` | ✅ | ✅ |
 | Workouts | `useTrainingTemplates` | `workouts`, `workout_items` | ✅ | ✅ |
+| Diagnostics | DiagnosticsDataAudit | all core tables | Direct queries | ✅ (level_4_master) |
+
+---
+
+## System Invariants (Enforced)
+
+| Invariant | Enforcement | File |
+|-----------|------------|------|
+| Attendance at most once per (member, schedule) | `hasExistingAttendance()` check before insert | `useClassBookings.ts` |
+| Package sessions decremented atomically with ledger entry | Same mutation in `useMarkAttendance` | `useClassBookings.ts` |
+| Schedule cancellation refunds sessions | Ledger reversal + `sessions_remaining` increment | `useSchedule.ts` |
+| Notifications refresh in real-time | Added to `TABLE_INVALIDATION_MAP` | `useRealtimeSync.ts` |
+| Role/permission changes reflect immediately | `roles`, `user_roles` in realtime sync | `useRealtimeSync.ts` |
+| Only master-level users access diagnostics | `ProtectedRoute minAccessLevel="level_4_master"` | `App.tsx` |
+| Audit log written for every mutation | `logActivity()` in every mutation's `onSuccess` | All hooks |
+
+---
+
+## Realtime Sync Coverage (34 tables)
+
+All tables in `TABLE_INVALIDATION_MAP`:
+`schedule`, `member_attendance`, `class_bookings`, `class_waitlist`, `rooms`, `locations`, `classes`, `class_categories`, `members`, `member_packages`, `package_usage_ledger`, `leads`, `ai_suggestions`, `packages`, `promotions`, `promotion_packages`, `promotion_redemptions`, `transactions`, `training_templates`, `workout_items`, `staff`, `staff_positions`, `role_permissions`, `activity_log`, `announcements`, `member_notes`, `member_injuries`, `member_suspensions`, `member_contracts`, `member_billing`, `notifications`, `roles`, `user_roles`, `checkin_qr_tokens`
 
 ---
 
@@ -85,3 +107,11 @@ All stats hooks use `{ count: 'exact', head: true }` to avoid fetching full row 
 - **Access Levels**: `level_1_minimum` < `level_2_operator` < `level_3_manager` < `level_4_master`
 - **Route Guards**: `ProtectedRoute` component checks `user` + optional `minAccessLevel`
 - **Auth Guards**: All `useQuery` hooks include `enabled: !!user` to prevent unauthenticated fetches
+- **Diagnostics**: Restricted to `level_4_master` via nested `ProtectedRoute`
+
+---
+
+## Idempotency Rules
+- **Attendance marking**: Checks `member_attendance` for existing `(member_id, schedule_id)` before insert
+- **Schedule cancellation**: Fetches bookings before bulk cancel, refunds only packages that had sessions deducted
+- **Booking creation**: DB unique constraint on `(schedule_id, member_id)` prevents duplicates at DB level

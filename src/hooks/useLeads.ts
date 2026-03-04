@@ -154,7 +154,7 @@ export const useConvertLeadToMember = () => {
     mutationFn: async ({ leadId, memberId }: { leadId: string; memberId: string }) => {
       const { error } = await supabase
         .from('leads')
-        .update({ status: 'converted' as any, converted_member_id: memberId } as any)
+        .update({ status: 'converted', converted_member_id: memberId })
         .eq('id', leadId);
 
       if (error) throw error;

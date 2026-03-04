@@ -373,6 +373,7 @@ export function useCancelSchedule() {
 
   return useMutation({
     mutationFn: async (scheduleId: string) => {
+      // 1) Cancel the schedule
       const { error: schedError } = await supabase
         .from('schedule')
         .update({ status: 'cancelled' })
@@ -380,6 +381,16 @@ export function useCancelSchedule() {
 
       if (schedError) throw schedError;
 
+      // 2) Fetch booked bookings WITH member_package_id to refund sessions
+      const { data: bookedBookings, error: fetchError } = await supabase
+        .from('class_bookings')
+        .select('id, member_id, member_package_id')
+        .eq('schedule_id', scheduleId)
+        .eq('status', 'booked');
+
+      if (fetchError) throw fetchError;
+
+      // 3) Cancel all booked bookings
       const { error: bookError } = await supabase
         .from('class_bookings')
         .update({
@@ -392,6 +403,39 @@ export function useCancelSchedule() {
 
       if (bookError) throw bookError;
 
+      // 4) Refund sessions for bookings that had a member_package_id
+      const bookingsWithPackage = (bookedBookings || []).filter(b => b.member_package_id);
+      for (const booking of bookingsWithPackage) {
+        const { data: mp } = await supabase
+          .from('member_packages')
+          .select('sessions_remaining, sessions_used, package_id, packages(sessions)')
+          .eq('id', booking.member_package_id!)
+          .single();
+
+        const pkg = (mp as any)?.packages;
+        if (pkg?.sessions && pkg.sessions > 0 && mp) {
+          const newBalance = (mp.sessions_remaining ?? 0) + 1;
+
+          await supabase.from('package_usage_ledger').insert({
+            member_package_id: booking.member_package_id!,
+            delta_sessions: 1,
+            balance_after: newBalance,
+            usage_type: 'adjustment',
+            reference_type: 'schedule',
+            reference_id: scheduleId,
+            note: 'Session refund — class cancelled',
+          });
+
+          await supabase
+            .from('member_packages')
+            .update({
+              sessions_remaining: newBalance,
+              sessions_used: Math.max((mp.sessions_used ?? 0) - 1, 0),
+            })
+            .eq('id', booking.member_package_id!);
+        }
+      }
+
       return scheduleId;
     },
     onSuccess: (scheduleId) => {
@@ -399,9 +443,11 @@ export function useCancelSchedule() {
       queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      queryClient.invalidateQueries({ queryKey: ['package-usage'] });
       logActivity({
         event_type: 'schedule_cancelled',
-        activity: 'Schedule cancelled with all bookings',
+        activity: 'Schedule cancelled with all bookings — sessions refunded',
         entity_type: 'schedule',
         entity_id: scheduleId,
       });
