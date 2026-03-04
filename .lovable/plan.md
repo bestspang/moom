@@ -1,207 +1,136 @@
 
 
-# UX/UI Comprehensive Audit & Improvement Plan
+# Deep UX/UI Audit & Improvement Plan — Round 2
 
-## Current State Assessment
+## Analysis Summary
 
-After reviewing 20+ pages, the sidebar, header, mobile viewport, i18n files, and session replay, this is a well-structured gym management admin app. The foundation is solid but several UX friction points, copy inconsistencies, and mobile gaps exist.
-
----
-
-## 1. Navigation & Information Architecture Issues
-
-### Problem: Sidebar has too many top-level groups (6 groups + 3 standalone items = 9 sections)
-Users must scan 15+ items. "Your gym" is vague. "Coming Soon" doesn't belong in primary nav.
-
-**Fix:**
-- Rename "Your gym" to "Admin" (clearer, universal)
-- Move "Coming Soon" (roadmap) out of main nav — put it in Settings or as a footer link
-- Collapse "Finance" into a single page with tabs (Transfer slips + Finance are nearly identical tables) instead of 2 nav items
-- The sidebar route `/admin` for Staff is confusing — the URL says "admin" but the label says "Staff". Keep the nav label but fix URL for semantic clarity
-
-### Problem: Sidebar group labels have no icons, creating visual inconsistency
-Top-level items (Dashboard, Lobby) have icons but group headers (Class, Client, Package) don't.
-
-**Fix:** Add icons to group headers for visual consistency.
+After the previous round fixed sidebar labels, common i18n keys, export stubs, and search/tab ordering, several **remaining friction points** persist across copy polish, mobile UX, empty states, status display, and page-specific interaction gaps.
 
 ---
 
-## 2. Dashboard UX Issues
+## Remaining Issues Found
 
-### Problem: Empty state is just "No data to show" — unhelpful for new users
-When a gym admin first logs in, every card shows 0 and "No data to show". No onboarding guidance.
+### A. Status Labels Still Use Raw `replace('_', ' ')` (4 files)
+**Files:** `Finance.tsx`, `TransferSlips.tsx`, `PromotionDetails.tsx`, `CreatePackage.tsx`
+- `row.status?.replace('_', ' ')` displays "needs_review" as "needs review" (lowercase, unpolished)
+- Should use proper translated labels like the Members/Leads/Staff pages already do
 
-**Fix:**
-- Add a first-time "Welcome" card or onboarding checklist when all stats are 0: "Create your first location", "Add a class", "Register your first member"
-- Each empty state in sidebar cards should have an action: "High risk members — No members at risk right now" (positive framing)
-- "Hot leads — No hot leads yet. Create a lead to get started" with CTA button
+### B. Dashboard Empty States Are Generic & Cold
+- Right sidebar cards show `t('common.noData')` = "No data to show" for high-risk members, hot leads, and birthdays
+- No positive framing or CTAs. New users see 3 identical "No data to show" blocks
+- No onboarding guidance when all stats are 0
 
-### Problem: "MOOM CLUB Main" subtitle on the check-in stat is hardcoded text from data
-This text comes from the location name which may not always be meaningful context on the stat card.
+### C. Finance Page Status Display Uses `as any` Cast
+- `variant={getStatusVariant(row.status) as any}` — the `paid` and `voided` variants DO exist in StatusBadge, so the cast is unnecessary but harmless. The real issue is the raw `replace('_', ' ')` for the label text.
 
-### Problem: Right sidebar cards are not actionable enough
-Birthday card shows names but doesn't suggest actions (send birthday message, offer discount).
+### D. Profile Page Is Bare Minimum
+- Only first name, last name, email (disabled). No password change, no language preference, no notification settings.
 
----
+### E. Notifications Page Type Filters Are Visually Heavy
+- 5 checkboxes in a row with labels — takes too much visual space
+- Should use compact pill/tag toggle buttons instead
 
-## 3. Copy & Labeling Issues
+### F. Mobile: Header Language Dropdown Wastes Space
+- On mobile, language dropdown (`EN ▼`) takes up header real estate. Could be moved into user dropdown.
 
-### Problem: Inconsistent column header reuse across pages
-- `t('lobby.name')` is used as column header for "Name" in Members, Leads, Staff, Packages — but the key is `lobby.name`. This makes i18n maintenance confusing. Should be `common.name`.
-- `t('leads.contactNumber')` used in Members page for phone — should be `common.phone` or `members.phone`
-- `t('leads.email')` used in Staff page — should be `common.email`
+### G. Dashboard Sidebar Cards Not Actionable
+- Birthday card shows names but no suggested action
+- Hot leads show status badge but no "follow up" or "call" hint
 
-**Fix:** Create proper `common.name`, `common.phone`, `common.email` keys and use them consistently.
+### H. Contextual Empty Messages Still Missing
+- Multiple DataTable instances still use generic `t('common.noData')` or search placeholder as empty message
+- Need page-specific messages: "No check-ins today", "No classes scheduled", "No transactions found"
 
-### Problem: Status labels use `replace('_', ' ')` for display
-`on_hold` becomes "on hold" (lowercase, unpolished). Should map to proper translated labels like "On Hold".
-
-**Fix:** Create a `getStatusLabel(status)` utility that returns properly capitalized, translated labels instead of raw string manipulation.
-
-### Problem: "No data to show" is used everywhere — generic and uninformative
-Different contexts need different empty messages: "No classes scheduled today", "No check-ins yet", "No members found matching your search".
-
-**Fix:** Pass contextual empty messages to each DataTable instance.
-
-### Problem: Mixed language in UI
-Some labels like "Class", "PT", "All" appear in English even in Thai mode because they're hardcoded strings not wrapped in `t()`.
+### I. Lobby Page Uses `(row as any).checkin_method`
+- Type cast suggests `checkin_method` may not be in the query type
 
 ---
 
-## 4. Mobile Responsiveness Issues
+## Implementation Plan
 
-### Problem: Members table has 11 columns — overflows badly on mobile
-Even with horizontal scroll, 11 columns on mobile is unusable. Users can't find important info.
+### Phase 1: Status Label Polish (Quick Win)
 
-**Fix:**
-- On mobile, switch Members list to a card/list layout instead of table
-- Show only: name + avatar, status badge, and phone — with expand/tap for details
-- Same approach for Leads (9 columns)
+**`src/pages/Finance.tsx`** (line 114)
+- Replace `row.status?.replace('_', ' ')` with proper translated label using a local `getStatusLabel()` function mapping: `paid` → `t('transferSlips.paid')`, `pending` → `t('common.pending')`, `needs_review` → `t('transferSlips.needsReview')`, `voided` → `t('transferSlips.voided')`
 
-### Problem: Lobby page actions overflow on mobile
-Date picker + search + QR button + Check-in button in one row — wraps but not gracefully.
+**`src/pages/TransferSlips.tsx`** (line 77)
+- Same pattern — add `getStatusLabel()` and use it instead of `replace('_', ' ')`
 
-**Fix:** Stack vertically on mobile. Primary action (Check-in) should be a floating action button (FAB) or sticky bottom bar on mobile.
+**`src/pages/PromotionDetails.tsx`** (line 231)
+- Replace `promo.type?.replace('_', ' ')` with translated type label
 
-### Problem: Header has too many items competing for space on mobile
-Hamburger + logo + support phone + bell + language + avatar = 6 items in 375px.
+**`src/pages/CreatePackage.tsx`** (line 864)
+- Replace `watchAll.usageType.replace('_', ' ')` with `getUsageTypeLabel(watchAll.usageType)`
 
-**Fix:** 
-- Hide support phone number on mobile (already done with `hidden md:block`)
-- Consider moving language toggle into the user dropdown menu to save space
+### Phase 2: Dashboard Onboarding & Empty States
 
----
+**`src/pages/Dashboard.tsx`**
+- Replace 3 identical "No data to show" empty messages with contextual positive messages:
+  - High risk: "All members are in good standing" (positive framing)
+  - Hot leads: "No hot leads right now" with CTA "Create a lead"
+  - Birthdays: "No upcoming birthdays this week"
+- Add a **Setup Checklist** card that appears when `stats.checkinsToday === 0 && stats.classesToday === 0`:
+  - Check: location exists, class exists, package exists, member exists
+  - Show as a compact card with progress indicator and links to create each
+  - Dismissible via localStorage
 
-## 5. Functional & Interaction Issues
+**`src/i18n/locales/en.ts` & `th.ts`**
+- Add keys: `dashboard.noHighRisk`, `dashboard.noHotLeads`, `dashboard.noBirthdays`, `dashboard.setupChecklist.*`
 
-### Problem: Packages page Export button does nothing
-The Export button on Packages page is just `<Button variant="outline">` with no onClick handler.
+### Phase 3: Contextual Empty Messages Across Pages
 
-**Fix:** Wire it to actual export function or remove it until functional (no-stub policy).
+Replace generic empty messages in these DataTable instances:
+- **Lobby**: "No check-ins today" instead of "No data to show"
+- **Schedule**: "No classes scheduled for this date"
+- **Finance**: "No transactions found"
+- **Transfer Slips**: "No transfer slips found"
+- **Rooms**: "No rooms created yet"
+- **Classes**: "No classes created yet"
+- **Staff**: "No staff members found"
 
-### Problem: Members page has checkbox selection but no bulk actions
-Users can select members but there's no "Delete selected", "Export selected", or "Change status" action.
+Add corresponding i18n keys to both locale files.
 
-**Fix:** Either remove checkboxes or add a bulk action bar that appears when rows are selected.
+### Phase 4: Notifications Pill Filters
 
-### Problem: Leads page StatusTabs appear BEFORE SearchBar
-On every other page (Members, Staff, Packages), search comes first then tabs. Leads reverses this order, breaking consistency.
+**`src/pages/Notifications.tsx`**
+- Replace checkbox-based type filters with compact pill/tag toggle buttons (same pattern as the status filter buttons already on the page)
+- Each type becomes a small `Button variant={selected ? 'default' : 'outline'} size="sm"` with the notification icon + label
+- Removes visual heaviness of 5 checkbox rows
 
-**Fix:** Move SearchBar above StatusTabs in Leads page to match other pages.
+### Phase 5: Header Mobile Optimization
 
-### Problem: Leads "Manage" dropdown uses Settings icon
-The gear icon implies settings/configuration, not data management. Members page correctly uses FileText icon.
+**`src/components/layout/Header.tsx`**
+- Move language toggle into user dropdown menu on mobile (keep it in header on desktop)
+- Add a separator between profile info and language/logout items
+- This saves ~44px of header space on mobile
 
-**Fix:** Use FileText icon for Leads manage dropdown too.
+### Phase 6: Profile Page Enhancement
 
-### Problem: Leads download template uses Download icon (same as Export CSV)
-Two dropdown items with the same icon — confusing. Template should have a distinct icon.
-
-**Fix:** Use FileText for template download (it's a file template, not a data export).
-
----
-
-## 6. Empty State & Onboarding Improvements
-
-### Problem: First-time user experience is cold
-No guidance, no setup wizard, no contextual help. A new gym owner sees 0 everywhere.
-
-**Fix:** Add a setup progress banner on Dashboard that shows:
-- Location created? (required first)
-- At least 1 class created?
-- At least 1 package created?
-- At least 1 member registered?
-Show completion percentage. Dismiss when all done.
-
----
-
-## 7. Color & Visual Hierarchy
-
-### Problem: StatCard comparison indicators lack visual weight
-The "+2 compared to yesterday" text is small and easy to miss.
-
-### Problem: StatusBadge variant names don't match their semantic meaning
-`variant="paid"` is used for "active" status, `variant="voided"` for "suspended". The variant names should be semantic (`success`, `warning`, `danger`, `neutral`) not domain-specific.
+**`src/pages/Profile.tsx`**
+- Add a "Change Password" section with current password + new password + confirm fields
+- Add a "Language Preference" dropdown (EN/TH) that calls `setLanguage()`
+- Add a "Danger Zone" section with account info (member since, role display)
 
 ---
 
-## 8. Page-Specific Fixes
+## Files to Touch
 
-### Finance Page
-- 4 filter dropdowns on one row overflow on mobile — stack them
-- KPI cards (Transactions, Total Sales, Net Income, Refunds) are great
+| File | Change | Risk |
+|------|--------|------|
+| `src/pages/Finance.tsx` | Translated status labels | Low |
+| `src/pages/TransferSlips.tsx` | Translated status labels | Low |
+| `src/pages/PromotionDetails.tsx` | Translated type label | Low |
+| `src/pages/CreatePackage.tsx` | Translated usage type label | Low |
+| `src/pages/Dashboard.tsx` | Onboarding checklist + contextual empty states | Low |
+| `src/pages/Notifications.tsx` | Pill filters instead of checkboxes | Low |
+| `src/pages/Lobby.tsx` | Contextual empty message | Low |
+| `src/pages/Schedule.tsx` | Contextual empty message | Low |
+| `src/pages/Staff.tsx` | Contextual empty message | Low |
+| `src/pages/Rooms.tsx` | Contextual empty message | Low |
+| `src/pages/Profile.tsx` | Password change + language + danger zone | Medium |
+| `src/components/layout/Header.tsx` | Mobile language toggle in user dropdown | Low |
+| `src/i18n/locales/en.ts` | New contextual empty state keys | Low |
+| `src/i18n/locales/th.ts` | Same | Low |
 
-### Schedule Page  
-- Trainer filter pills are well-done with horizontal scroll
-- Missing: visual indicator for "class is full" vs "has spots"
-
-### Profile Page
-- Very basic — only name + email. Missing: password change, notification preferences, theme/language settings
-
-### Notifications Page
-- Checkbox filters for notification types are functional but visually heavy
-- Consider using pill/tag toggle instead of checkboxes
-
----
-
-## Implementation Plan (Prioritized)
-
-### Phase 1: Quick Wins (Low risk, high impact)
-1. **Fix Packages Export button** — wire to real handler or remove
-2. **Fix Leads page order** — move SearchBar above StatusTabs
-3. **Fix Leads manage icon** — FileText instead of Settings
-4. **Fix status label display** — proper `getStatusLabel()` utility instead of `replace('_', ' ')`
-5. **Contextual empty messages** — replace generic "No data to show"
-6. **Remove member table checkboxes** or add bulk action bar
-
-### Phase 2: Mobile UX (Medium effort)
-7. **Members/Leads mobile card layout** — switch from table to cards on mobile
-8. **Lobby mobile layout** — stack filters, FAB for check-in
-9. **Move language toggle** into user dropdown on mobile
-
-### Phase 3: Onboarding & First-Time Experience
-10. **Dashboard setup checklist** — show when stats are all 0
-11. **Contextual empty states with CTAs** — "No members yet, create one"
-12. **Rename "Your gym" to "Admin"** in sidebar
-
-### Phase 4: Copy & i18n Consistency
-13. **Create common.name/phone/email keys** — stop reusing `lobby.name` everywhere
-14. **Fix hardcoded English strings** in Thai mode
-
-### Files to Touch
-
-| File | Changes |
-|------|---------|
-| `src/pages/Members.tsx` | Remove checkboxes or add bulk actions; mobile card layout |
-| `src/pages/Leads.tsx` | Swap search/tabs order; fix manage icon |
-| `src/pages/Packages.tsx` | Wire or remove Export button |
-| `src/pages/Dashboard.tsx` | Onboarding checklist; better empty states |
-| `src/pages/Lobby.tsx` | Mobile layout improvements |
-| `src/components/layout/Sidebar.tsx` | Rename "Your gym"; remove "Coming Soon" from nav |
-| `src/components/common/StatusBadge.tsx` | Add semantic variant aliases |
-| `src/lib/formatters.ts` | Add `getStatusLabel()` utility |
-| `src/i18n/locales/en.ts` | Add common keys, contextual empty messages |
-| `src/i18n/locales/th.ts` | Same |
-
-No DB changes needed. No security changes. All UI/UX only.
+No DB changes. No security changes. All UI/UX improvements.
 
