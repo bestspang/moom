@@ -5,7 +5,8 @@ import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadg
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
-import { useFinanceTransactions, computeFinanceStats, useTransferSlips, useTransferSlipStats } from '@/hooks/useFinance';
+import { useFinanceTransactions, computeFinanceStats } from '@/hooks/useFinance';
+import { useTransferSlipsList, useTransferSlipStats } from '@/hooks/useTransferSlips';
 import { useRevenueForecast } from '@/hooks/useRevenueForecast';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +16,7 @@ import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
+import { SlipDetailDialog } from '@/components/transfer-slips/SlipDetailDialog';
 
 const PAGE_SIZE = 50;
 
@@ -44,6 +46,8 @@ const Finance = () => {
   // Transfer slips state
   const [slipSearch, setSlipSearch] = useState('');
   const [slipStatusTab, setSlipStatusTab] = useState('needs_review');
+  const [selectedSlipId, setSelectedSlipId] = useState<string | null>(null);
+  const [slipDetailOpen, setSlipDetailOpen] = useState(false);
 
   // Finance transactions data
   const { data: transactions, isLoading: txLoading } = useFinanceTransactions({
@@ -55,11 +59,11 @@ const Finance = () => {
   });
 
   // Transfer slips data
-  const { data: slips, isLoading: slipsLoading } = useTransferSlips({
+  const { data: slips, isLoading: slipsLoading } = useTransferSlipsList({
     startDate: dateRange.start,
     endDate: dateRange.end,
     search: slipSearch,
-    slipStatus: slipStatusTab,
+    status: slipStatusTab,
   });
   const { data: slipStats } = useTransferSlipStats();
 
@@ -164,11 +168,11 @@ const Finance = () => {
   const handleExportSlips = () => {
     if (!slips?.length) return;
     const csvColumns: CsvColumn<any>[] = [
-      { key: 'dateTime', header: 'Date', accessor: (r) => format(new Date(r.created_at), 'yyyy-MM-dd HH:mm') },
-      { key: 'transactionId', header: 'Transaction ID', accessor: (r) => r.transaction_id },
-      { key: 'packageName', header: 'Package', accessor: (r) => r.package?.name_en || r.order_name },
-      { key: 'soldTo', header: 'Sold To', accessor: (r) => r.member ? `${r.member.first_name} ${r.member.last_name}` : '' },
-      { key: 'amount', header: 'Amount', accessor: (r) => r.amount },
+      { key: 'dateTime', header: 'Date', accessor: (r) => r.slip_datetime ? format(new Date(r.slip_datetime), 'yyyy-MM-dd HH:mm') : '' },
+      { key: 'transactionId', header: 'Transaction ID', accessor: (r) => r.linked_transaction ? (r.linked_transaction as any).transaction_id : '' },
+      { key: 'packageName', header: 'Package', accessor: (r) => r.package?.name_en || '' },
+      { key: 'soldTo', header: 'Sold To', accessor: (r) => r.member ? `${r.member.first_name} ${r.member.last_name}` : r.member_name_text || '' },
+      { key: 'amount', header: 'Amount', accessor: (r) => r.amount_thb },
       { key: 'status', header: 'Status', accessor: (r) => r.status || '' },
     ];
     const date = new Date().toISOString().split('T')[0];
@@ -261,40 +265,41 @@ const Finance = () => {
     { 
       key: 'dateTime', 
       header: t('finance.dateTime'), 
-      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
+      cell: (row) => row.slip_datetime ? format(new Date(row.slip_datetime), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) }) : '-'
     },
-    { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
+    { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.linked_transaction ? (row.linked_transaction as any).transaction_id : '-' },
     { 
       key: 'packageName', 
       header: t('transferSlips.packageName'), 
-      cell: (row) => row.package ? (language === 'th' && row.package.name_th ? row.package.name_th : row.package.name_en) : row.order_name
+      cell: (row) => row.package ? (language === 'th' && row.package.name_th ? row.package.name_th : row.package.name_en) : '-'
     },
     { 
       key: 'packageType', 
       header: t('transferSlips.packageType'), 
-      cell: (row) => (
+      cell: (row) => row.package?.type ? (
         <StatusBadge variant="default">
-          {row.package?.type || row.type || '-'}
+          {row.package.type}
         </StatusBadge>
-      )
+      ) : '-'
     },
     { 
       key: 'soldTo', 
       header: t('transferSlips.soldTo'), 
-      cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : '-'
+      cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : row.member_name_text || '-'
     },
     { 
       key: 'amount', 
       header: t('finance.amount'), 
-      cell: (row) => formatCurrency(Number(row.amount))
+      cell: (row) => formatCurrency(Number(row.amount_thb))
     },
     { 
       key: 'status', 
       header: t('common.status'), 
       cell: (row) => {
         const statusLabels: Record<string, string> = {
-          paid: t('transferSlips.paid'),
+          approved: t('transferSlips.paid'),
           needs_review: t('transferSlips.needsReview'),
+          rejected: t('transferSlips.rejected'),
           voided: t('transferSlips.voided'),
         };
         return (
@@ -308,7 +313,7 @@ const Finance = () => {
 
   const slipStatusTabs: StatusTab[] = [
     { key: 'needs_review', label: t('transferSlips.needsReview'), count: slipStats?.needs_review || 0, color: 'red' },
-    { key: 'paid', label: t('transferSlips.paid'), count: slipStats?.paid || 0, color: 'teal' },
+    { key: 'approved', label: t('transferSlips.paid'), count: slipStats?.approved || 0, color: 'teal' },
     { key: 'voided', label: t('transferSlips.voided'), count: slipStats?.voided || 0, color: 'gray' },
   ];
 
@@ -520,6 +525,7 @@ const Finance = () => {
               columns={slipColumns}
               data={slips || []}
               rowKey={(row) => row.id}
+              onRowClick={(row) => { setSelectedSlipId(row.id); setSlipDetailOpen(true); }}
               emptyMessage={t('transferSlips.noSlips')}
             />
           )}
@@ -560,6 +566,7 @@ const Finance = () => {
       </Tabs>
 
       <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity={activeMainTab === 'slips' ? 'slips' : 'finance'} />
+      <SlipDetailDialog slipId={selectedSlipId} open={slipDetailOpen} onOpenChange={setSlipDetailOpen} />
     </div>
   );
 };
