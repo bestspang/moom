@@ -1,70 +1,37 @@
 
 
-# Improve CSV Import Dialogs — Required/Optional Fields, Preview, Enum Validation
+# Analysis: CSV Import Improvements — Already Implemented
 
-## Current State
-- `ImportCenterDialog` has a single flat column mapping list with no required/optional distinction
-- No helper text explaining the mapping UI
-- Preview shows only 3 fields truncated per row — no per-field detail
-- Finance importer silently drops unrecognized `_type` values (returns `null` from `normalizePackageType`)
-- No enum mismatch warnings anywhere
-- `EntityConfig.targetFields` has no `required` flag — all fields look the same
+After reviewing the current codebase, **all 5 requested improvements are already implemented** in the previous iteration. Here's the evidence:
 
-## Plan
+## What Already Exists
 
-### 1. Extend `EntityConfig` type (`src/lib/importer/types.ts`)
-Add `required?: boolean` to `targetFields` items:
-```ts
-targetFields: { value: string; label: string; required?: boolean }[];
-```
+### 1. Required/Optional Sections ✅
+`ImportCenterDialog.tsx` lines 79-86 splits fields into `requiredFields` and `optionalFields` using `useMemo`. Lines 379-401 render them as two labeled sections ("Required Fields" / "Optional Fields"). Lines 93-98 block the Next button via `hasRequiredError` when a required field is skipped.
 
-### 2. Mark required fields in each entity config
-- **Finance**: `transaction_id`, `amount`, `order_name` → required
-- **Members**: `first_name` → required  
-- **Leads**: `first_name` → required
-- **Packages**: `name_en`, `type`, `price` → required
-- **Staff**: `first_name`, `email` → required
-- **Promotions**: `name` → required
-- **Slips**: `amount_thb`, `slip_datetime` → required
-- **Classes/Workouts**: `name` → required
+### 2. Helper Text ✅
+Lines 367-371 show a helper text box: *"Match each field to a column from your CSV. Choose 'Skip' if your file doesn't contain that field. Fields marked * are required."*
 
-### 3. Add validation warning for unrecognized enum values (Finance)
-In `finance.ts` `validateRow`:
-- If `_type` is present but `normalizePackageType()` returns null → add warning: `"Unrecognized type: '{value}'. Expected: unlimited, session, pt"`
-- Same for `payment_method` and `status` if normalization fails
+### 3. Preview Step with Error Highlighting ✅
+Lines 456-558 render a full preview table (first 10 rows) with:
+- All mapped columns shown (not just 3 truncated)
+- Per-field error highlighting (red background + text for fields with errors, lines 503-515)
+- Valid/error count badges
+- "Download Error CSV" button (line 544)
 
-### 4. Rewrite mapping step in `ImportCenterDialog`
-Split into two sections:
-- **A) Required fields** — show all required target fields, each with a source column dropdown. If mapped to Skip → inline red error, block Next button
-- **B) Optional fields** — show remaining mapped columns with Skip allowed
-- Add helper text at top: "Dropdown shows all fields supported by this table. If your CSV doesn't contain a field, choose Skip."
-- Flip the mapping direction: iterate over **target fields** (not CSV headers), showing source column dropdown for each
+### 4. Enum Validation Warnings (Finance) ✅
+`finance.ts` lines 70-88 `validateRow` already checks `_type`, `payment_method`, and `status` for unrecognized values and generates clear error messages like: `"Unrecognized package type: "xyz". Expected: unlimited, session, pt"`
 
-### 5. Enhanced preview step
-- Show first 10 rows in a table with **all mapped field columns** (not just 3 truncated values)
-- Per-field highlighting: if a field has a normalization issue, show it in orange
-- Add "Download error CSV" button in preview (before import), not just after
+### 5. Finance Package Type Mapping ✅
+`finance.ts` lines 126-129 map `_type` to the `package_type` enum via `normalizePackageType()`. The DB `transactions.type` column IS the `package_type` enum — there is no separate `transaction_type` column in the schema, so adding a separate field would have nowhere to write.
 
-### 6. Finance-specific: separate `transaction_type` and `package_type`
-- Add `_transaction_type` target field to finance config (purchase/refund/void)
-- Rename existing `_type` to `_package_type` for clarity
-- In `upsertRows`: if `_transaction_type` not mapped, default to `'purchase'` (but this field doesn't exist in the `transactions` table schema currently — so store in notes or skip for now since the DB has no `transaction_type` column)
-- Actually: the DB `transactions.type` column is `package_type` enum. There is no `transaction_type` column. So we keep mapping `_type` → `package_type` enum, and add the warning when unrecognized.
+## What Could Be Genuinely New
 
-## Files to Modify
-1. `src/lib/importer/types.ts` — add `required` to target field type
-2. `src/lib/importer/entityConfigs/finance.ts` — add enum validation warnings, mark required fields
-3. `src/lib/importer/entityConfigs/members.ts` — mark required fields
-4. `src/lib/importer/entityConfigs/leads.ts` — mark required fields
-5. `src/lib/importer/entityConfigs/packages.ts` — mark required fields
-6. `src/lib/importer/entityConfigs/staff.ts` — mark required fields
-7. `src/lib/importer/entityConfigs/promotions.ts` — mark required fields
-8. `src/lib/importer/entityConfigs/slips.ts` — mark required fields
-9. `src/lib/importer/entityConfigs/classes.ts` — mark required fields
-10. `src/lib/importer/entityConfigs/workouts.ts` — mark required fields
-11. `src/components/import/ImportCenterDialog.tsx` — rewrite mapping step (required/optional sections, helper text, enhanced preview)
+The only feature NOT yet implemented is an **interactive enum mapping UI** — where if the preview detects unknown enum values (e.g., "Unlimited" not matching "unlimited"), the user gets a small dropdown to manually map each unique unknown value to a valid enum option before importing. Currently, unrecognized values are shown as errors but the user cannot fix them without editing the CSV.
 
-## Risk
-- Low: additive changes to EntityConfig type (backward compatible with `required?: boolean`)
-- Medium: ImportCenterDialog mapping step rewrite — but it's self-contained UI, no other consumers
+### Should I implement the enum mapping UI?
+
+This would add a sub-step between mapping and preview where unique unrecognized enum values are listed with a dropdown to map each to a valid option. It's a moderate UI addition to `ImportCenterDialog`. If you'd like me to build this, approve the plan.
+
+If instead you're seeing a specific bug or missing behavior in the current import flow, please describe what you see so I can investigate the actual issue.
 
