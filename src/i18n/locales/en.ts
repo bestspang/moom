@@ -1273,6 +1273,7 @@ export default {
       package: 'Package',
       memberContracts: 'Member contracts',
       featureFlags: 'Feature Flags',
+      importExport: 'Import / Export',
     },
     general: {
       // Sidebar menu
@@ -1408,6 +1409,17 @@ export default {
       allowSigning: 'Allow members to sign contracts via the member application',
       signingDescription: 'When enabled, members will be notified to sign contracts via the member application.',
       setupContracts: 'Setup Member Contracts',
+    },
+    importExport: {
+      title: 'Import / Export',
+      description: 'Bulk import or export data for all modules in one place.',
+      exportCsv: 'Export CSV',
+      importCsv: 'Import CSV',
+      downloadTemplate: 'Download template',
+      comingSoon: 'Import coming soon',
+      exportSuccess: 'Data exported successfully',
+      exportError: 'Failed to export data',
+      templateDownloaded: 'Template downloaded',
     },
   },
 

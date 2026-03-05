@@ -1,0 +1,358 @@
+import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Users, UserPlus, Package, Tag, Shield, BookOpen, Dumbbell,
+  Download, Upload, FileDown, Loader2
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { exportToCsv, exportMembers, exportLeads } from '@/lib/exportCsv';
+import type { ExportableMember, ExportableLead, CsvColumn } from '@/lib/exportCsv';
+import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
+import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface ModuleConfig {
+  id: string;
+  icon: React.ElementType;
+  labelKey: string;
+  hasExport: boolean;
+  hasImport: boolean;
+  templateHeaders: string[];
+}
+
+const modules: ModuleConfig[] = [
+  {
+    id: 'members',
+    icon: Users,
+    labelKey: 'members',
+    hasExport: true,
+    hasImport: true,
+    templateHeaders: ['first_name','last_name','nickname','gender','date_of_birth','phone','email','status','source','notes'],
+  },
+  {
+    id: 'leads',
+    icon: UserPlus,
+    labelKey: 'leads',
+    hasExport: true,
+    hasImport: true,
+    templateHeaders: ['first_name','last_name','nickname','gender','date_of_birth','phone','email','status','source','temperature','notes'],
+  },
+  {
+    id: 'packages',
+    icon: Package,
+    labelKey: 'packages',
+    hasExport: true,
+    hasImport: false,
+    templateHeaders: ['name_en','name_th','type','price','sessions','expiration_days','term_days','status'],
+  },
+  {
+    id: 'promotions',
+    icon: Tag,
+    labelKey: 'promotions',
+    hasExport: true,
+    hasImport: false,
+    templateHeaders: ['name','name_en','name_th','promo_code','discount_type','discount_value','status','start_date','end_date'],
+  },
+  {
+    id: 'staff',
+    icon: Shield,
+    labelKey: 'staff',
+    hasExport: true,
+    hasImport: false,
+    templateHeaders: ['first_name','last_name','nickname','email','phone','status'],
+  },
+  {
+    id: 'classes',
+    icon: BookOpen,
+    labelKey: 'classes',
+    hasExport: true,
+    hasImport: false,
+    templateHeaders: ['name','name_th','type','level','duration','status','description'],
+  },
+  {
+    id: 'workouts',
+    icon: Dumbbell,
+    labelKey: 'workouts',
+    hasExport: true,
+    hasImport: false,
+    templateHeaders: ['name','is_active','items_count'],
+  },
+];
+
+const SettingsImportExport = () => {
+  const { t } = useLanguage();
+  const [loadingExport, setLoadingExport] = useState<string | null>(null);
+  const [showImportMembers, setShowImportMembers] = useState(false);
+  const [showImportLeads, setShowImportLeads] = useState(false);
+
+  const downloadTemplate = (mod: ModuleConfig) => {
+    const csv = mod.templateHeaders.map(h => `"${h}"`).join(',');
+    const blob = new Blob(['\ufeff' + csv + '\n'], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${mod.id}-template.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('settings.importExport.templateDownloaded'));
+  };
+
+  const handleExport = async (moduleId: string) => {
+    setLoadingExport(moduleId);
+    try {
+      switch (moduleId) {
+        case 'members': {
+          const { data, error } = await supabase
+            .from('members')
+            .select('*, register_location:locations!members_register_location_id_fkey(id, name)')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          const mapped: ExportableMember[] = (data || []).map((m: any) => ({
+            member_id: m.member_id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+            nickname: m.nickname,
+            gender: m.gender,
+            date_of_birth: m.date_of_birth,
+            phone: m.phone,
+            email: m.email,
+            line_id: m.line_id,
+            register_location_id: m.register_location_id,
+            register_location_name: m.register_location?.name ?? null,
+            status: m.status,
+            member_since: m.member_since,
+            address_1: m.address_1,
+            address_2: m.address_2,
+            subdistrict: m.subdistrict,
+            district: m.district,
+            province: m.province,
+            postal_code: m.postal_code,
+            emergency_first_name: m.emergency_first_name,
+            emergency_last_name: m.emergency_last_name,
+            emergency_phone: m.emergency_phone,
+            emergency_relationship: m.emergency_relationship,
+            has_medical_conditions: m.has_medical_conditions ?? false,
+            medical_notes: m.medical_notes,
+            allow_physical_contact: m.allow_physical_contact ?? false,
+            source: m.source,
+            notes: m.notes,
+          }));
+          exportMembers(mapped);
+          break;
+        }
+        case 'leads': {
+          const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          exportLeads((data || []) as ExportableLead[]);
+          break;
+        }
+        case 'packages': {
+          const { data, error } = await supabase.from('packages').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'name_en', header: 'name_en', accessor: r => r.name_en },
+            { key: 'name_th', header: 'name_th', accessor: r => r.name_th },
+            { key: 'type', header: 'type', accessor: r => r.type },
+            { key: 'price', header: 'price', accessor: r => r.price },
+            { key: 'sessions', header: 'sessions', accessor: r => r.sessions },
+            { key: 'expiration_days', header: 'expiration_days', accessor: r => r.expiration_days },
+            { key: 'term_days', header: 'term_days', accessor: r => r.term_days },
+            { key: 'status', header: 'status', accessor: r => r.status },
+          ];
+          exportToCsv(data || [], cols, `packages-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'promotions': {
+          const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'name', header: 'name', accessor: r => r.name },
+            { key: 'name_en', header: 'name_en', accessor: r => r.name_en },
+            { key: 'name_th', header: 'name_th', accessor: r => r.name_th },
+            { key: 'promo_code', header: 'promo_code', accessor: r => r.promo_code },
+            { key: 'discount_type', header: 'discount_type', accessor: r => r.discount_type },
+            { key: 'discount_value', header: 'discount_value', accessor: r => r.discount_value },
+            { key: 'status', header: 'status', accessor: r => r.status },
+            { key: 'start_date', header: 'start_date', accessor: r => r.start_date },
+            { key: 'end_date', header: 'end_date', accessor: r => r.end_date },
+          ];
+          exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'staff': {
+          const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'first_name', header: 'first_name', accessor: r => r.first_name },
+            { key: 'last_name', header: 'last_name', accessor: r => r.last_name },
+            { key: 'nickname', header: 'nickname', accessor: r => r.nickname },
+            { key: 'email', header: 'email', accessor: r => r.email },
+            { key: 'phone', header: 'phone', accessor: r => r.phone },
+            { key: 'status', header: 'status', accessor: r => r.status },
+          ];
+          exportToCsv(data || [], cols, `staff-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'classes': {
+          const { data, error } = await supabase.from('classes').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'name', header: 'name', accessor: r => r.name },
+            { key: 'name_th', header: 'name_th', accessor: r => r.name_th },
+            { key: 'type', header: 'type', accessor: r => r.type },
+            { key: 'level', header: 'level', accessor: r => r.level },
+            { key: 'duration', header: 'duration', accessor: r => r.duration },
+            { key: 'status', header: 'status', accessor: r => r.status },
+            { key: 'description', header: 'description', accessor: r => r.description },
+          ];
+          exportToCsv(data || [], cols, `classes-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'workouts': {
+          const { data, error } = await supabase
+            .from('training_templates')
+            .select('*, workout_items(id)')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'name', header: 'name', accessor: r => r.name },
+            { key: 'is_active', header: 'is_active', accessor: r => r.is_active ? 'true' : 'false' },
+            { key: 'items_count', header: 'items_count', accessor: r => r.workout_items?.length ?? 0 },
+          ];
+          exportToCsv(data || [], cols, `workouts-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+      }
+      toast.success(t('settings.importExport.exportSuccess'));
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error(t('settings.importExport.exportError'));
+    } finally {
+      setLoadingExport(null);
+    }
+  };
+
+  const handleImport = (moduleId: string) => {
+    if (moduleId === 'members') setShowImportMembers(true);
+    if (moduleId === 'leads') setShowImportLeads(true);
+  };
+
+  const getModuleLabel = (mod: ModuleConfig) => {
+    const labels: Record<string, string> = {
+      members: t('nav.members'),
+      leads: t('nav.leads'),
+      packages: t('nav.packages'),
+      promotions: t('nav.promotions'),
+      staff: t('nav.staff'),
+      classes: t('nav.classes'),
+      workouts: t('nav.workoutList'),
+    };
+    return labels[mod.id] || mod.id;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold">{t('settings.importExport.title')}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t('settings.importExport.description')}
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {modules.map((mod) => {
+          const Icon = mod.icon;
+          const isExporting = loadingExport === mod.id;
+
+          return (
+            <Card key={mod.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <CardTitle className="text-sm">{getModuleLabel(mod)}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                {/* Export */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  disabled={isExporting}
+                  onClick={() => handleExport(mod.id)}
+                >
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-3.5 w-3.5" />
+                  )}
+                  {t('settings.importExport.exportCsv')}
+                </Button>
+
+                {/* Import */}
+                {mod.hasImport ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => handleImport(mod.id)}
+                  >
+                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    {t('settings.importExport.importCsv')}
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start opacity-50 cursor-not-allowed"
+                        disabled
+                      >
+                        <Upload className="mr-2 h-3.5 w-3.5" />
+                        {t('settings.importExport.importCsv')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t('settings.importExport.comingSoon')}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {/* Template */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground"
+                  onClick={() => downloadTemplate(mod)}
+                >
+                  <FileDown className="mr-2 h-3.5 w-3.5" />
+                  {t('settings.importExport.downloadTemplate')}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Import Dialogs */}
+      <ImportMembersDialog
+        open={showImportMembers}
+        onOpenChange={setShowImportMembers}
+      />
+      <ImportLeadsDialog
+        open={showImportLeads}
+        onOpenChange={setShowImportLeads}
+      />
+    </div>
+  );
+};
+
+export default SettingsImportExport;

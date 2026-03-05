@@ -27,6 +27,7 @@ const Settings = () => {
     { value: 'setting-package', label: t('settings.tabs.package'), path: '/setting/setting-package' },
     { value: 'member-contracts', label: t('settings.tabs.memberContracts'), path: '/setting/member-contracts' },
     { value: 'feature-flags', label: t('settings.tabs.featureFlags'), path: '/setting/feature-flags' },
+    { value: 'import-export', label: t('settings.tabs.importExport'), path: '/setting/import-export' },
   ];
 
   const currentTab = tabs.find(tab => location.pathname === tab.path)?.value || 'general';
