@@ -11,16 +11,57 @@ interface StatCardProps {
     value: number;
     label?: string;
   };
+  trend?: number[]; // optional sparkline data (last 7 values)
   color?: 'default' | 'teal' | 'orange' | 'blue' | 'magenta' | 'gray';
   icon?: React.ReactNode;
   action?: React.ReactNode;
 }
+
+/** Mini SVG sparkline — no external deps */
+const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
+  if (data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 60;
+  const h = 20;
+  const points = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - min) / range) * h;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <svg width={w} height={h} className="flex-shrink-0">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+const sparklineColors: Record<string, string> = {
+  teal: 'hsl(var(--accent-teal, 160 60% 45%))',
+  orange: 'hsl(var(--primary))',
+  blue: 'hsl(220 80% 55%)',
+  magenta: 'hsl(330 80% 55%)',
+  gray: 'hsl(0 0% 60%)',
+  default: 'hsl(var(--primary))',
+};
 
 export const StatCard = ({
   title,
   value,
   subtitle,
   comparison,
+  trend,
   color = 'default',
   icon,
   action,
@@ -58,7 +99,12 @@ export const StatCard = ({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-lg font-bold mt-1">{value}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-lg font-bold">{value}</p>
+              {trend && trend.length >= 2 && (
+                <Sparkline data={trend} color={sparklineColors[color] || sparklineColors.default} />
+              )}
+            </div>
             {subtitle && (
               <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
             )}

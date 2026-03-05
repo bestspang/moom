@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, type Column } from '@/components/common';
+import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, StatusTabs, type Column, type StatusTab } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
-import { useFinanceTransactions, computeFinanceStats } from '@/hooks/useFinance';
+import { useFinanceTransactions, computeFinanceStats, useTransferSlips, useTransferSlipStats } from '@/hooks/useFinance';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download } from 'lucide-react';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 
@@ -14,6 +16,10 @@ const PAGE_SIZE = 50;
 
 const Finance = () => {
   const { t, language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'slips' ? 'slips' : 'transactions';
+
+  const [activeMainTab, setActiveMainTab] = useState(initialTab);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
@@ -23,7 +29,12 @@ const Finance = () => {
     end: endOfMonth(new Date()),
   });
 
-  const { data: transactions, isLoading } = useFinanceTransactions({
+  // Transfer slips state
+  const [slipSearch, setSlipSearch] = useState('');
+  const [slipStatusTab, setSlipStatusTab] = useState('needs_review');
+
+  // Finance transactions data
+  const { data: transactions, isLoading: txLoading } = useFinanceTransactions({
     startDate: dateRange.start,
     endDate: dateRange.end,
     search,
@@ -31,17 +42,24 @@ const Finance = () => {
     paymentMethod: paymentMethodFilter,
   });
 
-  // Stats computed from the same filtered data — guarantees KPI/table consistency
+  // Transfer slips data
+  const { data: slips, isLoading: slipsLoading } = useTransferSlips({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+    search: slipSearch,
+    slipStatus: slipStatusTab,
+  });
+  const { data: slipStats } = useTransferSlipStats();
+
   const stats = useMemo(() => computeFinanceStats(transactions), [transactions]);
 
-  // Client-side pagination
+  // Client-side pagination for transactions
   const paginatedData = useMemo(() => {
     if (!transactions) return [];
     const start = (page - 1) * PAGE_SIZE;
     return transactions.slice(start, start + PAGE_SIZE);
   }, [transactions, page]);
 
-  // Reset page on filter change
   const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
     setter(value);
     setPage(1);
@@ -74,7 +92,7 @@ const Finance = () => {
     exportToCsv(transactions, csvColumns, `finance-export-${date}`);
   };
 
-  const columns: Column<any>[] = [
+  const txColumns: Column<any>[] = [
     { 
       key: 'dateTime', 
       header: t('finance.dateTime'), 
@@ -125,104 +143,181 @@ const Finance = () => {
     },
   ];
 
+  const slipColumns: Column<any>[] = [
+    { 
+      key: 'dateTime', 
+      header: t('finance.dateTime'), 
+      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
+    },
+    { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
+    { 
+      key: 'packageName', 
+      header: t('transferSlips.packageName'), 
+      cell: (row) => row.package ? (language === 'th' && row.package.name_th ? row.package.name_th : row.package.name_en) : row.order_name
+    },
+    { 
+      key: 'packageType', 
+      header: t('transferSlips.packageType'), 
+      cell: (row) => (
+        <StatusBadge variant="default">
+          {row.package?.type || row.type || '-'}
+        </StatusBadge>
+      )
+    },
+    { 
+      key: 'soldTo', 
+      header: t('transferSlips.soldTo'), 
+      cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : '-'
+    },
+    { 
+      key: 'amount', 
+      header: t('finance.amount'), 
+      cell: (row) => formatCurrency(Number(row.amount))
+    },
+    { 
+      key: 'status', 
+      header: t('common.status'), 
+      cell: (row) => {
+        const statusLabels: Record<string, string> = {
+          paid: t('transferSlips.paid'),
+          needs_review: t('transferSlips.needsReview'),
+          voided: t('transferSlips.voided'),
+        };
+        return (
+          <StatusBadge variant={getStatusVariant(row.status) as any}>
+            {statusLabels[row.status] || row.status || '-'}
+          </StatusBadge>
+        );
+      }
+    },
+  ];
+
+  const slipStatusTabs: StatusTab[] = [
+    { key: 'needs_review', label: t('transferSlips.needsReview'), count: slipStats?.needs_review || 0, color: 'red' },
+    { key: 'paid', label: t('transferSlips.paid'), count: slipStats?.paid || 0, color: 'teal' },
+    { key: 'voided', label: t('transferSlips.voided'), count: slipStats?.voided || 0, color: 'gray' },
+  ];
+
   return (
     <div>
       <PageHeader 
         title={t('finance.title')} 
         breadcrumbs={[{ label: t('nav.finance') }, { label: t('finance.title') }]}
         actions={
-          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={!transactions?.length}>
-            <Download className="h-4 w-4 mr-1.5" />
-            {t('finance.export')}
-          </Button>
+          activeMainTab === 'transactions' ? (
+            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={!transactions?.length}>
+              <Download className="h-4 w-4 mr-1.5" />
+              {t('finance.export')}
+            </Button>
+          ) : undefined
         }
       />
-      
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <DateRangePicker 
-          startDate={dateRange.start} 
-          endDate={dateRange.end} 
-          onChange={setDateRange} 
-        />
-        <SearchBar 
-          placeholder={t('finance.searchPlaceholder')} 
-          value={search} 
-          onChange={(v) => { setSearch(v); setPage(1); }} 
-          className="max-w-md" 
-        />
-        <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder={t('finance.allStatuses')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('finance.allStatuses')}</SelectItem>
-            <SelectItem value="paid">{t('transferSlips.paid')}</SelectItem>
-            <SelectItem value="pending">{t('common.pending')}</SelectItem>
-            <SelectItem value="needs_review">{t('transferSlips.needsReview')}</SelectItem>
-            <SelectItem value="voided">{t('transferSlips.voided')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={paymentMethodFilter} onValueChange={handleFilterChange(setPaymentMethodFilter)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('finance.allPaymentMethods')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('finance.allPaymentMethods')}</SelectItem>
-            <SelectItem value="cash">{t('finance.cash')}</SelectItem>
-            <SelectItem value="bank_transfer">{t('finance.bankTransfer')}</SelectItem>
-            <SelectItem value="credit_card">{t('finance.creditCard')}</SelectItem>
-            <SelectItem value="promptpay">{t('finance.promptpay')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <StatCard 
-          title={t('finance.transactions')} 
-          value={stats.transactions} 
-          color="blue" 
-        />
-        <StatCard 
-          title={t('finance.totalSales')} 
-          value={formatCurrency(stats.totalSales)} 
-          color="magenta" 
-        />
-        <StatCard 
-          title={t('finance.netIncome')} 
-          value={formatCurrency(stats.netIncome)} 
-          color="orange" 
-        />
-        <StatCard 
-          title={t('finance.refundsGiven')} 
-          value={formatCurrency(stats.refunds)} 
-          color="gray" 
-        />
-      </div>
-      
-      {/* Table */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={paginatedData}
-          rowKey={(row) => row.id}
-          emptyMessage={t('finance.noTransactions')}
-          emptyVariant="finance"
-          pagination={{
-            page,
-            perPage: PAGE_SIZE,
-            total: transactions?.length || 0,
-          }}
-          onPageChange={setPage}
-        />
-      )}
+
+      {/* Main tabs: Transactions | Transfer Slips */}
+      <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="mb-4">
+        <TabsList>
+          <TabsTrigger value="transactions">{t('finance.transactions')}</TabsTrigger>
+          <TabsTrigger value="slips">
+            {t('nav.transferSlips')}
+            {(slipStats?.needs_review || 0) > 0 && (
+              <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] rounded-full px-1.5 py-0.5 leading-none">
+                {slipStats?.needs_review}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ===== Transactions Tab ===== */}
+        <TabsContent value="transactions" className="mt-4">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <StatCard title={t('finance.transactions')} value={stats.transactions} color="blue" />
+            <StatCard title={t('finance.totalSales')} value={formatCurrency(stats.totalSales)} color="magenta" />
+            <StatCard title={t('finance.netIncome')} value={formatCurrency(stats.netIncome)} color="orange" />
+            <StatCard title={t('finance.refundsGiven')} value={formatCurrency(stats.refunds)} color="gray" />
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
+            <SearchBar 
+              placeholder={t('finance.searchPlaceholder')} 
+              value={search} 
+              onChange={(v) => { setSearch(v); setPage(1); }} 
+              className="max-w-md" 
+            />
+            <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder={t('finance.allStatuses')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('finance.allStatuses')}</SelectItem>
+                <SelectItem value="paid">{t('transferSlips.paid')}</SelectItem>
+                <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                <SelectItem value="needs_review">{t('transferSlips.needsReview')}</SelectItem>
+                <SelectItem value="voided">{t('transferSlips.voided')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={paymentMethodFilter} onValueChange={handleFilterChange(setPaymentMethodFilter)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('finance.allPaymentMethods')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('finance.allPaymentMethods')}</SelectItem>
+                <SelectItem value="cash">{t('finance.cash')}</SelectItem>
+                <SelectItem value="bank_transfer">{t('finance.bankTransfer')}</SelectItem>
+                <SelectItem value="credit_card">{t('finance.creditCard')}</SelectItem>
+                <SelectItem value="promptpay">{t('finance.promptpay')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Table */}
+          {txLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : (
+            <DataTable
+              columns={txColumns}
+              data={paginatedData}
+              rowKey={(row) => row.id}
+              emptyMessage={t('finance.noTransactions')}
+              emptyVariant="finance"
+              pagination={{ page, perPage: PAGE_SIZE, total: transactions?.length || 0 }}
+              onPageChange={setPage}
+            />
+          )}
+        </TabsContent>
+
+        {/* ===== Transfer Slips Tab ===== */}
+        <TabsContent value="slips" className="mt-4">
+          <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
+            <SearchBar 
+              placeholder={t('transferSlips.searchPlaceholder')} 
+              value={slipSearch} 
+              onChange={setSlipSearch} 
+              className="max-w-md" 
+            />
+          </div>
+
+          <StatusTabs tabs={slipStatusTabs} activeTab={slipStatusTab} onChange={setSlipStatusTab} />
+
+          {slipsLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : (
+            <DataTable
+              columns={slipColumns}
+              data={slips || []}
+              rowKey={(row) => row.id}
+              emptyMessage={t('transferSlips.noSlips')}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
