@@ -7,6 +7,8 @@ import { packagesConfig } from './entityConfigs/packages';
 import { staffConfig } from './entityConfigs/staff';
 import { promotionsConfig } from './entityConfigs/promotions';
 import { financeConfig } from './entityConfigs/finance';
+import { classesConfig } from './entityConfigs/classes';
+import { workoutsConfig } from './entityConfigs/workouts';
 import type { EntityConfig, EntityId } from './types';
 
 export const ENTITY_CONFIGS: Record<EntityId, EntityConfig> = {
@@ -16,6 +18,8 @@ export const ENTITY_CONFIGS: Record<EntityId, EntityConfig> = {
   staff: staffConfig,
   promotions: promotionsConfig,
   finance: financeConfig,
+  classes: classesConfig,
+  workouts: workoutsConfig,
   slips: {
     id: 'slips',
     headerAliases: {},
@@ -27,4 +31,4 @@ export const ENTITY_CONFIGS: Record<EntityId, EntityConfig> = {
   },
 };
 
-export { membersConfig, leadsConfig, packagesConfig, staffConfig, promotionsConfig, financeConfig };
+export { membersConfig, leadsConfig, packagesConfig, staffConfig, promotionsConfig, financeConfig, classesConfig, workoutsConfig };

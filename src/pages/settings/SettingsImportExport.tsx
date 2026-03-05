@@ -58,17 +58,17 @@ const modules: ModuleConfig[] = [
   },
   {
     id: 'classes', icon: BookOpen, labelKey: 'classes',
-    hasExport: true, hasImport: false,
+    hasExport: true, hasImport: true, importEntity: 'classes' as EntityId,
     templateHeaders: ['name','name_th','type','level','duration','status','description'],
   },
   {
     id: 'workouts', icon: Dumbbell, labelKey: 'workouts',
-    hasExport: true, hasImport: false,
+    hasExport: true, hasImport: true, importEntity: 'workouts' as EntityId,
     templateHeaders: ['name','is_active','items_count'],
   },
   {
     id: 'slips', icon: Receipt, labelKey: 'slips',
-    hasExport: false, hasImport: false, importEntity: 'slips' as EntityId,
+    hasExport: false, hasImport: true, importEntity: 'slips' as EntityId,
     templateHeaders: ['Transaction no.','Slip file url','Slip amount','Slip datetime','Sender bank','Sender last4','Status','Review note'],
   },
 ];
