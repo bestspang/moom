@@ -13,7 +13,7 @@ import { getInitials } from '@/lib/formatters';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 
-const TEMPLATE_HEADERS = ['first_name', 'last_name', 'phone', 'email', 'status'];
+const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
 const Staff = () => {
   const { t } = useLanguage();
@@ -67,14 +67,33 @@ const Staff = () => {
     return Array.from(ids).map(id => locationMap.get(id) || id).join(', ');
   };
 
+  const getRoleNames = (row: any): string => {
+    const positions = row.staff_positions;
+    if (positions?.length > 0) {
+      return positions.map((p: any) => p.role?.name || '-').join(', ');
+    }
+    return row.role?.name || '-';
+  };
+
+  const getAddress = (row: any): string => {
+    const parts = [row.address_1, row.address_2, row.subdistrict, row.district, row.province, row.postal_code].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '-';
+  };
+
   const handleExport = () => {
     if (!staff?.length) { toast.info(t('common.noData')); return; }
     const csvColumns: CsvColumn<any>[] = [
-      { key: 'first_name', header: 'First Name', accessor: (r) => r.first_name },
-      { key: 'last_name', header: 'Last Name', accessor: (r) => r.last_name },
-      { key: 'phone', header: 'Phone', accessor: (r) => r.phone },
-      { key: 'email', header: 'Email', accessor: (r) => r.email },
-      { key: 'status', header: 'Status', accessor: (r) => r.status },
+      { key: 'first_name', header: 'Firstname', accessor: (r) => r.first_name },
+      { key: 'last_name', header: 'Lastname', accessor: (r) => r.last_name },
+      { key: 'nickname', header: 'Nickname', accessor: (r) => r.nickname || '-' },
+      { key: 'role', header: 'Role', accessor: (r) => getRoleNames(r) },
+      { key: 'gender', header: 'Gender', accessor: (r) => r.gender || '-' },
+      { key: 'birthdate', header: 'Birthdate', accessor: (r) => r.date_of_birth || '-' },
+      { key: 'email', header: 'Email', accessor: (r) => r.email || '-' },
+      { key: 'phone', header: 'Phone', accessor: (r) => r.phone || '-' },
+      { key: 'address', header: 'Address', accessor: (r) => getAddress(r) },
+      { key: 'branch', header: 'Branch', accessor: (r) => getLocationScopeLabel(r) },
+      { key: 'status', header: 'Status', accessor: (r) => r.status || '-' },
     ];
     exportToCsv(staff, csvColumns, 'staff');
     toast.success(t('common.export'));

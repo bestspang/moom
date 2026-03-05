@@ -14,7 +14,7 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type Promotion = Tables<'promotions'>;
 
-const TEMPLATE_HEADERS = ['name', 'type', 'promo_code', 'discount_type', 'discount_value', 'start_date', 'end_date', 'status'];
+const TEMPLATE_HEADERS = ['Name', 'Type', 'Promo code', 'Discount', 'Started on', 'Ending on', 'Date modified', 'Status'];
 
 const Promotions = () => {
   const { t, language } = useLanguage();
@@ -48,17 +48,30 @@ const Promotions = () => {
     return formatCurrency(Number(val));
   };
 
+  const getExportDiscount = (promo: Promotion): string => {
+    if (!promo.same_discount_all_packages) return 'Varies';
+    const mode = (promo as any).discount_mode || promo.discount_type;
+    if (mode === 'percentage') {
+      const val = (promo as any).percentage_discount ?? promo.discount_value;
+      return `${val}%`;
+    }
+    const val = (promo as any).flat_rate_discount ?? promo.discount_value;
+    return `${Number(val)}฿`;
+  };
+
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+
   const handleExport = () => {
     if (!promotions?.length) { toast.info(t('common.noData')); return; }
     const csvColumns: CsvColumn<Promotion>[] = [
       { key: 'name', header: 'Name', accessor: (r) => r.name },
-      { key: 'type', header: 'Type', accessor: (r) => r.type },
-      { key: 'promo_code', header: 'Promo Code', accessor: (r) => r.promo_code },
-      { key: 'discount_type', header: 'Discount Type', accessor: (r) => r.discount_type },
-      { key: 'discount_value', header: 'Discount Value', accessor: (r) => r.discount_value },
-      { key: 'start_date', header: 'Start Date', accessor: (r) => r.start_date ? format(new Date(r.start_date), 'yyyy-MM-dd') : '' },
-      { key: 'end_date', header: 'End Date', accessor: (r) => r.end_date ? format(new Date(r.end_date), 'yyyy-MM-dd') : '' },
-      { key: 'status', header: 'Status', accessor: (r) => r.status },
+      { key: 'type', header: 'Type', accessor: (r) => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+      { key: 'promo_code', header: 'Promo code', accessor: (r) => r.promo_code || '-' },
+      { key: 'discount', header: 'Discount', accessor: (r) => getExportDiscount(r) },
+      { key: 'start_date', header: 'Started on', accessor: (r) => fmtDate(r.start_date) },
+      { key: 'end_date', header: 'Ending on', accessor: (r) => fmtDate(r.end_date) },
+      { key: 'date_modified', header: 'Date modified', accessor: (r) => fmtDate(r.updated_at) },
+      { key: 'status', header: 'Status', accessor: (r) => r.status ?? 'drafts' },
     ];
     exportToCsv(promotions, csvColumns, 'promotions');
     toast.success(t('common.export'));
