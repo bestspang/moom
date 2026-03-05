@@ -4,9 +4,9 @@ import {
   Home,
   DoorOpen,
   Calendar,
-  LayoutGrid,
   List,
   Grid3X3,
+  LayoutGrid,
   Users,
   Star,
   Tag,
@@ -17,7 +17,6 @@ import {
   FileText,
   Megaphone,
   Dumbbell,
-  Receipt,
   DollarSign,
   BarChart3,
   Settings,
@@ -26,6 +25,7 @@ import {
   GraduationCap,
   Briefcase,
   Wallet,
+  UserPlus,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,7 +73,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { accessLevel } = useAuth();
   const { can, hasCustomPermissions } = usePermissions();
   const location = useLocation();
-  const [openGroups, setOpenGroups] = React.useState<string[]>(['class', 'client', 'package', 'admin', 'finance']);
+  const [openGroups, setOpenGroups] = React.useState<string[]>(['people', 'business', 'yourgym']);
 
   const toggleGroup = (group: string) => {
     setOpenGroups((prev) =>
@@ -90,66 +90,60 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return accessLevelOrder[accessLevel] >= accessLevelOrder[minLevel];
   };
 
-  const navItems: (NavItem | NavGroup)[] = [
+  // Restructured: Daily (flat) → People → Business → Your Gym
+  const dailyItems: NavItem[] = [
     { label: t('nav.dashboard'), path: '/', icon: Home, resource: 'dashboard' },
     { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen, resource: 'lobby' },
-    {
-      label: t('nav.class'),
-      icon: GraduationCap,
-      minLevel: 'level_2_operator',
-      items: [
-        { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
-        { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid, resource: 'rooms' },
-        { label: t('nav.classList'), path: '/class', icon: List, resource: 'classes' },
-        { label: t('nav.classCategories'), path: '/class-category', icon: Grid3X3, resource: 'class_categories' },
-      ],
-    },
-    {
-      label: t('nav.client'),
-      icon: Users,
-      items: [
-        { label: t('nav.members'), path: '/members', icon: Users, resource: 'members' },
-        { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
-      ],
-    },
-    {
-      label: t('nav.package'),
-      icon: Tag,
-      minLevel: 'level_2_operator',
-      items: [
-        { label: t('nav.packages'), path: '/package', icon: Tag, resource: 'packages' },
-        { label: t('nav.promotions'), path: '/promotion', icon: Gift, resource: 'promotions' },
-      ],
-    },
-    {
-      label: t('nav.yourGym'),
-      icon: Briefcase,
-      minLevel: 'level_3_manager',
-      items: [
-        { label: t('nav.staff'), path: '/admin', icon: UserCheck, resource: 'staff' },
-        { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master', resource: 'roles' },
-        { label: t('nav.locations'), path: '/location', icon: MapPin, resource: 'locations' },
-        { label: t('nav.activityLog'), path: '/activity-log', icon: FileText, resource: 'activity_log' },
-        { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
-        { label: t('nav.workoutList'), path: '/workout-list', icon: Dumbbell, resource: 'workout_list' },
-      ],
-    },
-    {
-      label: t('nav.finance'),
-      icon: Wallet,
-      minLevel: 'level_3_manager',
-      items: [
-        { label: t('nav.transferSlips'), path: '/transfer-slip', icon: Receipt, resource: 'transfer_slips' },
-        { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance' },
-      ],
-    },
-    { label: t('nav.reports'), path: '/report', icon: BarChart3, minLevel: 'level_2_operator', resource: 'reports' },
-    { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
+    { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
   ];
 
-  const isNavItem = (item: NavItem | NavGroup): item is NavItem => {
-    return 'path' in item;
-  };
+  const navGroups: { key: string; group: NavGroup }[] = [
+    {
+      key: 'people',
+      group: {
+        label: t('nav.people'),
+        icon: Users,
+        items: [
+          { label: t('nav.members'), path: '/members', icon: Users, resource: 'members' },
+          { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
+        ],
+      },
+    },
+    {
+      key: 'business',
+      group: {
+        label: t('nav.business'),
+        icon: Wallet,
+        minLevel: 'level_2_operator',
+        items: [
+          { label: t('nav.packages'), path: '/package', icon: Tag, resource: 'packages' },
+          { label: t('nav.promotions'), path: '/promotion', icon: Gift, resource: 'promotions' },
+          { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance' },
+          { label: t('nav.reports'), path: '/report', icon: BarChart3, resource: 'reports' },
+        ],
+      },
+    },
+    {
+      key: 'yourgym',
+      group: {
+        label: t('nav.yourGym'),
+        icon: Briefcase,
+        minLevel: 'level_2_operator',
+        items: [
+          { label: t('nav.classList'), path: '/class', icon: List, resource: 'classes' },
+          { label: t('nav.classCategories'), path: '/class-category', icon: Grid3X3, resource: 'class_categories' },
+          { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid, resource: 'rooms' },
+          { label: t('nav.workoutList'), path: '/workout-list', icon: Dumbbell, resource: 'workout_list' },
+          { label: t('nav.staff'), path: '/admin', icon: UserCheck, minLevel: 'level_3_manager', resource: 'staff' },
+          { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master', resource: 'roles' },
+          { label: t('nav.locations'), path: '/location', icon: MapPin, minLevel: 'level_3_manager', resource: 'locations' },
+          { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
+          { label: t('nav.activityLog'), path: '/activity-log', icon: FileText, resource: 'activity_log' },
+          { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
+        ],
+      },
+    },
+  ];
 
   const isActiveRoute = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -241,20 +235,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       >
         <ScrollArea className="h-full">
           <div className="p-4 space-y-1">
-            {navItems.map((item, index) => {
-              if (isNavItem(item)) {
-                return renderNavItem(item);
-              } else {
-                const groupKey = item.label.toLowerCase().replace(/\s+/g, '');
-                const rendered = renderNavGroup(item, groupKey);
-                if (!rendered) return null;
-                return (
-                  <div key={groupKey}>
-                    {index > 0 && <div className="my-3 border-t border-sidebar-border" />}
-                    {rendered}
-                  </div>
-                );
-              }
+            {/* Daily items — always visible, no group header */}
+            {dailyItems.map(renderNavItem)}
+
+            {/* Grouped sections */}
+            {navGroups.map(({ key, group }, index) => {
+              const rendered = renderNavGroup(group, key);
+              if (!rendered) return null;
+              return (
+                <div key={key}>
+                  <div className="my-3 border-t border-sidebar-border" />
+                  {rendered}
+                </div>
+              );
             })}
           </div>
 
