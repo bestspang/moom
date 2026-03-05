@@ -39,6 +39,7 @@ import Announcements from "./pages/Announcements";
 import WorkoutList from "./pages/WorkoutList";
 import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
+import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
 import ActiveMembers from "./pages/reports/ActiveMembers";
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="workout-list" element={<WorkoutList />} />
                 <Route path="transfer-slip" element={<TransferSlips />} />
                 <Route path="finance" element={<Finance />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="report" element={<Reports />} />
                 <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
                 <Route path="report/member/active-members" element={<ActiveMembers />} />
