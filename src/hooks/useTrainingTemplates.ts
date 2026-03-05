@@ -269,3 +269,88 @@ export function useDeleteTraining() {
     },
   });
 }
+
+// ── Bulk mutations ──
+
+export function useBulkToggleTrainings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, is_active }: { ids: string[]; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('training_templates')
+        .update({ is_active })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, is_active }) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      logActivity({
+        event_type: 'trainings_bulk_toggled',
+        activity: `${ids.length} trainings set to ${is_active ? 'active' : 'inactive'}`,
+        entity_type: 'training',
+      });
+      toast.success(`${ids.length} trainings updated`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useBulkDeleteTrainings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('training_templates').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      logActivity({
+        event_type: 'trainings_bulk_deleted',
+        activity: `${ids.length} trainings deleted`,
+        entity_type: 'training',
+      });
+      toast.success(`${ids.length} trainings deleted`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useBulkDuplicateTrainings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (trainings: TrainingTemplateRow[]) => {
+      for (const tr of trainings) {
+        const { data: newTr, error: tErr } = await supabase
+          .from('training_templates')
+          .insert({ name: `Copy of ${tr.name}`, is_active: false })
+          .select()
+          .single();
+        if (tErr) throw tErr;
+
+        if (tr.workout_items.length > 0) {
+          const items = tr.workout_items.map((item) => ({
+            training_id: newTr.id,
+            name: item.name,
+            track_metric: item.track_metric,
+            unit: item.unit,
+            goal_type: item.goal_type,
+            description: item.description,
+            sort_order: item.sort_order,
+          }));
+          const { error: iErr } = await supabase.from('workout_items').insert(items);
+          if (iErr) throw iErr;
+        }
+      }
+    },
+    onSuccess: (_, trainings) => {
+      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      logActivity({
+        event_type: 'trainings_bulk_duplicated',
+        activity: `${trainings.length} trainings duplicated`,
+        entity_type: 'training',
+      });
+      toast.success(`${trainings.length} trainings duplicated`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}

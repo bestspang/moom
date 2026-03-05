@@ -171,3 +171,79 @@ export const useDeletePromotion = () => {
     },
   });
 };
+
+// ── Bulk mutations ──
+
+export const useBulkUpdatePromotionStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase
+        .from('promotions')
+        .update({ status: status as Promotion['status'] })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, status }) => {
+      queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotions_bulk_status',
+        activity: `${ids.length} promotions status changed to ${status}`,
+        entity_type: 'promotion',
+      });
+      toast.success(`${ids.length} promotions updated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDeletePromotions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('promotions').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotions_bulk_deleted',
+        activity: `${ids.length} promotions deleted`,
+        entity_type: 'promotion',
+      });
+      toast.success(`${ids.length} promotions deleted`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDuplicatePromotions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (promotions: Promotion[]) => {
+      const copies = promotions.map(({ id, created_at, updated_at, usage_count, ...rest }) => ({
+        ...rest,
+        name: `Copy of ${rest.name}`,
+        name_en: rest.name_en ? `Copy of ${rest.name_en}` : null,
+        name_th: rest.name_th ? `Copy of ${rest.name_th}` : null,
+        promo_code: null,
+        status: 'drafts' as Promotion['status'],
+      }));
+      const { error } = await supabase.from('promotions').insert(copies);
+      if (error) throw error;
+    },
+    onSuccess: (_, promos) => {
+      queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotion-stats'] });
+      logActivity({
+        event_type: 'promotions_bulk_duplicated',
+        activity: `${promos.length} promotions duplicated`,
+        entity_type: 'promotion',
+      });
+      toast.success(`${promos.length} promotions duplicated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};

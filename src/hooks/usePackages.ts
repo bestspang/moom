@@ -202,3 +202,77 @@ export const useArchivePackage = () => {
     },
   });
 };
+
+// ── Bulk mutations ──
+
+export const useBulkUpdatePackageStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase
+        .from('packages')
+        .update({ status: status as Package['status'] })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, status }) => {
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'packages_bulk_status',
+        activity: `${ids.length} packages status changed to ${status}`,
+        entity_type: 'package',
+      });
+      toast.success(`${ids.length} packages updated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDeletePackages = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('packages').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'packages_bulk_deleted',
+        activity: `${ids.length} packages deleted`,
+        entity_type: 'package',
+      });
+      toast.success(`${ids.length} packages deleted`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDuplicatePackages = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (packages: Package[]) => {
+      const copies = packages.map(({ id, created_at, updated_at, ...rest }) => ({
+        ...rest,
+        name_en: `Copy of ${rest.name_en}`,
+        name_th: rest.name_th ? `Copy of ${rest.name_th}` : null,
+        status: 'drafts' as Package['status'],
+      }));
+      const { error } = await supabase.from('packages').insert(copies);
+      if (error) throw error;
+    },
+    onSuccess: (_, pkgs) => {
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      logActivity({
+        event_type: 'packages_bulk_duplicated',
+        activity: `${pkgs.length} packages duplicated`,
+        entity_type: 'package',
+      });
+      toast.success(`${pkgs.length} packages duplicated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
