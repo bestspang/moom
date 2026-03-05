@@ -1,96 +1,48 @@
 
 
-# Add Bulk Actions to Packages, Promotions, and Workout List
+# Add "Import / Export" Tab to Settings
 
-Add row-level selection with a bulk action bar supporting **Change Status**, **Delete**, **Export Selected**, and **Duplicate** for all three pages.
+## Overview
+Add a new settings tab that provides a centralized place to bulk import/export data across all major modules (Members, Leads, Packages, Promotions, Staff, Classes, Workouts) in one place — instead of going to each page individually.
 
 ## Design
+A single page with a card-grid layout. Each module gets a card showing:
+- Module name + icon
+- **Export** button → downloads CSV of all data for that module
+- **Import** button → opens the existing import dialog (for modules that support it) or a new one
+- **Download Template** button → downloads a blank CSV template
 
-When rows are selected, a floating action bar appears at the bottom of the page showing:
-- **Selected count** (e.g., "3 selected")
-- **Change Status** dropdown (Archive, Activate, Draft, etc. — varies per entity)
-- **Export Selected** button
-- **Duplicate** button
-- **Delete** button (destructive, with confirmation dialog)
-- **Clear selection** button
+Modules to support:
 
-The `DataTable` already supports `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` props — we just need to wire them up.
+| Module | Export | Import | Template |
+|--------|--------|--------|----------|
+| Members | ✅ (existing `exportMembers`) | ✅ (existing `ImportMembersDialog`) | ✅ |
+| Leads | ✅ (existing `exportLeads`) | ✅ (existing `ImportLeadsDialog`) | ✅ |
+| Packages | ✅ (reuse from Packages page) | Future | ✅ |
+| Promotions | ✅ (reuse from Promotions page) | Future | ✅ |
+| Staff | ✅ (reuse from Staff page) | Future | ✅ |
+| Classes | ✅ (new) | Future | ✅ |
+| Workouts | ✅ (new) | Future | ✅ |
 
-## Bulk Actions Per Entity
-
-| Action | Packages | Promotions | Workouts |
-|--------|----------|------------|----------|
-| Change Status | `on_sale`, `scheduled`, `drafts`, `archive` | `active`, `scheduled`, `drafts`, `archive` | `is_active` toggle (active/inactive) |
-| Delete | ✅ | ✅ | ✅ (delete training templates) |
-| Export Selected | ✅ | ✅ | ✅ |
-| Duplicate | ✅ (insert copy with "Copy of" prefix) | ✅ | ✅ |
-
-## Implementation
-
-### 1. Create `BulkActionBar` component (`src/components/common/BulkActionBar.tsx`)
-A reusable floating bar component:
-```
-Props:
-- selectedCount: number
-- onClearSelection: () => void
-- onDelete: () => void
-- onExport: () => void
-- onDuplicate: () => void
-- statusOptions: { value: string; label: string }[]
-- onChangeStatus: (status: string) => void
-- isLoading?: boolean
-```
-Renders a fixed bottom bar with buttons. Re-export from `common/index.ts`.
-
-### 2. Add bulk mutation hooks
-- `src/hooks/usePackages.ts` — add `useBulkUpdatePackageStatus`, `useBulkDeletePackages`, `useBulkDuplicatePackages`
-- `src/hooks/usePromotions.ts` — add `useBulkUpdatePromotionStatus`, `useBulkDeletePromotions`, `useBulkDuplicatePromotions`
-- `src/hooks/useTrainingTemplates.ts` — add `useBulkToggleTrainings`, `useBulkDeleteTrainings`, `useBulkDuplicateTrainings`
-
-Each mutation accepts an array of IDs, performs the batch operation, invalidates caches, and logs activity.
-
-### 3. Wire up each page
-
-**Packages.tsx:**
-- Add `selectedRows` state, pass `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` to `DataTable`
-- Render `BulkActionBar` when `selectedRows.length > 0`
-- Status options: On Sale, Scheduled, Drafts, Archive
-- Export selected: filter packages by selected IDs, call existing export logic
-- Duplicate: insert copies with `name_en: "Copy of ..."`, status `drafts`
-- Delete: confirm dialog, then bulk delete
-
-**Promotions.tsx:**
-- Same pattern as Packages
-- Status options: Active, Scheduled, Drafts, Archive
-- Duplicate: copy with `name: "Copy of ..."`, status `drafts`, clear promo_code
-
-**WorkoutList.tsx:**
-- Selection at training template level (not individual workout items)
-- Status: bulk toggle `is_active`
-- Duplicate: copy training + its workout_items
-- Delete: bulk delete trainings (cascade deletes items)
-
-### 4. Delete confirmation dialog
-Show an `AlertDialog` before bulk delete, shared across pages. Can be part of `BulkActionBar` or rendered separately in each page.
-
-## Files
+## Files to Create/Edit
 
 | File | Action |
 |------|--------|
-| `src/components/common/BulkActionBar.tsx` | **Create** — reusable bulk action floating bar |
-| `src/components/common/index.ts` | **Edit** — re-export |
-| `src/hooks/usePackages.ts` | **Edit** — add 3 bulk mutations |
-| `src/hooks/usePromotions.ts` | **Edit** — add 3 bulk mutations |
-| `src/hooks/useTrainingTemplates.ts` | **Edit** — add 3 bulk mutations |
-| `src/pages/Packages.tsx` | **Edit** — add selection state + BulkActionBar |
-| `src/pages/Promotions.tsx` | **Edit** — add selection state + BulkActionBar |
-| `src/pages/WorkoutList.tsx` | **Edit** — add selection state + BulkActionBar |
-| `src/i18n/locales/en.ts` | **Edit** — add bulk action i18n keys |
-| `src/i18n/locales/th.ts` | **Edit** — add bulk action i18n keys |
+| `src/pages/settings/SettingsImportExport.tsx` | **Create** — new settings tab page with module cards |
+| `src/pages/Settings.tsx` | **Edit** — add tab entry |
+| `src/App.tsx` | **Edit** — add route |
+| `src/i18n/locales/en.ts` | **Edit** — add i18n keys |
+| `src/i18n/locales/th.ts` | **Edit** — add i18n keys |
+
+## Implementation
+
+1. **Create `SettingsImportExport.tsx`**: Grid of cards per module. Each card has Export/Import/Template buttons. Reuse existing export functions and import dialogs. For modules without import dialogs yet, show a "Coming soon" tooltip on the Import button.
+
+2. **Add tab + route**: Add `{ value: 'import-export', label: 'Import / Export', path: '/setting/import-export' }` to Settings tabs and corresponding route in App.tsx.
+
+3. **i18n**: Add `settings.tabs.importExport`, `settings.importExport.*` keys for EN/TH.
 
 ## Risk
-- **Low**: DataTable already supports selection UI — no changes to shared component needed
-- **No DB changes**: all operations use existing tables and mutation patterns
-- Delete confirmation prevents accidental data loss
-- Duplicate creates new records with `drafts` status, safe by default
+- **Zero regression**: No existing functionality is modified. Only adds a new tab and page.
+- Reuses existing export functions and import dialogs — no new data operations.
 
