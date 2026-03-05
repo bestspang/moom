@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -151,9 +151,10 @@ function downloadLeadTemplate(type: 'minimal' | 'full') {
 interface ImportLeadsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialFile?: File;
 }
 
-export const ImportLeadsDialog = ({ open, onOpenChange }: ImportLeadsDialogProps) => {
+export const ImportLeadsDialog = ({ open, onOpenChange, initialFile }: ImportLeadsDialogProps) => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -166,6 +167,13 @@ export const ImportLeadsDialog = ({ open, onOpenChange }: ImportLeadsDialogProps
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [fileName, setFileName] = useState('');
+
+  // Auto-process initialFile when provided
+  useEffect(() => {
+    if (open && initialFile && step === 'upload') {
+      handleFile(initialFile);
+    }
+  }, [open, initialFile]);
 
   const resetState = () => {
     setStep('upload');

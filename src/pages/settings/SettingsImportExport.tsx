@@ -13,6 +13,7 @@ import type { ExportableMember, ExportableLead, CsvColumn } from '@/lib/exportCs
 import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import BulkImportDropZone from '@/components/settings/BulkImportDropZone';
 
 interface ModuleConfig {
   id: string;
@@ -87,6 +88,23 @@ const SettingsImportExport = () => {
   const [loadingExport, setLoadingExport] = useState<string | null>(null);
   const [showImportMembers, setShowImportMembers] = useState(false);
   const [showImportLeads, setShowImportLeads] = useState(false);
+  const [importFile, setImportFile] = useState<File | undefined>(undefined);
+
+  const handleBulkImportStart = (file: File, module: 'members' | 'leads') => {
+    setImportFile(file);
+    if (module === 'members') setShowImportMembers(true);
+    if (module === 'leads') setShowImportLeads(true);
+  };
+
+  const handleImportMembersClose = (open: boolean) => {
+    setShowImportMembers(open);
+    if (!open) setImportFile(undefined);
+  };
+
+  const handleImportLeadsClose = (open: boolean) => {
+    setShowImportLeads(open);
+    if (!open) setImportFile(undefined);
+  };
 
   const downloadTemplate = (mod: ModuleConfig) => {
     const csv = mod.templateHeaders.map(h => `"${h}"`).join(',');
@@ -264,6 +282,9 @@ const SettingsImportExport = () => {
         </p>
       </div>
 
+      {/* Bulk Drop Zone */}
+      <BulkImportDropZone onStartImport={handleBulkImportStart} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((mod) => {
           const Icon = mod.icon;
@@ -345,11 +366,13 @@ const SettingsImportExport = () => {
       {/* Import Dialogs */}
       <ImportMembersDialog
         open={showImportMembers}
-        onOpenChange={setShowImportMembers}
+        onOpenChange={handleImportMembersClose}
+        initialFile={importFile}
       />
       <ImportLeadsDialog
         open={showImportLeads}
-        onOpenChange={setShowImportLeads}
+        onOpenChange={handleImportLeadsClose}
+        initialFile={importFile}
       />
     </div>
   );

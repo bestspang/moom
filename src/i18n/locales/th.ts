@@ -1420,6 +1420,11 @@ export default {
       exportSuccess: 'ส่งออกข้อมูลสำเร็จ',
       exportError: 'ส่งออกข้อมูลไม่สำเร็จ',
       templateDownloaded: 'ดาวน์โหลดเทมเพลตแล้ว',
+      bulkDropTitle: 'วางไฟล์ CSV ที่นี่เพื่อนำเข้าจำนวนมาก',
+      bulkDropDesc: 'วางไฟล์ .csv หลายไฟล์ — ตรวจจับสมาชิกหรือ Leads อัตโนมัติ',
+      rows: 'แถว',
+      unknown: 'ไม่ทราบ',
+      startImport: 'นำเข้า',
     },
   },
 
