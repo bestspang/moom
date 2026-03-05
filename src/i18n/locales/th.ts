@@ -39,6 +39,16 @@ export default {
     no: 'ไม่',
   },
 
+  // Bulk actions
+  bulk: {
+    selected: 'รายการที่เลือก',
+    changeStatus: 'เปลี่ยนสถานะ',
+    exportSelected: 'ส่งออก',
+    duplicate: 'ทำสำเนา',
+    deleteTitle: 'ลบรายการที่เลือก',
+    deleteDesc: 'รายการจะถูกลบถาวร ไม่สามารถยกเลิกได้',
+  },
+
   // Navigation
   nav: {
     dashboard: 'แดชบอร์ด',

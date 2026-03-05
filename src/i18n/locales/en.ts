@@ -39,6 +39,16 @@ export default {
     no: 'No',
   },
 
+  // Bulk actions
+  bulk: {
+    selected: 'selected',
+    changeStatus: 'Change status',
+    exportSelected: 'Export',
+    duplicate: 'Duplicate',
+    deleteTitle: 'Delete selected items',
+    deleteDesc: 'items will be permanently deleted. This action cannot be undone.',
+  },
+
   // Navigation
   nav: {
     dashboard: 'Dashboard',
