@@ -295,3 +295,77 @@ export const useDeleteClass = () => {
     },
   });
 };
+
+// ── Bulk mutations ──
+
+export const useBulkUpdateClassStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase
+        .from('classes')
+        .update({ status })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, status }) => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'classes_bulk_status',
+        activity: `${ids.length} classes status changed to ${status}`,
+        entity_type: 'class',
+      });
+      toast.success(`${ids.length} classes updated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDeleteClasses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('classes').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'classes_bulk_deleted',
+        activity: `${ids.length} classes deleted`,
+        entity_type: 'class',
+      });
+      toast.success(`${ids.length} classes deleted`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDuplicateClasses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (classes: Class[]) => {
+      const copies = classes.map(({ id, created_at, updated_at, ...rest }) => ({
+        ...rest,
+        name: `Copy of ${rest.name}`,
+        name_th: rest.name_th ? `Copy of ${rest.name_th}` : null,
+        status: 'drafts',
+      }));
+      const { error } = await supabase.from('classes').insert(copies);
+      if (error) throw error;
+    },
+    onSuccess: (_, cls) => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      logActivity({
+        event_type: 'classes_bulk_duplicated',
+        activity: `${cls.length} classes duplicated`,
+        entity_type: 'class',
+      });
+      toast.success(`${cls.length} classes duplicated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
