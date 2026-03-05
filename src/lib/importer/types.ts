@@ -30,6 +30,7 @@ export interface EntityConfig {
     rows: ImportRow[],
     queryClient: QueryClient,
     setProgress: (pct: number) => void,
+    options?: { overwrite?: boolean; defaultLocationId?: string },
   ) => Promise<ImportResult>;
   queryKeysToInvalidate: string[][];
 }

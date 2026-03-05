@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, DateRangePicker, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, DateRangePicker, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, type Column, type StatusTab } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTransferSlips, useTransferSlipStats } from '@/hooks/useFinance';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { toast } from 'sonner';
 
 const TransferSlips = () => {
   const { t, language } = useLanguage();
@@ -87,11 +89,45 @@ const TransferSlips = () => {
     },
   ];
 
+  const handleExport = () => {
+    if (!slips?.length) { toast.info(t('common.noData')); return; }
+    const csvColumns: CsvColumn<any>[] = [
+      { key: 'dateTime', header: 'Date', accessor: (r: any) => format(new Date(r.created_at), 'yyyy-MM-dd HH:mm') },
+      { key: 'transactionId', header: 'Transaction ID', accessor: (r: any) => r.transaction_id },
+      { key: 'amount', header: 'Amount', accessor: (r: any) => r.amount },
+      { key: 'status', header: 'Status', accessor: (r: any) => r.status || '' },
+    ];
+    exportToCsv(slips, csvColumns, 'transfer-slips');
+    toast.success(t('common.export'));
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['transaction_id', 'order_name', 'amount', 'status'];
+    const csv = headers.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'transfer-slips-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
+  };
+
   return (
     <div>
       <PageHeader 
         title={t('transferSlips.title')} 
-        breadcrumbs={[{ label: t('nav.finance') }, { label: t('transferSlips.title') }]} 
+        breadcrumbs={[{ label: t('nav.finance') }, { label: t('transferSlips.title') }]}
+        actions={
+          <ManageDropdown
+            onExport={handleExport}
+            onDownloadTemplate={handleDownloadTemplate}
+            exportDisabled={!slips?.length}
+          />
+        }
       />
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">

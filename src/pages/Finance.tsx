@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 
 const PAGE_SIZE = 50;
 
@@ -34,6 +35,7 @@ const Finance = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [importOpen, setImportOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({
     start: startOfMonth(new Date()),
     end: endOfMonth(new Date()),
@@ -330,6 +332,7 @@ const Finance = () => {
             <ManageDropdown
               onExport={handleExportCsv}
               onDownloadTemplate={handleDownloadTxTemplate}
+              onImport={() => setImportOpen(true)}
               exportDisabled={!transactions?.length}
             />
           ) : activeMainTab === 'slips' ? (
@@ -554,6 +557,8 @@ const Finance = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="finance" />
     </div>
   );
 };

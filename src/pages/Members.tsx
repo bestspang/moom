@@ -21,6 +21,7 @@ import { useEngagementScores } from '@/hooks/useEngagementScores';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import { EditMemberDialog } from '@/components/members/EditMemberDialog';
 import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
@@ -317,7 +318,7 @@ const Members = () => {
 
       <CreateMemberDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       <EditMemberDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} member={selectedMember} />
-      <ImportMembersDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <ImportCenterDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} presetEntity="members" />
     </div>
   );
 };
