@@ -51,10 +51,11 @@ function normalizePaymentMethod(val: string): string | null {
 
 function normalizeStatus(val: string): string | null {
   const v = val.toLowerCase().trim();
-  if (v === 'paid' || v === 'completed') return 'completed';
+  if (v === 'paid' || v === 'completed') return 'paid';
   if (v === 'voided' || v === 'void') return 'voided';
   if (v === 'refunded' || v === 'refund') return 'refunded';
-  if (v === 'pending' || v === 'needs review') return 'pending';
+  if (v === 'pending') return 'pending';
+  if (v === 'needs review' || v === 'needs_review') return 'needs_review';
   return null;
 }
 

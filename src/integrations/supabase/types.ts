@@ -2605,7 +2605,7 @@ export type Database = {
         | "package_expiring"
       package_status: "on_sale" | "scheduled" | "drafts" | "archive"
       package_type: "unlimited" | "session" | "pt"
-      payment_method: "credit_card" | "bank_transfer" | "qr_promptpay"
+      payment_method: "credit_card" | "bank_transfer" | "qr_promptpay" | "cash"
       promotion_status: "active" | "scheduled" | "drafts" | "archive"
       promotion_type: "discount" | "promo_code"
       risk_level: "high" | "medium" | "low"
@@ -2613,7 +2613,12 @@ export type Database = {
       room_status: "open" | "closed"
       schedule_status: "scheduled" | "cancelled" | "completed"
       staff_status: "active" | "pending" | "terminated"
-      transaction_status: "paid" | "pending" | "voided" | "needs_review"
+      transaction_status:
+        | "paid"
+        | "pending"
+        | "voided"
+        | "needs_review"
+        | "refunded"
       usage_type: "class_only" | "gym_checkin_only" | "both"
       usage_type_ledger: "checkin" | "booking" | "pt_session" | "adjustment"
       waitlist_status: "waiting" | "promoted" | "expired" | "cancelled"
@@ -2780,7 +2785,7 @@ export const Constants = {
       ],
       package_status: ["on_sale", "scheduled", "drafts", "archive"],
       package_type: ["unlimited", "session", "pt"],
-      payment_method: ["credit_card", "bank_transfer", "qr_promptpay"],
+      payment_method: ["credit_card", "bank_transfer", "qr_promptpay", "cash"],
       promotion_status: ["active", "scheduled", "drafts", "archive"],
       promotion_type: ["discount", "promo_code"],
       risk_level: ["high", "medium", "low"],
@@ -2788,7 +2793,13 @@ export const Constants = {
       room_status: ["open", "closed"],
       schedule_status: ["scheduled", "cancelled", "completed"],
       staff_status: ["active", "pending", "terminated"],
-      transaction_status: ["paid", "pending", "voided", "needs_review"],
+      transaction_status: [
+        "paid",
+        "pending",
+        "voided",
+        "needs_review",
+        "refunded",
+      ],
       usage_type: ["class_only", "gym_checkin_only", "both"],
       usage_type_ledger: ["checkin", "booking", "pt_session", "adjustment"],
       waitlist_status: ["waiting", "promoted", "expired", "cancelled"],
