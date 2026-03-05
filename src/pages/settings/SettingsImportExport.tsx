@@ -187,16 +187,22 @@ const SettingsImportExport = () => {
         case 'promotions': {
           const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
           if (error) throw error;
+          const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+          const getExportDiscount = (r: any): string => {
+            if (!r.same_discount_all_packages) return 'Varies';
+            const mode = r.discount_mode || r.discount_type;
+            if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+            return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+          };
           const cols: CsvColumn<any>[] = [
-            { key: 'name', header: 'name', accessor: r => r.name },
-            { key: 'name_en', header: 'name_en', accessor: r => r.name_en },
-            { key: 'name_th', header: 'name_th', accessor: r => r.name_th },
-            { key: 'promo_code', header: 'promo_code', accessor: r => r.promo_code },
-            { key: 'discount_type', header: 'discount_type', accessor: r => r.discount_type },
-            { key: 'discount_value', header: 'discount_value', accessor: r => r.discount_value },
-            { key: 'status', header: 'status', accessor: r => r.status },
-            { key: 'start_date', header: 'start_date', accessor: r => r.start_date },
-            { key: 'end_date', header: 'end_date', accessor: r => r.end_date },
+            { key: 'name', header: 'Name', accessor: r => r.name },
+            { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+            { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+            { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+            { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+            { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+            { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+            { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
           ];
           exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
           break;
