@@ -1,76 +1,64 @@
 
 
-# Analytics Dashboard + Enhanced Finance Hub
+# Add "Manage" Dropdown to 7 Pages
 
-Two parallel workstreams: (1) new Analytics page and (2) Finance page enhancement with Overview + Forecasting tabs.
+Add a consistent "Manage" dropdown button (matching Members/Leads pattern) with Export CSV, Import CSV, and Download Template options to: **Packages, Promotions, Staff, Roles, Locations, Workout List, Finance (Transfer Slips tab)**.
 
----
+## Pattern
 
-## 1. Analytics Dashboard (`/analytics`)
+Each page gets a `DropdownMenu` with:
+- **Export CSV** — exports current table data using `exportToCsv()`
+- **Download Template** — downloads a blank CSV with correct headers
+- **Import CSV** (where applicable) — opens an import dialog (future; for now just Export + Template)
 
-New page at `/analytics` — the strategic decision-making hub.
+Since most of these entities don't have import dialogs yet, we'll add Export + Template for all 7 pages now. Import dialogs can be added later per entity.
 
-### Layout: 4 sections in cards
+## Changes Per Page
 
-**Section A: Revenue Trends** (Bar chart — 6 months of monthly revenue from `transactions` where status='paid')
+| Page | Current Actions | New Actions |
+|------|----------------|-------------|
+| **Packages** | Separate Export button + Create | Manage dropdown (Export, Template) + Create |
+| **Promotions** | Create button only | Manage dropdown (Export, Template) + Create |
+| **Staff** | Create button only | Manage dropdown (Export, Template) + Create |
+| **Roles** | Create button only | Manage dropdown (Export, Template) + Create |
+| **Locations** | Create button only | Manage dropdown (Export, Template) + Create |
+| **Workout List** | Create button only | Manage dropdown (Export, Template) + Create |
+| **Finance** | Export on Transactions tab | Manage dropdown on Transactions + Transfer Slips tabs |
 
-**Section B: Member Growth** (Line chart — monthly new members vs churned/expired, from `members.created_at` and `member_packages` status changes)
+## Implementation
 
-**Section C: Class Fill Rate Heatmap** (7×12 grid — day-of-week × hour, from `schedule` table, showing avg fill rate as color intensity)
+### 1. Create reusable `ManageDropdown` component
+A shared component at `src/components/common/ManageDropdown.tsx` accepting:
+- `onExport: () => void`
+- `onDownloadTemplate: () => void`  
+- `onImport?: () => void` (optional, renders Import item only if provided)
+- `exportDisabled?: boolean`
 
-**Section D: Lead Conversion Funnel** (Horizontal funnel bars — count by `leads.status`: new → contacted → interested → converted)
+This avoids duplicating the dropdown markup 7 times.
 
-### Data Hook: `src/hooks/useAnalytics.ts`
-- `useRevenueByMonth()` — query `transactions` grouped by month (last 6 months), sum amount where status='paid'
-- `useMemberGrowth()` — query `members` created_at by month + count expired `member_packages`
-- `useClassFillRate()` — query `schedule` with checked_in/capacity by day_of_week + hour
-- `useLeadFunnel()` — query `leads` count grouped by status
+### 2. Update each page
+- Replace standalone Export buttons with `ManageDropdown`
+- Add export logic using `exportToCsv` with appropriate column configs
+- Add template download with correct CSV headers per entity
 
-All queries use real Supabase data. No mocks.
+### 3. i18n
+Add missing keys if needed (most like `common.manage`, `common.downloadTemplate` should already exist from Members page).
 
-### Files
-- **New**: `src/pages/Analytics.tsx`
-- **New**: `src/hooks/useAnalytics.ts`
-- **Edit**: `src/App.tsx` — add route `/analytics`
-- **Edit**: `src/components/layout/Sidebar.tsx` — add Analytics nav item in Business group
-- **Edit**: `src/i18n/locales/en.ts`, `th.ts` — add analytics translations
-
----
-
-## 2. Enhanced Finance Page
-
-Add 2 new tabs to existing Finance page: **Overview** (first tab) and **Forecasting** (last tab).
-
-### Tab order: Overview | Transactions | Transfer Slips | Forecasting
-
-**Overview tab**:
-- 4 KPI stat cards (reuse existing `computeFinanceStats`)
-- Revenue by day bar chart (from filtered transactions, grouped by date)
-- Payment method breakdown donut chart
-
-**Forecasting tab**:
-- Reuse existing `useRevenueForecast` hook
-- Show last/this/next month bars (already have `RevenueForecastCard`)
-- Add a simple line chart showing monthly revenue trend (last 6 months)
-
-### Files
-- **Edit**: `src/pages/Finance.tsx` — add Overview + Forecasting tabs, move KPI cards into Overview
-- Uses `recharts` (already installed) via `ChartContainer` from `src/components/ui/chart.tsx`
-
----
-
-## Risk Assessment
-- Analytics page is 100% new — zero regression risk
-- Finance changes: existing Transactions and Transfer Slips tabs preserved exactly. Only adding new tabs around them.
-- All data from existing tables with existing RLS policies — no DB changes needed
-
-## Total Files Changed: 6
+## Files
 | File | Action |
 |------|--------|
-| `src/pages/Analytics.tsx` | Create |
-| `src/hooks/useAnalytics.ts` | Create |
-| `src/pages/Finance.tsx` | Edit (add 2 tabs) |
-| `src/App.tsx` | Edit (add route) |
-| `src/components/layout/Sidebar.tsx` | Edit (add nav item) |
-| `src/i18n/locales/en.ts` + `th.ts` | Edit (translations) |
+| `src/components/common/ManageDropdown.tsx` | **Create** — reusable dropdown |
+| `src/components/common/index.ts` | **Edit** — re-export |
+| `src/pages/Packages.tsx` | **Edit** — replace export button |
+| `src/pages/Promotions.tsx` | **Edit** — add manage dropdown |
+| `src/pages/Staff.tsx` | **Edit** — add manage dropdown |
+| `src/pages/Roles.tsx` | **Edit** — add manage dropdown |
+| `src/pages/Locations.tsx` | **Edit** — add manage dropdown |
+| `src/pages/WorkoutList.tsx` | **Edit** — add manage dropdown |
+| `src/pages/Finance.tsx` | **Edit** — add manage dropdown to slip tab |
+
+## Risk
+- Zero regression: only adding a new dropdown next to existing Create buttons
+- Export logic uses existing `exportToCsv` utility
+- No DB/schema changes
 
