@@ -7,11 +7,13 @@ import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 
 const TransferSlips = () => {
   const { t, language } = useLanguage();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('needs_review');
+  const [importOpen, setImportOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({
     start: startOfMonth(new Date()),
     end: endOfMonth(new Date()),
@@ -125,6 +127,7 @@ const TransferSlips = () => {
           <ManageDropdown
             onExport={handleExport}
             onDownloadTemplate={handleDownloadTemplate}
+            onImport={() => setImportOpen(true)}
             exportDisabled={!slips?.length}
           />
         }
@@ -160,6 +163,12 @@ const TransferSlips = () => {
           emptyMessage={t('transferSlips.noSlips')}
         />
       )}
+
+      <ImportCenterDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        presetEntity="slips"
+      />
     </div>
   );
 };

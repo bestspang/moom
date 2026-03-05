@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { EntityConfig, ImportRow, ImportResult } from '../types';
+import { logActivity } from '@/lib/activityLogger';
 
 const HEADER_ALIASES: Record<string, string> = {
   'name': 'name', 'class name': 'name', 'ชื่อคลาส': 'name',
@@ -54,10 +55,17 @@ async function upsertRows(
   setProgress: (pct: number) => void,
 ): Promise<ImportResult> {
   const result: ImportResult = { created: 0, updated: 0, failed: 0, errors: [] };
-  const total = rows.length;
+  const validRows = rows.filter(r => r.errors.length === 0);
+  const total = validRows.length;
+
+  // Count skipped invalid rows
+  result.failed += rows.length - total;
+  rows.filter(r => r.errors.length > 0).forEach(r => {
+    result.errors.push({ row: r.rowIndex, reason: r.errors.join('; '), data: r.data });
+  });
 
   for (let i = 0; i < total; i++) {
-    const row = rows[i];
+    const row = validRows[i];
     const d = row.data;
     try {
       const record: Record<string, any> = {
@@ -72,7 +80,6 @@ async function upsertRows(
       if (d.description_th) record.description_th = d.description_th.trim();
       if (d.category_id) record.category_id = d.category_id.trim();
 
-      // Try to find existing by name
       const { data: existing } = await supabase
         .from('classes')
         .select('id')
@@ -94,6 +101,15 @@ async function upsertRows(
     }
     setProgress(Math.round(((i + 1) / total) * 100));
   }
+
+  // Log batch activity
+  logActivity({
+    event_type: 'class_import_batch',
+    activity: `Imported classes: ${result.created} created, ${result.updated} updated, ${result.failed} failed`,
+    entity_type: 'class',
+    new_value: { created: result.created, updated: result.updated, failed: result.failed } as any,
+  });
+
   return result;
 }
 

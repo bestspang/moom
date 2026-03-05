@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { EntityConfig, ImportRow, ImportResult } from '../types';
 import { parseBool } from '../normalizers';
+import { logActivity } from '@/lib/activityLogger';
 
 const HEADER_ALIASES: Record<string, string> = {
   'name': 'name', 'workout name': 'name', 'template name': 'name', 'ชื่อ': 'name',
@@ -27,10 +28,17 @@ async function upsertRows(
   setProgress: (pct: number) => void,
 ): Promise<ImportResult> {
   const result: ImportResult = { created: 0, updated: 0, failed: 0, errors: [] };
-  const total = rows.length;
+  const validRows = rows.filter(r => r.errors.length === 0);
+  const total = validRows.length;
+
+  // Count skipped invalid rows
+  result.failed += rows.length - total;
+  rows.filter(r => r.errors.length > 0).forEach(r => {
+    result.errors.push({ row: r.rowIndex, reason: r.errors.join('; '), data: r.data });
+  });
 
   for (let i = 0; i < total; i++) {
-    const row = rows[i];
+    const row = validRows[i];
     const d = row.data;
     try {
       const record: Record<string, any> = {
@@ -41,7 +49,6 @@ async function upsertRows(
         record.is_active = parseBool(d.is_active);
       }
 
-      // Try to find existing by name
       const { data: existing } = await supabase
         .from('training_templates')
         .select('id')
@@ -63,6 +70,15 @@ async function upsertRows(
     }
     setProgress(Math.round(((i + 1) / total) * 100));
   }
+
+  // Log batch activity
+  logActivity({
+    event_type: 'training_import_batch',
+    activity: `Imported workouts: ${result.created} created, ${result.updated} updated, ${result.failed} failed`,
+    entity_type: 'training_template',
+    new_value: { created: result.created, updated: result.updated, failed: result.failed } as any,
+  });
+
   return result;
 }
 
