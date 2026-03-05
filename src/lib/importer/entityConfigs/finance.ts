@@ -49,6 +49,14 @@ function normalizePaymentMethod(val: string): string | null {
   return null;
 }
 
+function normalizePackageType(val: string): string | null {
+  const v = val.toLowerCase().trim();
+  if (v === 'unlimited') return 'unlimited';
+  if (v === 'session' || v === 'sessions') return 'session';
+  if (v === 'pt' || v === 'personal training') return 'pt';
+  return null;
+}
+
 function normalizeStatus(val: string): string | null {
   const v = val.toLowerCase().trim();
   if (v === 'paid' || v === 'completed') return 'paid';
@@ -99,8 +107,13 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
         transaction_id: txId,
         order_name: row.data.order_name || txId,
         amount: parseCurrency(row.data.amount) ?? 0,
-        type: 'purchase',
       };
+
+      // Map _type to package_type enum
+      if (row.data._type) {
+        const pt = normalizePackageType(row.data._type);
+        if (pt) tx.type = pt;
+      }
 
       const dt = parseDatetime(row.data._datetime || '');
       if (dt) tx.created_at = dt;
