@@ -1,28 +1,37 @@
 
 
-# Simplify Classes Page to Match Class Categories Layout
+# Add Bulk Actions to Classes Page
 
 ## Problem
-The current Classes page has complex filters (type, category, level dropdowns) and status tabs. The user wants it simplified to match the clean Class Categories layout style.
+The Classes page (`/class`) has no bulk action support — no row selection checkboxes, no `ManageDropdown` (export/template), and no `BulkActionBar`. The user expects it to match Packages/Promotions/WorkoutList which already have these features.
 
-## Changes
+Packages, Promotions, and WorkoutList already have full bulk action support — no changes needed there.
 
-**`src/pages/Classes.tsx`** — Rewrite to match ClassCategories pattern:
-- Remove status tabs, type/category/level filter dropdowns
-- Keep only: PageHeader + SearchBar + simple DataTable
-- Keep columns simple: Class name, Type (Class/PT), Category, Level, Duration
-- Keep "Create class" button and row click navigation
-- Remove pagination (or keep if data is large) — keep pagination since they may have many classes
-- Remove all the filter state variables (`activeTab`, `typeFilter`, `categoryFilter`, `levelFilter`)
+## Plan
 
-The page will look like the ClassCategories screenshot: clean header, search bar, and a straightforward data table.
+### 1. Add bulk mutation hooks to `src/hooks/useClasses.ts`
+Add three new hooks following the same pattern as Packages/Promotions:
+- `useBulkUpdateClassStatus()` — update status (active/inactive) for selected classes
+- `useBulkDeleteClasses()` — delete selected classes
+- `useBulkDuplicateClasses()` — duplicate selected classes as drafts
 
-## Files
-| File | Change |
+### 2. Update `src/pages/Classes.tsx`
+- Add `selectedRows` state and selection handlers (`handleSelectRow`, `handleSelectAll`, `clearSelection`)
+- Add `ManageDropdown` with export/template download to `PageHeader` actions
+- Pass `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` to `DataTable`
+- Add `BulkActionBar` with delete/duplicate/status change/export wired to the new bulk hooks
+- Add CSV export logic (reuse `exportToCsv`) and template download
+
+### 3. Add i18n keys (if missing)
+Check and add any missing bulk-related translation keys for classes in `en.ts` / `th.ts`.
+
+## Files to Change
+
+| File | Action |
 |------|--------|
-| `src/pages/Classes.tsx` | **Rewrite** — simplified layout matching ClassCategories style |
+| `src/hooks/useClasses.ts` | Add 3 bulk mutation hooks |
+| `src/pages/Classes.tsx` | Add selection, ManageDropdown, BulkActionBar, CSV export |
 
 ## Risk
-- **Low**: Only simplifies the Classes list page UI. No hooks or data layer changes.
-- Existing `useClasses` hook still works — just called without filters.
+- **Low**: Only adds new hooks + UI wiring to the Classes page. No existing functionality modified.
 
