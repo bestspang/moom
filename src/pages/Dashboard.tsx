@@ -21,6 +21,7 @@ import { CheckInDialog } from '@/components/lobby/CheckInDialog';
 import { useExpiringPackages } from '@/hooks/useExpiringPackages';
 import { useHighRiskMembers } from '@/hooks/useDashboardStats';
 import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
+import { useDashboardTrends } from '@/hooks/useDashboardTrends';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
@@ -72,6 +73,7 @@ const Dashboard = () => {
   const { data: highRiskMembers = [] } = useHighRiskMembers();
   const { data: rawScheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
   const { data: gymCheckins = [], isLoading: gymLoading } = useGymCheckinsByDate(selectedDate, debouncedSearch);
+  const { data: trends } = useDashboardTrends();
 
   const scheduleData = useMemo(() => rawScheduleData.map(mapScheduleToItem), [rawScheduleData]);
 
@@ -151,6 +153,7 @@ const Dashboard = () => {
               value={stats?.checkinsToday || 0}
               subtitle={t('dashboardExtra.mainLocation')}
               color="teal"
+              trend={trends?.checkins7d}
               comparison={
                 checkinComparison !== 0
                   ? { value: checkinComparison, label: t('dashboard.comparedToYesterday') }
@@ -167,6 +170,7 @@ const Dashboard = () => {
               title={t('dashboard.classesScheduledToday')}
               value={stats?.classesToday || 0}
               color="blue"
+              trend={trends?.classes7d}
               action={
                 <Link to="/calendar">
                   <Button variant="link" className="text-primary p-0 h-auto text-xs">

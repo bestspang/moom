@@ -37,6 +37,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { useExpiringPackages } from '@/hooks/useExpiringPackages';
+import { useTransferSlipStats } from '@/hooks/useFinance';
 import type { Database } from '@/integrations/supabase/types';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
@@ -52,6 +54,7 @@ interface NavItem {
   icon: React.ElementType;
   minLevel?: AccessLevel;
   resource?: ResourceKey;
+  badge?: number;
 }
 
 interface NavGroup {
@@ -74,6 +77,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { can, hasCustomPermissions } = usePermissions();
   const location = useLocation();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['people', 'business', 'yourgym']);
+
+  // Badge data
+  const { data: expiringPkgs } = useExpiringPackages();
+  const { data: slipStats } = useTransferSlipStats();
+  const pendingSlips = slipStats?.needs_review || 0;
+  const expiringCount = expiringPkgs?.filter(p => p.daysLeft <= 7).length || 0;
 
   const toggleGroup = (group: string) => {
     setOpenGroups((prev) =>
@@ -104,7 +113,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         label: t('nav.people'),
         icon: Users,
         items: [
-          { label: t('nav.members'), path: '/members', icon: Users, resource: 'members' },
+          { label: t('nav.members'), path: '/members', icon: Users, resource: 'members', badge: expiringCount },
           { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
         ],
       },
@@ -118,7 +127,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         items: [
           { label: t('nav.packages'), path: '/package', icon: Tag, resource: 'packages' },
           { label: t('nav.promotions'), path: '/promotion', icon: Gift, resource: 'promotions' },
-          { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance' },
+          { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance', badge: pendingSlips },
           { label: t('nav.reports'), path: '/report', icon: BarChart3, resource: 'reports' },
         ],
       },
@@ -169,7 +178,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         )}
       >
         <Icon className="h-4 w-4 flex-shrink-0" />
-        <span>{item.label}</span>
+        <span className="flex-1">{item.label}</span>
+        {item.badge != null && item.badge > 0 && (
+          <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none font-semibold">
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
       </NavLink>
     );
   };
