@@ -55,6 +55,7 @@ import SettingsClient from "./pages/settings/SettingsClient";
 import SettingsPackage from "./pages/settings/SettingsPackage";
 import SettingsContracts from "./pages/settings/SettingsContracts";
 import SettingsFeatureFlags from "./pages/settings/SettingsFeatureFlags";
+import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
@@ -153,6 +154,7 @@ const App = () => (
                   <Route path="setting-package" element={<SettingsPackage />} />
                   <Route path="member-contracts" element={<SettingsContracts />} />
                   <Route path="feature-flags" element={<SettingsFeatureFlags />} />
+                  <Route path="import-export" element={<SettingsImportExport />} />
                 </Route>
                 <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
               </Route>

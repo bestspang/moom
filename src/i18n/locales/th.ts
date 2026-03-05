@@ -1273,6 +1273,7 @@ export default {
       package: 'แพ็คเกจ',
       memberContracts: 'สัญญาสมาชิก',
       featureFlags: 'Feature Flags',
+      importExport: 'นำเข้า / ส่งออก',
     },
     general: {
       // Sidebar menu
@@ -1408,6 +1409,17 @@ export default {
       allowSigning: 'อนุญาตให้สมาชิกเซ็นสัญญาผ่านแอปพลิเคชันสำหรับสมาชิก',
       signingDescription: 'เมื่อเปิดใช้งาน สมาชิกจะได้รับการแจ้งเตือนให้เซ็นสัญญาผ่านแอปพลิเคชันสำหรับสมาชิก',
       setupContracts: 'ตั้งค่าสัญญาสมาชิก',
+    },
+    importExport: {
+      title: 'นำเข้า / ส่งออก',
+      description: 'นำเข้าหรือส่งออกข้อมูลจำนวนมากสำหรับทุกโมดูลในที่เดียว',
+      exportCsv: 'ส่งออก CSV',
+      importCsv: 'นำเข้า CSV',
+      downloadTemplate: 'ดาวน์โหลดเทมเพลต',
+      comingSoon: 'การนำเข้าจะมาเร็วๆ นี้',
+      exportSuccess: 'ส่งออกข้อมูลสำเร็จ',
+      exportError: 'ส่งออกข้อมูลไม่สำเร็จ',
+      templateDownloaded: 'ดาวน์โหลดเทมเพลตแล้ว',
     },
   },
 
