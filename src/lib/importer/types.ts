@@ -17,7 +17,7 @@ export interface ImportResult {
 
 export type ImportStep = 'select' | 'upload' | 'mapping' | 'preview' | 'importing' | 'done';
 
-export type EntityId = 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance' | 'slips';
+export type EntityId = 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance' | 'slips' | 'classes' | 'workouts';
 
 export interface EntityConfig {
   id: EntityId;

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Upload, Download, AlertTriangle, CheckCircle, X,
-  Users, UserPlus, Package, Megaphone, UserCog, DollarSign, Receipt,
+  Users, UserPlus, Package, Megaphone, UserCog, DollarSign, Receipt, BookOpen, Dumbbell,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
 const ENTITY_ICONS: Record<EntityId, React.ElementType> = {
   members: Users, leads: UserPlus, packages: Package,
   staff: UserCog, promotions: Megaphone, finance: DollarSign, slips: Receipt,
+  classes: BookOpen, workouts: Dumbbell,
 };
 
 const ENTITY_LABELS: Record<EntityId, { en: string; th: string }> = {
@@ -36,9 +37,11 @@ const ENTITY_LABELS: Record<EntityId, { en: string; th: string }> = {
   promotions: { en: 'Promotions', th: 'โปรโมชั่น' },
   finance: { en: 'Finance', th: 'การเงิน' },
   slips: { en: 'Transfer Slips', th: 'สลิปโอนเงิน' },
+  classes: { en: 'Classes', th: 'คลาส' },
+  workouts: { en: 'Workouts', th: 'เวิร์คเอาท์' },
 };
 
-const IMPORTABLE: EntityId[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance'];
+const IMPORTABLE: EntityId[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance', 'classes', 'workouts'];
 
 interface ImportCenterDialogProps {
   open: boolean;
