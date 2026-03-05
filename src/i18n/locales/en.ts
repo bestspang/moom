@@ -64,6 +64,7 @@ export default {
     finance: 'Finance',
     transferSlips: 'Transfer slips',
     reports: 'Reports',
+    analytics: 'Analytics',
     settings: 'Settings',
     notifications: 'Notifications',
     comingSoon: 'Coming Soon',
@@ -1121,6 +1122,25 @@ export default {
     creditCard: 'Credit card',
     promptpay: 'PromptPay',
     noTransactions: 'No transactions found',
+    overview: 'Overview',
+    forecasting: 'Forecasting',
+    dailyRevenue: 'Daily Revenue',
+    paymentBreakdown: 'Payment Methods',
+    revenueComparison: 'Revenue Comparison',
+  },
+
+  // Analytics
+  analytics: {
+    title: 'Analytics',
+    revenueTrends: 'Revenue Trends (6 months)',
+    revenue: 'Revenue',
+    memberGrowth: 'Member Growth',
+    newMembers: 'New Members',
+    expired: 'Expired',
+    classFillRate: 'Class Fill Rate Heatmap',
+    low: 'Low',
+    high: 'High',
+    leadFunnel: 'Lead Conversion Funnel',
   },
 
   // Reports

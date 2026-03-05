@@ -64,6 +64,7 @@ export default {
     finance: 'การเงิน',
     transferSlips: 'สลิปโอนเงิน',
     reports: 'รายงาน',
+    analytics: 'วิเคราะห์',
     settings: 'ตั้งค่า',
     notifications: 'การแจ้งเตือน',
     comingSoon: 'เร็วๆ นี้',
@@ -1121,6 +1122,25 @@ export default {
     creditCard: 'บัตรเครดิต',
     promptpay: 'พร้อมเพย์',
     noTransactions: 'ไม่พบรายการธุรกรรม',
+    overview: 'ภาพรวม',
+    forecasting: 'พยากรณ์',
+    dailyRevenue: 'รายได้รายวัน',
+    paymentBreakdown: 'วิธีชำระเงิน',
+    revenueComparison: 'เปรียบเทียบรายได้',
+  },
+
+  // Analytics
+  analytics: {
+    title: 'วิเคราะห์',
+    revenueTrends: 'แนวโน้มรายได้ (6 เดือน)',
+    revenue: 'รายได้',
+    memberGrowth: 'การเติบโตสมาชิก',
+    newMembers: 'สมาชิกใหม่',
+    expired: 'หมดอายุ',
+    classFillRate: 'อัตราเข้าเรียนตามวัน-เวลา',
+    low: 'ต่ำ',
+    high: 'สูง',
+    leadFunnel: 'ช่องทาง Lead Conversion',
   },
 
   // Reports

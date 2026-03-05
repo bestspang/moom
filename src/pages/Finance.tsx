@@ -3,21 +3,31 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, StatusTabs, type Column, type StatusTab } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { useFinanceTransactions, computeFinanceStats, useTransferSlips, useTransferSlipStats } from '@/hooks/useFinance';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { useRevenueForecast } from '@/hooks/useRevenueForecast';
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download } from 'lucide-react';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const PAGE_SIZE = 50;
+
+const PAYMENT_COLORS: Record<string, string> = {
+  cash: 'hsl(var(--primary))',
+  bank_transfer: 'hsl(142 71% 45%)',
+  credit_card: 'hsl(221 83% 53%)',
+  promptpay: 'hsl(280 67% 52%)',
+};
 
 const Finance = () => {
   const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'slips' ? 'slips' : 'transactions';
+  const initialTab = searchParams.get('tab') || 'overview';
 
   const [activeMainTab, setActiveMainTab] = useState(initialTab);
   const [search, setSearch] = useState('');
@@ -51,6 +61,9 @@ const Finance = () => {
   });
   const { data: slipStats } = useTransferSlipStats();
 
+  // Revenue forecast
+  const { data: forecast, isLoading: forecastLoading } = useRevenueForecast();
+
   const stats = useMemo(() => computeFinanceStats(transactions), [transactions]);
 
   // Client-side pagination for transactions
@@ -59,6 +72,44 @@ const Finance = () => {
     const start = (page - 1) * PAGE_SIZE;
     return transactions.slice(start, start + PAGE_SIZE);
   }, [transactions, page]);
+
+  // Overview charts data
+  const dailyRevenueData = useMemo(() => {
+    if (!transactions) return [];
+    const dayMap = new Map<string, number>();
+    transactions.forEach((tx) => {
+      if (tx.status !== 'paid') return;
+      const day = format(new Date(tx.created_at), 'MM/dd');
+      dayMap.set(day, (dayMap.get(day) || 0) + Number(tx.amount));
+    });
+    return Array.from(dayMap.entries())
+      .map(([day, amount]) => ({ day, amount }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+  }, [transactions]);
+
+  const paymentBreakdown = useMemo(() => {
+    if (!transactions) return [];
+    const methodMap = new Map<string, number>();
+    transactions.forEach((tx) => {
+      if (tx.status !== 'paid') return;
+      const method = tx.payment_method || 'other';
+      methodMap.set(method, (methodMap.get(method) || 0) + Number(tx.amount));
+    });
+    return Array.from(methodMap.entries()).map(([method, amount]) => ({
+      name: method,
+      value: amount,
+      color: PAYMENT_COLORS[method] || 'hsl(var(--muted-foreground))',
+    }));
+  }, [transactions]);
+
+  const forecastChartData = useMemo(() => {
+    if (!forecast) return [];
+    return [
+      { label: t('revenueForecast.lastMonth'), amount: forecast.lastMonth },
+      { label: t('revenueForecast.thisMonth'), amount: forecast.thisMonth },
+      { label: t('revenueForecast.nextMonth'), amount: forecast.projectedNextMonth },
+    ];
+  }, [forecast, t]);
 
   const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
     setter(value);
@@ -198,6 +249,16 @@ const Finance = () => {
     { key: 'voided', label: t('transferSlips.voided'), count: slipStats?.voided || 0, color: 'gray' },
   ];
 
+  const methodLabel = (method: string) => {
+    const map: Record<string, string> = {
+      cash: t('finance.cash'),
+      bank_transfer: t('finance.bankTransfer'),
+      credit_card: t('finance.creditCard'),
+      promptpay: t('finance.promptpay'),
+    };
+    return map[method] || method;
+  };
+
   return (
     <div>
       <PageHeader 
@@ -213,9 +274,9 @@ const Finance = () => {
         }
       />
 
-      {/* Main tabs: Transactions | Transfer Slips */}
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="mb-4">
         <TabsList>
+          <TabsTrigger value="overview">{t('finance.overview')}</TabsTrigger>
           <TabsTrigger value="transactions">{t('finance.transactions')}</TabsTrigger>
           <TabsTrigger value="slips">
             {t('nav.transferSlips')}
@@ -225,18 +286,93 @@ const Finance = () => {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="forecasting">{t('finance.forecasting')}</TabsTrigger>
         </TabsList>
 
-        {/* ===== Transactions Tab ===== */}
-        <TabsContent value="transactions" className="mt-4">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        {/* ===== Overview Tab ===== */}
+        <TabsContent value="overview" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard title={t('finance.transactions')} value={stats.transactions} color="blue" />
             <StatCard title={t('finance.totalSales')} value={formatCurrency(stats.totalSales)} color="magenta" />
             <StatCard title={t('finance.netIncome')} value={formatCurrency(stats.netIncome)} color="orange" />
             <StatCard title={t('finance.refundsGiven')} value={formatCurrency(stats.refunds)} color="gray" />
           </div>
 
+          <div className="flex flex-col md:flex-row gap-3">
+            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Daily Revenue */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t('finance.dailyRevenue')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {txLoading ? (
+                  <Skeleton className="h-[220px] w-full" />
+                ) : dailyRevenueData.length === 0 ? (
+                  <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">{t('finance.noTransactions')}</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={dailyRevenueData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="day" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip
+                        formatter={(value: number) => [formatCurrency(value), t('finance.amount')]}
+                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Payment Method Breakdown */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t('finance.paymentBreakdown')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {txLoading ? (
+                  <Skeleton className="h-[220px] w-full" />
+                ) : paymentBreakdown.length === 0 ? (
+                  <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">{t('finance.noTransactions')}</div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <ResponsiveContainer width="50%" height={220}>
+                      <PieChart>
+                        <Pie data={paymentBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={45}>
+                          {paymentBreakdown.map((entry, idx) => (
+                            <Cell key={idx} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number, name: string) => [formatCurrency(value), methodLabel(name)]}
+                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2">
+                      {paymentBreakdown.map((entry) => (
+                        <div key={entry.name} className="flex items-center gap-2 text-sm">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span>{methodLabel(entry.name)}</span>
+                          <span className="text-muted-foreground ml-auto">{formatCurrency(entry.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ===== Transactions Tab ===== */}
+        <TabsContent value="transactions" className="mt-4">
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-3 mb-4">
             <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
@@ -272,7 +408,6 @@ const Finance = () => {
             </Select>
           </div>
 
-          {/* Table */}
           {txLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -316,6 +451,39 @@ const Finance = () => {
               emptyMessage={t('transferSlips.noSlips')}
             />
           )}
+        </TabsContent>
+
+        {/* ===== Forecasting Tab ===== */}
+        <TabsContent value="forecasting" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard title={t('revenueForecast.lastMonth')} value={formatCurrency(forecast?.lastMonth || 0)} color="gray" />
+            <StatCard title={t('revenueForecast.thisMonth')} value={formatCurrency(forecast?.thisMonth || 0)} color="blue" />
+            <StatCard title={`${t('revenueForecast.nextMonth')} (${t('revenueForecast.projected')})`} value={formatCurrency(forecast?.projectedNextMonth || 0)} color="magenta" />
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t('finance.revenueComparison')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {forecastLoading ? (
+                <Skeleton className="h-[250px] w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={forecastChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), t('finance.amount')]}
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                    />
+                    <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
