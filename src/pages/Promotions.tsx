@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePromotions, usePromotionStats } from '@/hooks/usePromotions';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Promotion = Tables<'promotions'>;
+
+const TEMPLATE_HEADERS = ['name', 'type', 'promo_code', 'discount_type', 'discount_value', 'start_date', 'end_date', 'status'];
 
 const Promotions = () => {
   const { t, language } = useLanguage();
@@ -36,7 +39,6 @@ const Promotions = () => {
   };
 
   const getDiscountDisplay = (promo: Promotion) => {
-    // Prefer new schema columns, fallback to legacy
     const mode = (promo as any).discount_mode || promo.discount_type;
     if (mode === 'percentage') {
       const val = (promo as any).percentage_discount ?? promo.discount_value;
@@ -44,6 +46,36 @@ const Promotions = () => {
     }
     const val = (promo as any).flat_rate_discount ?? promo.discount_value;
     return formatCurrency(Number(val));
+  };
+
+  const handleExport = () => {
+    if (!promotions?.length) { toast.info(t('common.noData')); return; }
+    const csvColumns: CsvColumn<Promotion>[] = [
+      { key: 'name', header: 'Name', accessor: (r) => r.name },
+      { key: 'type', header: 'Type', accessor: (r) => r.type },
+      { key: 'promo_code', header: 'Promo Code', accessor: (r) => r.promo_code },
+      { key: 'discount_type', header: 'Discount Type', accessor: (r) => r.discount_type },
+      { key: 'discount_value', header: 'Discount Value', accessor: (r) => r.discount_value },
+      { key: 'start_date', header: 'Start Date', accessor: (r) => r.start_date ? format(new Date(r.start_date), 'yyyy-MM-dd') : '' },
+      { key: 'end_date', header: 'End Date', accessor: (r) => r.end_date ? format(new Date(r.end_date), 'yyyy-MM-dd') : '' },
+      { key: 'status', header: 'Status', accessor: (r) => r.status },
+    ];
+    exportToCsv(promotions, csvColumns, 'promotions');
+    toast.success(t('common.export'));
+  };
+
+  const handleDownloadTemplate = () => {
+    const csv = TEMPLATE_HEADERS.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'promotions-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
   };
 
   const columns: Column<Promotion>[] = [
@@ -93,9 +125,16 @@ const Promotions = () => {
         title={t('promotions.title')}
         breadcrumbs={[{ label: t('nav.package') }, { label: t('promotions.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
-            {t('promotions.createPromotion')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ManageDropdown
+              onExport={handleExport}
+              onDownloadTemplate={handleDownloadTemplate}
+              exportDisabled={!promotions?.length}
+            />
+            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
+              {t('promotions.createPromotion')}
+            </Button>
+          </div>
         }
       />
 

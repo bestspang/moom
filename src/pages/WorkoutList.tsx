@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, DataTable, EmptyState, type Column } from '@/components/common';
+import { PageHeader, SearchBar, DataTable, EmptyState, ManageDropdown, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -23,6 +23,10 @@ import {
 import { CreateTrainingDialog } from '@/components/workouts/CreateTrainingDialog';
 import { EditWorkoutItemDialog } from '@/components/workouts/EditWorkoutItemDialog';
 import { EditTrainingNameDialog } from '@/components/workouts/EditTrainingNameDialog';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { toast } from 'sonner';
+
+const TEMPLATE_HEADERS = ['training_name', 'workout_name', 'track_metric', 'unit', 'goal_type', 'description'];
 
 const WorkoutList = () => {
   const { t } = useLanguage();
@@ -47,6 +51,40 @@ const WorkoutList = () => {
 
   const toggleSection = (id: string) =>
     setOpenSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+
+  const handleExport = () => {
+    if (!trainings?.length) { toast.info(t('common.noData')); return; }
+    const flatItems: any[] = [];
+    trainings.forEach((tr) => {
+      tr.workout_items.forEach((item) => {
+        flatItems.push({ training_name: tr.name, ...item });
+      });
+    });
+    const csvColumns: CsvColumn<any>[] = [
+      { key: 'training_name', header: 'Training Name', accessor: (r) => r.training_name },
+      { key: 'name', header: 'Workout Name', accessor: (r) => r.name },
+      { key: 'track_metric', header: 'Track Metric', accessor: (r) => r.track_metric },
+      { key: 'unit', header: 'Unit', accessor: (r) => r.unit },
+      { key: 'goal_type', header: 'Goal Type', accessor: (r) => r.goal_type },
+      { key: 'description', header: 'Description', accessor: (r) => r.description },
+    ];
+    exportToCsv(flatItems, csvColumns, 'workouts');
+    toast.success(t('common.export'));
+  };
+
+  const handleDownloadTemplate = () => {
+    const csv = TEMPLATE_HEADERS.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'workouts-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
+  };
 
   const columns: Column<WorkoutItemRow>[] = [
     { key: 'name', header: t('workouts.workout'), cell: (row) => row.name },
@@ -77,10 +115,17 @@ const WorkoutList = () => {
         title={t('workouts.title')}
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('workouts.title') }]}
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            {t('workouts.createTraining')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ManageDropdown
+              onExport={handleExport}
+              onDownloadTemplate={handleDownloadTemplate}
+              exportDisabled={!trainings?.length}
+            />
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              {t('workouts.createTraining')}
+            </Button>
+          </div>
         }
       />
 
@@ -169,7 +214,6 @@ const WorkoutList = () => {
 
       <CreateTrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
-      {/* Edit workout item dialog */}
       {editItem && (
         <EditWorkoutItemDialog
           open={!!editItem}
@@ -178,7 +222,6 @@ const WorkoutList = () => {
         />
       )}
 
-      {/* Edit training name dialog */}
       {editTraining && (
         <EditTrainingNameDialog
           open={!!editTraining}
@@ -187,7 +230,6 @@ const WorkoutList = () => {
         />
       )}
 
-      {/* Delete workout item confirmation */}
       <AlertDialog open={!!deleteItem} onOpenChange={(v) => { if (!v) setDeleteItem(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -213,7 +255,6 @@ const WorkoutList = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete training confirmation */}
       <AlertDialog open={!!deleteTraining} onOpenChange={(v) => { if (!v) setDeleteTraining(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, StatusTabs, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, StatusTabs, ManageDropdown, type Column, type StatusTab } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
@@ -11,8 +11,8 @@ import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download } from 'lucide-react';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const PAGE_SIZE = 50;
@@ -141,6 +141,52 @@ const Finance = () => {
     ];
     const date = new Date().toISOString().split('T')[0];
     exportToCsv(transactions, csvColumns, `finance-export-${date}`);
+    toast.success(t('common.export'));
+  };
+
+  const handleExportSlips = () => {
+    if (!slips?.length) return;
+    const csvColumns: CsvColumn<any>[] = [
+      { key: 'dateTime', header: 'Date', accessor: (r) => format(new Date(r.created_at), 'yyyy-MM-dd HH:mm') },
+      { key: 'transactionId', header: 'Transaction ID', accessor: (r) => r.transaction_id },
+      { key: 'packageName', header: 'Package', accessor: (r) => r.package?.name_en || r.order_name },
+      { key: 'soldTo', header: 'Sold To', accessor: (r) => r.member ? `${r.member.first_name} ${r.member.last_name}` : '' },
+      { key: 'amount', header: 'Amount', accessor: (r) => r.amount },
+      { key: 'status', header: 'Status', accessor: (r) => r.status || '' },
+    ];
+    const date = new Date().toISOString().split('T')[0];
+    exportToCsv(slips, csvColumns, `transfer-slips-${date}`);
+    toast.success(t('common.export'));
+  };
+
+  const handleDownloadTxTemplate = () => {
+    const headers = ['transaction_id', 'order_name', 'type', 'amount', 'payment_method', 'status'];
+    const csv = headers.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'transactions-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
+  };
+
+  const handleDownloadSlipTemplate = () => {
+    const headers = ['transaction_id', 'order_name', 'amount', 'status'];
+    const csv = headers.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'transfer-slips-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
   };
 
   const txColumns: Column<any>[] = [
@@ -266,10 +312,17 @@ const Finance = () => {
         breadcrumbs={[{ label: t('nav.finance') }, { label: t('finance.title') }]}
         actions={
           activeMainTab === 'transactions' ? (
-            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={!transactions?.length}>
-              <Download className="h-4 w-4 mr-1.5" />
-              {t('finance.export')}
-            </Button>
+            <ManageDropdown
+              onExport={handleExportCsv}
+              onDownloadTemplate={handleDownloadTxTemplate}
+              exportDisabled={!transactions?.length}
+            />
+          ) : activeMainTab === 'slips' ? (
+            <ManageDropdown
+              onExport={handleExportSlips}
+              onDownloadTemplate={handleDownloadSlipTemplate}
+              exportDisabled={!slips?.length}
+            />
           ) : undefined
         }
       />
