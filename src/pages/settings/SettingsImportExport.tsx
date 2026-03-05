@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,19 +148,40 @@ const SettingsImportExport = () => {
           break;
         }
         case 'packages': {
-          const { data, error } = await supabase.from('packages').select('*').order('created_at', { ascending: false });
-          if (error) throw error;
+          const [pkgRes, locRes] = await Promise.all([
+            supabase.from('packages').select('*').order('created_at', { ascending: false }),
+            supabase.from('locations').select('id, name'),
+          ]);
+          if (pkgRes.error) throw pkgRes.error;
+          const pkgs = pkgRes.data || [];
+          const locMap = new Map((locRes.data || []).map((l: any) => [l.id, l.name]));
+          const idMap = new Map(pkgs.map((p: any, i: number) => [p.id, `PKG-${String(i + 1).padStart(5, '0')}`]));
+          const resolveLocations = (r: any) => {
+            if (r.all_locations) return 'All';
+            if (!r.access_locations?.length) return '-';
+            return r.access_locations.map((id: string) => locMap.get(id) || id).join(', ');
+          };
+          const resolveCategories = (r: any) => {
+            if (r.all_categories) return 'All';
+            if (!r.categories?.length) return '-';
+            return r.categories.join(', ');
+          };
           const cols: CsvColumn<any>[] = [
+            { key: 'id', header: 'ID', accessor: r => idMap.get(r.id) ?? r.id },
             { key: 'name_en', header: 'name_en', accessor: r => r.name_en },
             { key: 'name_th', header: 'name_th', accessor: r => r.name_th },
             { key: 'type', header: 'type', accessor: r => r.type },
             { key: 'price', header: 'price', accessor: r => r.price },
-            { key: 'sessions', header: 'sessions', accessor: r => r.sessions },
+            { key: 'sessions', header: 'sessions', accessor: r => r.sessions ?? '-' },
             { key: 'expiration_days', header: 'expiration_days', accessor: r => r.expiration_days },
             { key: 'term_days', header: 'term_days', accessor: r => r.term_days },
-            { key: 'status', header: 'status', accessor: r => r.status },
+            { key: 'categories', header: 'Categories', accessor: r => resolveCategories(r) },
+            { key: 'access_locations', header: 'Access locations', accessor: r => resolveLocations(r) },
+            { key: 'sold_at', header: 'Sold at', accessor: r => resolveLocations(r) },
+            { key: 'date_modified', header: 'Date modified', accessor: r => r.updated_at ? format(new Date(r.updated_at), 'd MMM yyyy').toUpperCase() : '-' },
+            { key: 'status', header: 'status', accessor: r => r.status ?? 'drafts' },
           ];
-          exportToCsv(data || [], cols, `packages-export-${new Date().toISOString().split('T')[0]}`);
+          exportToCsv(pkgs, cols, `packages-export-${new Date().toISOString().split('T')[0]}`);
           break;
         }
         case 'promotions': {
