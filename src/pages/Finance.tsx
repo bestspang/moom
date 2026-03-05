@@ -126,18 +126,33 @@ const Finance = () => {
     }
   };
 
+  const formatPaymentMethod = (method: string | null): string => {
+    const map: Record<string, string> = {
+      cash: 'Cash',
+      bank_transfer: 'Bank Transfer',
+      credit_card: 'Credit Card',
+      promptpay: 'QR PromptPay',
+    };
+    return method ? (map[method] || method) : '-';
+  };
+
   const handleExportCsv = () => {
     if (!transactions?.length) return;
     const csvColumns: CsvColumn<any>[] = [
-      { key: 'dateTime', header: t('finance.dateTime'), accessor: (r) => format(new Date(r.created_at), 'yyyy-MM-dd HH:mm') },
-      { key: 'transactionId', header: t('finance.transactionNo'), accessor: (r) => r.transaction_id },
-      { key: 'orderName', header: t('finance.orderName'), accessor: (r) => r.order_name },
-      { key: 'type', header: t('packages.type'), accessor: (r) => r.type || '' },
-      { key: 'soldTo', header: t('finance.soldTo'), accessor: (r) => r.member ? `${r.member.first_name} ${r.member.last_name}` : '' },
-      { key: 'location', header: t('finance.location'), accessor: (r) => r.location?.name || '' },
-      { key: 'amount', header: t('finance.amount'), accessor: (r) => r.amount },
-      { key: 'paymentMethod', header: t('finance.paymentMethod'), accessor: (r) => r.payment_method || '' },
-      { key: 'status', header: t('common.status'), accessor: (r) => r.status || '' },
+      { key: 'dateTime', header: 'Date & Time', accessor: (r) => format(new Date(r.created_at), 'd MMM yyyy, HH:mm').toUpperCase() },
+      { key: 'transactionId', header: 'Transaction no.', accessor: (r) => r.transaction_id },
+      { key: 'orderName', header: 'Order name', accessor: (r) => r.order_name },
+      { key: 'type', header: 'Type', accessor: (r) => r.type || '-' },
+      { key: 'soldTo', header: 'Sold to', accessor: (r) => r.member ? `${r.member.first_name} ${r.member.last_name}` : '-' },
+      { key: 'registerLocation', header: 'Register location', accessor: (r) => r.location?.name || '-' },
+      { key: 'priceExclVat', header: 'Price excluding vat', accessor: (r) => (Number(r.amount) / 1.07).toFixed(2) },
+      { key: 'vat', header: 'VAT @7%', accessor: (r) => (Number(r.amount) - Number(r.amount) / 1.07).toFixed(2) },
+      { key: 'priceInclVat', header: 'Price including vat', accessor: (r) => Number(r.amount).toFixed(2) },
+      { key: 'soldAt', header: 'Sold at', accessor: (r) => r.location?.name || '-' },
+      { key: 'paymentMethod', header: 'Payment method', accessor: (r) => formatPaymentMethod(r.payment_method) },
+      { key: 'taxInvoice', header: 'Tax invoice no.', accessor: (r) => r.tax_invoice_url || '-' },
+      { key: 'status', header: 'Status', accessor: (r) => r.status || '-' },
+      { key: 'staff', header: 'Staff', accessor: (r) => r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : '-' },
     ];
     const date = new Date().toISOString().split('T')[0];
     exportToCsv(transactions, csvColumns, `finance-export-${date}`);
@@ -160,7 +175,7 @@ const Finance = () => {
   };
 
   const handleDownloadTxTemplate = () => {
-    const headers = ['transaction_id', 'order_name', 'type', 'amount', 'payment_method', 'status'];
+    const headers = ['Date & Time', 'Transaction no.', 'Order name', 'Type', 'Sold to', 'Register location', 'Price excluding vat', 'VAT @7%', 'Price including vat', 'Sold at', 'Payment method', 'Tax invoice no.', 'Status', 'Staff'];
     const csv = headers.join(',');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
