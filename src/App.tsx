@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -148,6 +148,7 @@ const App = () => (
                 <Route path="member-app" element={<MemberAppPreview />} />
                 <Route path="trainer-app" element={<TrainerAppPreview />} />
                 <Route path="setting" element={<Settings />}>
+                  <Route index element={<Navigate to="general" replace />} />
                   <Route path="general" element={<SettingsGeneral />} />
                   <Route path="class-management" element={<SettingsClass />} />
                   <Route path="client-management" element={<SettingsClient />} />
