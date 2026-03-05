@@ -1,32 +1,44 @@
 
 
-# Add Bulk Actions to Staff Page
+# Fix: Finance Import Enum Mismatches
 
-## Changes
+## Root Cause
 
-### 1. Add bulk mutation hooks in `src/hooks/useStaff.ts`
-Following the exact Classes pattern, add three hooks:
-- `useBulkUpdateStaffStatus` — update status (active/pending/terminated) for selected IDs
-- `useBulkDeleteStaff` — delete selected staff rows
-- `useBulkDuplicateStaff` — duplicate selected staff as "Copy of" with status=pending
+The `normalizePaymentMethod` and `normalizeStatus` functions in `src/lib/importer/entityConfigs/finance.ts` return values that don't exist in the database enums:
 
-All three invalidate `['staff']` + `['staff-stats']` and log activity.
+| Function | Returns | DB Enum Values |
+|---|---|---|
+| `normalizePaymentMethod` | `'cash'` | `credit_card`, `bank_transfer`, `qr_promptpay` (no `cash`) |
+| `normalizeStatus` | `'completed'`, `'refunded'` | `paid`, `pending`, `voided`, `needs_review` (no `completed` or `refunded`) |
 
-### 2. Update `src/pages/Staff.tsx`
-- Add `selectedRows` state + `handleSelectRow`/`handleSelectAll`/`clearSelection` callbacks (same as Classes page)
-- Import `BulkActionBar` from common + new bulk hooks
-- Pass `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` to `DataTable`
-- Render `BulkActionBar` with staff status options (`active`/`pending`/`terminated`)
-- Wire export-selected to filter staff by selectedRows
-- Clear selection on search/tab change
+This causes 100% failure on import — every row hits an enum violation.
 
-### Status options for bulk bar
-```
-{ value: 'active', label: 'Active' }
-{ value: 'pending', label: 'Pending' }
-{ value: 'terminated', label: 'Terminated' }
+## Fix
+
+### 1. Add `cash` to `payment_method` enum (DB migration)
+```sql
+ALTER TYPE payment_method ADD VALUE 'cash';
 ```
 
-### Risk
-Low — additive only. Existing staff list behavior unchanged. DataTable already supports selectable mode.
+### 2. Fix `normalizeStatus` in `src/lib/importer/entityConfigs/finance.ts`
+Map to actual enum values:
+- `'paid'` / `'completed'` → `'paid'` (not `'completed'`)
+- `'refunded'` / `'refund'` → `'voided'` (closest match, or we add `refunded` to enum)
+- `'needs review'` → `'needs_review'`
+
+### 3. Fix `normalizePaymentMethod`
+- `'cash'` → `'cash'` (after enum addition)
+- Keep existing mappings (they're correct)
+
+### Optional: Add `refunded` to `transaction_status` enum
+If refunds are a real business case:
+```sql
+ALTER TYPE transaction_status ADD VALUE 'refunded';
+```
+
+## Files Changed
+- DB migration: add `cash` to `payment_method`, optionally `refunded` to `transaction_status`
+- `src/lib/importer/entityConfigs/finance.ts`: fix return values in both normalize functions
+
+Zero risk to existing data — `ALTER TYPE ADD VALUE` is additive only.
 
