@@ -36,7 +36,7 @@ function parseCsvFirstLine(text: string): { headers: string[]; rowCount: number 
 
 export type DetectedModule = 'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'finance' | 'slips' | null;
 
-const IMPORTABLE_MODULES: DetectedModule[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance'];
+const IMPORTABLE_MODULES: DetectedModule[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance', 'slips'];
 
 interface ModuleSignature {
   module: DetectedModule;
@@ -134,7 +134,7 @@ export interface QueuedFile {
 }
 
 interface BulkImportDropZoneProps {
-  onStartImport: (file: File, module: 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance') => void;
+  onStartImport: (file: File, module: 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance' | 'slips') => void;
 }
 
 const ALL_MODULES: { value: DetectedModule; labelKey: string }[] = [
@@ -206,7 +206,7 @@ const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
 
   const handleStartImport = (item: QueuedFile) => {
     if (!item.selectedModule || !isImportable(item.selectedModule)) return;
-    onStartImport(item.file, item.selectedModule as 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance');
+    onStartImport(item.file, item.selectedModule as 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance' | 'slips');
     removeFile(item.id);
   };
 
@@ -281,7 +281,7 @@ const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
                       {ALL_MODULES.map(m => (
                         <SelectItem key={m.value!} value={m.value!}>{t(m.labelKey)}</SelectItem>
                       ))}
-                      <SelectItem value="__none__">{t('settings.importExport.unknown')}</SelectItem>
+                      <SelectItem value="__none__">{t('settings.importExport.selectType') || 'Select type...'}</SelectItem>
                     </SelectContent>
                   </Select>
 

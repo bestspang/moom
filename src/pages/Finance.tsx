@@ -339,6 +339,7 @@ const Finance = () => {
             <ManageDropdown
               onExport={handleExportSlips}
               onDownloadTemplate={handleDownloadSlipTemplate}
+              onImport={() => setImportOpen(true)}
               exportDisabled={!slips?.length}
             />
           ) : undefined
@@ -558,7 +559,7 @@ const Finance = () => {
         </TabsContent>
       </Tabs>
 
-      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="finance" />
+      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity={activeMainTab === 'slips' ? 'slips' : 'finance'} />
     </div>
   );
 };
