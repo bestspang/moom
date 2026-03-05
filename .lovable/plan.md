@@ -1,32 +1,47 @@
 
 
-# Fix: Add "Date modified" and missing columns to Settings package export
+# Fix: Promotions export missing columns in Settings
 
 ## Problem
-The package export from **Settings > Import/Export** page (`SettingsImportExport.tsx` lines 149-163) only exports 8 basic columns: `name_en, name_th, type, price, sessions, expiration_days, term_days, status`.
-
-It is missing columns that the Packages page export (`Packages.tsx` lines 105-119) already includes:
-- **ID** (formatted as PKG-00001)
-- **Categories**
-- **Access locations**
-- **Sold at** (same as access locations)
-- **Date modified** (from `updated_at`)
-
-The user's screenshot shows these columns are expected in the export.
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
 ## Fix (surgical, 1 file)
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 149-163
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Update the packages export `cols` array to match the full column set from the Packages page export, adding:
-1. `id` column — formatted as `PKG-{index}` (same pattern as Packages page)
-2. `categories` — resolve from `all_categories` / `categories` array
-3. `access_locations` — resolve from `all_locations` / `access_locations` array joined with locations table
-4. `sold_at` — same as access_locations
-5. `date_modified` — from `updated_at`, formatted as `d MMM yyyy` uppercase
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Also fetch locations (join or separate query) to resolve location UUIDs to names, matching how the Packages page does it.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
 ## Risk
-- **Low**: Only changes the CSV output of one export path. No other behavior affected.
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
