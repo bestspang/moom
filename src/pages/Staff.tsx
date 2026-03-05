@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useStaff, useStaffStats } from '@/hooks/useStaff';
+import { useStaff, useStaffStats, useBulkUpdateStaffStatus, useBulkDeleteStaff, useBulkDuplicateStaff } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLocations';
 import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
@@ -16,6 +16,12 @@ import { toast } from 'sonner';
 
 const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
+const STAFF_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'terminated', label: 'Terminated' },
+];
+
 const Staff = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -23,12 +29,29 @@ const Staff = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   const { data: staff, isLoading } = useStaff(activeTab, search);
   const { data: stats } = useStaffStats();
   const { data: locations } = useLocations();
 
+  const bulkStatus = useBulkUpdateStaffStatus();
+  const bulkDelete = useBulkDeleteStaff();
+  const bulkDuplicate = useBulkDuplicateStaff();
+  const isBulkLoading = bulkStatus.isPending || bulkDelete.isPending || bulkDuplicate.isPending;
+
   const locationMap = new Map(locations?.map(l => [l.id, l.name]) || []);
+
+  const handleSelectRow = useCallback((id: string) => {
+    setSelectedRows((prev) => prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]);
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (!staff) return;
+    setSelectedRows((prev) => prev.length === staff.length ? [] : staff.map((s) => s.id));
+  }, [staff]);
+
+  const clearSelection = useCallback(() => setSelectedRows([]), []);
 
   const statusTabs: StatusTab[] = [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
@@ -82,22 +105,31 @@ const Staff = () => {
     return parts.length > 0 ? parts.join(', ') : '-';
   };
 
+  const buildCsvColumns = (): CsvColumn<any>[] => [
+    { key: 'first_name', header: 'Firstname', accessor: (r) => r.first_name },
+    { key: 'last_name', header: 'Lastname', accessor: (r) => r.last_name },
+    { key: 'nickname', header: 'Nickname', accessor: (r) => r.nickname || '-' },
+    { key: 'role', header: 'Role', accessor: (r) => getRoleNames(r) },
+    { key: 'gender', header: 'Gender', accessor: (r) => r.gender || '-' },
+    { key: 'birthdate', header: 'Birthdate', accessor: (r) => r.date_of_birth || '-' },
+    { key: 'email', header: 'Email', accessor: (r) => r.email || '-' },
+    { key: 'phone', header: 'Phone', accessor: (r) => r.phone || '-' },
+    { key: 'address', header: 'Address', accessor: (r) => getAddress(r) },
+    { key: 'branch', header: 'Branch', accessor: (r) => getLocationScopeLabel(r) },
+    { key: 'status', header: 'Status', accessor: (r) => r.status || '-' },
+  ];
+
   const handleExport = () => {
     if (!staff?.length) { toast.info(t('common.noData')); return; }
-    const csvColumns: CsvColumn<any>[] = [
-      { key: 'first_name', header: 'Firstname', accessor: (r) => r.first_name },
-      { key: 'last_name', header: 'Lastname', accessor: (r) => r.last_name },
-      { key: 'nickname', header: 'Nickname', accessor: (r) => r.nickname || '-' },
-      { key: 'role', header: 'Role', accessor: (r) => getRoleNames(r) },
-      { key: 'gender', header: 'Gender', accessor: (r) => r.gender || '-' },
-      { key: 'birthdate', header: 'Birthdate', accessor: (r) => r.date_of_birth || '-' },
-      { key: 'email', header: 'Email', accessor: (r) => r.email || '-' },
-      { key: 'phone', header: 'Phone', accessor: (r) => r.phone || '-' },
-      { key: 'address', header: 'Address', accessor: (r) => getAddress(r) },
-      { key: 'branch', header: 'Branch', accessor: (r) => getLocationScopeLabel(r) },
-      { key: 'status', header: 'Status', accessor: (r) => r.status || '-' },
-    ];
-    exportToCsv(staff, csvColumns, 'staff');
+    exportToCsv(staff, buildCsvColumns(), 'staff');
+    toast.success(t('common.export'));
+  };
+
+  const handleExportSelected = () => {
+    if (!staff) return;
+    const selected = staff.filter((s) => selectedRows.includes(s.id));
+    if (!selected.length) return;
+    exportToCsv(selected, buildCsvColumns(), 'staff-selected');
     toast.success(t('common.export'));
   };
 
@@ -196,11 +228,11 @@ const Staff = () => {
       <SearchBar 
         placeholder={t('staff.searchPlaceholder')} 
         value={search} 
-        onChange={setSearch} 
+        onChange={(v) => { setSearch(v); clearSelection(); }}
         className="max-w-md mb-6" 
       />
       
-      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={setActiveTab} />
+      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); clearSelection(); }} />
       
       {isLoading ? (
         <div className="space-y-3">
@@ -215,8 +247,26 @@ const Staff = () => {
           rowKey={(row) => row.id}
           emptyMessage={t('staff.noStaff')}
           onRowClick={(row) => navigate(`/admin/${row.id}`)}
+          selectable
+          selectedRows={selectedRows}
+          onSelectRow={handleSelectRow}
+          onSelectAll={handleSelectAll}
         />
       )}
+
+      <BulkActionBar
+        selectedCount={selectedRows.length}
+        onClearSelection={clearSelection}
+        onDelete={() => { bulkDelete.mutate(selectedRows, { onSuccess: clearSelection }); }}
+        onExport={handleExportSelected}
+        onDuplicate={() => {
+          const selected = (staff || []).filter((s) => selectedRows.includes(s.id));
+          bulkDuplicate.mutate(selected, { onSuccess: clearSelection });
+        }}
+        statusOptions={STAFF_STATUS_OPTIONS}
+        onChangeStatus={(status) => { bulkStatus.mutate({ ids: selectedRows, status }, { onSuccess: clearSelection }); }}
+        isLoading={isBulkLoading}
+      />
 
       <CreateStaffDialog open={createOpen} onOpenChange={setCreateOpen} />
       <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="staff" />
