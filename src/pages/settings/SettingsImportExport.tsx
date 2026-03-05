@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Users, UserPlus, Package, Tag, Shield, BookOpen, Dumbbell, DollarSign,
-  Download, Upload, FileDown, Loader2
+  Download, Upload, FileDown, Loader2, Receipt
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +65,11 @@ const modules: ModuleConfig[] = [
     id: 'workouts', icon: Dumbbell, labelKey: 'workouts',
     hasExport: true, hasImport: false,
     templateHeaders: ['name','is_active','items_count'],
+  },
+  {
+    id: 'slips', icon: Receipt, labelKey: 'slips',
+    hasExport: false, hasImport: false, importEntity: 'slips' as EntityId,
+    templateHeaders: ['Transaction no.','Slip file url','Slip amount','Slip datetime','Sender bank','Sender last4','Status','Review note'],
   },
 ];
 
@@ -231,7 +236,7 @@ const SettingsImportExport = () => {
     const labels: Record<string, string> = {
       members: t('nav.members'), leads: t('nav.leads'), packages: t('nav.packages'),
       promotions: t('nav.promotions'), staff: t('nav.staff'), finance: t('nav.finance'),
-      classes: t('nav.classes'), workouts: t('nav.workoutList'),
+      classes: t('nav.classList'), workouts: t('nav.workoutList'), slips: t('nav.transferSlips'),
     };
     return labels[mod.id] || mod.id;
   };
