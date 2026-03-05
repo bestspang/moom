@@ -1,167 +1,70 @@
 
 
-# Transfer Slips Module — End-to-End Implementation Plan
+# Improve CSV Import Dialogs — Required/Optional Fields, Preview, Enum Validation
 
-## Current State Analysis
+## Current State
+- `ImportCenterDialog` has a single flat column mapping list with no required/optional distinction
+- No helper text explaining the mapping UI
+- Preview shows only 3 fields truncated per row — no per-field detail
+- Finance importer silently drops unrecognized `_type` values (returns `null` from `normalizePackageType`)
+- No enum mismatch warnings anywhere
+- `EntityConfig.targetFields` has no `required` flag — all fields look the same
 
-**What exists today:**
-- Transfer slips are just a filtered view of the `transactions` table (where `payment_method = 'bank_transfer'`)
-- No dedicated `transfer_slips` table
-- No approve/reject/void workflow
-- No slip detail modal
-- No connection to `member_packages` or `member_billing` on approval
-- Existing tables: `transactions`, `member_packages`, `member_billing`, `activity_log`
+## Plan
 
-**Key constraint:** We must NOT break the existing Finance page or its transactions tab. The `transactions` table stays as-is. We add a new `transfer_slips` table that links to it.
-
----
-
-## Scope
-
-**IN:**
-1. New `transfer_slips` DB table with proper schema
-2. Hooks for CRUD + approve/reject/void mutations
-3. Rewrite `TransferSlips.tsx` page with proper filters, search, status tabs
-4. Slip detail dialog with approve/reject/void actions
-5. Approve flow: atomically create `transactions` record, `member_billing` record, optionally `member_packages` record, and `activity_log` entries
-6. Reject flow: require reason, log activity
-7. Void flow: mark slip voided, void linked transaction, log activity
-8. Import CSV into `transfer_slips` (status=needs_review)
-9. Export CSV from current filtered view
-10. Slips importer entity config
-
-**OUT (future):**
-- File upload/storage for slip images (no storage bucket yet)
-- Stripe integration
-- Billing document PDF generation
-- Dedupe hash (can add later)
-
----
-
-## Implementation Plan
-
-### Step 1: Database Migration — Create `transfer_slips` table
-
-```sql
-CREATE TYPE transfer_slip_status AS ENUM ('needs_review', 'approved', 'rejected', 'voided');
-
-CREATE TABLE transfer_slips (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  slip_datetime timestamptz,
-  member_id uuid REFERENCES members(id),
-  member_name_text text,
-  member_phone_text text,
-  location_id uuid REFERENCES locations(id),
-  amount_thb numeric NOT NULL DEFAULT 0,
-  bank_reference text,
-  payment_method payment_method DEFAULT 'bank_transfer',
-  slip_file_url text,
-  status transfer_slip_status DEFAULT 'needs_review',
-  reviewer_staff_id uuid REFERENCES staff(id),
-  reviewed_at timestamptz,
-  review_note text,
-  linked_transaction_id uuid REFERENCES transactions(id),
-  package_id uuid REFERENCES packages(id),
-  raw_import_row_json jsonb
-);
-
--- Indexes
-CREATE INDEX idx_transfer_slips_status ON transfer_slips(status);
-CREATE INDEX idx_transfer_slips_datetime ON transfer_slips(slip_datetime);
-CREATE INDEX idx_transfer_slips_amount ON transfer_slips(amount_thb);
-CREATE INDEX idx_transfer_slips_linked_tx ON transfer_slips(linked_transaction_id);
-
--- Updated_at trigger
-CREATE TRIGGER set_transfer_slips_updated_at
-  BEFORE UPDATE ON transfer_slips
-  FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
-
--- RLS
-ALTER TABLE transfer_slips ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Managers can read transfer slips"
-  ON transfer_slips FOR SELECT TO authenticated
-  USING (has_min_access_level(auth.uid(), 'level_3_manager'));
-
-CREATE POLICY "Managers can manage transfer slips"
-  ON transfer_slips FOR ALL TO authenticated
-  USING (has_min_access_level(auth.uid(), 'level_3_manager'));
+### 1. Extend `EntityConfig` type (`src/lib/importer/types.ts`)
+Add `required?: boolean` to `targetFields` items:
+```ts
+targetFields: { value: string; label: string; required?: boolean }[];
 ```
 
-### Step 2: Create `src/hooks/useTransferSlips.ts`
+### 2. Mark required fields in each entity config
+- **Finance**: `transaction_id`, `amount`, `order_name` → required
+- **Members**: `first_name` → required  
+- **Leads**: `first_name` → required
+- **Packages**: `name_en`, `type`, `price` → required
+- **Staff**: `first_name`, `email` → required
+- **Promotions**: `name` → required
+- **Slips**: `amount_thb`, `slip_datetime` → required
+- **Classes/Workouts**: `name` → required
 
-New dedicated hook file with:
-- `useTransferSlipsList(filters)` — query `transfer_slips` joined with `members`, `packages`, `locations`, `staff` (reviewer)
-- `useTransferSlipStats()` — counts by status
-- `useTransferSlipDetail(id)` — single slip with all relations
-- `useApproveSlip()` — mutation: validate → create transaction → create member_billing → optionally create member_package → update slip status → log activity
-- `useRejectSlip()` — mutation: update status to rejected with review_note → log activity
-- `useVoidSlip()` — mutation: update slip to voided → void linked transaction → log activity
+### 3. Add validation warning for unrecognized enum values (Finance)
+In `finance.ts` `validateRow`:
+- If `_type` is present but `normalizePackageType()` returns null → add warning: `"Unrecognized type: '{value}'. Expected: unlimited, session, pt"`
+- Same for `payment_method` and `status` if normalization fails
 
-All mutations invalidate `['transfer-slips']`, `['transfer-slip-stats']`, `['finance-transactions']`, `['transactions']`.
+### 4. Rewrite mapping step in `ImportCenterDialog`
+Split into two sections:
+- **A) Required fields** — show all required target fields, each with a source column dropdown. If mapped to Skip → inline red error, block Next button
+- **B) Optional fields** — show remaining mapped columns with Skip allowed
+- Add helper text at top: "Dropdown shows all fields supported by this table. If your CSV doesn't contain a field, choose Skip."
+- Flip the mapping direction: iterate over **target fields** (not CSV headers), showing source column dropdown for each
 
-### Step 3: Create `src/components/transfer-slips/SlipDetailDialog.tsx`
+### 5. Enhanced preview step
+- Show first 10 rows in a table with **all mapped field columns** (not just 3 truncated values)
+- Per-field highlighting: if a field has a normalization issue, show it in orange
+- Add "Download error CSV" button in preview (before import), not just after
 
-Dialog/drawer showing:
-- Slip info (datetime, member, location, amount, method, bank reference)
-- If matched: linked transaction details
-- Action buttons:
-  - **Approve**: opens inline form to optionally select package, confirm amount, add note. On submit calls `useApproveSlip`
-  - **Reject**: requires review_note text, calls `useRejectSlip`
-  - **Void** (only if status=approved): calls `useVoidSlip`
-- Activity log timeline for this slip (filtered from activity_log by entity_type='transfer_slip')
-
-### Step 4: Rewrite `src/pages/TransferSlips.tsx`
-
-- Date range picker (default: last 7 days)
-- Status tabs: Needs review / Approved (Paid) / Voided
-- Search input searching member name, phone, bank_reference
-- Table columns: slip_datetime, transaction_no (linked or "-"), package_name, package_type, sold_to, location, amount_thb, status + review action button
-- Row click opens SlipDetailDialog
-- ManageDropdown with Import/Export
-- Location column from joined locations
-
-### Step 5: Create `src/lib/importer/entityConfigs/slips.ts`
-
-Real importer (replacing the stub):
-- Header aliases mapping CSV columns to transfer_slips fields
-- Target fields: slip_datetime, amount_thb, payment_method, member_name/phone/id, location, bank_reference, notes
-- Validation: amount required & numeric, slip_datetime parseable, payment_method normalizable
-- Upsert: resolve member by id/phone/name, resolve location by id/name, insert into `transfer_slips` with status=needs_review, store raw row
-- Required: amount_thb, slip_datetime. At least one of member_id/phone/name
-
-### Step 6: Update `src/lib/importer/index.ts`
-
-Replace the stub `slips` config with the real one from step 5.
-
-### Step 7: Update existing hooks
-
-- Update `useTransferSlips` and `useTransferSlipStats` in `src/hooks/useFinance.ts` to query from `transfer_slips` table instead of filtering `transactions`. Or deprecate them in favor of the new hook. The Finance page slips tab will use the new hook.
-
-### Step 8: Update Finance page slips tab
-
-Update `src/pages/Finance.tsx` slips tab section to use the new `useTransferSlipsList` hook instead of the old `useTransferSlips` from useFinance.
-
----
-
-## Files to Create
-- `src/hooks/useTransferSlips.ts`
-- `src/components/transfer-slips/SlipDetailDialog.tsx`
-- `src/lib/importer/entityConfigs/slips.ts`
-- DB migration SQL
+### 6. Finance-specific: separate `transaction_type` and `package_type`
+- Add `_transaction_type` target field to finance config (purchase/refund/void)
+- Rename existing `_type` to `_package_type` for clarity
+- In `upsertRows`: if `_transaction_type` not mapped, default to `'purchase'` (but this field doesn't exist in the `transactions` table schema currently — so store in notes or skip for now since the DB has no `transaction_type` column)
+- Actually: the DB `transactions.type` column is `package_type` enum. There is no `transaction_type` column. So we keep mapping `_type` → `package_type` enum, and add the warning when unrecognized.
 
 ## Files to Modify
-- `src/pages/TransferSlips.tsx` (rewrite)
-- `src/pages/Finance.tsx` (update slips tab to use new hook)
-- `src/hooks/useFinance.ts` (deprecate old slip hooks or redirect)
-- `src/lib/importer/index.ts` (replace stub)
-- `src/i18n/locales/en.ts` and `th.ts` (new keys for approve/reject/void UI)
+1. `src/lib/importer/types.ts` — add `required` to target field type
+2. `src/lib/importer/entityConfigs/finance.ts` — add enum validation warnings, mark required fields
+3. `src/lib/importer/entityConfigs/members.ts` — mark required fields
+4. `src/lib/importer/entityConfigs/leads.ts` — mark required fields
+5. `src/lib/importer/entityConfigs/packages.ts` — mark required fields
+6. `src/lib/importer/entityConfigs/staff.ts` — mark required fields
+7. `src/lib/importer/entityConfigs/promotions.ts` — mark required fields
+8. `src/lib/importer/entityConfigs/slips.ts` — mark required fields
+9. `src/lib/importer/entityConfigs/classes.ts` — mark required fields
+10. `src/lib/importer/entityConfigs/workouts.ts` — mark required fields
+11. `src/components/import/ImportCenterDialog.tsx` — rewrite mapping step (required/optional sections, helper text, enhanced preview)
 
-## Risk Assessment
-- **Low**: New table, additive only. No existing schema changes.
-- **Medium**: Finance page slips tab changes — but it's a simple hook swap.
-- Existing `transactions` table untouched. Old finance import still works.
-- RLS on new table follows existing pattern (Manager+).
+## Risk
+- Low: additive changes to EntityConfig type (backward compatible with `required?: boolean`)
+- Medium: ImportCenterDialog mapping step rewrite — but it's self-contained UI, no other consumers
 
