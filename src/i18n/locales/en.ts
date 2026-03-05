@@ -1420,6 +1420,11 @@ export default {
       exportSuccess: 'Data exported successfully',
       exportError: 'Failed to export data',
       templateDownloaded: 'Template downloaded',
+      bulkDropTitle: 'Drop CSV files here to bulk import',
+      bulkDropDesc: 'Drop multiple .csv files — auto-detects Members or Leads',
+      rows: 'rows',
+      unknown: 'Unknown',
+      startImport: 'Import',
     },
   },
 
