@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, FileText, Users, UserPlus, X, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, X, AlertTriangle, Package, Megaphone, UserCog, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── CSV header parsing (first line only) ──
@@ -11,7 +12,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 function parseCsvFirstLine(text: string): { headers: string[]; rowCount: number } {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length === 0) return { headers: [], rowCount: 0 };
-  // Simple CSV line parse
   const headers: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -32,27 +32,87 @@ function parseCsvFirstLine(text: string): { headers: string[]; rowCount: number 
   return { headers, rowCount: lines.length - 1 };
 }
 
-// ── Auto-detection ──
+// ── Auto-detection with real CSV header aliases ──
 
-type DetectedModule = 'members' | 'leads' | null;
+export type DetectedModule = 'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'finance' | null;
+
+const IMPORTABLE_MODULES: DetectedModule[] = ['members', 'leads'];
+
+interface ModuleSignature {
+  module: DetectedModule;
+  /** Headers that strongly signal this module (lowercase, trimmed) */
+  signals: string[];
+}
+
+const MODULE_SIGNATURES: ModuleSignature[] = [
+  {
+    module: 'finance',
+    signals: ['transaction no.', 'transaction no', 'order name', 'vat', 'vat @7%', 'payment method', 'tax invoice no.', 'tax invoice no', 'price excluding vat', 'price including vat'],
+  },
+  {
+    module: 'packages',
+    signals: ['term(d)', 'sessions', 'access locations', 'sold at', 'categories'],
+  },
+  {
+    module: 'promotions',
+    signals: ['promo code', 'promo_code', 'discount', 'started on', 'ending on'],
+  },
+  {
+    module: 'staff',
+    signals: ['role', 'branch'],
+  },
+  {
+    module: 'members',
+    signals: ['joined date', 'member_id', 'member_since', 'medical conditions', 'medical_notes', 'allow_physical_contact', 'line_id'],
+  },
+  {
+    module: 'leads',
+    signals: ['temperature', 'internal_notes', 'package_interest_id', 'times_contacted', 'last_contacted'],
+  },
+];
+
+function normalize(h: string): string {
+  return h.toLowerCase().replace(/[\ufeff"]/g, '').replace(/\s+/g, ' ').trim();
+}
 
 function detectModule(headers: string[], fileName: string): { module: DetectedModule; confidence: number } {
-  const normalized = headers.map(h => h.toLowerCase().trim());
-  const memberSignals = ['member_id', 'member_since', 'line_id', 'allow_physical_contact'];
-  const leadSignals = ['temperature', 'internal_notes', 'package_interest_id'];
+  const norm = headers.map(normalize);
 
-  const memberScore = memberSignals.filter(s => normalized.includes(s)).length;
-  const leadScore = leadSignals.filter(s => normalized.includes(s)).length;
+  let best: { module: DetectedModule; score: number } = { module: null, score: 0 };
 
-  if (memberScore > leadScore) return { module: 'members', confidence: memberScore };
-  if (leadScore > memberScore) return { module: 'leads', confidence: leadScore };
+  for (const sig of MODULE_SIGNATURES) {
+    const score = sig.signals.filter(s => norm.some(h => h.includes(s))).length;
+    if (score > best.score) {
+      best = { module: sig.module, score };
+    }
+  }
 
-  // Fallback: check filename
+  if (best.score > 0) return { module: best.module, confidence: best.score };
+
+  // Filename fallback
   const fn = fileName.toLowerCase();
   if (fn.includes('member')) return { module: 'members', confidence: 0.5 };
   if (fn.includes('lead')) return { module: 'leads', confidence: 0.5 };
+  if (fn.includes('package')) return { module: 'packages', confidence: 0.5 };
+  if (fn.includes('promo')) return { module: 'promotions', confidence: 0.5 };
+  if (fn.includes('staff')) return { module: 'staff', confidence: 0.5 };
+  if (fn.includes('finance') || fn.includes('transaction') || fn.includes('slip')) return { module: 'finance', confidence: 0.5 };
 
   return { module: null, confidence: 0 };
+}
+
+// ── Module icon helper ──
+
+function ModuleIcon({ module }: { module: DetectedModule }) {
+  switch (module) {
+    case 'members': return <Users className="h-4 w-4 text-primary" />;
+    case 'leads': return <UserPlus className="h-4 w-4 text-primary" />;
+    case 'packages': return <Package className="h-4 w-4 text-primary" />;
+    case 'promotions': return <Megaphone className="h-4 w-4 text-primary" />;
+    case 'staff': return <UserCog className="h-4 w-4 text-primary" />;
+    case 'finance': return <DollarSign className="h-4 w-4 text-primary" />;
+    default: return <AlertTriangle className="h-4 w-4 text-destructive" />;
+  }
 }
 
 // ── Types ──
@@ -70,6 +130,15 @@ export interface QueuedFile {
 interface BulkImportDropZoneProps {
   onStartImport: (file: File, module: 'members' | 'leads') => void;
 }
+
+const ALL_MODULES: { value: DetectedModule; labelKey: string }[] = [
+  { value: 'members', labelKey: 'nav.members' },
+  { value: 'leads', labelKey: 'nav.leads' },
+  { value: 'packages', labelKey: 'nav.packages' },
+  { value: 'promotions', labelKey: 'nav.promotions' },
+  { value: 'staff', labelKey: 'nav.staff' },
+  { value: 'finance', labelKey: 'nav.finance' },
+];
 
 const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
   const { t } = useLanguage();
@@ -126,9 +195,11 @@ const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
     setQueue(prev => prev.map(f => f.id === id ? { ...f, selectedModule: module } : f));
   };
 
+  const isImportable = (module: DetectedModule) => IMPORTABLE_MODULES.includes(module as any);
+
   const handleStartImport = (item: QueuedFile) => {
-    if (!item.selectedModule) return;
-    onStartImport(item.file, item.selectedModule);
+    if (!item.selectedModule || !isImportable(item.selectedModule)) return;
+    onStartImport(item.file, item.selectedModule as 'members' | 'leads');
     removeFile(item.id);
   };
 
@@ -170,68 +241,84 @@ const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
         {/* File queue */}
         {queue.length > 0 && (
           <div className="mt-4 space-y-2">
-            {queue.map(item => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
-              >
-                {/* Icon */}
-                <div className="flex-shrink-0">
-                  {item.selectedModule === 'members' ? (
-                    <Users className="h-4 w-4 text-primary" />
-                  ) : item.selectedModule === 'leads' ? (
-                    <UserPlus className="h-4 w-4 text-primary" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
-                  )}
-                </div>
-
-                {/* File info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-medium truncate">{item.file.name}</span>
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">
-                      {item.rowCount} {t('settings.importExport.rows')}
-                    </Badge>
+            {queue.map(item => {
+              const importable = isImportable(item.selectedModule);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
+                >
+                  <div className="flex-shrink-0">
+                    <ModuleIcon module={item.selectedModule} />
                   </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">{item.file.name}</span>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">
+                        {item.rowCount} {t('settings.importExport.rows')}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Module selector */}
+                  <Select
+                    value={item.selectedModule || '__none__'}
+                    onValueChange={(v) => updateModule(item.id, v === '__none__' ? null : v as DetectedModule)}
+                  >
+                    <SelectTrigger className="w-36 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALL_MODULES.map(m => (
+                        <SelectItem key={m.value!} value={m.value!}>{t(m.labelKey)}</SelectItem>
+                      ))}
+                      <SelectItem value="__none__">{t('settings.importExport.unknown')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Actions */}
+                  {importable ? (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-8 text-xs"
+                      onClick={() => handleStartImport(item)}
+                    >
+                      {t('settings.importExport.startImport')}
+                    </Button>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 text-xs"
+                            disabled
+                          >
+                            {t('settings.importExport.startImport')}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('settings.importExport.comingSoon')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 flex-shrink-0"
+                    onClick={() => removeFile(item.id)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-
-                {/* Module selector */}
-                <Select
-                  value={item.selectedModule || '__none__'}
-                  onValueChange={(v) => updateModule(item.id, v === '__none__' ? null : v as 'members' | 'leads')}
-                >
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="members">{t('nav.members')}</SelectItem>
-                    <SelectItem value="leads">{t('nav.leads')}</SelectItem>
-                    <SelectItem value="__none__">{t('settings.importExport.unknown')}</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {/* Actions */}
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="h-8 text-xs"
-                  disabled={!item.selectedModule}
-                  onClick={() => handleStartImport(item)}
-                >
-                  {t('settings.importExport.startImport')}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={() => removeFile(item.id)}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
