@@ -1,50 +1,49 @@
 
 
-# Fix: Enable Import CSV for Classes, Workouts, and Transfer Slips
+# Recheck: Import Center Full Spec Compliance
 
-## Problem
-The Import CSV buttons on Class list, Workout list, and Transfer slips cards are disabled (`hasImport: false`) because no entity configs exist for them.
+## Current State Summary
 
-## Plan
+The import system is largely complete. All 9 entity configs exist and are registered. The ImportCenterDialog supports column mapping, preview, validation, upsert, error CSV download, activity logging, and query invalidation. Members-specific features (default location picker, overwrite toggle) are implemented.
 
-### 1. Create entity configs for Classes and Workouts
+## Gaps Found
 
-**`src/lib/importer/entityConfigs/classes.ts`** — New file
-- Header aliases: name, name_th, type (class/pt), level (all_levels/beginner/intermediate/advanced), duration, status, description, description_th, category
-- Validate: require `name`
-- Upsert: match by `name` + `type`, insert/update `classes` table
-- Invalidate: `['classes']`
+### 1. Classes config — missing activity logging + missing invalid row filtering
+**File**: `src/lib/importer/entityConfigs/classes.ts`
+- No `logActivity` calls (batch or per-row)
+- `upsertRows` processes ALL rows including those with validation errors (doesn't filter `rows.filter(r => r.errors.length === 0)`)
+- Fix: Add `logActivity` import, filter valid/invalid rows, log batch result
 
-**`src/lib/importer/entityConfigs/workouts.ts`** — New file
-- Header aliases: name, description, is_active
-- Validate: require `name`
-- Upsert: match by `name`, insert/update `training_templates` table
-- Invalidate: `['training-templates']`
+### 2. Workouts config — missing activity logging + missing invalid row filtering
+**File**: `src/lib/importer/entityConfigs/workouts.ts`
+- Same issues as classes: no activity log, no error filtering
+- Fix: Same pattern as classes
 
-### 2. Update EntityId type and registry
+### 3. TransferSlips page — missing Import CSV in ManageDropdown
+**File**: `src/pages/TransferSlips.tsx`
+- The ManageDropdown only has export + template download — no "Import CSV" action
+- `ImportCenterDialog` is not imported or rendered
+- Fix: Add `importOpen` state, import `ImportCenterDialog`, add `onImport` to ManageDropdown
 
-**`src/lib/importer/types.ts`** — Add `'classes' | 'workouts'` to `EntityId`
+### 4. Slips export button disabled in SettingsImportExport but should show export
+**File**: `src/pages/settings/SettingsImportExport.tsx`  
+- Slips has `hasExport: false` but there's no export handler for it either — this is fine since there's no transfer_slips table. No change needed.
 
-**`src/lib/importer/index.ts`** — Import and register `classesConfig` and `workoutsConfig`
+### 5. ManageDropdown — need to verify `onImport` prop exists
+**File**: `src/components/common/ManageDropdown.tsx`
+- Need to check if it supports an `onImport` prop
 
-### 3. Enable import buttons in SettingsImportExport
+## Files to Read
 
-**`src/pages/settings/SettingsImportExport.tsx`** — Set `hasImport: true` and add `importEntity` for classes, workouts, and slips (slips stays stub with error message)
+Let me verify ManageDropdown supports `onImport`.
 
-### 4. Slips — keep as stub but allow opening the dialog
-Set `hasImport: true` for slips so the button is clickable. The existing stub config in `index.ts` already returns validation error "Slips import not yet supported", which will show in preview step.
+## Implementation Plan
 
-### Files to create/modify
+| # | Task | File | Risk |
+|---|---|---|---|
+| 1 | Add activity logging + invalid row filtering to classes config | `src/lib/importer/entityConfigs/classes.ts` | Low |
+| 2 | Add activity logging + invalid row filtering to workouts config | `src/lib/importer/entityConfigs/workouts.ts` | Low |
+| 3 | Add Import CSV to TransferSlips ManageDropdown | `src/pages/TransferSlips.tsx` | Low |
 
-| File | Action |
-|---|---|
-| `src/lib/importer/entityConfigs/classes.ts` | Create |
-| `src/lib/importer/entityConfigs/workouts.ts` | Create |
-| `src/lib/importer/types.ts` | Edit — add classes/workouts to EntityId |
-| `src/lib/importer/index.ts` | Edit — register new configs |
-| `src/pages/settings/SettingsImportExport.tsx` | Edit — enable import for classes/workouts/slips |
-
-### Risk: Low
-- Additive only — no existing behavior changed
-- Classes and training_templates tables already exist in DB
+All changes are additive. No existing behavior modified.
 
