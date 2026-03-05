@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   Upload, Download, AlertTriangle, CheckCircle, X,
   Users, UserPlus, Package, Megaphone, UserCog, DollarSign, Receipt, BookOpen, Dumbbell,
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocations } from '@/hooks/useLocations';
@@ -41,7 +42,7 @@ const ENTITY_LABELS: Record<EntityId, { en: string; th: string }> = {
   workouts: { en: 'Workouts', th: 'เวิร์คเอาท์' },
 };
 
-const IMPORTABLE: EntityId[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance', 'classes', 'workouts'];
+const IMPORTABLE: EntityId[] = ['members', 'leads', 'packages', 'staff', 'promotions', 'finance', 'slips', 'classes', 'workouts'];
 
 interface ImportCenterDialogProps {
   open: boolean;
@@ -59,7 +60,8 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
   const [entity, setEntity] = useState<EntityId | null>(presetEntity || null);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<Record<number, string>>({});
+  // Mapping: target field value → CSV column index (or -1 for skip)
+  const [mapping, setMapping] = useState<Record<string, number>>({});
   const [previewRows, setPreviewRows] = useState<ImportRow[]>([]);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -73,9 +75,27 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
   const config = entity ? ENTITY_CONFIGS[entity] : null;
   const lang = language === 'th' ? 'th' : 'en';
 
+  // Separate required and optional target fields (exclude __skip__)
+  const { requiredFields, optionalFields } = useMemo(() => {
+    if (!config) return { requiredFields: [], optionalFields: [] };
+    const allFields = config.targetFields.filter(f => f.value !== '__skip__');
+    return {
+      requiredFields: allFields.filter(f => f.required),
+      optionalFields: allFields.filter(f => !f.required),
+    };
+  }, [config]);
+
   // Check if register_location_id is mapped
-  const isLocationMapped = Object.values(mapping).includes('register_location_id');
+  const isLocationMapped = Object.entries(mapping).some(([k, v]) => k === 'register_location_id' && v >= 0);
   const showLocationPicker = entity === 'members' && !isLocationMapped;
+
+  // Check if all required fields are mapped (not skipped)
+  const hasRequiredError = useMemo(() => {
+    return requiredFields.some(f => {
+      const colIdx = mapping[f.value];
+      return colIdx === undefined || colIdx < 0;
+    });
+  }, [requiredFields, mapping]);
 
   // Auto-process file
   useEffect(() => {
@@ -117,12 +137,26 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
       const { headers, rows } = parseCsv(text);
       setCsvHeaders(headers);
       setCsvRows(rows);
-      const autoMap: Record<number, string> = {};
-      headers.forEach((h, i) => {
-        const normalized = h.toLowerCase().trim();
-        autoMap[i] = config.headerAliases[normalized] || '__skip__';
-      });
-      setMapping(autoMap);
+
+      // Build reverse mapping: for each target field, find the best CSV column
+      const newMapping: Record<string, number> = {};
+      const allFields = config.targetFields.filter(f => f.value !== '__skip__');
+
+      for (const field of allFields) {
+        // Check if any CSV header maps to this target field via aliases
+        let bestIdx = -1;
+        for (let i = 0; i < headers.length; i++) {
+          const normalized = headers[i].toLowerCase().trim();
+          const aliasTarget = config.headerAliases[normalized];
+          if (aliasTarget === field.value) {
+            bestIdx = i;
+            break;
+          }
+        }
+        newMapping[field.value] = bestIdx;
+      }
+
+      setMapping(newMapping);
       setStep('mapping');
     };
     reader.readAsText(file);
@@ -136,10 +170,11 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
 
   const buildMappedData = (row: string[]): Record<string, string> => {
     const data: Record<string, string> = {};
-    csvHeaders.forEach((_, colIdx) => {
-      const target = mapping[colIdx];
-      if (target && target !== '__skip__' && row[colIdx]) data[target] = row[colIdx];
-    });
+    for (const [targetField, colIdx] of Object.entries(mapping)) {
+      if (colIdx >= 0 && row[colIdx]) {
+        data[targetField] = row[colIdx];
+      }
+    }
     // Apply default location for members if not in CSV
     if (entity === 'members' && !data.register_location_id && defaultLocationId) {
       data.register_location_id = defaultLocationId;
@@ -147,9 +182,16 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     return data;
   };
 
+  // Get the mapped fields that are actually active (not skipped)
+  const activeMappedFields = useMemo(() => {
+    if (!config) return [];
+    const allFields = config.targetFields.filter(f => f.value !== '__skip__');
+    return allFields.filter(f => (mapping[f.value] ?? -1) >= 0);
+  }, [config, mapping]);
+
   const buildPreview = useCallback(() => {
     if (!config) return;
-    const rows: ImportRow[] = csvRows.slice(0, 20).map((row, idx) => {
+    const rows: ImportRow[] = csvRows.slice(0, 10).map((row, idx) => {
       const data = buildMappedData(row);
       const errors = config.validateRow(data);
       return { rowIndex: idx + 2, data, errors };
@@ -179,19 +221,67 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     setStep('done');
   }, [csvRows, csvHeaders, mapping, config, queryClient, overwriteExisting, defaultLocationId, entity]);
 
-  const downloadErrors = () => {
-    if (!result || result.errors.length === 0) return;
-    const cols: CsvColumn<typeof result.errors[0]>[] = [
+  const downloadErrors = (errors?: { row: number; reason: string; data: Record<string, string> }[]) => {
+    const errList = errors || result?.errors || [];
+    if (errList.length === 0) return;
+    const cols: CsvColumn<typeof errList[0]>[] = [
       { key: 'row', header: 'Row', accessor: r => r.row },
       { key: 'reason', header: 'Error', accessor: r => r.reason },
-      ...Object.keys(result.errors[0]?.data || {}).slice(0, 5).map(k => ({
+      ...Object.keys(errList[0]?.data || {}).slice(0, 8).map(k => ({
         key: k, header: k, accessor: (r: any) => r.data[k] || '',
       })),
     ];
-    exportToCsv(result.errors, cols, `${entity}-import-errors`);
+    exportToCsv(errList, cols, `${entity}-import-errors`);
   };
 
   const entityLabel = entity ? ENTITY_LABELS[entity][lang] : '';
+
+  // CSV column options for dropdown
+  const csvColumnOptions = useMemo(() => {
+    return [
+      { value: '-1', label: language === 'th' ? '— ข้าม —' : '— Skip —' },
+      ...csvHeaders.map((h, i) => ({ value: String(i), label: h })),
+    ];
+  }, [csvHeaders, language]);
+
+  const renderFieldMappingRow = (field: { value: string; label: string; required?: boolean }) => {
+    const colIdx = mapping[field.value] ?? -1;
+    const isSkipped = colIdx < 0;
+    const isRequired = field.required;
+    const hasError = isRequired && isSkipped;
+    const autoDetected = colIdx >= 0;
+
+    return (
+      <div key={field.value} className={`flex items-center gap-3 py-1.5 px-2 rounded ${hasError ? 'bg-destructive/10' : ''}`}>
+        <div className="flex items-center gap-1.5 w-44 min-w-0">
+          <span className="text-sm truncate">{field.label}</span>
+          {isRequired && <span className="text-destructive text-xs font-bold">*</span>}
+        </div>
+        <span className="text-muted-foreground text-xs">←</span>
+        <Select
+          value={String(colIdx)}
+          onValueChange={v => setMapping(prev => ({ ...prev, [field.value]: parseInt(v) }))}
+        >
+          <SelectTrigger className={`w-52 ${autoDetected && !hasError ? 'border-primary/30' : ''} ${hasError ? 'border-destructive' : ''}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {csvColumnOptions.map(opt => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasError && (
+          <span className="text-destructive text-[11px] whitespace-nowrap">
+            {language === 'th' ? 'จำเป็นต้องแมป' : 'Must be mapped'}
+          </span>
+        )}
+        {autoDetected && !hasError && (
+          <Badge variant="secondary" className="text-[9px] shrink-0">Auto</Badge>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -273,27 +363,42 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
         {/* Step: Mapping */}
         {step === 'mapping' && config && (
           <div className="space-y-4">
+            {/* Helper text */}
+            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+              {language === 'th'
+                ? 'เลือกคอลัมน์จาก CSV ที่ตรงกับแต่ละฟิลด์ หากไม่มีข้อมูลในไฟล์ CSV ให้เลือก "ข้าม" ฟิลด์ที่มีเครื่องหมาย * ต้องระบุ'
+                : 'Match each field to a column from your CSV. Choose "Skip" if your file doesn\'t contain that field. Fields marked * are required.'}
+            </div>
+
             <p className="text-sm text-muted-foreground">
-              {language === 'th' ? 'จับคู่คอลัมน์' : 'Map columns'} — {csvRows.length} {language === 'th' ? 'แถว' : 'rows'}
+              {csvRows.length} {language === 'th' ? 'แถวจากไฟล์' : 'rows from file'} — <span className="font-mono text-xs">{fileName}</span>
             </p>
-            <ScrollArea className="h-[280px]">
-              <div className="space-y-2">
-                {csvHeaders.map((header, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <span className="text-sm w-40 truncate font-mono">{header}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <Select value={mapping[idx] || '__skip__'} onValueChange={v => setMapping(prev => ({ ...prev, [idx]: v }))}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {config.targetFields.map(f => (
-                          <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+            <ScrollArea className="h-[320px]">
+              <div className="space-y-4">
+                {/* Required fields section */}
+                {requiredFields.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-destructive mb-2">
+                      {language === 'th' ? 'ฟิลด์ที่จำเป็น' : 'Required Fields'}
+                    </p>
+                    <div className="space-y-1">
+                      {requiredFields.map(renderFieldMappingRow)}
+                    </div>
                   </div>
-                ))}
+                )}
+
+                {/* Optional fields section */}
+                {optionalFields.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                      {language === 'th' ? 'ฟิลด์ทางเลือก' : 'Optional Fields'}
+                    </p>
+                    <div className="space-y-1">
+                      {optionalFields.map(renderFieldMappingRow)}
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
 
@@ -331,9 +436,18 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
               </div>
             )}
 
+            {hasRequiredError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {language === 'th' ? 'ฟิลด์ที่จำเป็นทั้งหมดต้องถูกแมปกับคอลัมน์ CSV' : 'All required fields must be mapped to a CSV column'}
+              </p>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('upload')}>{t('common.back')}</Button>
-              <Button onClick={buildPreview}>{t('common.next')}</Button>
+              <Button onClick={buildPreview} disabled={hasRequiredError}>
+                {language === 'th' ? 'ดูตัวอย่าง' : 'Preview'}
+              </Button>
             </div>
           </div>
         )}
@@ -343,10 +457,12 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
           const validCount = previewRows.filter(r => r.errors.length === 0).length;
           const errorCount = previewRows.filter(r => r.errors.length > 0).length;
           const allErrors = csvRows.length > 0 && validCount === 0;
+          const errorRows = previewRows.filter(r => r.errors.length > 0);
+
           return (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                {language === 'th' ? 'ตรวจสอบข้อมูล' : 'Preview'} ({previewRows.length} of {csvRows.length})
+                {language === 'th' ? 'ตรวจสอบข้อมูลก่อนนำเข้า' : 'Review parsed data before importing'} ({previewRows.length} of {csvRows.length})
               </p>
               <div className="flex gap-2">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 text-xs font-medium">
@@ -358,45 +474,84 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
                   </div>
                 )}
               </div>
-              <ScrollArea className="h-[300px]">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-1.5 text-left w-12">Row</th>
-                      <th className="p-1.5 text-left">Data</th>
-                      <th className="p-1.5 text-left">Errors</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewRows.map(row => {
-                      const preview = Object.entries(row.data).slice(0, 3).map(([, v]) => v).join(', ');
-                      return (
-                        <tr key={row.rowIndex} className={`border-b ${row.errors.length > 0 ? 'bg-red-50/50 dark:bg-red-950/30' : ''}`}>
-                          <td className="p-1.5">{row.rowIndex}</td>
-                          <td className="p-1.5 truncate max-w-[200px]">{preview}</td>
-                          <td className="p-1.5">
-                            {row.errors.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {row.errors.map((err, i) => <Badge key={i} variant="destructive" className="text-[10px]">{err}</Badge>)}
-                              </div>
-                            ) : <Badge variant="secondary" className="text-[10px]">OK</Badge>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+              {/* Full mapped preview table */}
+              <ScrollArea className="h-[280px]">
+                <div className="min-w-max">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12 sticky left-0 bg-background z-10">Row</TableHead>
+                        {activeMappedFields.map(f => (
+                          <TableHead key={f.value} className="whitespace-nowrap">
+                            {f.label}
+                            {f.required && <span className="text-destructive ml-0.5">*</span>}
+                          </TableHead>
+                        ))}
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewRows.map(row => {
+                        const hasErr = row.errors.length > 0;
+                        return (
+                          <TableRow key={row.rowIndex} className={hasErr ? 'bg-destructive/5' : ''}>
+                            <TableCell className="font-mono text-xs sticky left-0 bg-background z-10">{row.rowIndex}</TableCell>
+                            {activeMappedFields.map(f => {
+                              const val = row.data[f.value] || '';
+                              // Check if this specific field has an error
+                              const fieldErr = row.errors.find(e =>
+                                e.toLowerCase().includes(f.value.toLowerCase()) ||
+                                e.toLowerCase().includes(f.label.toLowerCase().split(' ')[0])
+                              );
+                              return (
+                                <TableCell
+                                  key={f.value}
+                                  className={`max-w-[150px] truncate text-xs ${fieldErr ? 'text-destructive font-medium bg-destructive/10' : ''} ${!val && f.required ? 'text-destructive/60 italic' : ''}`}
+                                  title={fieldErr || val}
+                                >
+                                  {val || (f.required ? '(empty)' : '—')}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell>
+                              {hasErr ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {row.errors.map((err, i) => (
+                                    <Badge key={i} variant="destructive" className="text-[9px] max-w-[180px] truncate">{err}</Badge>
+                                  ))}
+                                </div>
+                              ) : (
+                                <Badge variant="secondary" className="text-[9px]">OK</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </ScrollArea>
+
               {errorCount > 0 && (
-                <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  {allErrors ? (language === 'th' ? 'ทุกแถวมีข้อผิดพลาด' : 'All rows have errors') : `${errorCount} ${language === 'th' ? 'แถวจะถูกข้าม' : 'rows will be skipped'}`}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-destructive flex items-center gap-1 flex-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {allErrors
+                      ? (language === 'th' ? 'ทุกแถวมีข้อผิดพลาด' : 'All rows have errors')
+                      : `${errorCount} ${language === 'th' ? 'แถวจะถูกข้าม' : 'rows will be skipped'}`}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => downloadErrors(errorRows.map(r => ({ row: r.rowIndex, reason: r.errors.join('; '), data: r.data })))}>
+                    <Download className="h-3 w-3 mr-1" />
+                    {language === 'th' ? 'ดาวน์โหลด Error CSV' : 'Download Error CSV'}
+                  </Button>
+                </div>
               )}
+
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep('mapping')}>{t('common.back')}</Button>
                 <Button onClick={doImport} disabled={allErrors}>
-                  {language === 'th' ? 'เริ่มนำเข้า' : 'Start Import'}
+                  {language === 'th' ? `เริ่มนำเข้า (${csvRows.length} แถว)` : `Start Import (${csvRows.length} rows)`}
                 </Button>
               </div>
             </div>
@@ -436,7 +591,7 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
               </div>
             </div>
             {result.errors.length > 0 && (
-              <Button variant="outline" size="sm" onClick={downloadErrors}>
+              <Button variant="outline" size="sm" onClick={() => downloadErrors()}>
                 <Download className="h-3 w-3 mr-1" />
                 {language === 'th' ? 'ดาวน์โหลด Error CSV' : 'Download Error CSV'}
               </Button>

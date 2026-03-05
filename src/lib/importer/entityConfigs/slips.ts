@@ -66,8 +66,8 @@ export const slipsConfig: EntityConfig = {
   },
 
   targetFields: [
-    { value: 'slip_datetime', label: 'Slip Date/Time *' },
-    { value: 'amount_thb', label: 'Amount (THB) *' },
+    { value: 'slip_datetime', label: 'Slip Date/Time', required: true },
+    { value: 'amount_thb', label: 'Amount (THB)', required: true },
     { value: 'payment_method', label: 'Payment Method' },
     { value: 'member_id', label: 'Member ID' },
     { value: 'member_name_text', label: 'Member Name' },

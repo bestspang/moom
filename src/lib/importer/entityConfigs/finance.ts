@@ -24,14 +24,14 @@ const HEADER_ALIASES: Record<string, string> = {
 const TARGET_FIELDS = [
   { value: '__skip__', label: 'Skip' },
   { value: '_datetime', label: 'Date & Time' },
-  { value: 'transaction_id', label: 'Transaction No.' },
-  { value: 'order_name', label: 'Order Name' },
-  { value: '_type', label: 'Type (info)' },
+  { value: 'transaction_id', label: 'Transaction No.', required: true },
+  { value: 'order_name', label: 'Order Name', required: true },
+  { value: '_type', label: 'Package Type (unlimited/session/pt)' },
   { value: '_sold_to', label: 'Sold To (info)' },
   { value: '_location', label: 'Location' },
   { value: '_price_ex_vat', label: 'Price excl VAT (info)' },
   { value: '_vat', label: 'VAT (info)' },
-  { value: 'amount', label: 'Amount (incl VAT)' },
+  { value: 'amount', label: 'Amount (incl VAT)', required: true },
   { value: '_sold_at', label: 'Sold At (info)' },
   { value: 'payment_method', label: 'Payment Method' },
   { value: '_tax_invoice', label: 'Tax Invoice (info)' },
@@ -72,6 +72,19 @@ function validateRow(data: Record<string, string>): string[] {
   if (!data.transaction_id) errors.push('Missing transaction no.');
   if (!data.amount) errors.push('Missing amount');
   if (!data.order_name) errors.push('Missing order name');
+  // Enum validation warnings
+  if (data._type) {
+    const pt = normalizePackageType(data._type);
+    if (!pt) errors.push(`Unrecognized package type: "${data._type}". Expected: unlimited, session, pt`);
+  }
+  if (data.payment_method) {
+    const pm = normalizePaymentMethod(data.payment_method);
+    if (!pm) errors.push(`Unrecognized payment method: "${data.payment_method}". Expected: cash, bank transfer, QR/PromptPay, credit card`);
+  }
+  if (data.status) {
+    const s = normalizeStatus(data.status);
+    if (!s) errors.push(`Unrecognized status: "${data.status}". Expected: paid, voided, refunded, pending, needs_review`);
+  }
   return errors;
 }
 

@@ -11,7 +11,7 @@ const HEADER_ALIASES: Record<string, string> = {
 
 const TARGET_FIELDS = [
   { value: '__skip__', label: 'Skip' },
-  { value: 'name', label: 'Name' },
+  { value: 'name', label: 'Name', required: true },
   { value: 'description', label: 'Description' },
   { value: 'is_active', label: 'Active' },
 ];
