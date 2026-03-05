@@ -1,64 +1,96 @@
 
 
-# Align Export/Template with Real-World CSV Formats
+# Add Bulk Actions to Packages, Promotions, and Workout List
 
-The user uploaded 4 sample CSVs showing the actual columns they use. Here's the gap analysis and plan.
+Add row-level selection with a bulk action bar supporting **Change Status**, **Delete**, **Export Selected**, and **Duplicate** for all three pages.
 
----
+## Design
 
-## 1. Promotions Export
+When rows are selected, a floating action bar appears at the bottom of the page showing:
+- **Selected count** (e.g., "3 selected")
+- **Change Status** dropdown (Archive, Activate, Draft, etc. — varies per entity)
+- **Export Selected** button
+- **Duplicate** button
+- **Delete** button (destructive, with confirmation dialog)
+- **Clear selection** button
 
-**Sample headers**: `Name, Type, Promo code, Discount, Started on, Ending on, Date modified, Status`
+The `DataTable` already supports `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` props — we just need to wire them up.
 
-**Current headers**: `Name, Type, Promo Code, Discount Type, Discount Value, Start Date, End Date, Status`
+## Bulk Actions Per Entity
 
-**Changes needed**:
-- Merge `Discount Type` + `Discount Value` → single `Discount` column (show `1290฿` or `10%` or `Varies` for per-package)
-- Rename headers: `Promo code`, `Started on`, `Ending on`, `Date modified`
-- Add `Date modified` from `updated_at`
-- Promo code: show `-` when null
-- Dates: format as `d MMM yyyy` uppercase (e.g. `31 MAR 2026`)
-- Update `TEMPLATE_HEADERS` to match
+| Action | Packages | Promotions | Workouts |
+|--------|----------|------------|----------|
+| Change Status | `on_sale`, `scheduled`, `drafts`, `archive` | `active`, `scheduled`, `drafts`, `archive` | `is_active` toggle (active/inactive) |
+| Delete | ✅ | ✅ | ✅ (delete training templates) |
+| Export Selected | ✅ | ✅ | ✅ |
+| Duplicate | ✅ (insert copy with "Copy of" prefix) | ✅ | ✅ |
 
-## 2. Staff Export
+## Implementation
 
-**Sample headers**: `Firstname, Lastname, Nickname, Role, Gender, Birthdate, Email, Phone, Address, Branch, Status`
+### 1. Create `BulkActionBar` component (`src/components/common/BulkActionBar.tsx`)
+A reusable floating bar component:
+```
+Props:
+- selectedCount: number
+- onClearSelection: () => void
+- onDelete: () => void
+- onExport: () => void
+- onDuplicate: () => void
+- statusOptions: { value: string; label: string }[]
+- onChangeStatus: (status: string) => void
+- isLoading?: boolean
+```
+Renders a fixed bottom bar with buttons. Re-export from `common/index.ts`.
 
-**Current headers**: `First Name, Last Name, Phone, Email, Status` (missing 6 columns!)
+### 2. Add bulk mutation hooks
+- `src/hooks/usePackages.ts` — add `useBulkUpdatePackageStatus`, `useBulkDeletePackages`, `useBulkDuplicatePackages`
+- `src/hooks/usePromotions.ts` — add `useBulkUpdatePromotionStatus`, `useBulkDeletePromotions`, `useBulkDuplicatePromotions`
+- `src/hooks/useTrainingTemplates.ts` — add `useBulkToggleTrainings`, `useBulkDeleteTrainings`, `useBulkDuplicateTrainings`
 
-**Changes needed**:
-- Add: `Nickname`, `Role` (joined position names), `Gender`, `Birthdate`, `Address` (concatenated), `Branch` (location scope)
-- Reorder to match sample
-- Update `TEMPLATE_HEADERS`
+Each mutation accepts an array of IDs, performs the batch operation, invalidates caches, and logs activity.
 
-## 3. Finance (Transactions) Export
+### 3. Wire up each page
 
-**Sample headers**: `Date & Time, Transaction no., Order name, Type, Sold to, Register location, Price excluding vat, VAT @7%, Price including vat, Sold at, Payment method, Tax invoice no., Status, Staff`
+**Packages.tsx:**
+- Add `selectedRows` state, pass `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` to `DataTable`
+- Render `BulkActionBar` when `selectedRows.length > 0`
+- Status options: On Sale, Scheduled, Drafts, Archive
+- Export selected: filter packages by selected IDs, call existing export logic
+- Duplicate: insert copies with `name_en: "Copy of ..."`, status `drafts`
+- Delete: confirm dialog, then bulk delete
 
-**Current headers**: `Date & Time, Transaction No, Order Name, Type, Sold To, Location, Amount, Payment Method, Status` (missing 5 columns!)
+**Promotions.tsx:**
+- Same pattern as Packages
+- Status options: Active, Scheduled, Drafts, Archive
+- Duplicate: copy with `name: "Copy of ..."`, status `drafts`, clear promo_code
 
-**Changes needed**:
-- Add: `Register location`, `Price excluding vat` (amount / 1.07), `VAT @7%` (amount - excl), `Price including vat` (amount), `Sold at` (location), `Tax invoice no.`, `Staff`
-- Date format: `d MMM yyyy, HH:mm` uppercase
-- Payment method: map `promptpay` → `QR PromptPay`, `cash` → `Cash`, etc.
-- Update template headers
+**WorkoutList.tsx:**
+- Selection at training template level (not individual workout items)
+- Status: bulk toggle `is_active`
+- Duplicate: copy training + its workout_items
+- Delete: bulk delete trainings (cascade deletes items)
 
-## 4. Transfer Slips Export
+### 4. Delete confirmation dialog
+Show an `AlertDialog` before bulk delete, shared across pages. Can be part of `BulkActionBar` or rendered separately in each page.
 
-**Sample**: Empty CSV uploaded — user likely wants same format as Finance transactions (bank_transfer subset). Keep current slip export but align headers with Finance format.
+## Files
 
----
-
-## Files to Edit
-
-| File | Changes |
-|------|---------|
-| `src/pages/Promotions.tsx` | Update `csvColumns`, `TEMPLATE_HEADERS`, discount display logic |
-| `src/pages/Staff.tsx` | Update `csvColumns`, `TEMPLATE_HEADERS`, add nickname/role/gender/birthdate/address/branch columns |
-| `src/pages/Finance.tsx` | Update `handleExportCsv` columns + `handleDownloadTxTemplate` headers to include VAT breakdown, tax invoice, staff, location mapping |
+| File | Action |
+|------|--------|
+| `src/components/common/BulkActionBar.tsx` | **Create** — reusable bulk action floating bar |
+| `src/components/common/index.ts` | **Edit** — re-export |
+| `src/hooks/usePackages.ts` | **Edit** — add 3 bulk mutations |
+| `src/hooks/usePromotions.ts` | **Edit** — add 3 bulk mutations |
+| `src/hooks/useTrainingTemplates.ts` | **Edit** — add 3 bulk mutations |
+| `src/pages/Packages.tsx` | **Edit** — add selection state + BulkActionBar |
+| `src/pages/Promotions.tsx` | **Edit** — add selection state + BulkActionBar |
+| `src/pages/WorkoutList.tsx` | **Edit** — add selection state + BulkActionBar |
+| `src/i18n/locales/en.ts` | **Edit** — add bulk action i18n keys |
+| `src/i18n/locales/th.ts` | **Edit** — add bulk action i18n keys |
 
 ## Risk
-- Zero regression: only changing export CSV output and template headers
-- No DB/schema changes
-- Table UI columns unchanged
+- **Low**: DataTable already supports selection UI — no changes to shared component needed
+- **No DB changes**: all operations use existing tables and mutation patterns
+- Delete confirmation prevents accidental data loss
+- Duplicate creates new records with `drafts` status, safe by default
 
