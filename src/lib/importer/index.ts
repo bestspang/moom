@@ -1,5 +1,5 @@
 export { parseCsv, parseCsvLine, downloadCsvTemplate } from './csvParser';
-export type { ImportRow, ImportResult, ImportStep, EntityId, EntityConfig } from './types';
+export type { ImportRow, ImportResult, ImportStep, EntityId, EntityConfig, EnumFieldDef } from './types';
 
 import { membersConfig } from './entityConfigs/members';
 import { leadsConfig } from './entityConfigs/leads';

@@ -20,7 +20,7 @@ import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import {
   parseCsv, downloadCsvTemplate,
   ENTITY_CONFIGS,
-  type EntityId, type ImportStep, type ImportRow, type ImportResult,
+  type EntityId, type ImportStep, type ImportRow, type ImportResult, type EnumFieldDef,
 } from '@/lib/importer';
 
 // ── Icons map ──
@@ -66,6 +66,10 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [fileName, setFileName] = useState('');
+  // Enum overrides: field → { rawLowerValue → validEnumValue }
+  const [enumOverrides, setEnumOverrides] = useState<Record<string, Record<string, string>>>({});
+  // Detected unrecognized enum values: field → Set<rawValue>
+  const [unmatchedEnums, setUnmatchedEnums] = useState<Record<string, string[]>>({});
 
   // Members-specific options
   const [defaultLocationId, setDefaultLocationId] = useState<string>('');
@@ -124,6 +128,8 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     setFileName('');
     setDefaultLocationId('');
     setOverwriteExisting(false);
+    setEnumOverrides({});
+    setUnmatchedEnums({});
   };
 
   const handleClose = () => { reset(); onOpenChange(false); };
@@ -189,16 +195,81 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     return allFields.filter(f => (mapping[f.value] ?? -1) >= 0);
   }, [config, mapping]);
 
+  // Detect unrecognized enum values from CSV data and go to enum-mapping if needed
+  const proceedFromMapping = useCallback(() => {
+    if (!config) return;
+    const enumDefs = config.enumFields || [];
+    if (enumDefs.length === 0) {
+      // No enum fields → skip to preview
+      buildPreview();
+      return;
+    }
+
+    // Scan all CSV rows for unrecognized enum values
+    const unmatched: Record<string, Set<string>> = {};
+    for (const row of csvRows) {
+      const data = buildMappedData(row);
+      for (const def of enumDefs) {
+        const rawVal = data[def.field];
+        if (!rawVal || !rawVal.trim()) continue;
+        const normalized = def.normalize(rawVal);
+        if (!normalized) {
+          if (!unmatched[def.field]) unmatched[def.field] = new Set();
+          unmatched[def.field].add(rawVal.trim());
+        }
+      }
+    }
+
+    const unmatchedArr: Record<string, string[]> = {};
+    let hasUnmatched = false;
+    for (const [field, vals] of Object.entries(unmatched)) {
+      unmatchedArr[field] = Array.from(vals);
+      hasUnmatched = true;
+    }
+
+    if (hasUnmatched) {
+      setUnmatchedEnums(unmatchedArr);
+      // Initialize overrides with empty values
+      const newOverrides: Record<string, Record<string, string>> = { ...enumOverrides };
+      for (const [field, vals] of Object.entries(unmatchedArr)) {
+        if (!newOverrides[field]) newOverrides[field] = {};
+        for (const v of vals) {
+          if (!newOverrides[field][v.toLowerCase().trim()]) {
+            newOverrides[field][v.toLowerCase().trim()] = '';
+          }
+        }
+      }
+      setEnumOverrides(newOverrides);
+      setStep('enum-mapping');
+    } else {
+      buildPreview();
+    }
+  }, [csvRows, config, mapping, defaultLocationId, entity, enumOverrides]);
+
   const buildPreview = useCallback(() => {
     if (!config) return;
     const rows: ImportRow[] = csvRows.slice(0, 10).map((row, idx) => {
       const data = buildMappedData(row);
+      // Apply enum overrides to data before validation
+      if (config.enumFields) {
+        for (const def of config.enumFields) {
+          const rawVal = data[def.field];
+          if (rawVal && !def.normalize(rawVal)) {
+            const override = enumOverrides[def.field]?.[rawVal.toLowerCase().trim()];
+            if (override === '__skip_enum__') {
+              delete data[def.field]; // Remove the field entirely
+            } else if (override) {
+              data[def.field] = override;
+            }
+          }
+        }
+      }
       const errors = config.validateRow(data);
       return { rowIndex: idx + 2, data, errors };
     });
     setPreviewRows(rows);
     setStep('preview');
-  }, [csvRows, csvHeaders, mapping, config, defaultLocationId, entity]);
+  }, [csvRows, csvHeaders, mapping, config, defaultLocationId, entity, enumOverrides]);
 
   const doImport = useCallback(async () => {
     if (!config) return;
@@ -206,12 +277,27 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     setProgress(0);
     const allRows: ImportRow[] = csvRows.map((row, idx) => {
       const data = buildMappedData(row);
+      // Apply enum overrides
+      if (config.enumFields) {
+        for (const def of config.enumFields) {
+          const rawVal = data[def.field];
+          if (rawVal && !def.normalize(rawVal)) {
+            const override = enumOverrides[def.field]?.[rawVal.toLowerCase().trim()];
+            if (override === '__skip_enum__') {
+              delete data[def.field];
+            } else if (override) {
+              data[def.field] = override;
+            }
+          }
+        }
+      }
       const errors = config.validateRow(data);
       return { rowIndex: idx + 2, data, errors };
     });
     const importResult = await config.upsertRows(allRows, queryClient, setProgress, {
       overwrite: overwriteExisting,
       defaultLocationId: defaultLocationId || undefined,
+      enumOverrides,
     });
     // Invalidate
     for (const key of config.queryKeysToInvalidate) {
@@ -445,12 +531,98 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('upload')}>{t('common.back')}</Button>
-              <Button onClick={buildPreview} disabled={hasRequiredError}>
-                {language === 'th' ? 'ดูตัวอย่าง' : 'Preview'}
+              <Button onClick={proceedFromMapping} disabled={hasRequiredError}>
+                {language === 'th' ? 'ถัดไป' : 'Next'}
               </Button>
             </div>
           </div>
         )}
+
+        {/* Step: Enum Mapping */}
+        {step === 'enum-mapping' && config && (() => {
+          const enumDefs = config.enumFields || [];
+          const hasUnmapped = Object.entries(unmatchedEnums).some(([field, vals]) =>
+            vals.some(v => !enumOverrides[field]?.[v.toLowerCase().trim()])
+          );
+
+          return (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+                {language === 'th'
+                  ? 'พบค่าที่ไม่ตรงกับตัวเลือกที่รองรับ กรุณาเลือกค่าที่ถูกต้องสำหรับแต่ละรายการ หรือเลือก "ข้าม" เพื่อปล่อยว่าง'
+                  : 'Some values in your CSV don\'t match the expected options. Map each unrecognized value to a valid option, or choose "Skip" to leave it empty.'}
+              </div>
+
+              <ScrollArea className="h-[340px]">
+                <div className="space-y-5">
+                  {Object.entries(unmatchedEnums).map(([field, rawValues]) => {
+                    const def = enumDefs.find(d => d.field === field);
+                    if (!def) return null;
+                    return (
+                      <div key={field} className="space-y-2">
+                        <p className="text-sm font-medium">{def.label}</p>
+                        <div className="space-y-1.5">
+                          {rawValues.map(rawVal => {
+                            const key = rawVal.toLowerCase().trim();
+                            const currentOverride = enumOverrides[field]?.[key] || '';
+                            return (
+                              <div key={rawVal} className="flex items-center gap-3 py-1 px-2 rounded bg-muted/30">
+                                <div className="w-40 min-w-0">
+                                  <Badge variant="outline" className="text-xs font-mono truncate max-w-full">
+                                    {rawVal}
+                                  </Badge>
+                                </div>
+                                <span className="text-muted-foreground text-xs">→</span>
+                                <Select
+                                  value={currentOverride}
+                                  onValueChange={v => {
+                                    setEnumOverrides(prev => ({
+                                      ...prev,
+                                      [field]: { ...prev[field], [key]: v },
+                                    }));
+                                  }}
+                                >
+                                  <SelectTrigger className={`w-48 ${!currentOverride ? 'border-destructive/50' : 'border-primary/30'}`}>
+                                    <SelectValue placeholder={language === 'th' ? 'เลือกค่า...' : 'Select value...'} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__skip_enum__">
+                                      {language === 'th' ? '— ข้าม (ปล่อยว่าง) —' : '— Skip (leave empty) —'}
+                                    </SelectItem>
+                                    {def.options.map(opt => (
+                                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+
+              {hasUnmapped && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {language === 'th' ? 'ค่าที่ยังไม่ได้แมปจะถูกปล่อยว่าง' : 'Unmapped values will be left empty during import'}
+                </p>
+              )}
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep('mapping')}>
+                  {t('common.back')}
+                </Button>
+                <Button onClick={buildPreview}>
+                  {language === 'th' ? 'ดูตัวอย่าง' : 'Preview'}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
+
 
         {/* Step: Preview */}
         {step === 'preview' && (() => {
@@ -549,7 +721,7 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
               )}
 
               <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep('mapping')}>{t('common.back')}</Button>
+                <Button variant="outline" onClick={() => setStep(config?.enumFields?.length ? 'enum-mapping' : 'mapping')}>{t('common.back')}</Button>
                 <Button onClick={doImport} disabled={allErrors}>
                   {language === 'th' ? `เริ่มนำเข้า (${csvRows.length} แถว)` : `Start Import (${csvRows.length} rows)`}
                 </Button>

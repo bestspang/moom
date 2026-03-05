@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activityLogger';
-import type { EntityConfig, ImportRow, ImportResult } from '../types';
+import type { EntityConfig, ImportRow, ImportResult, EnumFieldDef } from '../types';
 import { parseDatetime, parseCurrency, dash } from '../normalizers';
 
 const HEADER_ALIASES: Record<string, string> = {
@@ -67,12 +67,47 @@ function normalizeStatus(val: string): string | null {
   return null;
 }
 
+const ENUM_FIELDS: EnumFieldDef[] = [
+  {
+    field: '_type',
+    label: 'Package Type',
+    options: [
+      { value: 'unlimited', label: 'Unlimited' },
+      { value: 'session', label: 'Session' },
+      { value: 'pt', label: 'PT (Personal Training)' },
+    ],
+    normalize: normalizePackageType,
+  },
+  {
+    field: 'payment_method',
+    label: 'Payment Method',
+    options: [
+      { value: 'cash', label: 'Cash' },
+      { value: 'bank_transfer', label: 'Bank Transfer' },
+      { value: 'qr_promptpay', label: 'QR / PromptPay' },
+      { value: 'credit_card', label: 'Credit Card' },
+    ],
+    normalize: normalizePaymentMethod,
+  },
+  {
+    field: 'status',
+    label: 'Status',
+    options: [
+      { value: 'paid', label: 'Paid' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'voided', label: 'Voided' },
+      { value: 'refunded', label: 'Refunded' },
+      { value: 'needs_review', label: 'Needs Review' },
+    ],
+    normalize: normalizeStatus,
+  },
+];
+
 function validateRow(data: Record<string, string>): string[] {
   const errors: string[] = [];
   if (!data.transaction_id) errors.push('Missing transaction no.');
   if (!data.amount) errors.push('Missing amount');
   if (!data.order_name) errors.push('Missing order name');
-  // Enum validation warnings
   if (data._type) {
     const pt = normalizePackageType(data._type);
     if (!pt) errors.push(`Unrecognized package type: "${data._type}". Expected: unlimited, session, pt`);
@@ -88,7 +123,8 @@ function validateRow(data: Record<string, string>): string[] {
   return errors;
 }
 
-async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) => void): Promise<ImportResult> {
+async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) => void, options?: { overwrite?: boolean; defaultLocationId?: string; enumOverrides?: Record<string, Record<string, string>> }): Promise<ImportResult> {
+  const enumOverrides = options?.enumOverrides || {};
   const validRows = rows.filter(r => r.errors.length === 0);
   const invalidRows = rows.filter(r => r.errors.length > 0);
   const result: ImportResult = {
@@ -109,6 +145,19 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
     locMap.set(l.name.toLowerCase(), l.id);
   }
 
+  // Helper to resolve enum with overrides
+  const resolveEnum = (field: string, rawVal: string, normalizeFn: (v: string) => string | null): string | null => {
+    const normalized = normalizeFn(rawVal);
+    if (normalized) return normalized;
+    // Check overrides
+    const fieldOverrides = enumOverrides[field];
+    if (fieldOverrides) {
+      const override = fieldOverrides[rawVal.toLowerCase().trim()];
+      if (override) return override;
+    }
+    return null;
+  };
+
   for (let i = 0; i < validRows.length; i++) {
     const row = validRows[i];
     setProgress(Math.round(((i + 1) / validRows.length) * 100));
@@ -124,7 +173,7 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
 
       // Map _type to package_type enum
       if (row.data._type) {
-        const pt = normalizePackageType(row.data._type);
+        const pt = resolveEnum('_type', row.data._type, normalizePackageType);
         if (pt) tx.type = pt;
       }
 
@@ -132,12 +181,12 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
       if (dt) tx.created_at = dt;
 
       if (row.data.payment_method) {
-        const pm = normalizePaymentMethod(row.data.payment_method);
+        const pm = resolveEnum('payment_method', row.data.payment_method, normalizePaymentMethod);
         if (pm) tx.payment_method = pm;
       }
 
       if (row.data.status) {
-        const s = normalizeStatus(row.data.status);
+        const s = resolveEnum('status', row.data.status, normalizeStatus);
         if (s) tx.status = s;
       }
 
@@ -182,6 +231,7 @@ export const financeConfig: EntityConfig = {
   id: 'finance',
   headerAliases: HEADER_ALIASES,
   targetFields: TARGET_FIELDS,
+  enumFields: ENUM_FIELDS,
   templateHeaders: ['transaction_id', 'order_name', 'amount', 'payment_method', 'status', 'date', 'location', 'notes'],
   validateRow,
   upsertRows,
