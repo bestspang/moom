@@ -1,50 +1,31 @@
 
 
-# Fix Bulk Import Detection — Support Real CSV Headers + More Modules
+# Fix Bulk Import: Add "Transfer Slips" module + Fix Import button UX
 
-## Problem
-The current detection logic uses **database column names** (`member_id`, `member_since`, `temperature`) but real-world CSV exports use **human-readable headers** like `"Firstname"`, `"Joined Date"`, `"Promo code"`. None of the uploaded files match, so detection always fails.
-
-Additionally, detection only supports `members` and `leads`, but the user has CSVs for packages, promotions, staff, and finance too.
-
-## Root Cause
-- `detectModule()` checks for DB-specific headers that don't appear in actual exported CSVs
-- No aliases for human-readable/Thai column names
-- Only 2 module types supported; user expects at least 6
+## Problems
+1. **No "Transfer Slips" option** — `slips-2.csv` gets detected as "Finance" but user expects a separate "Transfer Slips" category. The dropdown only has 6 modules, missing Transfer Slips.
+2. **Import button disabled** for all modules except Members and Leads — `IMPORTABLE_MODULES` only includes those two, so clicking Import on Packages/Promotions/Staff/Finance/Slips does nothing.
 
 ## Plan
 
-### 1. Expand `DetectedModule` type and detection signatures
+### File: `src/components/settings/BulkImportDropZone.tsx`
 
-Add support for: `members`, `leads`, `packages`, `promotions`, `staff`, `finance` (read-only/info only for modules without import support).
+1. **Add `'slips'` to `DetectedModule` type** — `'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'finance' | 'slips' | null`
 
-Each module gets **human-readable header aliases** based on the actual CSV samples:
+2. **Add slips detection signature** — signals like `slip`, `transfer`, `bank_transfer` + filename fallback for `slip`
 
-| Module | Unique header signals |
-|--------|----------------------|
-| **members** | `firstname+joined date`, `member_id`, `member_since`, `medical conditions` |
-| **leads** | `temperature`, `internal_notes`, `package_interest_id` |
-| **packages** | `term(d)`, `sessions+price+categories`, `access locations` |
-| **promotions** | `promo code`, `promo_code`, `discount+started on` |
-| **staff** | `role+branch`, `firstname+role+branch` |
-| **finance** | `transaction no`, `order name`, `vat`, `payment method`, `tax invoice` |
+3. **Add "Transfer Slips" to `ALL_MODULES`** dropdown with `labelKey: 'nav.transferSlips'` and a `Receipt` icon
 
-### 2. Normalize headers before matching
-- Lowercase, trim, strip quotes, collapse whitespace
-- Match against aliases using `includes()` for flexibility
+4. **Add slips icon** to `ModuleIcon` (e.g., `Receipt` from lucide)
 
-### 3. Better filename fallback
-Expand filename checks: `package` → packages, `promo` → promotions, `staff` → staff, `finance`/`transaction`/`slip` → finance
+5. **Update filename fallback** — `slip` → `'slips'` (not `'finance'`), keep `finance`/`transaction` → `'finance'`
 
-### 4. Show detected module for non-importable types
-For modules without import (packages, promotions, staff, finance), show the detection result but disable the "Start Import" button with a "Coming soon" tooltip — same pattern as the module grid below.
+6. **Update drop zone description text** — change from "auto-detects Members or Leads" to something more generic like "auto-detects module type" since we now support 7 modules
 
-## Files to Change
+7. **Keep `IMPORTABLE_MODULES` as `['members', 'leads']`** — this is correct since only those two have import dialogs. The disabled button + "Coming soon" tooltip is the right UX for unsupported modules.
 
-| File | Change |
-|------|--------|
-| `src/components/settings/BulkImportDropZone.tsx` | Rewrite `DetectedModule` type + `detectModule()` with real header aliases; expand filename fallback; disable import button for unsupported modules |
+### No other files need changes.
 
 ## Risk
-- **Low**: Only changes detection logic in one component. No data layer or dialog changes.
+- **Minimal**: Only adds a new module type option and fixes detection. No logic changes to import flow.
 
