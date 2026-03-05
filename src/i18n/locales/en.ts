@@ -1421,7 +1421,7 @@ export default {
       exportError: 'Failed to export data',
       templateDownloaded: 'Template downloaded',
       bulkDropTitle: 'Drop CSV files here to bulk import',
-      bulkDropDesc: 'Drop multiple .csv files — auto-detects Members or Leads',
+      bulkDropDesc: 'Drop multiple .csv files — auto-detects module type',
       rows: 'rows',
       unknown: 'Unknown',
       startImport: 'Import',

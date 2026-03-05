@@ -1421,7 +1421,7 @@ export default {
       exportError: 'ส่งออกข้อมูลไม่สำเร็จ',
       templateDownloaded: 'ดาวน์โหลดเทมเพลตแล้ว',
       bulkDropTitle: 'วางไฟล์ CSV ที่นี่เพื่อนำเข้าจำนวนมาก',
-      bulkDropDesc: 'วางไฟล์ .csv หลายไฟล์ — ตรวจจับสมาชิกหรือ Leads อัตโนมัติ',
+      bulkDropDesc: 'วางไฟล์ .csv หลายไฟล์ — ตรวจจับประเภทข้อมูลอัตโนมัติ',
       rows: 'แถว',
       unknown: 'ไม่ทราบ',
       startImport: 'นำเข้า',

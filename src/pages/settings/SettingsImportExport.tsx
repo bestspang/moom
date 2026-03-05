@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Users, UserPlus, Package, Tag, Shield, BookOpen, Dumbbell,
@@ -10,10 +10,10 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToCsv, exportMembers, exportLeads } from '@/lib/exportCsv';
 import type { ExportableMember, ExportableLead, CsvColumn } from '@/lib/exportCsv';
-import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
-import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import BulkImportDropZone from '@/components/settings/BulkImportDropZone';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
+import type { EntityId } from '@/lib/importer';
 
 interface ModuleConfig {
   id: string;
@@ -21,64 +21,44 @@ interface ModuleConfig {
   labelKey: string;
   hasExport: boolean;
   hasImport: boolean;
+  importEntity?: EntityId;
   templateHeaders: string[];
 }
 
 const modules: ModuleConfig[] = [
   {
-    id: 'members',
-    icon: Users,
-    labelKey: 'members',
-    hasExport: true,
-    hasImport: true,
+    id: 'members', icon: Users, labelKey: 'members',
+    hasExport: true, hasImport: true, importEntity: 'members',
     templateHeaders: ['first_name','last_name','nickname','gender','date_of_birth','phone','email','status','source','notes'],
   },
   {
-    id: 'leads',
-    icon: UserPlus,
-    labelKey: 'leads',
-    hasExport: true,
-    hasImport: true,
+    id: 'leads', icon: UserPlus, labelKey: 'leads',
+    hasExport: true, hasImport: true, importEntity: 'leads',
     templateHeaders: ['first_name','last_name','nickname','gender','date_of_birth','phone','email','status','source','temperature','notes'],
   },
   {
-    id: 'packages',
-    icon: Package,
-    labelKey: 'packages',
-    hasExport: true,
-    hasImport: false,
+    id: 'packages', icon: Package, labelKey: 'packages',
+    hasExport: true, hasImport: true, importEntity: 'packages',
     templateHeaders: ['name_en','name_th','type','price','sessions','expiration_days','term_days','status'],
   },
   {
-    id: 'promotions',
-    icon: Tag,
-    labelKey: 'promotions',
-    hasExport: true,
-    hasImport: false,
+    id: 'promotions', icon: Tag, labelKey: 'promotions',
+    hasExport: true, hasImport: true, importEntity: 'promotions',
     templateHeaders: ['name','name_en','name_th','promo_code','discount_type','discount_value','status','start_date','end_date'],
   },
   {
-    id: 'staff',
-    icon: Shield,
-    labelKey: 'staff',
-    hasExport: true,
-    hasImport: false,
+    id: 'staff', icon: Shield, labelKey: 'staff',
+    hasExport: true, hasImport: true, importEntity: 'staff',
     templateHeaders: ['first_name','last_name','nickname','email','phone','status'],
   },
   {
-    id: 'classes',
-    icon: BookOpen,
-    labelKey: 'classes',
-    hasExport: true,
-    hasImport: false,
+    id: 'classes', icon: BookOpen, labelKey: 'classes',
+    hasExport: true, hasImport: false,
     templateHeaders: ['name','name_th','type','level','duration','status','description'],
   },
   {
-    id: 'workouts',
-    icon: Dumbbell,
-    labelKey: 'workouts',
-    hasExport: true,
-    hasImport: false,
+    id: 'workouts', icon: Dumbbell, labelKey: 'workouts',
+    hasExport: true, hasImport: false,
     templateHeaders: ['name','is_active','items_count'],
   },
 ];
@@ -86,24 +66,25 @@ const modules: ModuleConfig[] = [
 const SettingsImportExport = () => {
   const { t } = useLanguage();
   const [loadingExport, setLoadingExport] = useState<string | null>(null);
-  const [showImportMembers, setShowImportMembers] = useState(false);
-  const [showImportLeads, setShowImportLeads] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importEntity, setImportEntity] = useState<EntityId | undefined>(undefined);
   const [importFile, setImportFile] = useState<File | undefined>(undefined);
 
-  const handleBulkImportStart = (file: File, module: 'members' | 'leads') => {
+  const handleBulkImportStart = (file: File, module: 'members' | 'leads' | 'packages' | 'staff' | 'promotions' | 'finance') => {
     setImportFile(file);
-    if (module === 'members') setShowImportMembers(true);
-    if (module === 'leads') setShowImportLeads(true);
+    setImportEntity(module);
+    setImportOpen(true);
   };
 
-  const handleImportMembersClose = (open: boolean) => {
-    setShowImportMembers(open);
-    if (!open) setImportFile(undefined);
+  const handleImportClose = (open: boolean) => {
+    setImportOpen(open);
+    if (!open) { setImportFile(undefined); setImportEntity(undefined); }
   };
 
-  const handleImportLeadsClose = (open: boolean) => {
-    setShowImportLeads(open);
-    if (!open) setImportFile(undefined);
+  const handleImport = (moduleId: string, entity?: EntityId) => {
+    setImportEntity(entity);
+    setImportFile(undefined);
+    setImportOpen(true);
   };
 
   const downloadTemplate = (mod: ModuleConfig) => {
@@ -131,34 +112,20 @@ const SettingsImportExport = () => {
             .order('created_at', { ascending: false });
           if (error) throw error;
           const mapped: ExportableMember[] = (data || []).map((m: any) => ({
-            member_id: m.member_id,
-            first_name: m.first_name,
-            last_name: m.last_name,
-            nickname: m.nickname,
-            gender: m.gender,
-            date_of_birth: m.date_of_birth,
-            phone: m.phone,
-            email: m.email,
-            line_id: m.line_id,
+            member_id: m.member_id, first_name: m.first_name, last_name: m.last_name,
+            nickname: m.nickname, gender: m.gender, date_of_birth: m.date_of_birth,
+            phone: m.phone, email: m.email, line_id: m.line_id,
             register_location_id: m.register_location_id,
             register_location_name: m.register_location?.name ?? null,
-            status: m.status,
-            member_since: m.member_since,
-            address_1: m.address_1,
-            address_2: m.address_2,
-            subdistrict: m.subdistrict,
-            district: m.district,
-            province: m.province,
-            postal_code: m.postal_code,
-            emergency_first_name: m.emergency_first_name,
-            emergency_last_name: m.emergency_last_name,
-            emergency_phone: m.emergency_phone,
-            emergency_relationship: m.emergency_relationship,
-            has_medical_conditions: m.has_medical_conditions ?? false,
-            medical_notes: m.medical_notes,
+            status: m.status, member_since: m.member_since,
+            address_1: m.address_1, address_2: m.address_2,
+            subdistrict: m.subdistrict, district: m.district,
+            province: m.province, postal_code: m.postal_code,
+            emergency_first_name: m.emergency_first_name, emergency_last_name: m.emergency_last_name,
+            emergency_phone: m.emergency_phone, emergency_relationship: m.emergency_relationship,
+            has_medical_conditions: m.has_medical_conditions ?? false, medical_notes: m.medical_notes,
             allow_physical_contact: m.allow_physical_contact ?? false,
-            source: m.source,
-            notes: m.notes,
+            source: m.source, notes: m.notes,
           }));
           exportMembers(mapped);
           break;
@@ -255,20 +222,11 @@ const SettingsImportExport = () => {
     }
   };
 
-  const handleImport = (moduleId: string) => {
-    if (moduleId === 'members') setShowImportMembers(true);
-    if (moduleId === 'leads') setShowImportLeads(true);
-  };
-
   const getModuleLabel = (mod: ModuleConfig) => {
     const labels: Record<string, string> = {
-      members: t('nav.members'),
-      leads: t('nav.leads'),
-      packages: t('nav.packages'),
-      promotions: t('nav.promotions'),
-      staff: t('nav.staff'),
-      classes: t('nav.classes'),
-      workouts: t('nav.workoutList'),
+      members: t('nav.members'), leads: t('nav.leads'), packages: t('nav.packages'),
+      promotions: t('nav.promotions'), staff: t('nav.staff'),
+      classes: t('nav.classes'), workouts: t('nav.workoutList'),
     };
     return labels[mod.id] || mod.id;
   };
@@ -277,19 +235,15 @@ const SettingsImportExport = () => {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold">{t('settings.importExport.title')}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t('settings.importExport.description')}
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">{t('settings.importExport.description')}</p>
       </div>
 
-      {/* Bulk Drop Zone */}
       <BulkImportDropZone onStartImport={handleBulkImportStart} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((mod) => {
           const Icon = mod.icon;
           const isExporting = loadingExport === mod.id;
-
           return (
             <Card key={mod.id}>
               <CardHeader className="pb-3">
@@ -301,59 +255,27 @@ const SettingsImportExport = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
-                {/* Export */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start"
-                  disabled={isExporting}
-                  onClick={() => handleExport(mod.id)}
-                >
-                  {isExporting ? (
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-3.5 w-3.5" />
-                  )}
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={isExporting} onClick={() => handleExport(mod.id)}>
+                  {isExporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
                   {t('settings.importExport.exportCsv')}
                 </Button>
-
-                {/* Import */}
                 {mod.hasImport ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => handleImport(mod.id)}
-                  >
+                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => handleImport(mod.id, mod.importEntity)}>
                     <Upload className="mr-2 h-3.5 w-3.5" />
                     {t('settings.importExport.importCsv')}
                   </Button>
                 ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start opacity-50 cursor-not-allowed"
-                        disabled
-                      >
+                      <Button variant="outline" size="sm" className="w-full justify-start opacity-50 cursor-not-allowed" disabled>
                         <Upload className="mr-2 h-3.5 w-3.5" />
                         {t('settings.importExport.importCsv')}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      {t('settings.importExport.comingSoon')}
-                    </TooltipContent>
+                    <TooltipContent>{t('settings.importExport.comingSoon')}</TooltipContent>
                   </Tooltip>
                 )}
-
-                {/* Template */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-muted-foreground"
-                  onClick={() => downloadTemplate(mod)}
-                >
+                <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={() => downloadTemplate(mod)}>
                   <FileDown className="mr-2 h-3.5 w-3.5" />
                   {t('settings.importExport.downloadTemplate')}
                 </Button>
@@ -363,15 +285,10 @@ const SettingsImportExport = () => {
         })}
       </div>
 
-      {/* Import Dialogs */}
-      <ImportMembersDialog
-        open={showImportMembers}
-        onOpenChange={handleImportMembersClose}
-        initialFile={importFile}
-      />
-      <ImportLeadsDialog
-        open={showImportLeads}
-        onOpenChange={handleImportLeadsClose}
+      <ImportCenterDialog
+        open={importOpen}
+        onOpenChange={handleImportClose}
+        presetEntity={importEntity}
         initialFile={importFile}
       />
     </div>
