@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, FileText, Users, UserPlus, X, AlertTriangle, Package, Megaphone, UserCog, DollarSign } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, X, AlertTriangle, Package, Megaphone, UserCog, DollarSign, Receipt } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,7 @@ function parseCsvFirstLine(text: string): { headers: string[]; rowCount: number 
 
 // ── Auto-detection with real CSV header aliases ──
 
-export type DetectedModule = 'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'finance' | null;
+export type DetectedModule = 'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'finance' | 'slips' | null;
 
 const IMPORTABLE_MODULES: DetectedModule[] = ['members', 'leads'];
 
@@ -48,6 +48,10 @@ const MODULE_SIGNATURES: ModuleSignature[] = [
   {
     module: 'finance',
     signals: ['transaction no.', 'transaction no', 'order name', 'vat', 'vat @7%', 'payment method', 'tax invoice no.', 'tax invoice no', 'price excluding vat', 'price including vat'],
+  },
+  {
+    module: 'slips',
+    signals: ['slip', 'transfer slip', 'bank', 'transfer date', 'slip image', 'slip_url', 'transfer_amount'],
   },
   {
     module: 'packages',
@@ -96,7 +100,8 @@ function detectModule(headers: string[], fileName: string): { module: DetectedMo
   if (fn.includes('package')) return { module: 'packages', confidence: 0.5 };
   if (fn.includes('promo')) return { module: 'promotions', confidence: 0.5 };
   if (fn.includes('staff')) return { module: 'staff', confidence: 0.5 };
-  if (fn.includes('finance') || fn.includes('transaction') || fn.includes('slip')) return { module: 'finance', confidence: 0.5 };
+  if (fn.includes('slip')) return { module: 'slips', confidence: 0.5 };
+  if (fn.includes('finance') || fn.includes('transaction')) return { module: 'finance', confidence: 0.5 };
 
   return { module: null, confidence: 0 };
 }
@@ -111,6 +116,7 @@ function ModuleIcon({ module }: { module: DetectedModule }) {
     case 'promotions': return <Megaphone className="h-4 w-4 text-primary" />;
     case 'staff': return <UserCog className="h-4 w-4 text-primary" />;
     case 'finance': return <DollarSign className="h-4 w-4 text-primary" />;
+    case 'slips': return <Receipt className="h-4 w-4 text-primary" />;
     default: return <AlertTriangle className="h-4 w-4 text-destructive" />;
   }
 }
@@ -138,6 +144,7 @@ const ALL_MODULES: { value: DetectedModule; labelKey: string }[] = [
   { value: 'promotions', labelKey: 'nav.promotions' },
   { value: 'staff', labelKey: 'nav.staff' },
   { value: 'finance', labelKey: 'nav.finance' },
+  { value: 'slips', labelKey: 'nav.transferSlips' },
 ];
 
 const BulkImportDropZone = ({ onStartImport }: BulkImportDropZoneProps) => {
