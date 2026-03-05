@@ -1,37 +1,32 @@
 
 
-# Analysis: CSV Import Improvements — Already Implemented
+# Fix: Add "Date modified" and missing columns to Settings package export
 
-After reviewing the current codebase, **all 5 requested improvements are already implemented** in the previous iteration. Here's the evidence:
+## Problem
+The package export from **Settings > Import/Export** page (`SettingsImportExport.tsx` lines 149-163) only exports 8 basic columns: `name_en, name_th, type, price, sessions, expiration_days, term_days, status`.
 
-## What Already Exists
+It is missing columns that the Packages page export (`Packages.tsx` lines 105-119) already includes:
+- **ID** (formatted as PKG-00001)
+- **Categories**
+- **Access locations**
+- **Sold at** (same as access locations)
+- **Date modified** (from `updated_at`)
 
-### 1. Required/Optional Sections ✅
-`ImportCenterDialog.tsx` lines 79-86 splits fields into `requiredFields` and `optionalFields` using `useMemo`. Lines 379-401 render them as two labeled sections ("Required Fields" / "Optional Fields"). Lines 93-98 block the Next button via `hasRequiredError` when a required field is skipped.
+The user's screenshot shows these columns are expected in the export.
 
-### 2. Helper Text ✅
-Lines 367-371 show a helper text box: *"Match each field to a column from your CSV. Choose 'Skip' if your file doesn't contain that field. Fields marked * are required."*
+## Fix (surgical, 1 file)
 
-### 3. Preview Step with Error Highlighting ✅
-Lines 456-558 render a full preview table (first 10 rows) with:
-- All mapped columns shown (not just 3 truncated)
-- Per-field error highlighting (red background + text for fields with errors, lines 503-515)
-- Valid/error count badges
-- "Download Error CSV" button (line 544)
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 149-163
 
-### 4. Enum Validation Warnings (Finance) ✅
-`finance.ts` lines 70-88 `validateRow` already checks `_type`, `payment_method`, and `status` for unrecognized values and generates clear error messages like: `"Unrecognized package type: "xyz". Expected: unlimited, session, pt"`
+Update the packages export `cols` array to match the full column set from the Packages page export, adding:
+1. `id` column — formatted as `PKG-{index}` (same pattern as Packages page)
+2. `categories` — resolve from `all_categories` / `categories` array
+3. `access_locations` — resolve from `all_locations` / `access_locations` array joined with locations table
+4. `sold_at` — same as access_locations
+5. `date_modified` — from `updated_at`, formatted as `d MMM yyyy` uppercase
 
-### 5. Finance Package Type Mapping ✅
-`finance.ts` lines 126-129 map `_type` to the `package_type` enum via `normalizePackageType()`. The DB `transactions.type` column IS the `package_type` enum — there is no separate `transaction_type` column in the schema, so adding a separate field would have nowhere to write.
+Also fetch locations (join or separate query) to resolve location UUIDs to names, matching how the Packages page does it.
 
-## What Could Be Genuinely New
-
-The only feature NOT yet implemented is an **interactive enum mapping UI** — where if the preview detects unknown enum values (e.g., "Unlimited" not matching "unlimited"), the user gets a small dropdown to manually map each unique unknown value to a valid enum option before importing. Currently, unrecognized values are shown as errors but the user cannot fix them without editing the CSV.
-
-### Should I implement the enum mapping UI?
-
-This would add a sub-step between mapping and preview where unique unrecognized enum values are listed with a dropdown to map each to a valid option. It's a moderate UI addition to `ImportCenterDialog`. If you'd like me to build this, approve the plan.
-
-If instead you're seeing a specific bug or missing behavior in the current import flow, please describe what you see so I can investigate the actual issue.
+## Risk
+- **Low**: Only changes the CSV output of one export path. No other behavior affected.
 
