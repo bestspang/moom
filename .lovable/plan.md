@@ -1,24 +1,25 @@
 
 
-# Fix: Settings page loses sub-route on refresh
+# Fix: Enable Slips Import + Clean Up "Unknown" Label
 
-## Problem
-The `/setting` route has no index redirect. When navigating to `/setting` directly (or if any redirect strips the sub-path), the Outlet renders empty. The fix is to add an index route that redirects `/setting` → `/setting/general`.
+## Problems Found
 
-## Change
+### 1. Slips import button disabled in BulkImportDropZone
+`IMPORTABLE_MODULES` on line 39 of `BulkImportDropZone.tsx` only includes `['members', 'leads', 'packages', 'staff', 'promotions', 'finance']` — missing `'slips'`. The `onStartImport` callback type also doesn't include `'slips'`.
 
-### `src/App.tsx`
-Add an index redirect under the `setting` route:
+### 2. Finance page — slips tab ManageDropdown missing `onImport`
+In `Finance.tsx` line 338-343, the slips tab renders `ManageDropdown` without `onImport`, so there's no Import CSV option on the Transfer Slips tab.
 
-```tsx
-import { Navigate } from 'react-router-dom';
+### 3. "Unknown" label in dropdown
+The `__none__` option shows "Unknown" which is confusing. Should show something like "Select type..." or remove it if not needed.
 
-<Route path="setting" element={<Settings />}>
-  <Route index element={<Navigate to="general" replace />} />
-  <Route path="general" element={<SettingsGeneral />} />
-  ...
-</Route>
-```
+## Changes
 
-One line addition. Zero risk.
+| # | File | Change |
+|---|---|---|
+| 1 | `src/components/settings/BulkImportDropZone.tsx` | Add `'slips'` to `IMPORTABLE_MODULES` and update `onStartImport` type signature |
+| 2 | `src/pages/Finance.tsx` | Add `onImport` to slips tab `ManageDropdown`, set `presetEntity` based on active tab (`'finance'` or `'slips'`) |
+| 3 | `src/components/settings/BulkImportDropZone.tsx` | Change "Unknown" label to "Select type..." for clarity |
+
+All additive. No existing behavior broken.
 
