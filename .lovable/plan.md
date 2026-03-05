@@ -1,25 +1,32 @@
 
 
-# Fix: Enable Slips Import + Clean Up "Unknown" Label
-
-## Problems Found
-
-### 1. Slips import button disabled in BulkImportDropZone
-`IMPORTABLE_MODULES` on line 39 of `BulkImportDropZone.tsx` only includes `['members', 'leads', 'packages', 'staff', 'promotions', 'finance']` — missing `'slips'`. The `onStartImport` callback type also doesn't include `'slips'`.
-
-### 2. Finance page — slips tab ManageDropdown missing `onImport`
-In `Finance.tsx` line 338-343, the slips tab renders `ManageDropdown` without `onImport`, so there's no Import CSV option on the Transfer Slips tab.
-
-### 3. "Unknown" label in dropdown
-The `__none__` option shows "Unknown" which is confusing. Should show something like "Select type..." or remove it if not needed.
+# Add Bulk Actions to Staff Page
 
 ## Changes
 
-| # | File | Change |
-|---|---|---|
-| 1 | `src/components/settings/BulkImportDropZone.tsx` | Add `'slips'` to `IMPORTABLE_MODULES` and update `onStartImport` type signature |
-| 2 | `src/pages/Finance.tsx` | Add `onImport` to slips tab `ManageDropdown`, set `presetEntity` based on active tab (`'finance'` or `'slips'`) |
-| 3 | `src/components/settings/BulkImportDropZone.tsx` | Change "Unknown" label to "Select type..." for clarity |
+### 1. Add bulk mutation hooks in `src/hooks/useStaff.ts`
+Following the exact Classes pattern, add three hooks:
+- `useBulkUpdateStaffStatus` — update status (active/pending/terminated) for selected IDs
+- `useBulkDeleteStaff` — delete selected staff rows
+- `useBulkDuplicateStaff` — duplicate selected staff as "Copy of" with status=pending
 
-All additive. No existing behavior broken.
+All three invalidate `['staff']` + `['staff-stats']` and log activity.
+
+### 2. Update `src/pages/Staff.tsx`
+- Add `selectedRows` state + `handleSelectRow`/`handleSelectAll`/`clearSelection` callbacks (same as Classes page)
+- Import `BulkActionBar` from common + new bulk hooks
+- Pass `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` to `DataTable`
+- Render `BulkActionBar` with staff status options (`active`/`pending`/`terminated`)
+- Wire export-selected to filter staff by selectedRows
+- Clear selection on search/tab change
+
+### Status options for bulk bar
+```
+{ value: 'active', label: 'Active' }
+{ value: 'pending', label: 'Pending' }
+{ value: 'terminated', label: 'Terminated' }
+```
+
+### Risk
+Low — additive only. Existing staff list behavior unchanged. DataTable already supports selectable mode.
 
