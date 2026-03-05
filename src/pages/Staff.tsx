@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -10,6 +10,10 @@ import { useStaff, useStaffStats } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLocations';
 import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { getInitials } from '@/lib/formatters';
+import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
+import { toast } from 'sonner';
+
+const TEMPLATE_HEADERS = ['first_name', 'last_name', 'phone', 'email', 'status'];
 
 const Staff = () => {
   const { t } = useLanguage();
@@ -61,6 +65,33 @@ const Staff = () => {
     });
     if (ids.size === 0) return t('staff.allLocations');
     return Array.from(ids).map(id => locationMap.get(id) || id).join(', ');
+  };
+
+  const handleExport = () => {
+    if (!staff?.length) { toast.info(t('common.noData')); return; }
+    const csvColumns: CsvColumn<any>[] = [
+      { key: 'first_name', header: 'First Name', accessor: (r) => r.first_name },
+      { key: 'last_name', header: 'Last Name', accessor: (r) => r.last_name },
+      { key: 'phone', header: 'Phone', accessor: (r) => r.phone },
+      { key: 'email', header: 'Email', accessor: (r) => r.email },
+      { key: 'status', header: 'Status', accessor: (r) => r.status },
+    ];
+    exportToCsv(staff, csvColumns, 'staff');
+    toast.success(t('common.export'));
+  };
+
+  const handleDownloadTemplate = () => {
+    const csv = TEMPLATE_HEADERS.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'staff-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
   };
 
   const columns: Column<any>[] = [
@@ -127,9 +158,16 @@ const Staff = () => {
         title={t('staff.title')} 
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('staff.title') }]} 
         actions={
-          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
-            {t('staff.createStaff')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ManageDropdown
+              onExport={handleExport}
+              onDownloadTemplate={handleDownloadTemplate}
+              exportDisabled={!staff?.length}
+            />
+            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
+              {t('staff.createStaff')}
+            </Button>
+          </div>
         } 
       />
       

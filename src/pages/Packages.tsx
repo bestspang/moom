@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, type Column, type StatusTab } from '@/components/common';
+import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/formatters';
@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Package = Tables<'packages'>;
+
+const TEMPLATE_HEADERS = ['name_en', 'name_th', 'type', 'term_days', 'sessions', 'price', 'usage_type', 'is_popular', 'status'];
 
 const Packages = () => {
   const { t, language } = useLanguage();
@@ -67,6 +69,20 @@ const Packages = () => {
     toast.success(t('common.export'));
   };
 
+  const handleDownloadTemplate = () => {
+    const csv = TEMPLATE_HEADERS.join(',');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'packages-template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('common.downloadTemplate'));
+  };
+
   const columns: Column<Package>[] = [
     { 
       key: 'name', 
@@ -116,10 +132,11 @@ const Packages = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              {t('common.export')}
-            </Button>
+            <ManageDropdown
+              onExport={handleExport}
+              onDownloadTemplate={handleDownloadTemplate}
+              exportDisabled={!packages?.length}
+            />
             <Button
               className="bg-primary hover:bg-primary-hover"
               onClick={() => navigate('/package/create')}

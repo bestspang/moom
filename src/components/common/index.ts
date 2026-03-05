@@ -7,3 +7,4 @@ export { EmptyState } from './EmptyState';
 export { DatePicker } from './DatePicker';
 export { DateRangePicker } from './DateRangePicker';
 export { DataTable, type Column } from './DataTable';
+export { ManageDropdown } from './ManageDropdown';
