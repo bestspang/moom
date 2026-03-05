@@ -22,7 +22,7 @@ export type EntityId = 'members' | 'leads' | 'packages' | 'staff' | 'promotions'
 export interface EntityConfig {
   id: EntityId;
   headerAliases: Record<string, string>;
-  targetFields: { value: string; label: string }[];
+  targetFields: { value: string; label: string; required?: boolean }[];
   templateHeaders: string[];
   fullTemplateHeaders?: string[];
   validateRow: (data: Record<string, string>) => string[];
