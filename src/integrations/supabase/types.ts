@@ -2419,6 +2419,108 @@ export type Database = {
           },
         ]
       }
+      transfer_slips: {
+        Row: {
+          amount_thb: number
+          bank_reference: string | null
+          created_at: string | null
+          id: string
+          linked_transaction_id: string | null
+          location_id: string | null
+          member_id: string | null
+          member_name_text: string | null
+          member_phone_text: string | null
+          package_id: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          raw_import_row_json: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewer_staff_id: string | null
+          slip_datetime: string | null
+          slip_file_url: string | null
+          status: Database["public"]["Enums"]["transfer_slip_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_thb?: number
+          bank_reference?: string | null
+          created_at?: string | null
+          id?: string
+          linked_transaction_id?: string | null
+          location_id?: string | null
+          member_id?: string | null
+          member_name_text?: string | null
+          member_phone_text?: string | null
+          package_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          raw_import_row_json?: Json | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_staff_id?: string | null
+          slip_datetime?: string | null
+          slip_file_url?: string | null
+          status?: Database["public"]["Enums"]["transfer_slip_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_thb?: number
+          bank_reference?: string | null
+          created_at?: string | null
+          id?: string
+          linked_transaction_id?: string | null
+          location_id?: string | null
+          member_id?: string | null
+          member_name_text?: string | null
+          member_phone_text?: string | null
+          package_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          raw_import_row_json?: Json | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_staff_id?: string | null
+          slip_datetime?: string | null
+          slip_file_url?: string | null
+          status?: Database["public"]["Enums"]["transfer_slip_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_slips_linked_transaction_id_fkey"
+            columns: ["linked_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_slips_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_slips_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_slips_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_slips_reviewer_staff_id_fkey"
+            columns: ["reviewer_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2619,6 +2721,7 @@ export type Database = {
         | "voided"
         | "needs_review"
         | "refunded"
+      transfer_slip_status: "needs_review" | "approved" | "rejected" | "voided"
       usage_type: "class_only" | "gym_checkin_only" | "both"
       usage_type_ledger: "checkin" | "booking" | "pt_session" | "adjustment"
       waitlist_status: "waiting" | "promoted" | "expired" | "cancelled"
@@ -2800,6 +2903,7 @@ export const Constants = {
         "needs_review",
         "refunded",
       ],
+      transfer_slip_status: ["needs_review", "approved", "rejected", "voided"],
       usage_type: ["class_only", "gym_checkin_only", "both"],
       usage_type_ledger: ["checkin", "booking", "pt_session", "adjustment"],
       waitlist_status: ["waiting", "promoted", "expired", "cancelled"],

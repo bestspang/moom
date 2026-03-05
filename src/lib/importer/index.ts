@@ -9,6 +9,7 @@ import { promotionsConfig } from './entityConfigs/promotions';
 import { financeConfig } from './entityConfigs/finance';
 import { classesConfig } from './entityConfigs/classes';
 import { workoutsConfig } from './entityConfigs/workouts';
+import { slipsConfig } from './entityConfigs/slips';
 import type { EntityConfig, EntityId } from './types';
 
 export const ENTITY_CONFIGS: Record<EntityId, EntityConfig> = {
@@ -20,15 +21,7 @@ export const ENTITY_CONFIGS: Record<EntityId, EntityConfig> = {
   finance: financeConfig,
   classes: classesConfig,
   workouts: workoutsConfig,
-  slips: {
-    id: 'slips',
-    headerAliases: {},
-    targetFields: [],
-    templateHeaders: ['transaction_no', 'slip_file_url', 'slip_amount', 'slip_datetime', 'sender_bank', 'sender_last4', 'status', 'review_note'],
-    validateRow: () => ['Slips import not yet supported'],
-    upsertRows: async () => ({ created: 0, updated: 0, failed: 0, errors: [] }),
-    queryKeysToInvalidate: [],
-  },
+  slips: slipsConfig,
 };
 
-export { membersConfig, leadsConfig, packagesConfig, staffConfig, promotionsConfig, financeConfig, classesConfig, workoutsConfig };
+export { membersConfig, leadsConfig, packagesConfig, staffConfig, promotionsConfig, financeConfig, classesConfig, workoutsConfig, slipsConfig };
