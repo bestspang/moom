@@ -158,7 +158,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const isActiveRoute = (path: string) => {
     if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
+    if (location.pathname === path) return true;
+    return location.pathname.startsWith(path + '/');
   };
 
   const renderNavItem = (item: NavItem) => {
