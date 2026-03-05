@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/formatters';
 import { usePackages, usePackageStats } from '@/hooks/usePackages';
+import { useLocations } from '@/hooks/useLocations';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Package = Tables<'packages'>;
 
-const TEMPLATE_HEADERS = ['name_en', 'name_th', 'type', 'term_days', 'sessions', 'price', 'usage_type', 'is_popular', 'status'];
+const TEMPLATE_HEADERS = ['ID', 'Name', 'Type', 'Term(D)', 'Sessions', 'Price', 'Categories', 'Access locations', 'Sold at', 'Date modified', 'Status'];
 
 const Packages = () => {
   const { t, language } = useLanguage();
@@ -23,6 +25,7 @@ const Packages = () => {
 
   const { data: packages, isLoading } = usePackages(activeTab, search);
   const { data: stats } = usePackageStats();
+  const { data: locations } = useLocations();
 
   const statusTabs: StatusTab[] = [
     { key: 'on_sale', label: t('packages.onSale'), count: stats?.on_sale || 0, color: 'teal' },
@@ -54,16 +57,48 @@ const Packages = () => {
       toast.info(t('common.noData'));
       return;
     }
+
+    const locationMap = new Map(
+      (locations || []).map((l) => [l.id, l.name])
+    );
+
+    const resolveLocations = (pkg: Package): string => {
+      if (pkg.all_locations) return 'All';
+      if (!pkg.access_locations?.length) return '-';
+      return pkg.access_locations.map((id) => locationMap.get(id) || id).join(', ');
+    };
+
+    const resolveCategories = (pkg: Package): string => {
+      if (pkg.all_categories) return 'All';
+      if (!pkg.categories?.length) return '-';
+      if (pkg.categories.length === 1) return pkg.categories[0];
+      return 'Multiple';
+    };
+
+    const formatType = (type: string) => {
+      switch (type) {
+        case 'unlimited': return 'Unlimited';
+        case 'session': return 'Sessions';
+        case 'pt': return 'PT';
+        default: return type;
+      }
+    };
+
+    // Build ID map: assign PKG-NNNNN based on row index
+    const idMap = new Map(packages.map((pkg, i) => [pkg.id, `PKG-${String(i + 1).padStart(5, '0')}`]));
+
     const csvColumns: CsvColumn<Package>[] = [
-      { key: 'name_en', header: 'Name (EN)', accessor: (r) => r.name_en },
-      { key: 'name_th', header: 'Name (TH)', accessor: (r) => r.name_th },
-      { key: 'type', header: 'Type', accessor: (r) => r.type },
-      { key: 'term_days', header: 'Term (Days)', accessor: (r) => r.term_days },
-      { key: 'sessions', header: 'Sessions', accessor: (r) => r.sessions },
+      { key: 'id', header: 'ID', accessor: (r) => idMap.get(r.id) ?? r.id },
+      { key: 'name', header: 'Name', accessor: (r) => (language === 'th' && r.name_th ? r.name_th : r.name_en) },
+      { key: 'type', header: 'Type', accessor: (r) => formatType(r.type) },
+      { key: 'term_days', header: 'Term(D)', accessor: (r) => r.term_days },
+      { key: 'sessions', header: 'Sessions', accessor: (r) => r.sessions ?? '-' },
       { key: 'price', header: 'Price', accessor: (r) => r.price },
-      { key: 'usage_type', header: 'Usage Type', accessor: (r) => r.usage_type },
-      { key: 'is_popular', header: 'Popular', accessor: (r) => r.is_popular ? 'Yes' : 'No' },
-      { key: 'status', header: 'Status', accessor: (r) => r.status },
+      { key: 'categories', header: 'Categories', accessor: (r) => resolveCategories(r) },
+      { key: 'access_locations', header: 'Access locations', accessor: (r) => resolveLocations(r) },
+      { key: 'sold_at', header: 'Sold at', accessor: (r) => resolveLocations(r) },
+      { key: 'date_modified', header: 'Date modified', accessor: (r) => r.updated_at ? format(new Date(r.updated_at), 'd MMM yyyy').toUpperCase() : '-' },
+      { key: 'status', header: 'Status', accessor: (r) => r.status ?? 'drafts' },
     ];
     exportToCsv(packages, csvColumns, 'packages');
     toast.success(t('common.export'));
