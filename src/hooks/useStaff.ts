@@ -341,3 +341,77 @@ export const useInviteStaff = () => {
     },
   });
 };
+
+// ── Bulk mutations ──
+
+export const useBulkUpdateStaffStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase
+        .from('staff')
+        .update({ status: status as Staff['status'] })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, status }) => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      logActivity({
+        event_type: 'staff_bulk_status',
+        activity: `${ids.length} staff status changed to ${status}`,
+        entity_type: 'staff',
+      });
+      toast.success(`${ids.length} staff updated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDeleteStaff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('staff').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      logActivity({
+        event_type: 'staff_bulk_deleted',
+        activity: `${ids.length} staff deleted`,
+        entity_type: 'staff',
+      });
+      toast.success(`${ids.length} staff deleted`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
+
+export const useBulkDuplicateStaff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (staffRows: Staff[]) => {
+      const copies = staffRows.map(({ id, created_at, updated_at, staff_code, ...rest }) => ({
+        ...rest,
+        first_name: `Copy of ${rest.first_name}`,
+        status: 'pending' as Staff['status'],
+        staff_code: null,
+      }));
+      const { error } = await supabase.from('staff').insert(copies);
+      if (error) throw error;
+    },
+    onSuccess: (_, rows) => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      logActivity({
+        event_type: 'staff_bulk_duplicated',
+        activity: `${rows.length} staff duplicated`,
+        entity_type: 'staff',
+      });
+      toast.success(`${rows.length} staff duplicated`);
+    },
+    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+  });
+};
