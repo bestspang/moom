@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStaff, useStaffStats } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLocations';
 import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { getInitials } from '@/lib/formatters';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ const Staff = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: staff, isLoading } = useStaff(activeTab, search);
   const { data: stats } = useStaffStats();
@@ -181,6 +183,7 @@ const Staff = () => {
             <ManageDropdown
               onExport={handleExport}
               onDownloadTemplate={handleDownloadTemplate}
+              onImport={() => setImportOpen(true)}
               exportDisabled={!staff?.length}
             />
             <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
@@ -216,6 +219,7 @@ const Staff = () => {
       )}
 
       <CreateStaffDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="staff" />
     </div>
   );
 };

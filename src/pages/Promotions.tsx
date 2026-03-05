@@ -11,6 +11,7 @@ import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 
 type Promotion = Tables<'promotions'>;
 
@@ -30,6 +31,7 @@ const Promotions = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: promotions, isLoading } = usePromotions(activeTab, search);
   const { data: stats } = usePromotionStats();
@@ -151,7 +153,7 @@ const Promotions = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('promotions.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!promotions?.length} />
+            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!promotions?.length} />
             <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
               {t('promotions.createPromotion')}
             </Button>
@@ -196,6 +198,8 @@ const Promotions = () => {
         onChangeStatus={(status) => { bulkStatus.mutate({ ids: selectedRows, status }, { onSuccess: clearSelection }); }}
         isLoading={isBulkLoading}
       />
+
+      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="promotions" />
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  Users, UserPlus, Package, Tag, Shield, BookOpen, Dumbbell,
+  Users, UserPlus, Package, Tag, Shield, BookOpen, Dumbbell, DollarSign,
   Download, Upload, FileDown, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -50,6 +50,11 @@ const modules: ModuleConfig[] = [
     id: 'staff', icon: Shield, labelKey: 'staff',
     hasExport: true, hasImport: true, importEntity: 'staff',
     templateHeaders: ['first_name','last_name','nickname','email','phone','status'],
+  },
+  {
+    id: 'finance', icon: DollarSign, labelKey: 'finance',
+    hasExport: true, hasImport: true, importEntity: 'finance',
+    templateHeaders: ['Date & Time','Transaction no.','Order name','Type','Sold to','Register location','Price including vat','Payment method','Status'],
   },
   {
     id: 'classes', icon: BookOpen, labelKey: 'classes',
@@ -225,7 +230,7 @@ const SettingsImportExport = () => {
   const getModuleLabel = (mod: ModuleConfig) => {
     const labels: Record<string, string> = {
       members: t('nav.members'), leads: t('nav.leads'), packages: t('nav.packages'),
-      promotions: t('nav.promotions'), staff: t('nav.staff'),
+      promotions: t('nav.promotions'), staff: t('nav.staff'), finance: t('nav.finance'),
       classes: t('nav.classes'), workouts: t('nav.workoutList'),
     };
     return labels[mod.id] || mod.id;

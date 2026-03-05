@@ -89,7 +89,9 @@ async function upsertRows(
   rows: ImportRow[],
   queryClient: any,
   setProgress: (pct: number) => void,
+  options?: { overwrite?: boolean; defaultLocationId?: string },
 ): Promise<ImportResult> {
+  const overwrite = options?.overwrite ?? true;
   const validRows = rows.filter(r => r.errors.length === 0);
   const invalidRows = rows.filter(r => r.errors.length > 0);
 
@@ -162,6 +164,18 @@ async function upsertRows(
       }
 
       if (matchId) {
+        // If not overwriting, fetch existing and only fill blank fields
+        if (!overwrite) {
+          const { data: existing } = await supabase.from('members').select('*').eq('id', matchId).single();
+          if (existing) {
+            for (const key of Object.keys(memberData)) {
+              if (key === 'first_name' || key === 'last_name') continue; // always keep identifiers
+              if (existing[key as keyof typeof existing] != null && existing[key as keyof typeof existing] !== '') {
+                delete memberData[key];
+              }
+            }
+          }
+        }
         const { error } = await supabase.from('members').update(memberData).eq('id', matchId);
         if (error) throw error;
         result.updated++;

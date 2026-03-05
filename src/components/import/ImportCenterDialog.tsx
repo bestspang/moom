@@ -10,8 +10,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocations } from '@/hooks/useLocations';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import {
   parseCsv, downloadCsvTemplate,
@@ -59,8 +62,17 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
   const [result, setResult] = useState<ImportResult | null>(null);
   const [fileName, setFileName] = useState('');
 
+  // Members-specific options
+  const [defaultLocationId, setDefaultLocationId] = useState<string>('');
+  const [overwriteExisting, setOverwriteExisting] = useState(false);
+
+  const { data: locations } = useLocations();
   const config = entity ? ENTITY_CONFIGS[entity] : null;
   const lang = language === 'th' ? 'th' : 'en';
+
+  // Check if register_location_id is mapped
+  const isLocationMapped = Object.values(mapping).includes('register_location_id');
+  const showLocationPicker = entity === 'members' && !isLocationMapped;
 
   // Auto-process file
   useEffect(() => {
@@ -87,6 +99,8 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     setProgress(0);
     setResult(null);
     setFileName('');
+    setDefaultLocationId('');
+    setOverwriteExisting(false);
   };
 
   const handleClose = () => { reset(); onOpenChange(false); };
@@ -123,6 +137,10 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
       const target = mapping[colIdx];
       if (target && target !== '__skip__' && row[colIdx]) data[target] = row[colIdx];
     });
+    // Apply default location for members if not in CSV
+    if (entity === 'members' && !data.register_location_id && defaultLocationId) {
+      data.register_location_id = defaultLocationId;
+    }
     return data;
   };
 
@@ -135,7 +153,7 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     });
     setPreviewRows(rows);
     setStep('preview');
-  }, [csvRows, csvHeaders, mapping, config]);
+  }, [csvRows, csvHeaders, mapping, config, defaultLocationId, entity]);
 
   const doImport = useCallback(async () => {
     if (!config) return;
@@ -146,14 +164,17 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
       const errors = config.validateRow(data);
       return { rowIndex: idx + 2, data, errors };
     });
-    const importResult = await config.upsertRows(allRows, queryClient, setProgress);
+    const importResult = await config.upsertRows(allRows, queryClient, setProgress, {
+      overwrite: overwriteExisting,
+      defaultLocationId: defaultLocationId || undefined,
+    });
     // Invalidate
     for (const key of config.queryKeysToInvalidate) {
       queryClient.invalidateQueries({ queryKey: key });
     }
     setResult(importResult);
     setStep('done');
-  }, [csvRows, csvHeaders, mapping, config, queryClient]);
+  }, [csvRows, csvHeaders, mapping, config, queryClient, overwriteExisting, defaultLocationId, entity]);
 
   const downloadErrors = () => {
     if (!result || result.errors.length === 0) return;
@@ -252,7 +273,7 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
             <p className="text-sm text-muted-foreground">
               {language === 'th' ? 'จับคู่คอลัมน์' : 'Map columns'} — {csvRows.length} {language === 'th' ? 'แถว' : 'rows'}
             </p>
-            <ScrollArea className="h-[350px]">
+            <ScrollArea className="h-[280px]">
               <div className="space-y-2">
                 {csvHeaders.map((header, idx) => (
                   <div key={idx} className="flex items-center gap-3">
@@ -272,6 +293,41 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
                 ))}
               </div>
             </ScrollArea>
+
+            {/* Members-specific options */}
+            {entity === 'members' && (
+              <div className="space-y-3 rounded-lg border p-3">
+                {showLocationPicker && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">
+                      {language === 'th' ? 'สาขาเริ่มต้น (สำหรับแถวที่ไม่มีสาขา)' : 'Default location (for rows without location)'}
+                    </Label>
+                    <Select value={defaultLocationId} onValueChange={setDefaultLocationId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={language === 'th' ? 'เลือกสาขา...' : 'Select location...'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(locations || []).map(loc => (
+                          <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">
+                    {language === 'th' ? 'เขียนทับข้อมูลเดิม' : 'Overwrite existing values'}
+                  </Label>
+                  <Switch checked={overwriteExisting} onCheckedChange={setOverwriteExisting} />
+                </div>
+                {!overwriteExisting && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {language === 'th' ? 'เฉพาะฟิลด์ที่ว่างจะถูกอัปเดต' : 'Only empty fields will be updated (fill blanks only)'}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('upload')}>{t('common.back')}</Button>
               <Button onClick={buildPreview}>{t('common.next')}</Button>

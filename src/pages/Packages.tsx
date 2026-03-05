@@ -12,6 +12,7 @@ import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
+import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 
 type Package = Tables<'packages'>;
 
@@ -30,6 +31,7 @@ const Packages = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: packages, isLoading } = usePackages(activeTab, search);
   const { data: stats } = usePackageStats();
@@ -165,7 +167,7 @@ const Packages = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!packages?.length} />
+            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
             <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
               {t('packages.createPackage')}
             </Button>
@@ -210,6 +212,8 @@ const Packages = () => {
         onChangeStatus={(status) => { bulkStatus.mutate({ ids: selectedRows, status }, { onSuccess: clearSelection }); }}
         isLoading={isBulkLoading}
       />
+
+      <ImportCenterDialog open={importOpen} onOpenChange={setImportOpen} presetEntity="packages" />
     </div>
   );
 };
