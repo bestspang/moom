@@ -249,5 +249,5 @@ export const financeConfig: EntityConfig = {
   templateHeaders: ['transaction_id', 'order_name', 'amount', 'payment_method', 'status', 'date', 'location', 'notes'],
   validateRow,
   upsertRows,
-  queryKeysToInvalidate: [['transactions']],
+  queryKeysToInvalidate: [['transactions'], ['finance-transactions']],
 };
