@@ -50,7 +50,7 @@ const modules: ModuleConfig[] = [
   {
     id: 'staff', icon: Shield, labelKey: 'staff',
     hasExport: true, hasImport: true, importEntity: 'staff',
-    templateHeaders: ['first_name','last_name','nickname','email','phone','status'],
+    templateHeaders: ['Firstname','Lastname','Nickname','Role','Gender','Birthdate','Email','Phone','Address','Branch','Status'],
   },
   {
     id: 'finance', icon: DollarSign, labelKey: 'finance',
