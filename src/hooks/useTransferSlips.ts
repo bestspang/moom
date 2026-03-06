@@ -146,108 +146,17 @@ export const useApproveSlip = () => {
 
   return useMutation({
     mutationFn: async ({ slipId, packageId, note }: ApproveSlipPayload) => {
-      // 1. Fetch the slip
-      const { data: slip, error: slipErr } = await supabase
-        .from('transfer_slips')
-        .select('*, member:members(id, first_name, last_name, phone), package:packages(id, name_en, type, sessions, term_days, expiration_days, price)')
-        .eq('id', slipId)
-        .single();
-
-      if (slipErr) throw slipErr;
-      if (!slip) throw new Error('Slip not found');
-      if (slip.status !== 'needs_review') throw new Error('Slip is not in needs_review status');
-      if (Number(slip.amount_thb) <= 0) throw new Error('Amount must be > 0');
-
-      // 2. Generate transaction ID
-      const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
-      const txNo = `T-${String((count || 0) + 1).padStart(7, '0')}`;
-
-      // Resolve package
-      const pkgId = packageId || slip.package_id;
-      let pkg = slip.package;
-      if (pkgId && pkgId !== slip.package_id) {
-        const { data: p } = await supabase.from('packages').select('id, name_en, type, sessions, term_days, expiration_days, price').eq('id', pkgId).single();
-        pkg = p;
-      }
-
-      const memberName = slip.member
-        ? `${slip.member.first_name} ${slip.member.last_name}`
-        : slip.member_name_text || '';
-
-      // 3. Create finance transaction
-      const { data: tx, error: txErr } = await supabase
-        .from('transactions')
-        .insert({
-          transaction_id: txNo,
-          order_name: pkg?.name_en || `Transfer Slip Payment`,
-          amount: slip.amount_thb,
-          type: pkg?.type || null,
-          payment_method: slip.payment_method || 'bank_transfer',
-          status: 'paid',
-          member_id: slip.member_id || null,
-          package_id: pkgId || null,
-          location_id: slip.location_id || null,
-          notes: note || null,
-        })
-        .select()
-        .single();
-
-      if (txErr) throw txErr;
-
-      // 4. Create member_billing
-      if (slip.member_id) {
-        await supabase.from('member_billing').insert({
-          member_id: slip.member_id,
-          transaction_id: tx.id,
-          amount: slip.amount_thb,
-          description: `Payment: ${pkg?.name_en || txNo}`,
-        });
-      }
-
-      // 5. Create member_package if package selected and member exists
-      if (pkgId && slip.member_id && pkg) {
-        const now = new Date();
-        const expiryDate = new Date(now);
-        expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30));
-
-        await supabase.from('member_packages').insert({
-          member_id: slip.member_id,
-          package_id: pkgId,
-          purchase_date: now.toISOString(),
-          activation_date: now.toISOString(),
-          expiry_date: expiryDate.toISOString(),
-          sessions_remaining: pkg.sessions || null,
-          sessions_used: 0,
-          status: 'active',
-        });
-      }
-
-      // 6. Update slip status
-      const { data: updatedSlip, error: updateErr } = await supabase
-        .from('transfer_slips')
-        .update({
-          status: 'approved' as any,
-          reviewed_at: new Date().toISOString(),
-          review_note: note || null,
-          linked_transaction_id: tx.id,
-          package_id: pkgId || slip.package_id,
-        })
-        .eq('id', slipId)
-        .select()
-        .single();
-
-      if (updateErr) throw updateErr;
-
-      // 7. Activity log
-      logActivity({
-        event_type: 'transfer_slip.approved',
-        activity: `Transfer slip approved. Transaction ${txNo} created. Amount: ${slip.amount_thb} THB. Member: ${memberName}`,
-        entity_type: 'transfer_slip',
-        entity_id: slipId,
-        new_value: { transaction_id: tx.id, status: 'approved', amount: slip.amount_thb },
+      const { data, error } = await supabase.functions.invoke('approve-slip', {
+        body: { slipId, packageId, note },
       });
 
-      return updatedSlip;
+      if (error) throw new Error(error.message || 'Failed to approve slip');
+
+      // Edge function returns { data, message } or { error }
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+      if (result.error) throw new Error(result.error);
+
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
