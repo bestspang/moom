@@ -102,6 +102,7 @@ const ENUM_FIELDS: EnumFieldDef[] = [
       { value: 'pending', label: 'Pending' },
       { value: 'voided', label: 'Voided' },
       { value: 'refunded', label: 'Refunded' },
+      { value: 'failed', label: 'Failed' },
       { value: 'needs_review', label: 'Needs Review' },
     ],
     normalize: normalizeStatus,
