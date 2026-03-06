@@ -517,6 +517,8 @@ const Finance = () => {
                 <SelectItem value="pending">{t('common.pending')}</SelectItem>
                 <SelectItem value="needs_review">{t('transferSlips.needsReview')}</SelectItem>
                 <SelectItem value="voided">{t('transferSlips.voided')}</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={paymentMethodFilter} onValueChange={handleFilterChange(setPaymentMethodFilter)}>

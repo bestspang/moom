@@ -78,84 +78,13 @@ export function computeFinanceStats(transactions: any[] | undefined) {
     if (tx.status === 'paid') {
       stats.totalSales += amount;
       stats.netIncome += amount;
-    } else if (tx.status === 'voided') {
+    } else if (tx.status === 'voided' || tx.status === 'refunded') {
       stats.refunds += amount;
     }
   });
 
   return stats;
 }
-
-export const useTransferSlips = (filters: FinanceFilters & { slipStatus?: string }) => {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ['transfer-slips', filters],
-    enabled: !!user,
-    queryFn: async () => {
-      let query = supabase
-        .from('transactions')
-        .select(`
-          *,
-          member:members(id, first_name, last_name),
-          package:packages(id, name_en, name_th, type)
-        `)
-        .eq('payment_method', 'bank_transfer');
-      
-      if (filters.startDate) {
-        query = query.gte('created_at', filters.startDate.toISOString());
-      }
-      
-      if (filters.endDate) {
-        query = query.lte('created_at', filters.endDate.toISOString());
-      }
-      
-      if (filters.search) {
-        query = query.or(`transaction_id.ilike.%${filters.search}%,order_name.ilike.%${filters.search}%`);
-      }
-      
-      if (filters.slipStatus && filters.slipStatus !== 'all') {
-        query = query.eq('status', filters.slipStatus as Transaction['status']);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-};
-
-export const useTransferSlipStats = () => {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ['transfer-slip-stats'],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('status')
-        .eq('payment_method', 'bank_transfer');
-      
-      if (error) throw error;
-      
-      const stats = {
-        needs_review: 0,
-        paid: 0,
-        voided: 0,
-      };
-      
-      data?.forEach((tx) => {
-        if (tx.status === 'needs_review') stats.needs_review++;
-        else if (tx.status === 'paid') stats.paid++;
-        else if (tx.status === 'voided') stats.voided++;
-      });
-      
-      return stats;
-    },
-  });
-};
 
 export const useUpdateTransactionStatus = () => {
   const queryClient = useQueryClient();
