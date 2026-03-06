@@ -1,61 +1,47 @@
 
 
-# Recheck Audit: Stripe-Ready Payment Architecture
+# Fix: Promotions export missing columns in Settings
 
-## Already Fully Implemented (No Changes Needed)
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-| Requirement | Status |
-|---|---|
-| `transactions` table: source_type, source_ref, idempotency_key, VAT columns, paid_at, sold_to_* | Done |
-| `member_packages`: purchase_transaction_id, package_name_snapshot, sessions_total | Done |
-| `transfer_slips` table with all required fields | Done |
-| `activity_log` table | Done |
-| `approve-slip` Edge Function (atomic, idempotent, VAT calc, entitlement, activity log) | Done |
-| `stripe-create-checkout` Edge Function (stub with pending tx, VAT, activity log) | Done |
-| `stripe-webhook` Edge Function (checkout.session.completed, charge.refunded, idempotent, CORS) | Done |
-| `useApproveSlip` → edge function invocation | Done |
-| Reject/Void set `reviewer_staff_id` via staff lookup | Done |
-| Finance page: source_type column, VAT display, Stripe payment method filters, refunded/failed status filters | Done |
-| Pie chart: Stripe method labels | Done |
-| Member packages: purchase_transaction link column | Done |
-| Realtime sync: transfer_slips in TABLE_INVALIDATION_MAP | Done |
-| KPI stats: `refunded` status included in refunds counter | Done |
-| Dead legacy code removed from useFinance.ts | Done |
+## Fix (surgical, 1 file)
 
-## Remaining Gaps (3 items)
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### Gap 1: Finance CSV importer missing Stripe payment methods and `failed` status
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**File**: `src/lib/importer/entityConfigs/finance.ts`
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-The `normalizePaymentMethod` function (line 43-50) only maps to `cash`, `qr_promptpay`, `bank_transfer`, `credit_card`. It does NOT recognize `card_stripe` or `qr_promptpay_stripe`. Similarly, `normalizeStatus` (line 60-68) does not recognize `failed`.
-
-The `ENUM_FIELDS` options lists (lines 84-89, 95-101) also lack these values, so the interactive enum mapping step won't offer them.
-
-**Fix**:
-- Add `card_stripe` and `qr_promptpay_stripe` to `normalizePaymentMethod` and its `ENUM_FIELDS` options
-- Add `failed` to `normalizeStatus` and its `ENUM_FIELDS` options
-
-### Gap 2: Finance CSV importer missing `source_type` column mapping
-
-When importing transactions, there's no way to specify `source_type` (stripe/transfer_slip/manual/etc). All imported rows default to `'manual'` via the DB default, which is correct for CSV imports. However, the importer also doesn't populate `amount_gross`, `amount_ex_vat`, `amount_vat` from the existing `_price_ex_vat` and `_vat` mapped columns — these are treated as info-only and discarded.
-
-**Fix**: In `upsertRows`, when `_price_ex_vat` or `_vat` values are present, populate the corresponding `amount_ex_vat`, `amount_vat`, and `amount_gross` columns so VAT data survives import.
-
-### Gap 3: Finance importer `queryKeysToInvalidate` is stale
-
-Line 238: `queryKeysToInvalidate: [['transactions']]` — should also include `['finance-transactions']` to match the query key used by `useFinanceTransactions`.
-
-**Fix**: Change to `[['transactions'], ['finance-transactions']]`.
-
-## Implementation Plan
-
-### Step 1: Update finance importer enums + VAT population
-**File**: `src/lib/importer/entityConfigs/finance.ts`
-- Add `card_stripe` and `qr_promptpay_stripe` to `normalizePaymentMethod` + ENUM_FIELDS options
-- Add `failed` to `normalizeStatus` + ENUM_FIELDS options
-- In `upsertRows`, populate `amount_gross`, `amount_ex_vat`, `amount_vat` from mapped CSV columns
-- Fix `queryKeysToInvalidate` to include `['finance-transactions']`
-
-### Risk: Zero — additive enum options, no behavior change for existing imports.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

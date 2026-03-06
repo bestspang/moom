@@ -43,6 +43,8 @@ const TARGET_FIELDS = [
 function normalizePaymentMethod(val: string): string | null {
   const v = val.toLowerCase().trim();
   if (v === 'cash') return 'cash';
+  if (v === 'card_stripe' || v === 'stripe card') return 'card_stripe';
+  if (v === 'qr_promptpay_stripe' || v === 'stripe promptpay') return 'qr_promptpay_stripe';
   if (v.includes('qr') || v.includes('promptpay')) return 'qr_promptpay';
   if (v.includes('bank') || v.includes('transfer')) return 'bank_transfer';
   if (v.includes('credit') || v.includes('card')) return 'credit_card';
@@ -63,6 +65,7 @@ function normalizeStatus(val: string): string | null {
   if (v === 'voided' || v === 'void') return 'voided';
   if (v === 'refunded' || v === 'refund') return 'refunded';
   if (v === 'pending') return 'pending';
+  if (v === 'failed' || v === 'fail') return 'failed';
   if (v === 'needs review' || v === 'needs_review') return 'needs_review';
   return null;
 }
@@ -86,6 +89,8 @@ const ENUM_FIELDS: EnumFieldDef[] = [
       { value: 'bank_transfer', label: 'Bank Transfer' },
       { value: 'qr_promptpay', label: 'QR / PromptPay' },
       { value: 'credit_card', label: 'Credit Card' },
+      { value: 'card_stripe', label: 'Stripe Card' },
+      { value: 'qr_promptpay_stripe', label: 'Stripe PromptPay' },
     ],
     normalize: normalizePaymentMethod,
   },
@@ -97,6 +102,7 @@ const ENUM_FIELDS: EnumFieldDef[] = [
       { value: 'pending', label: 'Pending' },
       { value: 'voided', label: 'Voided' },
       { value: 'refunded', label: 'Refunded' },
+      { value: 'failed', label: 'Failed' },
       { value: 'needs_review', label: 'Needs Review' },
     ],
     normalize: normalizeStatus,
@@ -118,7 +124,7 @@ function validateRow(data: Record<string, string>): string[] {
   }
   if (data.status) {
     const s = normalizeStatus(data.status);
-    if (!s) errors.push(`Unrecognized status: "${data.status}". Expected: paid, voided, refunded, pending, needs_review`);
+    if (!s) errors.push(`Unrecognized status: "${data.status}". Expected: paid, voided, refunded, failed, pending, needs_review`);
   }
   return errors;
 }
@@ -190,6 +196,14 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
         if (s) tx.status = s;
       }
 
+      // Populate VAT columns from CSV mapped fields
+      const exVat = parseCurrency(row.data._price_ex_vat || '');
+      const vatAmt = parseCurrency(row.data._vat || '');
+      if (exVat != null) tx.amount_ex_vat = exVat;
+      if (vatAmt != null) tx.amount_vat = vatAmt;
+      if (exVat != null && vatAmt != null) tx.amount_gross = exVat + vatAmt;
+      else if (tx.amount && !tx.amount_gross) tx.amount_gross = tx.amount;
+
       // Resolve location
       const locName = dash(row.data._location);
       if (locName) {
@@ -235,5 +249,5 @@ export const financeConfig: EntityConfig = {
   templateHeaders: ['transaction_id', 'order_name', 'amount', 'payment_method', 'status', 'date', 'location', 'notes'],
   validateRow,
   upsertRows,
-  queryKeysToInvalidate: [['transactions']],
+  queryKeysToInvalidate: [['transactions'], ['finance-transactions']],
 };
