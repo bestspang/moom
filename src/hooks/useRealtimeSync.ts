@@ -77,6 +77,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   roles: ['roles', 'role-permissions', 'my-permissions'],
   user_roles: ['my-permissions', 'user-roles'],
   checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
+  transfer_slips: ['transfer-slips', 'transfer-slip-stats', 'transfer-slip-detail'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];

@@ -527,6 +527,8 @@ const Finance = () => {
                 <SelectItem value="bank_transfer">{t('finance.bankTransfer')}</SelectItem>
                 <SelectItem value="credit_card">{t('finance.creditCard')}</SelectItem>
                 <SelectItem value="promptpay">{t('finance.promptpay')}</SelectItem>
+                <SelectItem value="card_stripe">Stripe Card</SelectItem>
+                <SelectItem value="qr_promptpay_stripe">Stripe PromptPay</SelectItem>
               </SelectContent>
             </Select>
           </div>

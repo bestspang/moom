@@ -231,6 +231,7 @@ const MemberDetails = () => {
       row.package?.sessions ? `${row.sessions_remaining || 0}/${row.package.sessions}` : t('common.unlimited')
     },
     { key: 'expiry_date', header: t('members.expiryDate'), cell: (row) => formatDate(row.expiry_date) },
+    { key: 'purchase_transaction', header: t('members.transactionId'), cell: (row) => (row as any).purchase_transaction?.transaction_id || '-' },
   ];
 
   const billingColumns: Column<MemberBilling>[] = [

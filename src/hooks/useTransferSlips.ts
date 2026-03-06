@@ -278,6 +278,7 @@ export const useVoidSlip = () => {
           status: 'voided' as any,
           reviewed_at: new Date().toISOString(),
           review_note: reviewNote || null,
+          ...(reviewerStaffId && { reviewer_staff_id: reviewerStaffId }),
         })
         .eq('id', slipId)
         .select()
