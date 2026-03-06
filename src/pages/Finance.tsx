@@ -128,6 +128,8 @@ const Finance = () => {
       case 'pending': return 'pending';
       case 'voided': return 'voided';
       case 'needs_review': return 'pending';
+      case 'refunded': return 'voided';
+      case 'failed': return 'inactive';
       default: return 'default';
     }
   };
@@ -138,6 +140,9 @@ const Finance = () => {
       bank_transfer: 'Bank Transfer',
       credit_card: 'Credit Card',
       promptpay: 'QR PromptPay',
+      card_stripe: 'Stripe Card',
+      qr_promptpay_stripe: 'Stripe PromptPay',
+      other: 'Other',
     };
     return method ? (map[method] || method) : '-';
   };
