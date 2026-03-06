@@ -43,6 +43,8 @@ const TARGET_FIELDS = [
 function normalizePaymentMethod(val: string): string | null {
   const v = val.toLowerCase().trim();
   if (v === 'cash') return 'cash';
+  if (v === 'card_stripe' || v === 'stripe card') return 'card_stripe';
+  if (v === 'qr_promptpay_stripe' || v === 'stripe promptpay') return 'qr_promptpay_stripe';
   if (v.includes('qr') || v.includes('promptpay')) return 'qr_promptpay';
   if (v.includes('bank') || v.includes('transfer')) return 'bank_transfer';
   if (v.includes('credit') || v.includes('card')) return 'credit_card';
