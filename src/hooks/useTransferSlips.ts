@@ -183,12 +183,25 @@ export const useRejectSlip = () => {
     mutationFn: async ({ slipId, reviewNote }: { slipId: string; reviewNote: string }) => {
       if (!reviewNote.trim()) throw new Error('Review note is required for rejection');
 
+      // Look up staff record for current user
+      const { data: { user } } = await supabase.auth.getUser();
+      let reviewerStaffId: string | null = null;
+      if (user) {
+        const { data: staffRow } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        reviewerStaffId = staffRow?.id || null;
+      }
+
       const { data, error } = await supabase
         .from('transfer_slips')
         .update({
           status: 'rejected' as any,
           reviewed_at: new Date().toISOString(),
           review_note: reviewNote,
+          ...(reviewerStaffId && { reviewer_staff_id: reviewerStaffId }),
         })
         .eq('id', slipId)
         .select()
