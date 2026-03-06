@@ -45,7 +45,7 @@ const modules: ModuleConfig[] = [
   {
     id: 'promotions', icon: Tag, labelKey: 'promotions',
     hasExport: true, hasImport: true, importEntity: 'promotions',
-    templateHeaders: ['name','name_en','name_th','promo_code','discount_type','discount_value','status','start_date','end_date'],
+    templateHeaders: ['name','type','promo_code','discount','started_on','ending_on','date_modified','status'],
   },
   {
     id: 'staff', icon: Shield, labelKey: 'staff',
