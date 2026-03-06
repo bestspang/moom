@@ -65,6 +65,7 @@ function normalizeStatus(val: string): string | null {
   if (v === 'voided' || v === 'void') return 'voided';
   if (v === 'refunded' || v === 'refund') return 'refunded';
   if (v === 'pending') return 'pending';
+  if (v === 'failed' || v === 'fail') return 'failed';
   if (v === 'needs review' || v === 'needs_review') return 'needs_review';
   return null;
 }
