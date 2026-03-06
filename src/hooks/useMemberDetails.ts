@@ -149,7 +149,7 @@ export const useMemberPackages = (memberId: string | undefined) => {
       if (!memberId) return [];
       const { data, error } = await supabase
         .from('member_packages')
-        .select(`*, package:packages(name_en, name_th, type, sessions)`)
+        .select(`*, package:packages(name_en, name_th, type, sessions), purchase_transaction:transactions!member_packages_purchase_transaction_id_fkey(transaction_id)`)
         .eq('member_id', memberId)
         .order('purchase_date', { ascending: false });
       if (error) throw error;
