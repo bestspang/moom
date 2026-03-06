@@ -196,6 +196,14 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
         if (s) tx.status = s;
       }
 
+      // Populate VAT columns from CSV mapped fields
+      const exVat = parseCurrency(row.data._price_ex_vat || '');
+      const vatAmt = parseCurrency(row.data._vat || '');
+      if (exVat != null) tx.amount_ex_vat = exVat;
+      if (vatAmt != null) tx.amount_vat = vatAmt;
+      if (exVat != null && vatAmt != null) tx.amount_gross = exVat + vatAmt;
+      else if (tx.amount && !tx.amount_gross) tx.amount_gross = tx.amount;
+
       // Resolve location
       const locName = dash(row.data._location);
       if (locName) {
