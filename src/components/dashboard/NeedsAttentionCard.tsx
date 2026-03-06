@@ -9,7 +9,7 @@ import { AlertTriangle, Package, Star, Receipt } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHighRiskMembers, useHotLeads } from '@/hooks/useDashboardStats';
 import { useExpiringPackages } from '@/hooks/useExpiringPackages';
-import { useTransferSlipStats } from '@/hooks/useFinance';
+import { useTransferSlipStats } from '@/hooks/useTransferSlips';
 
 const NeedsAttentionCard = () => {
   const { t } = useLanguage();
