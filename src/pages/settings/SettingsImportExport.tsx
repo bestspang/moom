@@ -40,12 +40,12 @@ const modules: ModuleConfig[] = [
   {
     id: 'packages', icon: Package, labelKey: 'packages',
     hasExport: true, hasImport: true, importEntity: 'packages',
-    templateHeaders: ['name_en','name_th','type','price','sessions','expiration_days','term_days','status'],
+    templateHeaders: ['name_en','name_th','type','term_days','sessions','price','categories','access_locations','sold_at','date_modified','status'],
   },
   {
     id: 'promotions', icon: Tag, labelKey: 'promotions',
     hasExport: true, hasImport: true, importEntity: 'promotions',
-    templateHeaders: ['name','name_en','name_th','promo_code','discount_type','discount_value','status','start_date','end_date'],
+    templateHeaders: ['name','type','promo_code','discount','started_on','ending_on','date_modified','status'],
   },
   {
     id: 'staff', icon: Shield, labelKey: 'staff',
@@ -248,6 +248,35 @@ const SettingsImportExport = () => {
             { key: 'items_count', header: 'items_count', accessor: r => r.workout_items?.length ?? 0 },
           ];
           exportToCsv(data || [], cols, `workouts-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'finance': {
+          const { data, error } = await supabase
+            .from('transactions')
+            .select('*, member:members(first_name, last_name), location:locations(name), staff:staff(first_name, last_name)')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          const fmtPayment = (m: string | null) => {
+            const map: Record<string, string> = { cash: 'Cash', credit_card: 'Credit Card', bank_transfer: 'Bank Transfer', promptpay: 'QR PromptPay' };
+            return m ? (map[m] || m) : '-';
+          };
+          const cols: CsvColumn<any>[] = [
+            { key: 'dateTime', header: 'Date & Time', accessor: r => format(new Date(r.created_at), 'd MMM yyyy, HH:mm').toUpperCase() },
+            { key: 'transactionId', header: 'Transaction no.', accessor: r => r.transaction_id },
+            { key: 'orderName', header: 'Order name', accessor: r => r.order_name },
+            { key: 'type', header: 'Type', accessor: r => r.type || '-' },
+            { key: 'soldTo', header: 'Sold to', accessor: r => r.member ? `${r.member.first_name} ${r.member.last_name}` : '-' },
+            { key: 'registerLocation', header: 'Register location', accessor: r => r.location?.name || '-' },
+            { key: 'priceExclVat', header: 'Price excluding vat', accessor: r => (Number(r.amount) / 1.07).toFixed(2) },
+            { key: 'vat', header: 'VAT @7%', accessor: r => (Number(r.amount) - Number(r.amount) / 1.07).toFixed(2) },
+            { key: 'priceInclVat', header: 'Price including vat', accessor: r => Number(r.amount).toFixed(2) },
+            { key: 'soldAt', header: 'Sold at', accessor: r => r.location?.name || '-' },
+            { key: 'paymentMethod', header: 'Payment method', accessor: r => fmtPayment(r.payment_method) },
+            { key: 'taxInvoice', header: 'Tax invoice no.', accessor: r => r.tax_invoice_url || '-' },
+            { key: 'status', header: 'Status', accessor: r => r.status || '-' },
+            { key: 'staff', header: 'Staff', accessor: r => r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : '-' },
+          ];
+          exportToCsv(data || [], cols, `finance-export-${new Date().toISOString().split('T')[0]}`);
           break;
         }
       }

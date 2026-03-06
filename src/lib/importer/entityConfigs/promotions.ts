@@ -145,6 +145,19 @@ export const promotionsConfig: EntityConfig = {
   headerAliases: HEADER_ALIASES,
   targetFields: TARGET_FIELDS,
   templateHeaders: ['name', 'type', 'promo_code', 'discount', 'start_date', 'end_date', 'status'],
+  enumFields: [
+    {
+      field: 'status',
+      label: 'Status',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'drafts', label: 'Drafts' },
+        { value: 'archive', label: 'Archive' },
+      ],
+      normalize: normalizeStatus,
+    },
+  ],
   validateRow,
   upsertRows,
   queryKeysToInvalidate: [['promotions'], ['promotion-stats']],

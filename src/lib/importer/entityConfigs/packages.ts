@@ -135,6 +135,31 @@ export const packagesConfig: EntityConfig = {
   headerAliases: HEADER_ALIASES,
   targetFields: TARGET_FIELDS,
   templateHeaders: ['name_en', 'name_th', 'type', 'term_days', 'sessions', 'price', 'status'],
+  enumFields: [
+    {
+      field: 'type',
+      label: 'Package Type',
+      options: [
+        { value: 'unlimited', label: 'Unlimited' },
+        { value: 'pt', label: 'Personal Training' },
+        { value: 'session', label: 'Session' },
+        { value: 'day_pass', label: 'Day Pass' },
+        { value: 'drop_in', label: 'Drop In' },
+      ],
+      normalize: normalizeType,
+    },
+    {
+      field: 'status',
+      label: 'Status',
+      options: [
+        { value: 'on_sale', label: 'On Sale' },
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'drafts', label: 'Drafts' },
+        { value: 'archive', label: 'Archive' },
+      ],
+      normalize: normalizeStatus,
+    },
+  ],
   validateRow,
   upsertRows,
   queryKeysToInvalidate: [['packages'], ['package-stats']],
