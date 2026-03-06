@@ -369,6 +369,8 @@ const Finance = () => {
       bank_transfer: t('finance.bankTransfer'),
       credit_card: t('finance.creditCard'),
       promptpay: t('finance.promptpay'),
+      card_stripe: 'Stripe Card',
+      qr_promptpay_stripe: 'Stripe PromptPay',
     };
     return map[method] || method;
   };
