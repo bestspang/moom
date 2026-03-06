@@ -124,7 +124,7 @@ function validateRow(data: Record<string, string>): string[] {
   }
   if (data.status) {
     const s = normalizeStatus(data.status);
-    if (!s) errors.push(`Unrecognized status: "${data.status}". Expected: paid, voided, refunded, pending, needs_review`);
+    if (!s) errors.push(`Unrecognized status: "${data.status}". Expected: paid, voided, refunded, failed, pending, needs_review`);
   }
   return errors;
 }
