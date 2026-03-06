@@ -350,10 +350,22 @@ const SettingsImportExport = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" disabled={isExporting} onClick={() => handleExport(mod.id)}>
-                  {isExporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
-                  {t('settings.importExport.exportCsv')}
-                </Button>
+                {mod.hasExport ? (
+                  <Button variant="outline" size="sm" className="w-full justify-start" disabled={isExporting} onClick={() => handleExport(mod.id)}>
+                    {isExporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
+                    {t('settings.importExport.exportCsv')}
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-start opacity-50 cursor-not-allowed" disabled>
+                        <Download className="mr-2 h-3.5 w-3.5" />
+                        {t('settings.importExport.exportCsv')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('settings.importExport.comingSoon')}</TooltipContent>
+                  </Tooltip>
+                )}
                 {mod.hasImport ? (
                   <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => handleImport(mod.id, mod.importEntity)}>
                     <Upload className="mr-2 h-3.5 w-3.5" />
