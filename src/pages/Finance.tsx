@@ -25,6 +25,9 @@ const PAYMENT_COLORS: Record<string, string> = {
   bank_transfer: 'hsl(142 71% 45%)',
   credit_card: 'hsl(221 83% 53%)',
   promptpay: 'hsl(280 67% 52%)',
+  card_stripe: 'hsl(221 83% 53%)',
+  qr_promptpay_stripe: 'hsl(280 67% 52%)',
+  other: 'hsl(var(--muted-foreground))',
 };
 
 const Finance = () => {
