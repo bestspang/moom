@@ -89,6 +89,8 @@ const ENUM_FIELDS: EnumFieldDef[] = [
       { value: 'bank_transfer', label: 'Bank Transfer' },
       { value: 'qr_promptpay', label: 'QR / PromptPay' },
       { value: 'credit_card', label: 'Credit Card' },
+      { value: 'card_stripe', label: 'Stripe Card' },
+      { value: 'qr_promptpay_stripe', label: 'Stripe PromptPay' },
     ],
     normalize: normalizePaymentMethod,
   },
