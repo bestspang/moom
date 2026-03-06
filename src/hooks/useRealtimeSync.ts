@@ -38,7 +38,8 @@ type TableName =
   | 'notifications'
   | 'roles'
   | 'user_roles'
-  | 'checkin_qr_tokens';
+  | 'checkin_qr_tokens'
+  | 'transfer_slips';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
