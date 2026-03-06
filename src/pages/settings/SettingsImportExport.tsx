@@ -40,7 +40,7 @@ const modules: ModuleConfig[] = [
   {
     id: 'packages', icon: Package, labelKey: 'packages',
     hasExport: true, hasImport: true, importEntity: 'packages',
-    templateHeaders: ['name_en','name_th','type','price','sessions','expiration_days','term_days','status'],
+    templateHeaders: ['name_en','name_th','type','term_days','sessions','price','categories','access_locations','sold_at','date_modified','status'],
   },
   {
     id: 'promotions', icon: Tag, labelKey: 'promotions',
