@@ -241,6 +241,18 @@ export const useVoidSlip = () => {
 
   return useMutation({
     mutationFn: async ({ slipId, reviewNote }: { slipId: string; reviewNote?: string }) => {
+      // Look up staff record for current user
+      const { data: { user } } = await supabase.auth.getUser();
+      let reviewerStaffId: string | null = null;
+      if (user) {
+        const { data: staffRow } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        reviewerStaffId = staffRow?.id || null;
+      }
+
       // Fetch slip to get linked transaction
       const { data: slip, error: slipErr } = await supabase
         .from('transfer_slips')
