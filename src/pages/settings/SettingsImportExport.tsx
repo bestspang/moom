@@ -208,17 +208,45 @@ const SettingsImportExport = () => {
           break;
         }
         case 'staff': {
-          const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: false });
-          if (error) throw error;
+          const [staffRes, locRes] = await Promise.all([
+            supabase.from('staff').select('*, staff_positions(role:roles(name), scope_all_locations, location_ids)').order('created_at', { ascending: false }),
+            supabase.from('locations').select('id, name'),
+          ]);
+          if (staffRes.error) throw staffRes.error;
+          const staffData = staffRes.data || [];
+          const locMap = new Map((locRes.data || []).map((l: any) => [l.id, l.name]));
+          const getRoleNames = (r: any): string => {
+            const positions = r.staff_positions;
+            if (positions?.length > 0) return positions.map((p: any) => p.role?.name || '-').join(', ');
+            return '-';
+          };
+          const getAddress = (r: any): string => {
+            const parts = [r.address_1, r.address_2, r.subdistrict, r.district, r.province, r.postal_code].filter(Boolean);
+            return parts.length > 0 ? parts.join(', ') : '-';
+          };
+          const getBranch = (r: any): string => {
+            const positions = r.staff_positions;
+            if (!positions?.length) return '-';
+            if (positions.every((p: any) => p.scope_all_locations)) return 'All';
+            const ids = new Set<string>();
+            positions.forEach((p: any) => { if (!p.scope_all_locations && p.location_ids) p.location_ids.forEach((id: string) => ids.add(id)); });
+            if (ids.size === 0) return 'All';
+            return Array.from(ids).map(id => locMap.get(id) || id).join(', ');
+          };
           const cols: CsvColumn<any>[] = [
-            { key: 'first_name', header: 'first_name', accessor: r => r.first_name },
-            { key: 'last_name', header: 'last_name', accessor: r => r.last_name },
-            { key: 'nickname', header: 'nickname', accessor: r => r.nickname },
-            { key: 'email', header: 'email', accessor: r => r.email },
-            { key: 'phone', header: 'phone', accessor: r => r.phone },
-            { key: 'status', header: 'status', accessor: r => r.status },
+            { key: 'first_name', header: 'Firstname', accessor: r => r.first_name },
+            { key: 'last_name', header: 'Lastname', accessor: r => r.last_name },
+            { key: 'nickname', header: 'Nickname', accessor: r => r.nickname || '-' },
+            { key: 'role', header: 'Role', accessor: r => getRoleNames(r) },
+            { key: 'gender', header: 'Gender', accessor: r => r.gender || '-' },
+            { key: 'birthdate', header: 'Birthdate', accessor: r => r.date_of_birth || '-' },
+            { key: 'email', header: 'Email', accessor: r => r.email || '-' },
+            { key: 'phone', header: 'Phone', accessor: r => r.phone || '-' },
+            { key: 'address', header: 'Address', accessor: r => getAddress(r) },
+            { key: 'branch', header: 'Branch', accessor: r => getBranch(r) },
+            { key: 'status', header: 'Status', accessor: r => r.status || '-' },
           ];
-          exportToCsv(data || [], cols, `staff-export-${new Date().toISOString().split('T')[0]}`);
+          exportToCsv(staffData, cols, `staff-export-${new Date().toISOString().split('T')[0]}`);
           break;
         }
         case 'classes': {
