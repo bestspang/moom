@@ -2,3 +2,18 @@ project_id = "qedxqilmnkbjncpnopty"
 
 [functions.daily-briefing]
 verify_jwt = false
+
+[functions.invite-staff]
+verify_jwt = false
+
+[functions.line-auth]
+verify_jwt = false
+
+[functions.approve-slip]
+verify_jwt = false
+
+[functions.stripe-create-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
