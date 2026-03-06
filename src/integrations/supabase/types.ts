@@ -1262,8 +1262,11 @@ export type Database = {
           id: string
           member_id: string
           package_id: string
+          package_name_snapshot: string | null
           purchase_date: string | null
+          purchase_transaction_id: string | null
           sessions_remaining: number | null
+          sessions_total: number | null
           sessions_used: number | null
           status: string | null
           updated_at: string | null
@@ -1275,8 +1278,11 @@ export type Database = {
           id?: string
           member_id: string
           package_id: string
+          package_name_snapshot?: string | null
           purchase_date?: string | null
+          purchase_transaction_id?: string | null
           sessions_remaining?: number | null
+          sessions_total?: number | null
           sessions_used?: number | null
           status?: string | null
           updated_at?: string | null
@@ -1288,8 +1294,11 @@ export type Database = {
           id?: string
           member_id?: string
           package_id?: string
+          package_name_snapshot?: string | null
           purchase_date?: string | null
+          purchase_transaction_id?: string | null
           sessions_remaining?: number | null
+          sessions_total?: number | null
           sessions_used?: number | null
           status?: string | null
           updated_at?: string | null
@@ -1307,6 +1316,13 @@ export type Database = {
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_packages_purchase_transaction_id_fkey"
+            columns: ["purchase_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -2336,14 +2352,26 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          amount_ex_vat: number | null
+          amount_gross: number | null
+          amount_vat: number | null
           created_at: string | null
+          currency: string | null
+          discount_amount: number | null
           id: string
+          idempotency_key: string | null
           location_id: string | null
           member_id: string | null
           notes: string | null
           order_name: string
           package_id: string | null
+          package_name_snapshot: string | null
+          paid_at: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          sold_to_contact: string | null
+          sold_to_name: string | null
+          source_ref: string | null
+          source_type: string | null
           staff_id: string | null
           status: Database["public"]["Enums"]["transaction_status"] | null
           tax_invoice_url: string | null
@@ -2351,17 +2379,30 @@ export type Database = {
           transfer_slip_url: string | null
           type: Database["public"]["Enums"]["package_type"] | null
           updated_at: string | null
+          vat_rate: number | null
         }
         Insert: {
           amount: number
+          amount_ex_vat?: number | null
+          amount_gross?: number | null
+          amount_vat?: number | null
           created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
           id?: string
+          idempotency_key?: string | null
           location_id?: string | null
           member_id?: string | null
           notes?: string | null
           order_name: string
           package_id?: string | null
+          package_name_snapshot?: string | null
+          paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sold_to_contact?: string | null
+          sold_to_name?: string | null
+          source_ref?: string | null
+          source_type?: string | null
           staff_id?: string | null
           status?: Database["public"]["Enums"]["transaction_status"] | null
           tax_invoice_url?: string | null
@@ -2369,17 +2410,30 @@ export type Database = {
           transfer_slip_url?: string | null
           type?: Database["public"]["Enums"]["package_type"] | null
           updated_at?: string | null
+          vat_rate?: number | null
         }
         Update: {
           amount?: number
+          amount_ex_vat?: number | null
+          amount_gross?: number | null
+          amount_vat?: number | null
           created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
           id?: string
+          idempotency_key?: string | null
           location_id?: string | null
           member_id?: string | null
           notes?: string | null
           order_name?: string
           package_id?: string | null
+          package_name_snapshot?: string | null
+          paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sold_to_contact?: string | null
+          sold_to_name?: string | null
+          source_ref?: string | null
+          source_type?: string | null
           staff_id?: string | null
           status?: Database["public"]["Enums"]["transaction_status"] | null
           tax_invoice_url?: string | null
@@ -2387,6 +2441,7 @@ export type Database = {
           transfer_slip_url?: string | null
           type?: Database["public"]["Enums"]["package_type"] | null
           updated_at?: string | null
+          vat_rate?: number | null
         }
         Relationships: [
           {
@@ -2707,7 +2762,14 @@ export type Database = {
         | "package_expiring"
       package_status: "on_sale" | "scheduled" | "drafts" | "archive"
       package_type: "unlimited" | "session" | "pt"
-      payment_method: "credit_card" | "bank_transfer" | "qr_promptpay" | "cash"
+      payment_method:
+        | "credit_card"
+        | "bank_transfer"
+        | "qr_promptpay"
+        | "cash"
+        | "card_stripe"
+        | "qr_promptpay_stripe"
+        | "other"
       promotion_status: "active" | "scheduled" | "drafts" | "archive"
       promotion_type: "discount" | "promo_code"
       risk_level: "high" | "medium" | "low"
@@ -2721,6 +2783,7 @@ export type Database = {
         | "voided"
         | "needs_review"
         | "refunded"
+        | "failed"
       transfer_slip_status: "needs_review" | "approved" | "rejected" | "voided"
       usage_type: "class_only" | "gym_checkin_only" | "both"
       usage_type_ledger: "checkin" | "booking" | "pt_session" | "adjustment"
@@ -2888,7 +2951,15 @@ export const Constants = {
       ],
       package_status: ["on_sale", "scheduled", "drafts", "archive"],
       package_type: ["unlimited", "session", "pt"],
-      payment_method: ["credit_card", "bank_transfer", "qr_promptpay", "cash"],
+      payment_method: [
+        "credit_card",
+        "bank_transfer",
+        "qr_promptpay",
+        "cash",
+        "card_stripe",
+        "qr_promptpay_stripe",
+        "other",
+      ],
       promotion_status: ["active", "scheduled", "drafts", "archive"],
       promotion_type: ["discount", "promo_code"],
       risk_level: ["high", "medium", "low"],
@@ -2902,6 +2973,7 @@ export const Constants = {
         "voided",
         "needs_review",
         "refunded",
+        "failed",
       ],
       transfer_slip_status: ["needs_review", "approved", "rejected", "voided"],
       usage_type: ["class_only", "gym_checkin_only", "both"],

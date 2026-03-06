@@ -25,6 +25,9 @@ const PAYMENT_COLORS: Record<string, string> = {
   bank_transfer: 'hsl(142 71% 45%)',
   credit_card: 'hsl(221 83% 53%)',
   promptpay: 'hsl(280 67% 52%)',
+  card_stripe: 'hsl(221 83% 53%)',
+  qr_promptpay_stripe: 'hsl(280 67% 52%)',
+  other: 'hsl(var(--muted-foreground))',
 };
 
 const Finance = () => {
@@ -128,6 +131,8 @@ const Finance = () => {
       case 'pending': return 'pending';
       case 'voided': return 'voided';
       case 'needs_review': return 'pending';
+      case 'refunded': return 'voided';
+      case 'failed': return 'inactive';
       default: return 'default';
     }
   };
@@ -138,6 +143,9 @@ const Finance = () => {
       bank_transfer: 'Bank Transfer',
       credit_card: 'Credit Card',
       promptpay: 'QR PromptPay',
+      card_stripe: 'Stripe Card',
+      qr_promptpay_stripe: 'Stripe PromptPay',
+      other: 'Other',
     };
     return method ? (map[method] || method) : '-';
   };
@@ -210,14 +218,34 @@ const Finance = () => {
     toast.success(t('common.downloadTemplate'));
   };
 
+  const formatSourceType = (source: string | null): string => {
+    const map: Record<string, string> = {
+      stripe: 'Stripe',
+      transfer_slip: 'Transfer',
+      cash: 'Cash',
+      bank_transfer: 'Bank Transfer',
+      manual: 'Manual',
+    };
+    return source ? (map[source] || source) : 'Manual';
+  };
+
   const txColumns: Column<any>[] = [
     { 
       key: 'dateTime', 
       header: t('finance.dateTime'), 
-      cell: (row) => format(new Date(row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
+      cell: (row) => format(new Date(row.paid_at || row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
     },
     { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
     { key: 'orderName', header: t('finance.orderName'), cell: (row) => row.order_name },
+    {
+      key: 'source',
+      header: 'Source',
+      cell: (row) => (
+        <StatusBadge variant={row.source_type === 'stripe' ? 'active' : 'default'}>
+          {formatSourceType(row.source_type)}
+        </StatusBadge>
+      )
+    },
     { 
       key: 'type', 
       header: t('packages.type'), 
@@ -230,7 +258,7 @@ const Finance = () => {
     { 
       key: 'soldTo', 
       header: t('finance.soldTo'), 
-      cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : '-'
+      cell: (row) => row.sold_to_name || (row.member ? `${row.member.first_name} ${row.member.last_name}` : '-')
     },
     {
       key: 'location',
@@ -240,7 +268,23 @@ const Finance = () => {
     { 
       key: 'amount', 
       header: t('finance.amount'), 
-      cell: (row) => formatCurrency(Number(row.amount))
+      cell: (row) => {
+        const gross = Number(row.amount);
+        const vat = row.amount_vat != null ? Number(row.amount_vat) : null;
+        return (
+          <div className="text-right">
+            <span className="font-medium">{formatCurrency(gross)}</span>
+            {vat != null && (
+              <span className="block text-[10px] text-muted-foreground">VAT {formatCurrency(vat)}</span>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'paymentMethod',
+      header: t('finance.paymentMethod'),
+      cell: (row) => formatPaymentMethod(row.payment_method),
     },
     { 
       key: 'status', 
@@ -251,6 +295,8 @@ const Finance = () => {
           pending: t('common.pending'),
           needs_review: t('transferSlips.needsReview'),
           voided: t('transferSlips.voided'),
+          failed: 'Failed',
+          refunded: 'Refunded',
         };
         return (
           <StatusBadge variant={getStatusVariant(row.status) as any}>
