@@ -305,7 +305,7 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     }
     setResult(importResult);
     setStep('done');
-  }, [csvRows, csvHeaders, mapping, config, queryClient, overwriteExisting, defaultLocationId, entity]);
+  }, [csvRows, csvHeaders, mapping, config, queryClient, overwriteExisting, defaultLocationId, entity, enumOverrides]);
 
   const downloadErrors = (errors?: { row: number; reason: string; data: Record<string, string> }[]) => {
     const errList = errors || result?.errors || [];
