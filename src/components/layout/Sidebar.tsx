@@ -39,7 +39,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useExpiringPackages } from '@/hooks/useExpiringPackages';
-import { useTransferSlipStats } from '@/hooks/useFinance';
+import { useTransferSlipStats } from '@/hooks/useTransferSlips';
 import type { Database } from '@/integrations/supabase/types';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
