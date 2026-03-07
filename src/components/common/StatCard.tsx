@@ -66,6 +66,7 @@ export const StatCard = ({
   color = 'default',
   icon,
   action,
+  onClick,
 }: StatCardProps) => {
   const getColorClasses = () => {
     switch (color) {
