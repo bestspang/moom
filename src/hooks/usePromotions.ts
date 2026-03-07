@@ -165,10 +165,10 @@ export const useDeletePromotion = () => {
         entity_type: 'promotion',
         entity_id: id,
       });
-      toast.success('Promotion deleted successfully');
+      toast.success(i18n.t('toast.promotionDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionDeleteFailed'));
     },
   });
 };
