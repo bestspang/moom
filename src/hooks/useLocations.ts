@@ -131,10 +131,10 @@ export const useUpdateLocation = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Location updated successfully');
+      toast.success(i18n.t('toast.locationUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update location: ${error.message}`);
+      toast.error(i18n.t('toast.locationUpdateFailed'));
     },
   });
 };
