@@ -382,8 +382,8 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
                 </Button>
               </div>
             </div>
-      </form>
-    </Form>
+          </form>
+        </Form>
   );
 
   if (isMobile) {
