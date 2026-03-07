@@ -221,10 +221,10 @@ export const useDeleteFeatureFlag = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag deleted');
+      toast.success(i18n.t('toast.flagDeleted'));
     },
     onError: (error) => {
-      toast.error('Failed to delete feature flag');
+      toast.error(i18n.t('toast.flagDeleteFailed'));
       console.error('Delete feature flag error:', error);
     },
   });
