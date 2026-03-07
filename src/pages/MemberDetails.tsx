@@ -864,6 +864,12 @@ const MemberDetails = () => {
           </Card>
         </div>
       </div>
+      <PurchasePackageDialog
+        open={purchaseOpen}
+        onOpenChange={setPurchaseOpen}
+        memberId={member.id}
+        memberName={`${member.first_name} ${member.last_name}`}
+      />
     </div>
   );
 };
