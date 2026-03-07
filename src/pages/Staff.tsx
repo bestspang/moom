@@ -65,7 +65,7 @@ const Staff = () => {
     switch (status) {
       case 'active': return 'active';
       case 'pending': return 'pending';
-      case 'inactive': return 'warning';
+      case 'inactive': return 'suspended';
       case 'terminated': return 'inactive';
       default: return 'default';
     }
