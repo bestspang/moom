@@ -289,10 +289,10 @@ export const useDeleteClass = () => {
         entity_type: 'class',
         entity_id: id,
       });
-      toast.success('Class deleted successfully');
+      toast.success(i18n.t('toast.classDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(i18n.t('toast.classDeleteFailed'));
     },
   });
 };
