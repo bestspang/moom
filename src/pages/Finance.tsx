@@ -18,6 +18,10 @@ import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { SlipDetailDialog } from '@/components/transfer-slips/SlipDetailDialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Trash2, Plus } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
