@@ -338,9 +338,9 @@ export const useBulkDeleteClasses = () => {
         activity: `${ids.length} classes deleted`,
         entity_type: 'class',
       });
-      toast.success(`${ids.length} classes deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
