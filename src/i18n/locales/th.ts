@@ -40,6 +40,8 @@ export default {
     or: 'หรือ',
     of: 'จาก',
     noResults: 'ไม่พบผลลัพธ์',
+    confirm: 'ยืนยัน',
+    saving: 'กำลังบันทึก...',
   },
 
   // Bulk actions
