@@ -18,6 +18,7 @@ export type CheckInWithRelations = Tables<'member_attendance'> & {
 export function useCheckIns(date: Date, search: string = '') {
   const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const dayRange = getBangkokDayRange(date);
   
   return useQuery({
     queryKey: ['check-ins', dateStr, search],
