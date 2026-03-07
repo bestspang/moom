@@ -685,6 +685,39 @@ export type Database = {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          period_end: string
+          period_start: string
+          target_value: number
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          target_value?: number
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          target_value?: number
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           address: string | null

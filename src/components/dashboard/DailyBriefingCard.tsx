@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sparkles, RefreshCw, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Sparkles, RefreshCw, X, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +21,15 @@ interface DailyBriefingCardProps {
   } | undefined;
 }
 
+const PRIORITY_COLORS = {
+  high: 'text-destructive',
+  medium: 'text-primary',
+  low: 'text-muted-foreground',
+};
+
 export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ stats }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { data, isLoading, isError, dismissed, dismiss, refresh } = useDailyBriefing(stats);
   const [isOpen, setIsOpen] = useState(true);
 
@@ -70,7 +78,29 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ stats }) =
             ) : isError ? (
               <p className="text-sm text-muted-foreground">{t('dailyBriefing.error')}</p>
             ) : (
-              <p className="text-sm text-foreground leading-relaxed">{data?.summary}</p>
+              <div className="space-y-3">
+                <p className="text-sm text-foreground leading-relaxed">{data?.summary}</p>
+                {data?.actions && data.actions.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {data.actions.map((action, i) => (
+                      <button
+                        key={i}
+                        onClick={() => navigate(action.route)}
+                        className="flex items-center gap-2 w-full text-left hover:bg-accent/50 rounded-md p-2 -mx-1 transition-colors group"
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                          action.priority === 'high' ? 'bg-destructive' :
+                          action.priority === 'medium' ? 'bg-primary' : 'bg-muted-foreground'
+                        }`} />
+                        <span className={`text-xs flex-1 ${PRIORITY_COLORS[action.priority]}`}>
+                          {action.text}
+                        </span>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </CollapsibleContent>

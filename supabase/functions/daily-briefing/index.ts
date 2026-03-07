@@ -5,6 +5,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface BriefingAction {
+  text: string;
+  route: string;
+  priority: "high" | "medium" | "low";
+}
+
+interface BriefingResponse {
+  summary: string;
+  actions: BriefingAction[];
+  source: string;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -54,14 +66,23 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
-      const summary = generateTemplateSummary(stats, language);
-      return new Response(JSON.stringify({ summary, source: "template" }), {
+      const result = generateTemplateResponse(stats, language);
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const lang = language === "th" ? "Thai" : "English";
-    const systemPrompt = `You are a gym operations assistant. Generate a concise 2-3 sentence daily briefing for a gym owner/manager. Be friendly, actionable, and highlight anything that needs attention. Respond in ${lang}.`;
+    const systemPrompt = `You are a gym operations assistant. Generate a daily briefing for a gym owner/manager.
+Respond in ${lang} with VALID JSON only (no markdown). Format:
+{
+  "summary": "2-3 sentence overview",
+  "actions": [
+    { "text": "actionable suggestion", "route": "/relevant-page", "priority": "high|medium|low" }
+  ]
+}
+Use these routes: /members for members, /leads for leads, /calendar for schedule, /lobby for check-ins, /packages for packages, /finance for finance, /report/member/members-at-risk for at-risk.
+Max 4 actions. Be friendly and actionable.`;
 
     const userPrompt = `Today's gym stats:
 - Check-ins today: ${stats.checkinsToday ?? 0}
@@ -72,7 +93,7 @@ Deno.serve(async (req) => {
 - High-risk members: ${stats.highRiskCount ?? 0}
 - Active members total: ${stats.activeMembers ?? 0}
 
-Generate a brief, natural daily briefing summary.`;
+Generate a structured daily briefing.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -104,18 +125,37 @@ Generate a brief, natural daily briefing summary.`;
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      const summary = generateTemplateSummary(stats, language);
-      return new Response(JSON.stringify({ summary, source: "template" }), {
+      const result = generateTemplateResponse(stats, language);
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content || generateTemplateSummary(stats, language);
+    const raw = data.choices?.[0]?.message?.content || "";
 
-    return new Response(JSON.stringify({ summary, source: "ai" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Try to parse JSON from AI response
+    try {
+      // Strip markdown code fences if present
+      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return new Response(JSON.stringify({
+        summary: parsed.summary || raw,
+        actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 4) : [],
+        source: "ai",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch {
+      // Fallback: use raw text as summary
+      return new Response(JSON.stringify({
+        summary: raw,
+        actions: [],
+        source: "ai",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   } catch (e) {
     console.error("daily-briefing error:", e);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
@@ -125,23 +165,42 @@ Generate a brief, natural daily briefing summary.`;
   }
 });
 
-function generateTemplateSummary(stats: any, language: string): string {
-  if (language === "th") {
-    const parts = [`วันนี้มี ${stats.classesToday ?? 0} คลาส และเช็คอินแล้ว ${stats.checkinsToday ?? 0} คน`];
-    if ((stats.expiringPackages7d ?? 0) > 0) {
-      parts.push(`มีแพ็กเกจ ${stats.expiringPackages7d} รายการจะหมดอายุภายใน 7 วัน`);
-    }
-    if ((stats.highRiskCount ?? 0) > 0) {
-      parts.push(`สมาชิกเสี่ยงหาย ${stats.highRiskCount} คน ควรติดตาม`);
-    }
-    return parts.join(" ");
-  }
-  const parts = [`Today has ${stats.classesToday ?? 0} classes scheduled with ${stats.checkinsToday ?? 0} check-ins so far.`];
+function generateTemplateResponse(stats: any, language: string): BriefingResponse {
+  const actions: BriefingAction[] = [];
+
   if ((stats.expiringPackages7d ?? 0) > 0) {
-    parts.push(`${stats.expiringPackages7d} packages expiring within 7 days — consider reaching out.`);
+    actions.push({
+      text: language === "th"
+        ? `แพ็กเกจ ${stats.expiringPackages7d} รายการจะหมดอายุภายใน 7 วัน`
+        : `${stats.expiringPackages7d} packages expiring within 7 days`,
+      route: "/report/member/members-at-risk",
+      priority: "high",
+    });
   }
+
   if ((stats.highRiskCount ?? 0) > 0) {
-    parts.push(`${stats.highRiskCount} members flagged as high-risk.`);
+    actions.push({
+      text: language === "th"
+        ? `สมาชิกเสี่ยงหาย ${stats.highRiskCount} คน ควรติดตาม`
+        : `${stats.highRiskCount} members flagged as high-risk`,
+      route: "/members?risk=high",
+      priority: "high",
+    });
   }
-  return parts.join(" ");
+
+  if ((stats.classesToday ?? 0) > 0) {
+    actions.push({
+      text: language === "th"
+        ? `มี ${stats.classesToday} คลาสวันนี้`
+        : `${stats.classesToday} classes scheduled today`,
+      route: "/calendar",
+      priority: "low",
+    });
+  }
+
+  const summary = language === "th"
+    ? `วันนี้มี ${stats.classesToday ?? 0} คลาส และเช็คอินแล้ว ${stats.checkinsToday ?? 0} คน`
+    : `Today has ${stats.classesToday ?? 0} classes scheduled with ${stats.checkinsToday ?? 0} check-ins so far.`;
+
+  return { summary, actions, source: "template" };
 }

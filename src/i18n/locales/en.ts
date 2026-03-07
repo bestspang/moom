@@ -342,6 +342,32 @@ export default {
     urgent: 'urgent',
     soon: 'soon',
     expired: 'Expired',
+    decliningAttendance: 'Declining Attendance',
+    visits: 'visits',
+  },
+
+  // Goals
+  goals: {
+    title: 'Monthly Goals',
+    createGoal: 'Set a goal',
+    type: 'Goal type',
+    typeRevenue: 'Revenue',
+    typeNewMembers: 'New Members',
+    typeRetention: 'Retention Rate',
+    typeCheckins: 'Check-ins',
+    targetValue: 'Target value',
+    periodNote: 'Goal will be set for the current month.',
+    noGoals: 'No goals set yet. Create one to track progress!',
+  },
+
+  // Timeline
+  timeline: {
+    title: 'Member Journey',
+    joined: 'Joined',
+    firstClass: 'First Class',
+    purchased: 'Package Purchased',
+    suspended: 'Suspended',
+    atRisk: 'At Risk',
   },
 
   // Lobby
@@ -557,6 +583,7 @@ export default {
       failed: 'Failed',
       downloadErrors: 'Download error report',
     },
+    score: 'Score',
   },
 
   // Packages

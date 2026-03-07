@@ -24,6 +24,7 @@ import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
 import { useDashboardTrends } from '@/hooks/useDashboardTrends';
 import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
 import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
+import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
@@ -140,8 +141,11 @@ const Dashboard = () => {
       {/* AI Daily Briefing — compact */}
       <DailyBriefingCard stats={briefingStats} />
 
-      {/* Business Health Score */}
-      <BusinessHealthCard />
+      {/* Business Health Score + Goals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <BusinessHealthCard />
+        <GoalProgressCard />
+      </div>
 
       {/* KPI Stats — full width row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials, getDateLocale } from '@/lib/formatters';
 import { useLeads, type LeadWithLocation } from '@/hooks/useLeads';
+import { computeLeadScore } from '@/hooks/useLeadScoring';
 import { format } from 'date-fns';
 import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
 import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
@@ -133,6 +134,19 @@ const Leads = () => {
       ),
     },
     { key: 'source', header: t('leads.source'), cell: (row) => row.source ? t(`leads.sourceOptions.${row.source}` as any) || row.source : '-' },
+    {
+      key: 'score',
+      header: t('leads.score'),
+      cell: (row) => {
+        const { score, level } = computeLeadScore(row);
+        const variant = level === 'high' ? 'active' : level === 'medium' ? 'pending' : 'inactive';
+        return (
+          <StatusBadge variant={variant as any}>
+            {score}
+          </StatusBadge>
+        );
+      },
+    },
     {
       key: 'location',
       header: t('lobby.location'),
