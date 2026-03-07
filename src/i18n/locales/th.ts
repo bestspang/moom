@@ -2040,5 +2040,16 @@ export default {
     bulkDeleted: 'ลบ {{count}} รายการ',
     bulkDuplicated: 'ทำซ้ำ {{count}} รายการ',
     bulkFailed: 'การดำเนินการล้มเหลว',
+    expenseCreated: 'บันทึกค่าใช้จ่ายแล้ว',
+    expenseCreateFailed: 'ไม่สามารถบันทึกค่าใช้จ่าย',
+    expenseDeleted: 'ลบค่าใช้จ่ายแล้ว',
+    expenseDeleteFailed: 'ไม่สามารถลบค่าใช้จ่าย',
+  },
+  communication: {
+    logged: 'บันทึกการสื่อสารแล้ว',
+    logFailed: 'ไม่สามารถบันทึกการสื่อสาร',
+    logEntry: 'บันทึก',
+    placeholder: 'พูดคุยเรื่องอะไร...',
+    noLogs: 'ยังไม่มีบันทึกการสื่อสาร',
   },
 };
