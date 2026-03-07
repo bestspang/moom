@@ -365,9 +365,9 @@ export const useBulkUpdateStaffStatus = () => {
         activity: `${ids.length} staff status changed to ${status}`,
         entity_type: 'staff',
       });
-      toast.success(`${ids.length} staff updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
