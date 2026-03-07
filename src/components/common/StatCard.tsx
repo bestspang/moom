@@ -138,4 +138,5 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(({
       </CardContent>
     </Card>
   );
-};
+});
+StatCard.displayName = 'StatCard';

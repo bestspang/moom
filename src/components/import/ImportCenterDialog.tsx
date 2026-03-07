@@ -772,6 +772,31 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
             </div>
           </div>
         )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={handleClose}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle>{titleText}</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {dialogBody}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{titleText}</DialogTitle>
+        </DialogHeader>
+        {dialogBody}
       </DialogContent>
     </Dialog>
   );
