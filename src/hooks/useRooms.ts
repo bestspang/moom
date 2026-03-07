@@ -123,10 +123,10 @@ export const useCreateRoom = () => {
           categories: data.categories,
         } as Record<string, unknown>,
       });
-      toast.success('Room created successfully');
+      toast.success(i18n.t('toast.roomCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create room: ${error.message}`);
+      toast.error(i18n.t('toast.roomCreateFailed'));
     },
   });
 };
