@@ -79,10 +79,10 @@ export const useCreateLead = () => {
         entity_type: 'lead',
         entity_id: data.id,
       });
-      toast.success('Lead created successfully');
+      toast.success(i18n.t('toast.leadCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadCreateFailed'));
     },
   });
 };
