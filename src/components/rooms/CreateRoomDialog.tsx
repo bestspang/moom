@@ -51,6 +51,7 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
   onOpenChange,
 }) => {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const { data: locations } = useLocations();
   const { data: classCategories } = useClassCategories();
   const createRoom = useCreateRoom();
