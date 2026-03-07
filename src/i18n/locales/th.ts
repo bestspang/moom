@@ -1514,7 +1514,7 @@ export default {
     invalidPhone: 'กรุณากรอกเบอร์โทรที่ถูกต้อง',
     firstNameRequired: 'กรุณากรอกชื่อจริง',
     lastNameRequired: 'กรุณากรอกนามสกุล',
-    passwordMinLength: 'รหัสผ่านต้องมีอย่างน้อย {n} ตัวอักษร',
+    passwordMinLength: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
     passwordUppercase: 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว',
     passwordLowercase: 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว',
     passwordNumber: 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว',
