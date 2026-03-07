@@ -225,10 +225,10 @@ export const useRejectSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
-      toast.success('Slip rejected');
+      toast.success(i18n.t('toast.slipRejected'));
     },
     onError: (error) => {
-      toast.error(`Failed to reject slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipRejectFailed'));
     },
   });
 };
