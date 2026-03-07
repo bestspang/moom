@@ -16,12 +16,7 @@ import { toast } from 'sonner';
 
 const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
-const STAFF_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'terminated', label: 'Terminated' },
-];
+// Status options moved inside component for i18n access
 
 const Staff = () => {
   const { t } = useLanguage();
