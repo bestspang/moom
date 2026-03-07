@@ -157,6 +157,7 @@ const App = () => (
                   <Route path="member-contracts" element={<SettingsContracts />} />
                   <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                   <Route path="import-export" element={<SettingsImportExport />} />
+                  <Route path="integrations" element={<SettingsIntegrations />} />
                 </Route>
                 <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
               </Route>

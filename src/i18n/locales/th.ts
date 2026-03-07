@@ -1293,6 +1293,7 @@ export default {
       memberContracts: 'สัญญาสมาชิก',
       featureFlags: 'Feature Flags',
       importExport: 'นำเข้า / ส่งออก',
+      integrations: 'การเชื่อมต่อ',
     },
     general: {
       // Sidebar menu

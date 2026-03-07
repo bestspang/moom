@@ -1293,6 +1293,7 @@ export default {
       memberContracts: 'Member contracts',
       featureFlags: 'Feature Flags',
       importExport: 'Import / Export',
+      integrations: 'Integrations',
     },
     general: {
       // Sidebar menu
