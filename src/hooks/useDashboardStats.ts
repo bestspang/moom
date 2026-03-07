@@ -117,16 +117,9 @@ export const useHighRiskMembers = () => {
           }
         });
 
-        let expiryText = '-';
+        let daysLeft: number | null = null;
         if (nearestExpiry) {
-          const daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 0) {
-            expiryText = 'Expired';
-          } else if (daysLeft === 1) {
-            expiryText = '1 day';
-          } else {
-            expiryText = `${daysLeft} days`;
-          }
+          daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         }
 
         return {
