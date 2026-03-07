@@ -159,6 +159,7 @@ const Dashboard = () => {
                   ? { value: checkinComparison, label: t('dashboard.comparedToYesterday') }
                   : undefined
               }
+              onClick={() => navigate('/lobby')}
             />
             <StatCard
               title={t('dashboard.currentlyInClass')}
