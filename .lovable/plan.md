@@ -1,47 +1,65 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Sync & Consistency Audit — Round 3
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Verified Working (No Changes)
+- Auth: Google OAuth + inactive gate ✅
+- AuthContext: staffStatus fetch + auto-signout ✅  
+- MemberDetails breadcrumbs: `nav.people` ✅
+- Rooms/Classes/ClassCategories/RoomDetails/ClassDetails breadcrumbs: `nav.yourGym` ✅
+- TransferSlips breadcrumb: `nav.business` ✅
+- Staff status options: i18n inside component ✅
+- Notifications timestamp: `getDateLocale(language)` ✅
+- Packages `formatType`: uses `t()` ✅
+- Finance `formatPaymentMethod`: uses `t()` ✅
+- Finance status labels in transaction table: uses `t()` ✅
+- DataTable pagination: `t('common.of')` ✅
+- Dashboard stat cards: clickable ✅
+- CheckInDialog: auto-select single location ✅
+- Profile: syncs to staff table ✅
+- ResetPassword/ForgotPassword: uses i18n ✅
 
-## Fix (surgical, 1 file)
+---
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## Issues Found (3 real issues)
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### Issue 1 — `CreateClass.tsx` breadcrumb still uses `t('nav.class')` 
+**Root cause:** Was missed during the breadcrumb alignment pass. All other class/room pages were fixed but CreateClass was not.
+**Fix:** Change line 78 from `t('nav.class')` to `t('nav.yourGym')`.
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### Issue 2 — Login.tsx has hardcoded English error string
+**Root cause:** Line 59 — `'Google sign-in failed'` is hardcoded, not using i18n.
+**Fix:** Replace with `t('auth.googleSignInFailed')` and add the key to both `en.ts` and `th.ts`.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Issue 3 — Finance CSV export headers are all hardcoded English
+**Root cause:** Lines 155-169 in `Finance.tsx` — CSV column headers like `'Date & Time'`, `'Transaction no.'`, `'Payment method'` are hardcoded strings. This is acceptable for CSV exports (standard practice — CSV headers are typically kept in English for data interoperability), so this is **low priority** and NOT a bug. Mentioning for awareness only — no action needed.
+
+---
+
+## Implementation Plan
+
+### Step 1 — Fix CreateClass breadcrumb
+- File: `src/pages/CreateClass.tsx` line 78
+- Change `t('nav.class')` → `t('nav.yourGym')`
+
+### Step 2 — Fix Login Google error string
+- File: `src/pages/Auth/Login.tsx` line 59
+- Change `'Google sign-in failed'` → `t('auth.googleSignInFailed')`
+- Add i18n keys:
+  - `en.ts`: `googleSignInFailed: 'Google sign-in failed'`
+  - `th.ts`: `googleSignInFailed: 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้'`
+
+### Risk: Zero — string replacements only, no logic changes.
+
+---
+
+## Feature Suggestions (verified safe to add)
+
+These are additive features that won't break existing functionality:
+
+1. **Lead detail slide-over panel** — Currently clicking a lead row does nothing. Adding a sheet/drawer that shows lead details + edit form would improve the Leads journey without changing any existing components.
+
+2. **Member search in Command Palette** — Currently only searches members + leads. Could add classes, packages, and staff to `CommandPalette.tsx` search results for faster navigation. Purely additive — extends the existing `results` array.
+
+3. **Sidebar "expiring" badge color differentiation** — Both `expiringCount` and `pendingSlips` use `bg-destructive` (red). Changing expiring packages to `bg-amber-500` (warning) would visually differentiate urgency levels. CSS-only change in `Sidebar.tsx`.
 
