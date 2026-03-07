@@ -180,11 +180,7 @@ export const useDeleteMember = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.rpc('delete_member_cascade', { p_member_id: id });
       if (error) throw error;
     },
     onSuccess: (_, id) => {
@@ -205,11 +201,10 @@ export const useBulkDeleteMembers = () => {
 
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
+      for (const id of ids) {
+        const { error } = await supabase.rpc('delete_member_cascade', { p_member_id: id });
+        if (error) throw error;
+      }
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['members'] });

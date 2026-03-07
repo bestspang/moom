@@ -1,34 +1,47 @@
 
 
-# Fix: Cannot Delete Members (Foreign Key Constraint Violation)
+# Fix: Promotions export missing columns in Settings
 
-## Problem (Verified)
-Deleting a member fails silently because several child tables have **NO ACTION** foreign key constraints that block deletion when related records exist:
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-| Child Table | FK Column | Delete Rule | Impact |
-|---|---|---|---|
-| `activity_log` | `member_id` | NO ACTION | **Blocks** |
-| `promotion_redemptions` | `member_id` | NO ACTION | **Blocks** |
-| `leads` | `converted_member_id` | NO ACTION | **Blocks** |
-| `transfer_slips` | `member_id` | NO ACTION | **Blocks** |
+## Fix (surgical, 1 file)
 
-Other tables like `member_packages`, `member_notes`, `class_bookings`, etc. already have CASCADE — those are fine.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## Solution
-Create a database function `delete_member_cascade` (SECURITY DEFINER) that:
-1. Sets `member_id` to NULL in `activity_log`, `transfer_slips`, `promotion_redemptions`
-2. Sets `converted_member_id` to NULL in `leads`
-3. Sets `member_id` to NULL in `line_users`, `line_message_log`
-4. Deletes the member (CASCADE handles the rest)
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Then update `useMembers.ts` to call `supabase.rpc('delete_member_cascade', { p_member_id: id })` instead of direct `.delete()`.
-
-## Files to Modify
-- **DB migration**: Create `delete_member_cascade` function
-- `src/hooks/useMembers.ts`: Update `useDeleteMember` and `useBulkDeleteMembers` to use RPC
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
 ## Risk
-- Low: The function nullifies references (preserving audit trail) then deletes
-- Activity log entries are preserved with `member_id = NULL` (audit integrity maintained)
-- No existing behavior changes — just makes delete actually work
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
