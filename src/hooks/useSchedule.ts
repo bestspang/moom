@@ -358,7 +358,7 @@ export function useCreateScheduleValidated() {
         entity_type: 'schedule',
         entity_id: (result as any)?.id,
       });
-      toast.success('Class scheduled successfully');
+      toast.success(i18n.t('toast.scheduleCreated'));
     },
     onError: (error) => {
       // Only show non-i18n errors here; i18n errors are handled by the caller
