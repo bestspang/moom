@@ -37,6 +37,7 @@ export default {
     downloadTemplate: 'Download template',
     yes: 'Yes',
     no: 'No',
+    or: 'or',
   },
 
   // Bulk actions
