@@ -116,10 +116,10 @@ export const useToggleFeatureFlag = () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
-      toast.success('Feature flag updated');
+      toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update feature flag');
+      toast.error(i18n.t('toast.flagUpdateFailed'));
       console.error('Toggle feature flag error:', error);
     },
   });
