@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getInitials } from '@/lib/formatters';
 import { exportMembers, type ExportableMember } from '@/lib/exportCsv';
-import { useMembers, useMemberStats, type MemberWithLocation } from '@/hooks/useMembers';
+import { useMembers, useMemberStats, useBulkDeleteMembers, useBulkUpdateMemberStatus, type MemberWithLocation } from '@/hooks/useMembers';
+import { BulkActionBar } from '@/components/common/BulkActionBar';
+import { toast } from 'sonner';
 import { useMembersEnrichment } from '@/hooks/useMembersEnriched';
 import { useEngagementScores } from '@/hooks/useEngagementScores';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
