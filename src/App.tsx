@@ -41,6 +41,7 @@ import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
+import Insights from "./pages/Insights";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
 import ActiveMembers from "./pages/reports/ActiveMembers";
 import ClassCapacityByHour from "./pages/reports/ClassCapacityByHour";
