@@ -127,7 +127,7 @@ const RoomDetails = () => {
       <div>
         <PageHeader
           title=""
-          breadcrumbs={[{ label: t('nav.class') }, { label: t('rooms.title'), href: '/room' }, { label: '...' }]}
+          breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('rooms.title'), href: '/room' }, { label: '...' }]}
         />
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
