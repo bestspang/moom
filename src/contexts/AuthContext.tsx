@@ -165,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setRole(null);
     setAccessLevel(null);
+    setStaffStatus(null);
   };
 
   return (
