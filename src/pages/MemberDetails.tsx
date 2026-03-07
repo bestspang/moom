@@ -307,6 +307,18 @@ const MemberDetails = () => {
     ) : '-' },
   ];
 
+  // Sync desk notes from server
+  useEffect(() => {
+    if (member?.notes !== undefined) {
+      setDeskNotes(member.notes || '');
+    }
+  }, [member?.notes]);
+
+  const handleDeskNotesBlur = useCallback(() => {
+    if (!member || deskNotes === (member.notes || '')) return;
+    updateMember.mutate({ id: member.id, data: { notes: deskNotes }, oldData: { notes: member.notes } });
+  }, [member, deskNotes, updateMember]);
+
   if (memberLoading) {
     return (
       <div>
