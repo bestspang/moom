@@ -42,6 +42,9 @@ export default {
     noResults: 'ไม่พบผลลัพธ์',
     confirm: 'ยืนยัน',
     saving: 'กำลังบันทึก...',
+    created: 'สร้างสำเร็จ',
+    saved: 'บันทึกสำเร็จ',
+    confirmDelete: 'ยืนยันการลบ',
   },
 
   // Bulk actions

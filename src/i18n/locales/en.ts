@@ -42,6 +42,9 @@ export default {
     noResults: 'No results found',
     confirm: 'Confirm',
     saving: 'Saving...',
+    created: 'Created successfully',
+    saved: 'Saved successfully',
+    confirmDelete: 'Confirm Delete',
   },
 
   // Bulk actions
