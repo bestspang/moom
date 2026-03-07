@@ -254,8 +254,11 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Needs Attention — unified action items */}
-      <NeedsAttentionCard />
+      {/* Revenue Forecast + Needs Attention */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <RevenueForecastCard />
+        <NeedsAttentionCard />
+      </div>
 
       {/* Quick Check-in FAB */}
       <Button
