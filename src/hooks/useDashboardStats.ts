@@ -39,19 +39,20 @@ export const useDashboardStats = () => {
     enabled: !!user,
     queryFn: async (): Promise<DashboardStats> => {
       const today = formatDateForDB(new Date());
-      const yesterday = formatDateForDB(new Date(Date.now() - 86400000));
+      const todayRange = getBangkokDayRange(new Date());
+      const yesterdayRange = getBangkokDayRange(new Date(Date.now() - 86400000));
 
       const { count: checkinsToday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
-        .gte('check_in_time', `${today}T00:00:00`)
-        .lt('check_in_time', `${today}T23:59:59`);
+        .gte('check_in_time', todayRange.start)
+        .lt('check_in_time', todayRange.end);
 
       const { count: checkinsYesterday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
-        .gte('check_in_time', `${yesterday}T00:00:00`)
-        .lt('check_in_time', `${yesterday}T23:59:59`);
+        .gte('check_in_time', yesterdayRange.start)
+        .lt('check_in_time', yesterdayRange.end);
 
       const { count: classesToday } = await supabase
         .from('schedule')
