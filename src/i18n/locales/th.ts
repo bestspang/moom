@@ -865,6 +865,7 @@ export default {
     createStaff: 'สร้างพนักงาน',
     noStaff: 'ไม่พบพนักงาน',
     terminated: 'สิ้นสุดการจ้าง',
+    inactive: 'รอการอนุมัติ',
     contactNumber: 'เบอร์โทรศัพท์',
     createSuccess: 'สร้างพนักงานสำเร็จ',
     positions: 'ตำแหน่ง',
