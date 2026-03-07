@@ -96,7 +96,7 @@ export const StatCard = ({
   };
 
   return (
-    <Card className={cn('shadow-card', getColorClasses())}>
+    <Card className={cn('shadow-card', getColorClasses(), onClick && 'cursor-pointer hover:bg-accent/50 transition-colors')} onClick={onClick}>
       <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
