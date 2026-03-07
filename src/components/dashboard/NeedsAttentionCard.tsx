@@ -197,6 +197,48 @@ const NeedsAttentionCard = () => {
                 </Button>
               </div>
             )}
+
+            {/* Declining Attendance */}
+            {churnMembers.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <TrendingDown className="h-3.5 w-3.5" />
+                    {t('dashboard.decliningAttendance')} ({churnMembers.length})
+                  </h4>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary p-0 h-auto text-xs"
+                    onClick={() => navigate('/members')}
+                  >
+                    {t('common.viewAll')}
+                  </Button>
+                </div>
+                <div className="space-y-1.5">
+                  {churnMembers.slice(0, 3).map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => navigate(`/members/${m.id}/detail`)}
+                      className="flex items-center gap-2 w-full text-left hover:bg-accent/50 rounded-md p-1.5 -m-0.5 transition-colors"
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-[10px]">
+                          {m.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{m.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {m.priorCount} → {m.recentCount} {t('dashboard.visits')}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-destructive">↓{m.declinePercent}%</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
