@@ -166,10 +166,10 @@ export const useCancelBooking = () => {
         entity_id: data.id,
         member_id: data.member_id,
       });
-      toast.success('Booking cancelled');
+      toast.success(i18n.t('toast.bookingCancelled'));
     },
     onError: (error) => {
-      toast.error('Failed to cancel booking');
+      toast.error(i18n.t('toast.bookingCancelFailed'));
       console.error('Cancel booking error:', error);
     },
   });
