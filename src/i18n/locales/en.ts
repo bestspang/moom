@@ -1835,6 +1835,36 @@ export default {
     projected: 'est.',
   },
 
+  // Business Health
+  businessHealth: {
+    title: 'Business Health',
+    retention: 'Retention',
+    revenue: 'Revenue',
+    classUtil: 'Class Util.',
+    leadConv: 'Lead Conv.',
+  },
+
+  // Insights
+  insights: {
+    title: 'Insights',
+    overview: 'Overview',
+    revenue: 'Revenue',
+    members: 'Members',
+    classes: 'Classes',
+    packages: 'Packages',
+    arpu: 'ARPU',
+    perMember: 'per active member',
+    retentionRate: 'Retention Rate',
+    classUtilization: 'Class Utilization',
+    leadConversion: 'Lead Conversion',
+    activeMembers: 'Active Members',
+    monthlyRevenue: 'Monthly Revenue',
+    estLtv: 'Est. LTV',
+    lifetime: 'lifetime value',
+    revenueTrend30d: 'Revenue Trend (30 days)',
+    detailedReports: 'Detailed Reports',
+  },
+
   // Toast messages (used by hooks via i18n.t())
   toast: {
     // Check-in / Lobby
