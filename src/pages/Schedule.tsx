@@ -18,6 +18,7 @@ const Schedule = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithRelations | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
   const { data: scheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(selectedDate);
   const { data: stats, isLoading: statsLoading } = useScheduleStats(selectedDate);
