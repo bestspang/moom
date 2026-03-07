@@ -266,7 +266,7 @@ export const useDeleteStaff = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to delete staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffDeleteFailed'));
     },
   });
 };
