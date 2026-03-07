@@ -75,7 +75,7 @@ const CreateClass = () => {
       <PageHeader
         title={t('classes.createClass')}
         breadcrumbs={[
-          { label: t('nav.class') },
+          { label: t('nav.yourGym') },
           { label: t('classes.title'), href: '/class' },
           { label: t('classes.createClass') },
         ]}

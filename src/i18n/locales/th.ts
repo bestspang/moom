@@ -1552,6 +1552,7 @@ export default {
     signupSuccess: 'สร้างบัญชีสำเร็จ!',
     checkEmail: 'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีของคุณ',
     googleLogin: 'เข้าสู่ระบบด้วย Google',
+    googleSignInFailed: 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้',
     accountInactive: 'บัญชีรอการอนุมัติ',
     pendingApproval: 'บัญชีของคุณรอการอนุมัติ กรุณาติดต่อผู้จัดการเพื่อเปิดใช้งาน',
     resetPasswordTitle: 'รีเซ็ตรหัสผ่าน',

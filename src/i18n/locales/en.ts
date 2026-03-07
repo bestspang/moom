@@ -1552,6 +1552,7 @@ export default {
     signupSuccess: 'Account created!',
     checkEmail: 'Please check your email to verify your account.',
     googleLogin: 'Sign in with Google',
+    googleSignInFailed: 'Google sign-in failed',
     accountInactive: 'Account pending approval',
     pendingApproval: 'Your account is pending approval. Please contact a manager to activate it.',
     resetPasswordTitle: 'Reset Password',
