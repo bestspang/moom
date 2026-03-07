@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'https://esm.sh/stripe@18.5.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,24 +17,35 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // --- STRIPE SIGNATURE VERIFICATION STUB ---
-    // When STRIPE_WEBHOOK_SECRET is configured:
-    //
-    // import Stripe from 'https://esm.sh/stripe@14'
-    // const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
-    // const signature = req.headers.get('stripe-signature')!
-    // const body = await req.text()
-    // const event = stripe.webhooks.constructEvent(body, signature, Deno.env.get('STRIPE_WEBHOOK_SECRET')!)
-    //
-    // For now, parse body as JSON (development only):
-    const body = await req.text()
-    const event = JSON.parse(body)
+    // Verify Stripe signature
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
+      apiVersion: '2025-08-27.basil',
+    })
 
-    const eventType = event.type as string
+    const signature = req.headers.get('stripe-signature')
+    if (!signature) {
+      return new Response(JSON.stringify({ error: 'Missing stripe-signature header' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    const body = await req.text()
+    let event: Stripe.Event
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+      )
+    } catch (err) {
+      console.error('[stripe-webhook] Signature verification failed:', err.message)
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    const eventType = event.type
     console.log(`[stripe-webhook] Received event: ${eventType}`)
 
     if (eventType === 'checkout.session.completed') {
-      const session = event.data.object
+      const session = event.data.object as Stripe.Checkout.Session
       const transactionId = session.metadata?.transaction_id
 
       if (!transactionId) {
@@ -117,7 +129,7 @@ Deno.serve(async (req) => {
         new_value: { status: 'paid', stripe_session_id: session.id, amount: tx.amount },
       })
     } else if (eventType === 'charge.refunded') {
-      const charge = event.data.object
+      const charge = event.data.object as Stripe.Charge
       const paymentIntentId = charge.payment_intent
 
       // Find transaction by source_ref
@@ -133,7 +145,7 @@ Deno.serve(async (req) => {
           .update({ status: 'refunded' })
           .eq('id', tx.id)
 
-        // Optionally deactivate member_package
+        // Deactivate member_package
         if (tx.member_id) {
           await supabase
             .from('member_packages')
