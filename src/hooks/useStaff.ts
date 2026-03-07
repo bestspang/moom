@@ -315,7 +315,7 @@ export const useRemoveStaffPosition = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-positions', result.staff_id] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Position removed');
+      toast.success(i18n.t('toast.positionRemoved'));
       logActivity({
         event_type: 'staff_position_removed',
         activity: `Position removed from staff`,
