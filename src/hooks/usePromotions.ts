@@ -101,10 +101,10 @@ export const useCreatePromotion = () => {
         entity_type: 'promotion',
         entity_id: data.id,
       });
-      toast.success('Promotion created successfully');
+      toast.success(i18n.t('toast.promotionCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionCreateFailed'));
     },
   });
 };
