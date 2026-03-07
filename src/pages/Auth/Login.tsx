@@ -24,31 +24,6 @@ const Login = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) {
-        toast({
-          variant: 'destructive',
-          title: t('auth.loginFailed'),
-          description: error.message,
-        });
-      }
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: t('auth.loginFailed'),
-        description: String(err),
-      });
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
 
   // Memoize schema for i18n support
   const loginSchema = useMemo(() => z.object({
