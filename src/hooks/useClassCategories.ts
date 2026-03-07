@@ -98,10 +98,10 @@ export const useCreateClassCategory = () => {
         entity_type: 'class_category',
         entity_id: data.id,
       });
-      toast.success('Category created successfully');
+      toast.success(i18n.t('toast.categoryCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryCreateFailed'));
     },
   });
 };
