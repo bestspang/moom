@@ -579,7 +579,7 @@ export const useAssignPackageToMember = () => {
         entity_id: variables.memberId,
         new_value: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
       });
-      toast.success(t('common.created'));
+      toast.success(t('toast.packageAssigned'));
     },
     onError: (error) => toast.error(error.message),
   });
