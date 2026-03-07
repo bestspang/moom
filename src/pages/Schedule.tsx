@@ -168,7 +168,27 @@ const Schedule = () => {
         <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
       </div>
 
-      {/* Schedule Table */}
+      {/* View toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <Button
+          variant={viewMode === 'list' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('list')}
+        >
+          <List className="h-4 w-4 mr-1" />
+          {t('schedule.listView')}
+        </Button>
+        <Button
+          variant={viewMode === 'timeline' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('timeline')}
+        >
+          <LayoutGrid className="h-4 w-4 mr-1" />
+          {t('schedule.timelineView')}
+        </Button>
+      </div>
+
+      {/* Schedule Content */}
       {scheduleLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -177,6 +197,14 @@ const Schedule = () => {
         </div>
       ) : filteredSchedule.length === 0 ? (
         <EmptyState message={t('schedule.noClassesForDate')} />
+      ) : viewMode === 'timeline' ? (
+        <ScheduleTimeline
+          schedules={filteredSchedule}
+          onScheduleClick={(row) => {
+            setSelectedSchedule(row);
+            setBookingDialogOpen(true);
+          }}
+        />
       ) : (
         <DataTable
           columns={columns}
