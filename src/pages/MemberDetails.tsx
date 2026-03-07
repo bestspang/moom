@@ -525,6 +525,15 @@ const MemberDetails = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Member Journey Timeline */}
+                    <MemberTimeline
+                      memberSince={member.member_since}
+                      attendance={attendance}
+                      packages={packages}
+                      suspensions={suspensions}
+                      riskLevel={member.risk_level}
+                    />
                   </div>
                 </TabsContent>
 
