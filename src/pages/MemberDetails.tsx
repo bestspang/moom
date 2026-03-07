@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PurchasePackageDialog } from '@/components/members/PurchasePackageDialog';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import {
   useMember,
@@ -55,6 +56,7 @@ const MemberDetails = () => {
   const [packageStatus, setPackageStatus] = useState('active');
   const [newNote, setNewNote] = useState('');
   const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [deskNotes, setDeskNotes] = useState('');
 
   // Profile edit state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -304,6 +306,18 @@ const MemberDetails = () => {
       </a>
     ) : '-' },
   ];
+
+  // Sync desk notes from server
+  useEffect(() => {
+    if (member?.notes !== undefined) {
+      setDeskNotes(member.notes || '');
+    }
+  }, [member?.notes]);
+
+  const handleDeskNotesBlur = useCallback(() => {
+    if (!member || deskNotes === (member.notes || '')) return;
+    updateMember.mutate({ id: member.id, data: { notes: deskNotes }, oldData: { notes: member.notes } });
+  }, [member, deskNotes, updateMember]);
 
   if (memberLoading) {
     return (
@@ -670,9 +684,18 @@ const MemberDetails = () => {
 
                 <TabsContent value="billing" className="mt-6">
                   <div className="flex justify-end mb-4">
-                    <Button className="bg-primary hover:bg-primary/90">
-                      {t('members.addBilling')}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button className="bg-primary hover:bg-primary/90" disabled>
+                              {t('members.addBilling')}
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Coming soon</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   {billingLoading ? (
                     <Skeleton className="h-48" />
@@ -857,8 +880,9 @@ const MemberDetails = () => {
               <Textarea
                 placeholder={t('members.frontDeskNotesPlaceholder')}
                 className="min-h-[100px]"
-                value={member.notes || ''}
-                onChange={(e) => updateMember.mutate({ id: member.id, data: { notes: e.target.value } })}
+                value={deskNotes}
+                onChange={(e) => setDeskNotes(e.target.value)}
+                onBlur={handleDeskNotesBlur}
               />
             </CardContent>
           </Card>

@@ -1,69 +1,47 @@
 
 
-# Comprehensive Audit: MemberDetails & Cross-Feature Consistency
+# Fix: Promotions export missing columns in Settings
 
-## Issues Found
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### 1. Missing i18n keys — `common.created` and `common.saved` (HIGH)
-**Root cause**: `useMemberDetails.ts` uses `t('common.created')` (4 places) and `t('common.saved')` (3 places), but **neither key exists** in `common` section of `en.ts` or `th.ts`. Users see raw keys like `common.created` as toast messages.
+## Fix (surgical, 1 file)
 
-**Affected mutations**:
-- `useCreateMemberNote` → `common.created` (line 332)
-- `useCreateMemberInjury` → `common.created` (line 397)
-- `useCreateMemberSuspension` → `common.created` (line 465)
-- `useCreateMemberContract` → `common.created` (line 546)
-- `useUpdateMember` → `common.saved` (line 364)
-- `useMarkInjuryRecovered` → `common.saved` (line 424)
-- `useEndMemberSuspension` → `common.saved` (line 508)
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Also in `useSettings.ts` → `common.saved` (2 places).
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**Fix**: Add `created: 'Created'` and `saved: 'Saved'` to `common` in both `en.ts` and `th.ts`.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 2. Missing i18n key — `common.confirmDelete` (MEDIUM)
-Used in `Announcements.tsx` (line 196) but doesn't exist in locale files.
-
-**Fix**: Add `confirmDelete: 'Confirm Delete'` / `'ยืนยันการลบ'` to `common`.
-
-### 3. Dead "Add Billing" button (MEDIUM)
-`MemberDetails.tsx` line 673: Button renders but has **no `onClick` handler** — same pattern as the Purchase Package bug we just fixed.
-
-**Fix**: For now, disable the button and mark it as "Coming soon" or wire it to a TODO dialog. This prevents user confusion.
-
-### 4. Front Desk Notes fires mutation on every keystroke (HIGH)
-`MemberDetails.tsx` line 861: `onChange` directly calls `updateMember.mutate()` on every character typed. This creates dozens of API calls and activity log entries per edit.
-
-**Fix**: Use local state + debounced save (onBlur or explicit Save button).
-
-### 5. Missing i18n keys for member tab labels (LOW-RISK, verify)
-Keys like `members.tabs.home`, `members.tabs.communications`, `members.frontDeskNotes`, `members.frontDeskNotesPlaceholder`, `members.addBilling`, `members.purchasePackage`, etc. — need to verify they all exist.
-
----
-
-## Implementation Plan
-
-### Step 1: Add missing i18n keys to `en.ts` and `th.ts`
-- `common.created` → `'Created'` / `'สร้างแล้ว'`
-- `common.saved` → `'Saved'` / `'บันทึกแล้ว'`
-- `common.confirmDelete` → `'Confirm Delete'` / `'ยืนยันการลบ'`
-
-### Step 2: Fix Front Desk Notes (keystroke mutation)
-- Add local state for notes text
-- Save on blur (or add a save button)
-- Remove direct `updateMember.mutate()` from `onChange`
-
-### Step 3: Fix dead "Add Billing" button
-- Add `disabled` + tooltip "Coming soon" until billing creation is implemented
-- This prevents user confusion without adding incomplete functionality
-
-### Files to modify
-| File | Change |
-|------|--------|
-| `src/i18n/locales/en.ts` | Add `created`, `saved`, `confirmDelete` to `common` |
-| `src/i18n/locales/th.ts` | Same keys in Thai |
-| `src/pages/MemberDetails.tsx` | Fix notes textarea (debounce/onBlur), disable Add Billing button |
-
-### Risk
-- **Low**: All changes are additive (i18n keys) or fix existing bugs (notes, dead button)
-- **Zero regression**: No existing working behavior is altered
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
