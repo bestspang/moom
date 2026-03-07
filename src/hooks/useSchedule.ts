@@ -266,7 +266,7 @@ export function useUpdateSchedule() {
         entity_id: variables.id,
         new_value: variables as Record<string, unknown>,
       });
-      toast.success('Schedule updated successfully');
+      toast.success(i18n.t('toast.scheduleUpdated'));
     },
     onError: (error) => {
       toast.error(error.message);
