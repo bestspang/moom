@@ -39,6 +39,7 @@ const Profile = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
+      // Update auth metadata
       const { error } = await supabase.auth.updateUser({
         data: {
           first_name: firstName,
@@ -53,6 +54,13 @@ const Profile = () => {
           description: error.message,
         });
       } else {
+        // Also sync to staff table
+        if (user?.id) {
+          await supabase
+            .from('staff')
+            .update({ first_name: firstName, last_name: lastName })
+            .eq('user_id', user.id);
+        }
         toast({
           title: t('common.success'),
           description: t('profile.profileUpdated'),
