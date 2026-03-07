@@ -654,7 +654,7 @@ const MemberDetails = () => {
                         <TabsTrigger value="completed">{t('members.completed')}</TabsTrigger>
                       </TabsList>
                     </Tabs>
-                    <Button className="bg-primary hover:bg-primary/90">
+                    <Button className="bg-primary hover:bg-primary/90" onClick={() => setPurchaseOpen(true)}>
                       {t('members.purchasePackage')}
                     </Button>
                   </div>
