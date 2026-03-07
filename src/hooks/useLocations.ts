@@ -98,10 +98,10 @@ export const useCreateLocation = () => {
         entity_type: 'location',
         entity_id: data.id,
       });
-      toast.success('Location created successfully');
+      toast.success(i18n.t('toast.locationCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create location: ${error.message}`);
+      toast.error(i18n.t('toast.locationCreateFailed'));
     },
   });
 };
