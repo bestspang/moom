@@ -37,6 +37,7 @@ export default {
     downloadTemplate: 'ดาวน์โหลดเทมเพลต',
     yes: 'ใช่',
     no: 'ไม่',
+    or: 'หรือ',
   },
 
   // Bulk actions
@@ -864,6 +865,7 @@ export default {
     createStaff: 'สร้างพนักงาน',
     noStaff: 'ไม่พบพนักงาน',
     terminated: 'สิ้นสุดการจ้าง',
+    inactive: 'รอการอนุมัติ',
     contactNumber: 'เบอร์โทรศัพท์',
     createSuccess: 'สร้างพนักงานสำเร็จ',
     positions: 'ตำแหน่ง',
@@ -1539,6 +1541,9 @@ export default {
     welcomeBack: 'เข้าสู่ระบบสำเร็จแล้ว',
     signupSuccess: 'สร้างบัญชีสำเร็จ!',
     checkEmail: 'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีของคุณ',
+    googleLogin: 'เข้าสู่ระบบด้วย Google',
+    accountInactive: 'บัญชีรอการอนุมัติ',
+    pendingApproval: 'บัญชีของคุณรอการอนุมัติ กรุณาติดต่อผู้จัดการเพื่อเปิดใช้งาน',
   },
 
   // Members form fields

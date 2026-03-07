@@ -19,6 +19,7 @@ const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender',
 const STAFF_STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'pending', label: 'Pending' },
+  { value: 'inactive', label: 'Inactive' },
   { value: 'terminated', label: 'Terminated' },
 ];
 
@@ -56,6 +57,7 @@ const Staff = () => {
   const statusTabs: StatusTab[] = [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
     { key: 'pending', label: t('common.pending'), count: stats?.pending || 0 },
+    { key: 'inactive', label: t('staff.inactive'), count: stats?.inactive || 0 },
     { key: 'terminated', label: t('staff.terminated'), count: stats?.terminated || 0 },
   ];
 
@@ -63,6 +65,7 @@ const Staff = () => {
     switch (status) {
       case 'active': return 'active';
       case 'pending': return 'pending';
+      case 'inactive': return 'suspended';
       case 'terminated': return 'inactive';
       default: return 'default';
     }
@@ -72,6 +75,7 @@ const Staff = () => {
     switch (status) {
       case 'active': return t('common.active');
       case 'pending': return t('common.pending');
+      case 'inactive': return t('staff.inactive');
       case 'terminated': return t('staff.terminated');
       default: return status || '';
     }

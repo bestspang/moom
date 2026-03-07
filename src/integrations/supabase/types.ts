@@ -2777,7 +2777,7 @@ export type Database = {
       room_layout_type: "open" | "fixed"
       room_status: "open" | "closed"
       schedule_status: "scheduled" | "cancelled" | "completed"
-      staff_status: "active" | "pending" | "terminated"
+      staff_status: "active" | "pending" | "terminated" | "inactive"
       transaction_status:
         | "paid"
         | "pending"
@@ -2967,7 +2967,7 @@ export const Constants = {
       room_layout_type: ["open", "fixed"],
       room_status: ["open", "closed"],
       schedule_status: ["scheduled", "cancelled", "completed"],
-      staff_status: ["active", "pending", "terminated"],
+      staff_status: ["active", "pending", "terminated", "inactive"],
       transaction_status: [
         "paid",
         "pending",

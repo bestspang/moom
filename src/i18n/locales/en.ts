@@ -37,6 +37,7 @@ export default {
     downloadTemplate: 'Download template',
     yes: 'Yes',
     no: 'No',
+    or: 'or',
   },
 
   // Bulk actions
@@ -864,6 +865,7 @@ export default {
     createStaff: 'Create staff',
     noStaff: 'No staff members found',
     terminated: 'Terminated',
+    inactive: 'Inactive',
     contactNumber: 'Contact number',
     createSuccess: 'Staff member created successfully',
     positions: 'Positions',
@@ -1539,6 +1541,9 @@ export default {
     welcomeBack: 'You have been logged in successfully.',
     signupSuccess: 'Account created!',
     checkEmail: 'Please check your email to verify your account.',
+    googleLogin: 'Sign in with Google',
+    accountInactive: 'Account pending approval',
+    pendingApproval: 'Your account is pending approval. Please contact a manager to activate it.',
   },
 
   // Members form fields
