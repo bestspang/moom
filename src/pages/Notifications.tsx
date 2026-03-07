@@ -36,7 +36,7 @@ const notificationTypes: NotificationType[] = [
 ];
 
 const Notifications = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all');
   const [typeFilters, setTypeFilters] = useState<NotificationType[]>([]);
