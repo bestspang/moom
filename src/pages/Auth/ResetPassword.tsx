@@ -12,13 +12,16 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
+const ResetPassword = () => {
+  const { t } = useLanguage();
+
+  const resetPasswordSchema = React.useMemo(() => z.object({
+    password: z.string().min(6, t('validation.passwordMinLength')),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('validation.passwordsNotMatch'),
+    path: ['confirmPassword'],
+  }), [t]);
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
