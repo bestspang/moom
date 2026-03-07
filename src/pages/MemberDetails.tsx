@@ -880,8 +880,9 @@ const MemberDetails = () => {
               <Textarea
                 placeholder={t('members.frontDeskNotesPlaceholder')}
                 className="min-h-[100px]"
-                value={member.notes || ''}
-                onChange={(e) => updateMember.mutate({ id: member.id, data: { notes: e.target.value } })}
+                value={deskNotes}
+                onChange={(e) => setDeskNotes(e.target.value)}
+                onBlur={handleDeskNotesBlur}
               />
             </CardContent>
           </Card>
