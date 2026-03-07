@@ -166,6 +166,7 @@ const Dashboard = () => {
               value={stats?.currentlyInClass || 0}
               subtitle={t('dashboardExtra.attendees')}
               color="orange"
+              onClick={() => navigate('/calendar')}
             />
             <StatCard
               title={t('dashboard.classesScheduledToday')}

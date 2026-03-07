@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,20 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
+type ResetPasswordFormData = { password: string; confirmPassword: string };
+
 const ResetPassword = () => {
-  const { t } = useLanguage();
-
-  const resetPasswordSchema = React.useMemo(() => z.object({
-    password: z.string().min(6, t('validation.passwordMinLength')),
-    confirmPassword: z.string(),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: t('validation.passwordsNotMatch'),
-    path: ['confirmPassword'],
-  }), [t]);
-
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
-
-const ResetPasswordInner = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,15 +24,21 @@ const ResetPasswordInner = () => {
   const [isValidSession, setIsValidSession] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
+  const resetPasswordSchema = useMemo(() => z.object({
+    password: z.string().min(6, t('validation.passwordMinLength')),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('validation.passwordsNotMatch'),
+    path: ['confirmPassword'],
+  }), [t]);
+
   useEffect(() => {
-    // Check if user has a valid recovery session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsValidSession(!!session);
       setIsChecking(false);
     };
 
-    // Listen for auth state changes (recovery event)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsValidSession(true);
@@ -78,7 +73,7 @@ const ResetPasswordInner = () => {
         setIsSuccess(true);
         toast({
           title: t('common.success'),
-          description: t('auth.passwordResetSuccess') || 'Password updated successfully',
+          description: t('auth.passwordResetSuccess'),
         });
       }
     } finally {
@@ -104,10 +99,10 @@ const ResetPasswordInner = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">
-            {t('auth.resetPasswordTitle') || 'Reset Password'}
+            {t('auth.resetPasswordTitle')}
           </CardTitle>
           <CardDescription>
-            {t('auth.resetPasswordDescription') || 'Enter your new password below'}
+            {t('auth.resetPasswordDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -117,25 +112,25 @@ const ResetPasswordInner = () => {
                 <CheckCircle className="h-8 w-8 text-accent-teal" />
               </div>
               <p className="text-muted-foreground">
-                {t('auth.passwordResetSuccess') || 'Your password has been updated successfully.'}
+                {t('auth.passwordResetSuccess')}
               </p>
               <Button onClick={() => navigate('/login')} className="w-full">
-                {t('auth.backToLogin') || 'Back to Login'}
+                {t('auth.backToLogin')}
               </Button>
             </div>
           ) : !isValidSession ? (
             <div className="text-center space-y-4">
               <p className="text-muted-foreground">
-                {t('auth.invalidResetLink') || 'This reset link is invalid or has expired. Please request a new one.'}
+                {t('auth.invalidResetLink')}
               </p>
               <Button onClick={() => navigate('/forgot-password')} className="w-full">
-                {t('auth.requestNewLink') || 'Request New Link'}
+                {t('auth.requestNewLink')}
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">{t('auth.newPassword') || 'New Password'}</Label>
+                <Label htmlFor="password">{t('auth.newPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -164,7 +159,7 @@ const ResetPasswordInner = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">{t('auth.confirmPassword') || 'Confirm Password'}</Label>
+                <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                 <Input
                   id="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
@@ -179,7 +174,7 @@ const ResetPasswordInner = () => {
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('auth.updatePassword') || 'Update Password'}
+                {t('auth.updatePassword')}
               </Button>
             </form>
           )}

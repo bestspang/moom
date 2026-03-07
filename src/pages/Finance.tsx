@@ -379,7 +379,7 @@ const Finance = () => {
     <div>
       <PageHeader 
         title={t('finance.title')} 
-        breadcrumbs={[{ label: t('nav.finance') }, { label: t('finance.title') }]}
+        breadcrumbs={[{ label: t('finance.title') }]}
         actions={
           activeMainTab === 'transactions' ? (
             <ManageDropdown

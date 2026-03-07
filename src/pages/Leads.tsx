@@ -246,7 +246,7 @@ const Leads = () => {
           columns={columns}
           data={displayLeads}
           rowKey={(row) => row.id}
-          emptyMessage={t('leads.searchPlaceholder')}
+          emptyMessage={t('common.noResults')}
         />
       )}
 

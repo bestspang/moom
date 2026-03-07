@@ -84,7 +84,7 @@ const Profile = () => {
       toast({
         variant: 'destructive',
         title: t('common.error'),
-        description: 'Password must be at least 6 characters',
+        description: t('validation.passwordMinLength'),
       });
       return;
     }
