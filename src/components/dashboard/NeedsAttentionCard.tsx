@@ -20,11 +20,12 @@ const NeedsAttentionCard = () => {
   const { data: hotLeads = [], isLoading: leadsLoading } = useHotLeads();
   const { data: expiringPkgs = [], isLoading: pkgLoading } = useExpiringPackages();
   const { data: slipStats, isLoading: slipLoading } = useTransferSlipStats();
+  const { data: churnMembers = [], isLoading: churnLoading } = useChurnPrediction();
 
   const pendingSlips = slipStats?.needs_review || 0;
-  const isLoading = riskLoading || leadsLoading || pkgLoading || slipLoading;
+  const isLoading = riskLoading || leadsLoading || pkgLoading || slipLoading || churnLoading;
 
-  const totalItems = highRiskMembers.length + hotLeads.length + expiringPkgs.length + pendingSlips;
+  const totalItems = highRiskMembers.length + hotLeads.length + expiringPkgs.length + pendingSlips + churnMembers.length;
 
   if (!isLoading && totalItems === 0) return null;
 
