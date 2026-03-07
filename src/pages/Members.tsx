@@ -40,6 +40,10 @@ const Members = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithLocation | null>(null);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const bulkDelete = useBulkDeleteMembers();
+  const bulkUpdateStatus = useBulkUpdateMemberStatus();
 
   const { data: membersData, isLoading: membersLoading } = useMembers({
     status: activeTab,
