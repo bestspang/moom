@@ -35,8 +35,8 @@ export function useCheckIns(date: Date, search: string = '') {
           ),
           location:locations(*)
         `)
-        .gte('check_in_time', `${dateStr}T00:00:00`)
-        .lt('check_in_time', `${dateStr}T23:59:59`)
+        .gte('check_in_time', dayRange.start)
+        .lt('check_in_time', dayRange.end)
         .order('check_in_time', { ascending: false });
 
       const { data, error } = await query;
