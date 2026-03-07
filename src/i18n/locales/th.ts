@@ -583,6 +583,7 @@ export default {
       failed: 'ล้มเหลว',
       downloadErrors: 'ดาวน์โหลดรายงานข้อผิดพลาด',
     },
+    score: 'คะแนน',
   },
 
   // Packages
