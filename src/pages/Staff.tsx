@@ -269,7 +269,7 @@ const Staff = () => {
           const selected = (staff || []).filter((s) => selectedRows.includes(s.id));
           bulkDuplicate.mutate(selected, { onSuccess: clearSelection });
         }}
-        statusOptions={STAFF_STATUS_OPTIONS}
+        statusOptions={staffStatusOptions}
         onChangeStatus={(status) => { bulkStatus.mutate({ ids: selectedRows, status }, { onSuccess: clearSelection }); }}
         isLoading={isBulkLoading}
       />

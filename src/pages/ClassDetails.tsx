@@ -128,7 +128,7 @@ const ClassDetails = () => {
       <PageHeader
         title={classData.name}
         breadcrumbs={[
-          { label: t('nav.class') },
+          { label: t('nav.yourGym') },
           { label: t('classes.title'), href: '/class' },
           { label: classData.name },
         ]}

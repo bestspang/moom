@@ -54,7 +54,7 @@ const Rooms = () => {
     <div>
       <PageHeader 
         title={t('rooms.title')} 
-        breadcrumbs={[{ label: t('nav.class') }, { label: t('rooms.title') }]} 
+        breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('rooms.title') }]} 
         actions={
           <Button 
             className="bg-primary hover:bg-primary-hover"

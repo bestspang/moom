@@ -206,6 +206,7 @@ const Notifications = () => {
                   {notification.created_at
                     ? formatDistanceToNow(new Date(notification.created_at), {
                         addSuffix: true,
+                        locale: getDateLocale(language),
                       })
                     : '-'}
                 </p>

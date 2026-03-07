@@ -95,9 +95,9 @@ const Packages = () => {
 
   const formatType = (type: string) => {
     switch (type) {
-      case 'unlimited': return 'Unlimited';
-      case 'session': return 'Sessions';
-      case 'pt': return 'PT';
+      case 'unlimited': return t('packages.unlimited');
+      case 'session': return t('packages.session');
+      case 'pt': return t('packages.pt');
       default: return type;
     }
   };

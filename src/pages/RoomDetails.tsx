@@ -155,7 +155,7 @@ const RoomDetails = () => {
       <PageHeader
         title={room.name}
         breadcrumbs={[
-          { label: t('nav.class') },
+          { label: t('nav.yourGym') },
           { label: t('rooms.title'), href: '/room' },
           { label: room.name },
         ]}

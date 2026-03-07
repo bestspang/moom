@@ -150,7 +150,7 @@ const TransferSlips = () => {
     <div>
       <PageHeader
         title={t('transferSlips.title')}
-        breadcrumbs={[{ label: t('nav.finance') }, { label: t('transferSlips.title') }]}
+        breadcrumbs={[{ label: t('nav.business') }, { label: t('transferSlips.title') }]}
         actions={
           <ManageDropdown
             onExport={handleExport}

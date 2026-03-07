@@ -32,7 +32,7 @@ const ClassCategories = () => {
     <div>
       <PageHeader
         title={t('categories.title')}
-        breadcrumbs={[{ label: t('nav.class') }, { label: t('categories.title') }]}
+        breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('categories.title') }]}
         actions={
           <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
             {t('common.create')}
