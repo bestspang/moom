@@ -1281,13 +1281,16 @@ export default {
   notifications: {
     title: 'การแจ้งเตือน',
     unread: 'ยังไม่ได้อ่าน',
-    noUnread: 'คุณไม่มีการแจ้งเตือนที่ยังไม่ได้อ่าน',
+    read: 'อ่านแล้ว',
+    new: 'ใหม่',
+    markAllRead: 'อ่านทั้งหมด',
+    noUnread: 'ไม่มีการแจ้งเตือน',
     types: {
-      bookingConfirmed: 'ยืนยันการจอง',
-      classCancellation: 'ยกเลิกคลาส',
-      paymentReceived: 'ได้รับการชำระเงิน',
-      memberRegistration: 'สมัครสมาชิก',
-      packageExpiring: 'แพ็คเกจใกล้หมดอายุ',
+      booking: 'การจอง',
+      cancellation: 'การยกเลิก',
+      payment: 'การชำระเงิน',
+      registration: 'การสมัคร',
+      expiring: 'ใกล้หมดอายุ',
     },
   },
 
