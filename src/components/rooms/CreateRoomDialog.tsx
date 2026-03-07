@@ -124,15 +124,7 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            {t('rooms.create.title')}
-          </DialogTitle>
-        </DialogHeader>
-
+  const formContent = (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Section: Information */}
