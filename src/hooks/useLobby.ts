@@ -111,7 +111,7 @@ export function useCreateCheckIn() {
         },
       });
 
-      toast.success('Member checked in successfully');
+      toast.success(i18n.t('toast.checkInSuccess'));
     },
     onError: (error) => {
       toast.error(error.message);
