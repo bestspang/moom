@@ -498,10 +498,10 @@ export const useLeaveWaitlist = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['class-waitlist', data.schedule_id] });
-      toast.success('Removed from waitlist');
+      toast.success(i18n.t('toast.removedFromWaitlist'));
     },
     onError: (error) => {
-      toast.error('Failed to leave waitlist');
+      toast.error(i18n.t('toast.waitlistLeaveFailed'));
       console.error('Leave waitlist error:', error);
     },
   });
