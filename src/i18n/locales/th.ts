@@ -1554,6 +1554,13 @@ export default {
     googleLogin: 'เข้าสู่ระบบด้วย Google',
     accountInactive: 'บัญชีรอการอนุมัติ',
     pendingApproval: 'บัญชีของคุณรอการอนุมัติ กรุณาติดต่อผู้จัดการเพื่อเปิดใช้งาน',
+    resetPasswordTitle: 'รีเซ็ตรหัสผ่าน',
+    resetPasswordDescription: 'กรอกรหัสผ่านใหม่ด้านล่าง',
+    newPassword: 'รหัสผ่านใหม่',
+    updatePassword: 'อัปเดตรหัสผ่าน',
+    passwordResetSuccess: 'อัปเดตรหัสผ่านสำเร็จแล้ว',
+    invalidResetLink: 'ลิงก์รีเซ็ตไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่',
+    requestNewLink: 'ขอลิงก์ใหม่',
   },
 
   // Members form fields

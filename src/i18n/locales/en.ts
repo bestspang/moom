@@ -1557,7 +1557,6 @@ export default {
     resetPasswordTitle: 'Reset Password',
     resetPasswordDescription: 'Enter your new password below',
     newPassword: 'New Password',
-    confirmPassword: 'Confirm Password',
     updatePassword: 'Update Password',
     passwordResetSuccess: 'Your password has been updated successfully.',
     invalidResetLink: 'This reset link is invalid or has expired. Please request a new one.',
