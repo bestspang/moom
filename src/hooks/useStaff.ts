@@ -386,9 +386,9 @@ export const useBulkDeleteStaff = () => {
         activity: `${ids.length} staff deleted`,
         entity_type: 'staff',
       });
-      toast.success(`${ids.length} staff deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
