@@ -427,6 +427,7 @@ export default {
       notes: 'บันทึก',
       suspensions: 'การระงับ',
       contract: 'สัญญา',
+      communications: 'การสื่อสาร',
     },
     accountDetails: 'รายละเอียดบัญชี',
     purchasePackage: 'ซื้อแพ็คเกจสำหรับสมาชิกนี้',
