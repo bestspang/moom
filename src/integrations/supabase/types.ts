@@ -607,6 +607,39 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       feature_flag_assignments: {
         Row: {
           created_at: string | null
@@ -1252,6 +1285,7 @@ export type Database = {
           id: string
           member_id: string
           note: string
+          note_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1260,6 +1294,7 @@ export type Database = {
           id?: string
           member_id: string
           note: string
+          note_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1268,6 +1303,7 @@ export type Database = {
           id?: string
           member_id?: string
           note?: string
+          note_type?: string | null
           updated_at?: string | null
         }
         Relationships: [

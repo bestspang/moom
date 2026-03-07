@@ -427,6 +427,7 @@ export default {
       notes: 'Notes',
       suspensions: 'Suspensions',
       contract: 'Contract',
+      communications: 'Communications',
     },
     accountDetails: 'Account details',
     purchasePackage: 'Purchase package for this member',
@@ -797,6 +798,9 @@ export default {
       roomNotFound: 'Room not found',
     },
     noClassesForDate: 'No classes scheduled for this date',
+    listView: 'List',
+    timelineView: 'Timeline',
+    noRoom: 'No Room',
   },
 
   // Rooms
@@ -1194,6 +1198,20 @@ export default {
     dailyRevenue: 'Daily Revenue',
     paymentBreakdown: 'Payment Methods',
     revenueComparison: 'Revenue Comparison',
+    pnl: 'Profit & Loss',
+    pnlRevenue: 'Total Revenue',
+    pnlExpenses: 'Total Expenses',
+    pnlNetProfit: 'Net Profit',
+    pnlMargin: 'Margin',
+    pnlPackages: 'Packages',
+    pnlPT: 'Personal Training',
+    pnlOther: 'Other',
+    pnlTotalRevenue: 'Total Revenue',
+    pnlTotalExpenses: 'Total Expenses',
+    revenueBreakdown: 'Revenue Breakdown',
+    addExpense: 'Add Expense',
+    expenseCategory: 'Category',
+    noExpenses: 'No expenses recorded yet',
   },
 
   // Analytics
@@ -2041,5 +2059,20 @@ export default {
     bulkDeleted: '{{count}} items deleted',
     bulkDuplicated: '{{count}} items duplicated',
     bulkFailed: 'Bulk action failed',
+
+    // Expenses
+    expenseCreated: 'Expense recorded',
+    expenseCreateFailed: 'Failed to record expense',
+    expenseDeleted: 'Expense deleted',
+    expenseDeleteFailed: 'Failed to delete expense',
+  },
+
+  // Communication
+  communication: {
+    logged: 'Communication logged',
+    logFailed: 'Failed to log communication',
+    logEntry: 'Log',
+    placeholder: 'What was discussed...',
+    noLogs: 'No communication logs yet',
   },
 };

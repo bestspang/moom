@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { MemberTimeline } from '@/components/members/MemberTimeline';
+import { MemberCommunicationLog } from '@/components/members/MemberCommunicationLog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, EmptyState, type Column } from '@/components/common';
 import { useEngagementScore } from '@/hooks/useEngagementScores';
@@ -102,6 +103,7 @@ const MemberDetails = () => {
     { value: 'billing', label: t('members.tabs.billing'), icon: DollarSign },
     { value: 'injuries', label: t('members.tabs.injuries'), icon: AlertTriangle },
     { value: 'notes', label: t('members.tabs.notes'), icon: ClipboardList },
+    { value: 'communications', label: t('members.tabs.communications'), icon: Activity },
     { value: 'suspensions', label: t('members.tabs.suspensions'), icon: PauseCircle },
     { value: 'contract', label: t('members.tabs.contract'), icon: FileText },
   ];
@@ -755,6 +757,10 @@ const MemberDetails = () => {
                       ))}
                     </div>
                   )}
+                </TabsContent>
+
+                <TabsContent value="communications" className="mt-6">
+                  {id && <MemberCommunicationLog memberId={id} />}
                 </TabsContent>
 
                 <TabsContent value="suspensions" className="mt-6">
