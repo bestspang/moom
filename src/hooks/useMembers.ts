@@ -200,6 +200,53 @@ export const useDeleteMember = () => {
   });
 };
 
+export const useBulkDeleteMembers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      logActivity({
+        event_type: 'member_bulk_deleted',
+        activity: `${ids.length} members deleted in bulk`,
+        entity_type: 'member',
+      });
+    },
+  });
+};
+
+export const useBulkUpdateMemberStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: MemberStatus }) => {
+      const { error } = await supabase
+        .from('members')
+        .update({ status })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ids, status }) => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      logActivity({
+        event_type: 'member_bulk_status_changed',
+        activity: `${ids.length} members status changed to ${status}`,
+        entity_type: 'member',
+        new_value: { status },
+      });
+    },
+  });
+};
+
 // Generate next member ID
 export const useNextMemberId = () => {
   const { user } = useAuth();

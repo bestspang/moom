@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getInitials } from '@/lib/formatters';
 import { exportMembers, type ExportableMember } from '@/lib/exportCsv';
-import { useMembers, useMemberStats, type MemberWithLocation } from '@/hooks/useMembers';
+import { useMembers, useMemberStats, useBulkDeleteMembers, useBulkUpdateMemberStatus, type MemberWithLocation } from '@/hooks/useMembers';
+import { BulkActionBar } from '@/components/common/BulkActionBar';
+import { toast } from 'sonner';
 import { useMembersEnrichment } from '@/hooks/useMembersEnriched';
 import { useEngagementScores } from '@/hooks/useEngagementScores';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
@@ -38,6 +40,10 @@ const Members = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithLocation | null>(null);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const bulkDelete = useBulkDeleteMembers();
+  const bulkUpdateStatus = useBulkUpdateMemberStatus();
 
   const { data: membersData, isLoading: membersLoading } = useMembers({
     status: activeTab,
@@ -231,7 +237,80 @@ const Members = () => {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as MemberStatus | 'all');
     setPage(1);
+    setSelectedRows([]);
   };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  };
+
+  const handleSelectAll = () => {
+    setSelectedRows(prev => prev.length === members.length ? [] : members.map(m => m.id));
+  };
+
+  const handleBulkDelete = () => {
+    bulkDelete.mutate(selectedRows, {
+      onSuccess: () => {
+        toast.success(t('bulk.deleteSuccess'));
+        setSelectedRows([]);
+      },
+    });
+  };
+
+  const handleBulkStatusChange = (status: string) => {
+    bulkUpdateStatus.mutate({ ids: selectedRows, status: status as MemberStatus }, {
+      onSuccess: () => {
+        toast.success(t('bulk.statusSuccess'));
+        setSelectedRows([]);
+      },
+    });
+  };
+
+  const handleBulkExport = () => {
+    const selected = members.filter(m => selectedRows.includes(m.id));
+    if (selected.length === 0) return;
+    const exportData: ExportableMember[] = selected.map(m => ({
+      member_id: m.member_id,
+      first_name: m.first_name,
+      last_name: m.last_name,
+      nickname: m.nickname,
+      gender: m.gender,
+      date_of_birth: m.date_of_birth,
+      phone: m.phone,
+      email: m.email,
+      line_id: (m as any).line_id ?? null,
+      register_location_id: m.register_location_id,
+      register_location_name: m.register_location?.name ?? null,
+      status: m.status,
+      member_since: m.member_since,
+      address_1: m.address_1,
+      address_2: m.address_2,
+      subdistrict: m.subdistrict,
+      district: m.district,
+      province: m.province,
+      postal_code: m.postal_code,
+      emergency_first_name: (m as any).emergency_first_name ?? m.emergency_contact_name ?? null,
+      emergency_last_name: (m as any).emergency_last_name ?? null,
+      emergency_phone: (m as any).emergency_phone ?? m.emergency_contact_phone ?? null,
+      emergency_relationship: m.emergency_relationship,
+      has_medical_conditions: (m as any).has_medical_conditions ?? false,
+      medical_notes: (m as any).medical_notes ?? null,
+      allow_physical_contact: (m as any).allow_physical_contact ?? false,
+      source: m.source,
+      notes: m.notes,
+      recent_package_name: enrichment?.[m.id]?.recent_package ?? null,
+      last_attended: enrichment?.[m.id]?.last_attended ?? null,
+      has_contract: enrichment?.[m.id]?.has_contract ?? false,
+    }));
+    exportMembers(exportData);
+  };
+
+  const memberStatusOptions = [
+    { value: 'active', label: t('common.active') },
+    { value: 'suspended', label: t('members.suspended') },
+    { value: 'on_hold', label: t('members.onHold') },
+    { value: 'inactive', label: t('common.inactive') },
+  ];
 
   return (
     <div>
@@ -289,6 +368,7 @@ const Members = () => {
           onChange={(value) => {
             setSearch(value);
             setPage(1);
+            setSelectedRows([]);
           }}
           className="max-w-md"
         />
@@ -308,13 +388,28 @@ const Members = () => {
         <DataTable
           columns={columns}
           data={members}
+          selectable={can('members', 'delete') || can('members', 'write')}
+          selectedRows={selectedRows}
+          onSelectRow={handleSelectRow}
+          onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
           pagination={{ page, perPage: 50, total }}
-          onPageChange={setPage}
+          onPageChange={(p) => { setPage(p); setSelectedRows([]); }}
           emptyMessage={t('common.noResults')}
         />
       )}
+
+      <BulkActionBar
+        selectedCount={selectedRows.length}
+        onClearSelection={() => setSelectedRows([])}
+        onDelete={handleBulkDelete}
+        onExport={handleBulkExport}
+        onDuplicate={() => {}}
+        statusOptions={memberStatusOptions}
+        onChangeStatus={handleBulkStatusChange}
+        isLoading={bulkDelete.isPending || bulkUpdateStatus.isPending}
+      />
 
       <CreateMemberDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       <EditMemberDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} member={selectedMember} />
