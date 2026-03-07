@@ -156,10 +156,10 @@ export const useCreateFeatureFlag = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag created');
+      toast.success(i18n.t('toast.flagCreated'));
     },
     onError: (error) => {
-      toast.error('Failed to create feature flag');
+      toast.error(i18n.t('toast.flagCreateFailed'));
       console.error('Create feature flag error:', error);
     },
   });
