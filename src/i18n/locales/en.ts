@@ -1984,9 +1984,4 @@ export default {
     bulkDuplicated: '{{count}} items duplicated',
     bulkFailed: 'Bulk action failed',
   },
-
-  // Dashboard
-  dashboard: {
-    expired: 'Expired',
-  },
 };
