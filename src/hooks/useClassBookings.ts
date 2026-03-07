@@ -114,13 +114,13 @@ export const useCreateBooking = () => {
         entity_id: data.id,
         member_id: variables.memberId,
       });
-      toast.success('Booking created successfully');
+      toast.success(i18n.t('toast.bookingCreated'));
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate key')) {
-        toast.error('Member is already booked for this class');
+        toast.error(i18n.t('toast.bookingAlreadyExists'));
       } else {
-        toast.error('Failed to create booking');
+        toast.error(i18n.t('toast.bookingCreateFailed'));
       }
       console.error('Create booking error:', error);
     },
