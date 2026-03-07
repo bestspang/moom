@@ -1446,6 +1446,18 @@ export default {
       unknown: 'ไม่ทราบ',
       startImport: 'นำเข้า',
     },
+    integrations: {
+      stripeTitle: 'Stripe Payment Gateway',
+      stripeDescription: 'รับชำระเงินผ่านบัตรเครดิตจากสมาชิกผ่าน Stripe',
+      enabled: 'เปิดใช้งาน',
+      disabled: 'ปิดใช้งาน',
+      enableHint: 'การชำระด้วยบัตรเครดิตปิดอยู่ เปิดใช้งานได้ที่ ตั้งค่า → ทั่วไป → วิธีการชำระเงิน',
+      webhookUrl: 'Webhook URL',
+      webhookDescription: 'เพิ่ม URL นี้ใน Stripe Dashboard → Webhooks เพื่อรับ event การชำระเงิน',
+      configuredEvents: 'Event ที่ตั้งค่าไว้',
+      testMode: 'การทดสอบ',
+      testModeDescription: 'ใช้หมายเลขบัตรทดสอบด้านล่างใน Stripe test mode เพื่อจำลองการชำระเงิน:',
+    },
   },
 
   // User Profile

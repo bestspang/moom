@@ -1446,6 +1446,18 @@ export default {
       unknown: 'Unknown',
       startImport: 'Import',
     },
+    integrations: {
+      stripeTitle: 'Stripe Payment Gateway',
+      stripeDescription: 'Accept credit card payments from members via Stripe.',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      enableHint: 'Credit card payments are currently disabled. Enable them in Settings → General → Payment methods.',
+      webhookUrl: 'Webhook URL',
+      webhookDescription: 'Add this URL to your Stripe Dashboard → Webhooks to receive payment events.',
+      configuredEvents: 'Configured events',
+      testMode: 'Testing',
+      testModeDescription: 'Use the test card number below in Stripe test mode to simulate payments:',
+    },
   },
 
   // User Profile
