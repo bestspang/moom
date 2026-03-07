@@ -180,7 +180,7 @@ const Leads = () => {
     <div>
       <PageHeader
         title={t('leads.title')}
-        breadcrumbs={[{ label: t('nav.client') }, { label: t('leads.title') }]}
+        breadcrumbs={[{ label: t('nav.people'), href: '/members' }, { label: t('leads.title') }]}
         actions={
           <div className="flex gap-2">
             <DropdownMenu>
