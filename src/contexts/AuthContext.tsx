@@ -175,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         role,
         accessLevel,
+        staffStatus,
         loading,
         signIn,
         signUp,

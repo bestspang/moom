@@ -45,15 +45,17 @@ export const useStaffStats = () => {
     queryKey: ['staff-stats'],
     enabled: !!user,
     queryFn: async () => {
-      const [activeRes, pendingRes, terminatedRes] = await Promise.all([
+      const [activeRes, pendingRes, inactiveRes, terminatedRes] = await Promise.all([
         supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'inactive'),
         supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'terminated'),
       ]);
 
       return {
         active: activeRes.count ?? 0,
         pending: pendingRes.count ?? 0,
+        inactive: inactiveRes.count ?? 0,
         terminated: terminatedRes.count ?? 0,
       };
     },

@@ -1539,6 +1539,9 @@ export default {
     welcomeBack: 'You have been logged in successfully.',
     signupSuccess: 'Account created!',
     checkEmail: 'Please check your email to verify your account.',
+    googleLogin: 'Sign in with Google',
+    accountInactive: 'Account pending approval',
+    pendingApproval: 'Your account is pending approval. Please contact a manager to activate it.',
   },
 
   // Members form fields

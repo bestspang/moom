@@ -1539,6 +1539,9 @@ export default {
     welcomeBack: 'เข้าสู่ระบบสำเร็จแล้ว',
     signupSuccess: 'สร้างบัญชีสำเร็จ!',
     checkEmail: 'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีของคุณ',
+    googleLogin: 'เข้าสู่ระบบด้วย Google',
+    accountInactive: 'บัญชีรอการอนุมัติ',
+    pendingApproval: 'บัญชีของคุณรอการอนุมัติ กรุณาติดต่อผู้จัดการเพื่อเปิดใช้งาน',
   },
 
   // Members form fields

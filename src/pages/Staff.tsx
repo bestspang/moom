@@ -65,6 +65,7 @@ const Staff = () => {
     switch (status) {
       case 'active': return 'active';
       case 'pending': return 'pending';
+      case 'inactive': return 'warning';
       case 'terminated': return 'inactive';
       default: return 'default';
     }
@@ -74,6 +75,7 @@ const Staff = () => {
     switch (status) {
       case 'active': return t('common.active');
       case 'pending': return t('common.pending');
+      case 'inactive': return t('staff.inactive');
       case 'terminated': return t('staff.terminated');
       default: return status || '';
     }
