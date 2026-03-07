@@ -137,7 +137,7 @@ export const GoalProgressCard: React.FC = () => {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">{formatValue(goal)}</span>
-                    {can('goals', 'write') && (
+                    {can('settings', 'write') && (
                       <Button
                         variant="ghost"
                         size="icon"
