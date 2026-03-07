@@ -57,7 +57,7 @@ const Leads = () => {
       case 'contacted': return 'pending';
       case 'interested': return 'active';
       case 'not_interested': return 'inactive';
-      case 'converted': return 'active';
+      case 'converted': return 'converted';
       default: return 'default';
     }
   };

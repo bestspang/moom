@@ -77,9 +77,30 @@ const Notifications = () => {
     );
   };
 
+  const getNavigationTarget = (notification: Notification): string | null => {
+    switch (notification.type) {
+      case 'package_expiring':
+        return notification.related_entity_id ? `/members/${notification.related_entity_id}/detail` : null;
+      case 'payment_received':
+        return '/finance?tab=transactions';
+      case 'member_registration':
+        return notification.related_entity_id ? `/members/${notification.related_entity_id}/detail` : '/members';
+      case 'booking_confirmed':
+        return '/calendar';
+      case 'class_cancellation':
+        return '/calendar';
+      default:
+        return null;
+    }
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
+    }
+    const target = getNavigationTarget(notification);
+    if (target) {
+      navigate(target);
     }
   };
 

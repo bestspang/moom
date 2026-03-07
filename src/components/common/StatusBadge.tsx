@@ -17,6 +17,7 @@ const badgeVariants = cva(
         'high-risk': 'bg-destructive text-white',
         'medium-risk': 'bg-warning-light text-warning-foreground',
         'low-risk': 'bg-accent-teal text-white',
+        converted: 'bg-green-600 text-white',
         voided: 'bg-muted text-muted-foreground',
         'needs-review': 'bg-destructive text-white',
       },
