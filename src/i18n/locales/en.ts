@@ -2059,5 +2059,20 @@ export default {
     bulkDeleted: '{{count}} items deleted',
     bulkDuplicated: '{{count}} items duplicated',
     bulkFailed: 'Bulk action failed',
+
+    // Expenses
+    expenseCreated: 'Expense recorded',
+    expenseCreateFailed: 'Failed to record expense',
+    expenseDeleted: 'Expense deleted',
+    expenseDeleteFailed: 'Failed to delete expense',
+  },
+
+  // Communication
+  communication: {
+    logged: 'Communication logged',
+    logFailed: 'Failed to log communication',
+    logEntry: 'Log',
+    placeholder: 'What was discussed...',
+    noLogs: 'No communication logs yet',
   },
 };
