@@ -20,6 +20,13 @@ const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender',
 
 const Staff = () => {
   const { t } = useLanguage();
+
+  const staffStatusOptions = [
+    { value: 'active', label: t('common.active') },
+    { value: 'pending', label: t('common.pending') },
+    { value: 'inactive', label: t('staff.inactive') },
+    { value: 'terminated', label: t('staff.terminated') },
+  ];
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
