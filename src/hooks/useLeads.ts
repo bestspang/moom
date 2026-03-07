@@ -111,10 +111,10 @@ export const useUpdateLead = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Lead updated successfully');
+      toast.success(i18n.t('toast.leadUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadUpdateFailed'));
     },
   });
 };
