@@ -139,6 +139,19 @@ const Leads = () => {
     },
     { key: 'source', header: t('leads.source'), cell: (row) => row.source ? t(`leads.sourceOptions.${row.source}` as any) || row.source : '-' },
     {
+      key: 'score',
+      header: t('leads.score'),
+      cell: (row) => {
+        const { score, level } = computeLeadScore(row);
+        const variant = level === 'high' ? 'active' : level === 'medium' ? 'pending' : 'inactive';
+        return (
+          <StatusBadge variant={variant as any}>
+            {score}
+          </StatusBadge>
+        );
+      },
+    },
+    {
       key: 'location',
       header: t('lobby.location'),
       cell: (row) => row.register_location?.name || '-',
