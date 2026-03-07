@@ -224,7 +224,7 @@ export const useUpdateStaff = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member updated successfully');
+      toast.success(i18n.t('toast.staffUpdated'));
 
       logActivity({
         event_type: 'staff_updated',
