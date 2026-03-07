@@ -295,7 +295,7 @@ export function useDeleteSchedule() {
         entity_type: 'schedule',
         entity_id: id,
       });
-      toast.success('Schedule deleted successfully');
+      toast.success(i18n.t('toast.scheduleDeleted'));
     },
     onError: (error) => {
       toast.error(error.message);
