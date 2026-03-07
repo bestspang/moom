@@ -61,6 +61,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 import Profile from "./pages/Profile";
 import ComingSoon from "./pages/ComingSoon";
 import MemberAppPreview from "./pages/MemberAppPreview";
