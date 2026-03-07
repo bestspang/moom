@@ -21,11 +21,47 @@ type LoginFormData = {
 
 const Login = () => {
   const { t } = useLanguage();
-  const { signIn } = useAuth();
+  const { signIn, staffStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Show toast when inactive user is detected and signed out
+  useEffect(() => {
+    if (staffStatus === 'inactive') {
+      toast({
+        variant: 'destructive',
+        title: t('auth.accountInactive'),
+        description: t('auth.pendingApproval'),
+      });
+    }
+  }, [staffStatus]);
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast({
+          variant: 'destructive',
+          title: t('auth.loginFailed'),
+          description: result.error.message,
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: t('auth.loginFailed'),
+        description: 'Google sign-in failed',
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   // Memoize schema for i18n support
   const loginSchema = useMemo(() => z.object({
