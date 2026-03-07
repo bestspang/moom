@@ -173,7 +173,7 @@ export const useConvertLeadToMember = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to convert lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadConvertFailed'));
     },
   });
 };

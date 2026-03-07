@@ -243,8 +243,8 @@ export const useBulkDuplicatePromotions = () => {
         activity: `${promos.length} promotions duplicated`,
         entity_type: 'promotion',
       });
-      toast.success(`${promos.length} promotions duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: promos.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

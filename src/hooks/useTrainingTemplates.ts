@@ -349,8 +349,8 @@ export function useBulkDuplicateTrainings() {
         activity: `${trainings.length} trainings duplicated`,
         entity_type: 'training',
       });
-      toast.success(`${trainings.length} trainings duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: trainings.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }

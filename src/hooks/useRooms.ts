@@ -187,10 +187,10 @@ export const useDeleteRoom = () => {
         entity_type: 'room',
         entity_id: id,
       });
-      toast.success('Room deleted successfully');
+      toast.success(i18n.t('toast.roomDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete room: ${error.message}`);
+      toast.error(i18n.t('toast.roomDeleteFailed'));
     },
   });
 };

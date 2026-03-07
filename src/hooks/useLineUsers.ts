@@ -207,10 +207,10 @@ export const useUnlinkLineAccount = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
-      toast.success('LINE account unlinked');
+      toast.success(i18n.t('toast.lineUnlinked'));
     },
     onError: (error) => {
-      toast.error('Failed to unlink LINE account');
+      toast.error(i18n.t('toast.lineUnlinkFailed'));
       console.error('Unlink LINE account error:', error);
     },
   });

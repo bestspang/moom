@@ -452,7 +452,7 @@ export function useCancelSchedule() {
         entity_type: 'schedule',
         entity_id: scheduleId,
       });
-      toast.success('Class cancelled successfully');
+      toast.success(i18n.t('toast.scheduleCancelled'));
     },
     onError: (error) => {
       toast.error(error.message);

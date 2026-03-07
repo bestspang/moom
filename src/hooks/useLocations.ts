@@ -161,10 +161,10 @@ export const useDeleteLocation = () => {
         entity_type: 'location',
         entity_id: id,
       });
-      toast.success('Location deleted successfully');
+      toast.success(i18n.t('toast.locationDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete location: ${error.message}`);
+      toast.error(i18n.t('toast.locationDeleteFailed'));
     },
   });
 };

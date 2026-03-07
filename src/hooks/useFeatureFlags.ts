@@ -271,10 +271,10 @@ export const useSetFlagAssignment = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
-      toast.success('Flag assignment updated');
+      toast.success(i18n.t('toast.flagAssignmentUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update flag assignment');
+      toast.error(i18n.t('toast.flagAssignmentFailed'));
       console.error('Set flag assignment error:', error);
     },
   });

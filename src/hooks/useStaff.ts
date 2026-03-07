@@ -413,8 +413,8 @@ export const useBulkDuplicateStaff = () => {
         activity: `${rows.length} staff duplicated`,
         entity_type: 'staff',
       });
-      toast.success(`${rows.length} staff duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: rows.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

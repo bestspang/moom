@@ -285,10 +285,10 @@ export const useAdjustBalance = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Balance adjusted');
+      toast.success(i18n.t('toast.balanceAdjusted'));
     },
     onError: (error) => {
-      toast.error('Failed to adjust balance');
+      toast.error(i18n.t('toast.balanceAdjustFailed'));
       console.error('Adjust balance error:', error);
     },
   });

@@ -365,8 +365,8 @@ export const useBulkDuplicateClasses = () => {
         activity: `${cls.length} classes duplicated`,
         entity_type: 'class',
       });
-      toast.success(`${cls.length} classes duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: cls.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

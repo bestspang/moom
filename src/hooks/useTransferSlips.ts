@@ -303,10 +303,10 @@ export const useVoidSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      toast.success('Slip voided');
+      toast.success(i18n.t('toast.slipVoided'));
     },
     onError: (error) => {
-      toast.error(`Failed to void slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipVoidFailed'));
     },
   });
 };

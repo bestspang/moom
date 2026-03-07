@@ -161,10 +161,10 @@ export const useDeleteClassCategory = () => {
         entity_type: 'class_category',
         entity_id: id,
       });
-      toast.success('Category deleted successfully');
+      toast.success(i18n.t('toast.categoryDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryDeleteFailed'));
     },
   });
 };

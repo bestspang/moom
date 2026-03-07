@@ -272,8 +272,8 @@ export const useBulkDuplicatePackages = () => {
         activity: `${pkgs.length} packages duplicated`,
         entity_type: 'package',
       });
-      toast.success(`${pkgs.length} packages duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: pkgs.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

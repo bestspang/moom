@@ -560,10 +560,10 @@ export const usePromoteFromWaitlist = () => {
         entity_id: data.id,
         member_id: variables.memberId,
       });
-      toast.success('Member promoted from waitlist');
+      toast.success(i18n.t('toast.promotedFromWaitlist'));
     },
     onError: (error) => {
-      toast.error('Failed to promote from waitlist');
+      toast.error(i18n.t('toast.promoteFailed'));
       console.error('Promote from waitlist error:', error);
     },
   });
