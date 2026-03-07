@@ -214,9 +214,9 @@ export const useBulkDeletePromotions = () => {
         activity: `${ids.length} promotions deleted`,
         entity_type: 'promotion',
       });
-      toast.success(`${ids.length} promotions deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
