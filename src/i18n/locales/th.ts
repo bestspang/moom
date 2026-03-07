@@ -78,7 +78,6 @@ export default {
     transferSlips: 'สลิปโอนเงิน',
     reports: 'รายงาน',
     analytics: 'วิเคราะห์',
-    analytics: 'วิเคราะห์',
     insights: 'วิเคราะห์ธุรกิจ',
     settings: 'ตั้งค่า',
     notifications: 'การแจ้งเตือน',
