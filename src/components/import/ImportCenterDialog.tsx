@@ -55,6 +55,7 @@ interface ImportCenterDialogProps {
 
 export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFile }: ImportCenterDialogProps) => {
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
