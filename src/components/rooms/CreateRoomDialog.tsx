@@ -13,6 +13,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -44,6 +51,7 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
   onOpenChange,
 }) => {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const { data: locations } = useLocations();
   const { data: classCategories } = useClassCategories();
   const createRoom = useCreateRoom();
@@ -116,15 +124,7 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            {t('rooms.create.title')}
-          </DialogTitle>
-        </DialogHeader>
-
+  const formContent = (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Section: Information */}
@@ -376,6 +376,34 @@ export const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
             </div>
           </form>
         </Form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle className="text-xl font-semibold">
+              {t('rooms.create.title')}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto">
+            {formContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            {t('rooms.create.title')}
+          </DialogTitle>
+        </DialogHeader>
+        {formContent}
       </DialogContent>
     </Dialog>
   );

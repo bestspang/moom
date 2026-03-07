@@ -4,6 +4,8 @@ import {
   Users, UserPlus, Package, Megaphone, UserCog, DollarSign, Receipt, BookOpen, Dumbbell,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -53,6 +55,7 @@ interface ImportCenterDialogProps {
 
 export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFile }: ImportCenterDialogProps) => {
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -369,14 +372,10 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     );
   };
 
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
-            {step === 'select' ? (language === 'th' ? 'เลือกประเภทข้อมูล' : 'Select Data Type') : `Import ${entityLabel}`}
-          </DialogTitle>
-        </DialogHeader>
+  const titleText = step === 'select' ? (language === 'th' ? 'เลือกประเภทข้อมูล' : 'Select Data Type') : `Import ${entityLabel}`;
+
+  const dialogBody = (
+    <>
 
         {/* Step: Select Entity */}
         {step === 'select' && (
@@ -773,6 +772,31 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
             </div>
           </div>
         )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={handleClose}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle>{titleText}</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {dialogBody}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{titleText}</DialogTitle>
+        </DialogHeader>
+        {dialogBody}
       </DialogContent>
     </Dialog>
   );

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -155,6 +156,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                       {notification.created_at
                         ? formatDistanceToNow(new Date(notification.created_at), {
                             addSuffix: true,
+                            locale: getDateLocale(language),
                           })
                         : ''}
                     </p>
