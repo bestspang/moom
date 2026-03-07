@@ -147,13 +147,13 @@ export const useRecordUsage = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Usage recorded');
+      toast.success(i18n.t('toast.usageRecorded'));
     },
     onError: (error: Error) => {
       if (error.message.includes('Insufficient')) {
-        toast.error('Insufficient sessions remaining');
+        toast.error(i18n.t('toast.insufficientSessions'));
       } else {
-        toast.error('Failed to record usage');
+        toast.error(i18n.t('toast.usageRecordFailed'));
       }
       console.error('Record usage error:', error);
     },
