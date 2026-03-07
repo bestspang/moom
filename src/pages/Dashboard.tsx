@@ -22,6 +22,8 @@ import { useExpiringPackages } from '@/hooks/useExpiringPackages';
 import { useHighRiskMembers } from '@/hooks/useDashboardStats';
 import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
 import { useDashboardTrends } from '@/hooks/useDashboardTrends';
+import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
+import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
