@@ -102,10 +102,10 @@ export const useCreatePackage = () => {
         entity_type: 'package',
         entity_id: data.id,
       });
-      toast.success('Package created successfully');
+      toast.success(i18n.t('toast.packageCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create package: ${error.message}`);
+      toast.error(i18n.t('toast.packageCreateFailed'));
     },
   });
 };
