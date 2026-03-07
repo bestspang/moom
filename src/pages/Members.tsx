@@ -368,6 +368,7 @@ const Members = () => {
           onChange={(value) => {
             setSearch(value);
             setPage(1);
+            setSelectedRows([]);
           }}
           className="max-w-md"
         />
