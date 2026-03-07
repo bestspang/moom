@@ -78,7 +78,6 @@ export default {
     transferSlips: 'Transfer slips',
     reports: 'Reports',
     analytics: 'Analytics',
-    analytics: 'Analytics',
     insights: 'Insights',
     settings: 'Settings',
     notifications: 'Notifications',
