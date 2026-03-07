@@ -57,7 +57,7 @@ const Leads = () => {
       case 'contacted': return 'pending';
       case 'interested': return 'active';
       case 'not_interested': return 'inactive';
-      case 'converted': return 'active';
+      case 'converted': return 'converted';
       default: return 'default';
     }
   };
@@ -180,7 +180,7 @@ const Leads = () => {
     <div>
       <PageHeader
         title={t('leads.title')}
-        breadcrumbs={[{ label: t('nav.client') }, { label: t('leads.title') }]}
+        breadcrumbs={[{ label: t('nav.people'), href: '/members' }, { label: t('leads.title') }]}
         actions={
           <div className="flex gap-2">
             <DropdownMenu>
@@ -246,7 +246,7 @@ const Leads = () => {
           columns={columns}
           data={displayLeads}
           rowKey={(row) => row.id}
-          emptyMessage={t('leads.searchPlaceholder')}
+          emptyMessage={t('common.noResults')}
         />
       )}
 

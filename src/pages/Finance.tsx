@@ -139,13 +139,13 @@ const Finance = () => {
 
   const formatPaymentMethod = (method: string | null): string => {
     const map: Record<string, string> = {
-      cash: 'Cash',
-      bank_transfer: 'Bank Transfer',
-      credit_card: 'Credit Card',
-      promptpay: 'QR PromptPay',
-      card_stripe: 'Stripe Card',
-      qr_promptpay_stripe: 'Stripe PromptPay',
-      other: 'Other',
+      cash: t('finance.cash'),
+      bank_transfer: t('finance.bankTransfer'),
+      credit_card: t('finance.creditCard'),
+      promptpay: t('finance.promptpay'),
+      card_stripe: t('finance.stripeCard'),
+      qr_promptpay_stripe: t('finance.stripePromptpay'),
+      other: t('finance.other'),
     };
     return method ? (map[method] || method) : '-';
   };
@@ -295,8 +295,8 @@ const Finance = () => {
           pending: t('common.pending'),
           needs_review: t('transferSlips.needsReview'),
           voided: t('transferSlips.voided'),
-          failed: 'Failed',
-          refunded: 'Refunded',
+          failed: t('finance.failed'),
+          refunded: t('finance.refunded'),
         };
         return (
           <StatusBadge variant={getStatusVariant(row.status) as any}>
@@ -379,7 +379,7 @@ const Finance = () => {
     <div>
       <PageHeader 
         title={t('finance.title')} 
-        breadcrumbs={[{ label: t('nav.finance') }, { label: t('finance.title') }]}
+        breadcrumbs={[{ label: t('finance.title') }]}
         actions={
           activeMainTab === 'transactions' ? (
             <ManageDropdown

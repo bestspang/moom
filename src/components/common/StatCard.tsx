@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
@@ -11,10 +11,11 @@ interface StatCardProps {
     value: number;
     label?: string;
   };
-  trend?: number[]; // optional sparkline data (last 7 values)
+  trend?: number[];
   color?: 'default' | 'teal' | 'orange' | 'blue' | 'magenta' | 'gray';
   icon?: React.ReactNode;
   action?: React.ReactNode;
+  onClick?: () => void;
 }
 
 /** Mini SVG sparkline — no external deps */
@@ -65,6 +66,7 @@ export const StatCard = ({
   color = 'default',
   icon,
   action,
+  onClick,
 }: StatCardProps) => {
   const getColorClasses = () => {
     switch (color) {
@@ -94,7 +96,7 @@ export const StatCard = ({
   };
 
   return (
-    <Card className={cn('shadow-card', getColorClasses())}>
+    <Card className={cn('shadow-card', getColorClasses(), onClick && 'cursor-pointer hover:bg-accent/50 transition-colors')} onClick={onClick}>
       <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">

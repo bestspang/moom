@@ -66,8 +66,12 @@ export function CheckInDialog({ open, onOpenChange }: CheckInDialogProps) {
       setMemberSearch('');
       setSelectedMemberId(null);
       setConfirmedDuplicate(false);
+      // Auto-select if only 1 location
+      if (locations.length === 1) {
+        form.setValue('location_id', locations[0].id);
+      }
     }
-  }, [open, form]);
+  }, [open, form, locations]);
 
   const onSubmit = async (data: CheckInFormData) => {
     if (isDuplicate && !confirmedDuplicate) {

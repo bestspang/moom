@@ -158,7 +158,7 @@ export function DataTable<T>({
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
             {(pagination.page - 1) * pagination.perPage + 1}-
-            {Math.min(pagination.page * pagination.perPage, pagination.total)} of{' '}
+            {Math.min(pagination.page * pagination.perPage, pagination.total)} {t('common.of')}{' '}
             {pagination.total}
           </p>
           <div className="flex items-center gap-2">

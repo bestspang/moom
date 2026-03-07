@@ -237,7 +237,7 @@ const Members = () => {
     <div>
       <PageHeader
         title={t('members.title')}
-        breadcrumbs={[{ label: t('nav.client') }, { label: t('members.title') }]}
+        breadcrumbs={[{ label: t('nav.people'), href: '/members' }, { label: t('members.title') }]}
         actions={
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -312,7 +312,7 @@ const Members = () => {
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
           pagination={{ page, perPage: 50, total }}
           onPageChange={setPage}
-          emptyMessage={t('members.searchPlaceholder')}
+          emptyMessage={t('common.noResults')}
         />
       )}
 

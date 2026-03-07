@@ -12,14 +12,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-});
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
-
 const ForgotPassword = () => {
   const { t } = useLanguage();
+
+  const forgotPasswordSchema = React.useMemo(() => z.object({
+    email: z.string().email(t('validation.invalidEmail')),
+  }), [t]);
+
+  type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);

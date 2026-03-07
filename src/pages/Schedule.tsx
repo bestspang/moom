@@ -76,7 +76,7 @@ const Schedule = () => {
     <div>
       <PageHeader
         title={t('schedule.title')}
-        breadcrumbs={[{ label: t('nav.class') }, { label: t('schedule.title') }]}
+        breadcrumbs={[{ label: t('schedule.title') }]}
         actions={
           <Button className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
             {t('schedule.scheduleClass')}

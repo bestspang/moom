@@ -139,7 +139,7 @@ const Dashboard = () => {
       <DailyBriefingCard stats={briefingStats} />
 
       {/* KPI Stats — full width row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {statsLoading ? (
           <>
             <StatCardSkeleton />
@@ -159,12 +159,14 @@ const Dashboard = () => {
                   ? { value: checkinComparison, label: t('dashboard.comparedToYesterday') }
                   : undefined
               }
+              onClick={() => navigate('/lobby')}
             />
             <StatCard
               title={t('dashboard.currentlyInClass')}
               value={stats?.currentlyInClass || 0}
               subtitle={t('dashboardExtra.attendees')}
               color="orange"
+              onClick={() => navigate('/calendar')}
             />
             <StatCard
               title={t('dashboard.classesScheduledToday')}
