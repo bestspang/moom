@@ -340,7 +340,7 @@ export const useInviteStaff = () => {
       return data;
     },
     onError: (error) => {
-      toast.error(`Failed to send invitation: ${error.message}`);
+      toast.error(i18n.t('toast.inviteFailed'));
     },
   });
 };
