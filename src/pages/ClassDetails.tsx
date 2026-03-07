@@ -101,7 +101,7 @@ const ClassDetails = () => {
   if (isLoading) {
     return (
       <div>
-        <PageHeader title="" breadcrumbs={[{ label: t('nav.class') }, { label: t('classes.title'), href: '/class' }, { label: '...' }]} />
+        <PageHeader title="" breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('classes.title'), href: '/class' }, { label: '...' }]} />
         <div className="space-y-6">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full" />)}
         </div>
@@ -128,7 +128,7 @@ const ClassDetails = () => {
       <PageHeader
         title={classData.name}
         breadcrumbs={[
-          { label: t('nav.class') },
+          { label: t('nav.yourGym') },
           { label: t('classes.title'), href: '/class' },
           { label: classData.name },
         ]}

@@ -306,7 +306,7 @@ const MemberDetails = () => {
         <PageHeader
           title={t('members.memberDetails')}
           breadcrumbs={[
-            { label: t('nav.client') },
+            { label: t('nav.people') },
             { label: t('members.title'), href: '/members' },
             { label: '...' },
           ]}
@@ -330,7 +330,7 @@ const MemberDetails = () => {
         <PageHeader
           title={t('members.memberDetails')}
           breadcrumbs={[
-            { label: t('nav.client') },
+            { label: t('nav.people') },
             { label: t('members.title'), href: '/members' },
           ]}
         />
@@ -347,7 +347,7 @@ const MemberDetails = () => {
       <PageHeader
         title={t('members.memberDetails')}
         breadcrumbs={[
-          { label: t('nav.client') },
+          { label: t('nav.people') },
           { label: t('members.title'), href: '/members' },
           { label: member.member_id },
         ]}

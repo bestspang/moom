@@ -16,15 +16,17 @@ import { toast } from 'sonner';
 
 const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
-const STAFF_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'terminated', label: 'Terminated' },
-];
+// Status options moved inside component for i18n access
 
 const Staff = () => {
   const { t } = useLanguage();
+
+  const staffStatusOptions = [
+    { value: 'active', label: t('common.active') },
+    { value: 'pending', label: t('common.pending') },
+    { value: 'inactive', label: t('staff.inactive') },
+    { value: 'terminated', label: t('staff.terminated') },
+  ];
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('active');
@@ -267,7 +269,7 @@ const Staff = () => {
           const selected = (staff || []).filter((s) => selectedRows.includes(s.id));
           bulkDuplicate.mutate(selected, { onSuccess: clearSelection });
         }}
-        statusOptions={STAFF_STATUS_OPTIONS}
+        statusOptions={staffStatusOptions}
         onChangeStatus={(status) => { bulkStatus.mutate({ ids: selectedRows, status }, { onSuccess: clearSelection }); }}
         isLoading={isBulkLoading}
       />

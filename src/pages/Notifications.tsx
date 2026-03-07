@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 import {
   Bell,
   Calendar,
@@ -35,7 +36,7 @@ const notificationTypes: NotificationType[] = [
 ];
 
 const Notifications = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all');
   const [typeFilters, setTypeFilters] = useState<NotificationType[]>([]);
@@ -205,6 +206,7 @@ const Notifications = () => {
                   {notification.created_at
                     ? formatDistanceToNow(new Date(notification.created_at), {
                         addSuffix: true,
+                        locale: getDateLocale(language),
                       })
                     : '-'}
                 </p>

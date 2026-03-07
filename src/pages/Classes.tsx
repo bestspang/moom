@@ -121,7 +121,7 @@ const Classes = () => {
     <div>
       <PageHeader
         title={t('classes.title')}
-        breadcrumbs={[{ label: t('nav.class') }, { label: t('classes.title') }]}
+        breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('classes.title') }]}
         actions={
           <div className="flex items-center gap-2">
             <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!classes?.length} />
