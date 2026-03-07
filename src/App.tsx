@@ -150,7 +150,7 @@ const App = () => (
                 <Route path="coming-soon" element={<ComingSoon />} />
                 <Route path="member-app" element={<MemberAppPreview />} />
                 <Route path="trainer-app" element={<TrainerAppPreview />} />
-                <Route path="setting" element={<Settings />}>
+                <Route path="setting" element={<ProtectedRoute minAccessLevel="level_3_manager"><Settings /></ProtectedRoute>}>
                   <Route index element={<Navigate to="general" replace />} />
                   <Route path="general" element={<SettingsGeneral />} />
                   <Route path="class-management" element={<SettingsClass />} />
