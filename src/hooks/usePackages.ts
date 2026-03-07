@@ -166,10 +166,10 @@ export const useDeletePackage = () => {
         entity_type: 'package',
         entity_id: id,
       });
-      toast.success('Package deleted successfully');
+      toast.success(i18n.t('toast.packageDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete package: ${error.message}`);
+      toast.error(i18n.t('toast.packageDeleteFailed'));
     },
   });
 };
