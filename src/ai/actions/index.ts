@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDB } from '@/lib/formatters';
+import { getBangkokDayRange } from '@/lib/dateRange';
 import type { DashboardContext, ScheduleContext, MemberContext } from '../types';
 import { AiActionError } from '../types';
 
