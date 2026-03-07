@@ -4,9 +4,11 @@ import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, SearchBar, typ
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { List, LayoutGrid } from 'lucide-react';
 import { useScheduleByDate, useScheduleStats, useTrainers, type ScheduleWithRelations } from '@/hooks/useSchedule';
 import { ScheduleClassDialog } from '@/components/schedule/ScheduleClassDialog';
 import { BookingManagementDialog } from '@/components/schedule/BookingManagementDialog';
+import { ScheduleTimeline } from '@/components/schedule/ScheduleTimeline';
 
 const Schedule = () => {
   const { t } = useLanguage();
