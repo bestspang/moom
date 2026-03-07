@@ -38,6 +38,8 @@ export default {
     yes: 'ใช่',
     no: 'ไม่',
     or: 'หรือ',
+    of: 'จาก',
+    noResults: 'ไม่พบผลลัพธ์',
   },
 
   // Bulk actions
