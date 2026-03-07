@@ -295,8 +295,8 @@ const Finance = () => {
           pending: t('common.pending'),
           needs_review: t('transferSlips.needsReview'),
           voided: t('transferSlips.voided'),
-          failed: 'Failed',
-          refunded: 'Refunded',
+          failed: t('finance.failed'),
+          refunded: t('finance.refunded'),
         };
         return (
           <StatusBadge variant={getStatusVariant(row.status) as any}>
