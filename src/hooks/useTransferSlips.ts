@@ -165,10 +165,10 @@ export const useApproveSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      toast.success('Slip approved successfully');
+      toast.success(i18n.t('toast.slipApproved'));
     },
     onError: (error) => {
-      toast.error(`Failed to approve slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipApproveFailed'));
     },
   });
 };
