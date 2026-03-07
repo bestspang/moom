@@ -340,6 +340,7 @@ export default {
     noExpiringPackages: 'ไม่มีแพ็กเกจใกล้หมดอายุ',
     urgent: 'ด่วน',
     soon: 'เร็วๆ นี้',
+    expired: 'หมดอายุ',
   },
 
   // Lobby
