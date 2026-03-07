@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
+import { MemberTimeline } from '@/components/members/MemberTimeline';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PageHeader, StatCard, StatusBadge, DataTable, EmptyState, type Column } from '@/components/common';
 import { useEngagementScore } from '@/hooks/useEngagementScores';
