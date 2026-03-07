@@ -2778,6 +2778,10 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_member_cascade: {
+        Args: { p_member_id: string }
+        Returns: undefined
+      }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
