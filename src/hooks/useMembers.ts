@@ -180,11 +180,7 @@ export const useDeleteMember = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.rpc('delete_member_cascade', { p_member_id: id });
       if (error) throw error;
     },
     onSuccess: (_, id) => {
