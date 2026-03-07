@@ -1835,6 +1835,36 @@ export default {
     projected: 'ประมาณการ',
   },
 
+  // Business Health
+  businessHealth: {
+    title: 'สุขภาพธุรกิจ',
+    retention: 'การรักษาลูกค้า',
+    revenue: 'รายได้',
+    classUtil: 'อัตราใช้คลาส',
+    leadConv: 'แปลงลีด',
+  },
+
+  // Insights
+  insights: {
+    title: 'วิเคราะห์ธุรกิจ',
+    overview: 'ภาพรวม',
+    revenue: 'รายได้',
+    members: 'สมาชิก',
+    classes: 'คลาส',
+    packages: 'แพ็คเกจ',
+    arpu: 'ARPU',
+    perMember: 'ต่อสมาชิกที่ใช้งาน',
+    retentionRate: 'อัตราการรักษาลูกค้า',
+    classUtilization: 'อัตราใช้คลาส',
+    leadConversion: 'อัตราแปลงลีด',
+    activeMembers: 'สมาชิกที่ใช้งาน',
+    monthlyRevenue: 'รายได้รายเดือน',
+    estLtv: 'LTV ประมาณการ',
+    lifetime: 'มูลค่าตลอดชีพ',
+    revenueTrend30d: 'แนวโน้มรายได้ (30 วัน)',
+    detailedReports: 'รายงานโดยละเอียด',
+  },
+
   // Toast messages
   toast: {
     checkInSuccess: 'เช็คอินสำเร็จ',
