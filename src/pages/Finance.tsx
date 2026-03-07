@@ -78,6 +78,16 @@ const Finance = () => {
   // Revenue forecast
   const { data: forecast, isLoading: forecastLoading } = useRevenueForecast();
 
+  // Expenses for P&L
+  const { data: expenses, isLoading: expensesLoading } = useExpenses({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+  const createExpense = useCreateExpense();
+  const deleteExpense = useDeleteExpense();
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({ date: '', category: 'rent', amount: '', description: '' });
+
   const stats = useMemo(() => computeFinanceStats(transactions), [transactions]);
 
   // Client-side pagination for transactions
