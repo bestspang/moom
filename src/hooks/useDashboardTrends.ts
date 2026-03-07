@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { queryKeys } from '@/lib/queryKeys';
 import { formatDateForDB } from '@/lib/formatters';
+import { getBangkokDayRange } from '@/lib/dateRange';
 
 export interface DashboardTrends {
   checkins7d: number[];
