@@ -388,13 +388,28 @@ const Members = () => {
         <DataTable
           columns={columns}
           data={members}
+          selectable={can('members', 'delete') || can('members', 'write')}
+          selectedRows={selectedRows}
+          onSelectRow={handleSelectRow}
+          onSelectAll={handleSelectAll}
           rowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/members/${row.id}/detail`)}
           pagination={{ page, perPage: 50, total }}
-          onPageChange={setPage}
+          onPageChange={(p) => { setPage(p); setSelectedRows([]); }}
           emptyMessage={t('common.noResults')}
         />
       )}
+
+      <BulkActionBar
+        selectedCount={selectedRows.length}
+        onClearSelection={() => setSelectedRows([])}
+        onDelete={handleBulkDelete}
+        onExport={handleBulkExport}
+        onDuplicate={() => {}}
+        statusOptions={memberStatusOptions}
+        onChangeStatus={handleBulkStatusChange}
+        isLoading={bulkDelete.isPending || bulkUpdateStatus.isPending}
+      />
 
       <CreateMemberDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       <EditMemberDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} member={selectedMember} />
