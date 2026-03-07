@@ -297,7 +297,7 @@ export const useAddStaffPosition = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to add position: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
