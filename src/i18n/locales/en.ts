@@ -1281,13 +1281,16 @@ export default {
   notifications: {
     title: 'Notifications',
     unread: 'unread',
-    noUnread: "You don't have unread notifications.",
+    read: 'read',
+    new: 'New',
+    markAllRead: 'Mark all as read',
+    noUnread: "No notifications to show.",
     types: {
-      bookingConfirmed: 'Booking confirmed',
-      classCancellation: 'Class cancellation',
-      paymentReceived: 'Payment received',
-      memberRegistration: 'Member registration',
-      packageExpiring: 'Package expiring soon',
+      booking: 'Booking',
+      cancellation: 'Cancellation',
+      payment: 'Payment',
+      registration: 'Registration',
+      expiring: 'Expiring',
     },
   },
 
