@@ -126,11 +126,11 @@ const App = () => (
                 <Route path="class/:id" element={<ClassDetails />} />
                 <Route path="class-category" element={<ClassCategories />} />
                 <Route path="class-category/:id" element={<ClassCategoryDetails />} />
-                <Route path="admin" element={<Staff />} />
-                <Route path="admin/:id" element={<StaffDetails />} />
-                <Route path="roles" element={<Roles />} />
-                <Route path="roles/create" element={<RoleEditor />} />
-                <Route path="roles/:id" element={<RoleEditor />} />
+                <Route path="admin" element={<ProtectedRoute minAccessLevel="level_3_manager"><Staff /></ProtectedRoute>} />
+                <Route path="admin/:id" element={<ProtectedRoute minAccessLevel="level_3_manager"><StaffDetails /></ProtectedRoute>} />
+                <Route path="roles" element={<ProtectedRoute minAccessLevel="level_4_master"><Roles /></ProtectedRoute>} />
+                <Route path="roles/create" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
+                <Route path="roles/:id" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
                 <Route path="location" element={<Locations />} />
                 <Route path="activity-log" element={<ActivityLog />} />
                 <Route path="announcement" element={<Announcements />} />
