@@ -132,10 +132,10 @@ export const useUpdateClassCategory = () => {
         old_value: variables.oldData ?? null,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Category updated successfully');
+      toast.success(i18n.t('toast.categoryUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryUpdateFailed'));
     },
   });
 };
