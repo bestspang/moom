@@ -218,10 +218,10 @@ export const useRefundUsage = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Sessions refunded');
+      toast.success(i18n.t('toast.sessionsRefunded'));
     },
     onError: (error) => {
-      toast.error('Failed to refund sessions');
+      toast.error(i18n.t('toast.sessionsRefundFailed'));
       console.error('Refund usage error:', error);
     },
   });
