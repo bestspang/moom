@@ -37,6 +37,7 @@ export default {
     downloadTemplate: 'ดาวน์โหลดเทมเพลต',
     yes: 'ใช่',
     no: 'ไม่',
+    or: 'หรือ',
   },
 
   // Bulk actions
