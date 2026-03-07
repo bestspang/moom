@@ -135,10 +135,10 @@ export const useUpdatePromotion = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Promotion updated successfully');
+      toast.success(i18n.t('toast.promotionUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionUpdateFailed'));
     },
   });
 };
