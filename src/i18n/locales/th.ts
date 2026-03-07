@@ -342,6 +342,32 @@ export default {
     urgent: 'ด่วน',
     soon: 'เร็วๆ นี้',
     expired: 'หมดอายุ',
+    decliningAttendance: 'เข้าใช้ลดลง',
+    visits: 'ครั้ง',
+  },
+
+  // Goals
+  goals: {
+    title: 'เป้าหมายรายเดือน',
+    createGoal: 'ตั้งเป้าหมาย',
+    type: 'ประเภทเป้าหมาย',
+    typeRevenue: 'รายได้',
+    typeNewMembers: 'สมาชิกใหม่',
+    typeRetention: 'อัตราการรักษา',
+    typeCheckins: 'เช็คอิน',
+    targetValue: 'เป้าหมาย',
+    periodNote: 'เป้าหมายจะถูกตั้งสำหรับเดือนปัจจุบัน',
+    noGoals: 'ยังไม่มีเป้าหมาย สร้างเพื่อติดตามความก้าวหน้า!',
+  },
+
+  // Timeline
+  timeline: {
+    title: 'เส้นทางสมาชิก',
+    joined: 'เข้าร่วม',
+    firstClass: 'คลาสแรก',
+    purchased: 'ซื้อแพ็กเกจ',
+    suspended: 'ระงับ',
+    atRisk: 'เสี่ยง',
   },
 
   // Lobby
