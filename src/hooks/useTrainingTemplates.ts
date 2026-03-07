@@ -289,9 +289,9 @@ export function useBulkToggleTrainings() {
         activity: `${ids.length} trainings set to ${is_active ? 'active' : 'inactive'}`,
         entity_type: 'training',
       });
-      toast.success(`${ids.length} trainings updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }
 
