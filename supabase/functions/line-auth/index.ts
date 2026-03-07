@@ -163,7 +163,6 @@ Deno.serve(async (req) => {
         line_user_id: lineUserId,
         line_display_name: displayName,
         line_picture_url: pictureUrl,
-        line_id_token: idToken,
         last_login_at: new Date().toISOString(),
       })
       .select()
