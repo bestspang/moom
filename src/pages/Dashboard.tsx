@@ -140,6 +140,9 @@ const Dashboard = () => {
       {/* AI Daily Briefing — compact */}
       <DailyBriefingCard stats={briefingStats} />
 
+      {/* Business Health Score */}
+      <BusinessHealthCard />
+
       {/* KPI Stats — full width row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {statsLoading ? (
