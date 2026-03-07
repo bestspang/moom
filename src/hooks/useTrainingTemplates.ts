@@ -309,9 +309,9 @@ export function useBulkDeleteTrainings() {
         activity: `${ids.length} trainings deleted`,
         entity_type: 'training',
       });
-      toast.success(`${ids.length} trainings deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }
 
