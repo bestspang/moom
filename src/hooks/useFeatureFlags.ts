@@ -197,10 +197,10 @@ export const useUpdateFeatureFlag = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
-      toast.success('Feature flag updated');
+      toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update feature flag');
+      toast.error(i18n.t('toast.flagUpdateFailed'));
       console.error('Update feature flag error:', error);
     },
   });
