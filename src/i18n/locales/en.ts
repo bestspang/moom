@@ -40,6 +40,8 @@ export default {
     or: 'or',
     of: 'of',
     noResults: 'No results found',
+    confirm: 'Confirm',
+    saving: 'Saving...',
   },
 
   // Bulk actions
