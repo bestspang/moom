@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/common';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Package, Star, Receipt } from 'lucide-react';
+import { AlertTriangle, Package, Star, Receipt, TrendingDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHighRiskMembers, useHotLeads } from '@/hooks/useDashboardStats';
 import { useExpiringPackages } from '@/hooks/useExpiringPackages';
 import { useTransferSlipStats } from '@/hooks/useTransferSlips';
+import { useChurnPrediction } from '@/hooks/useChurnPrediction';
 
 const NeedsAttentionCard = () => {
   const { t } = useLanguage();
