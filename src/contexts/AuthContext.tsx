@@ -41,27 +41,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
+  const [staffStatus, setStaffStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRoleAndStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch role
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
         return;
       }
 
-      if (data) {
-        setRole(data.role);
-        setAccessLevel(roleToAccessLevel[data.role]);
+      if (roleData) {
+        setRole(roleData.role);
+        setAccessLevel(roleToAccessLevel[roleData.role]);
       }
+
+      // Fetch staff status
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('status')
+        .eq('user_id', userId)
+        .single();
+
+      if (staffError) {
+        console.error('Error fetching staff status:', staffError);
+        return;
+      }
+
+      if (staffData?.status === 'inactive') {
+        setStaffStatus('inactive');
+        // Auto sign-out inactive users
+        await supabase.auth.signOut();
+        return;
+      }
+
+      setStaffStatus(staffData?.status ?? null);
     } catch (error) {
-      console.error('Error in fetchUserRole:', error);
+      console.error('Error in fetchUserRoleAndStatus:', error);
     }
   };
 
