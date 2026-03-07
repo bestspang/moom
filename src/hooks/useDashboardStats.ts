@@ -126,7 +126,7 @@ export const useHighRiskMembers = () => {
           id: member.id,
           name: `${member.first_name} ${member.last_name}`,
           phone: member.phone || '-',
-          expiryDate: expiryText,
+          daysLeft,
         };
       });
     },
