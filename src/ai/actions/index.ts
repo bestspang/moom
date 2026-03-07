@@ -54,14 +54,15 @@ export async function getDashboardContext(input: {
   await assertAccess(userId, 'level_1_minimum');
 
   const dateStr = formatDateForDB(date);
+  const dayRange = getBangkokDayRange(date);
 
   // Parallel queries
   const [checkinsRes, classesRes, riskRes] = await Promise.all([
     supabase
       .from('member_attendance')
       .select('*', { count: 'exact', head: true })
-      .gte('check_in_time', `${dateStr}T00:00:00`)
-      .lt('check_in_time', `${dateStr}T23:59:59`),
+      .gte('check_in_time', dayRange.start)
+      .lt('check_in_time', dayRange.end),
     supabase
       .from('schedule')
       .select('*', { count: 'exact', head: true })

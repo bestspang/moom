@@ -173,6 +173,7 @@ export function useMemberPackages(memberId: string | null) {
 export function useCheckDuplicate(memberId: string | null, locationId: string | null, date: Date) {
   const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const dayRange = getBangkokDayRange(date);
   return useQuery({
     queryKey: ['check-in-duplicate', memberId, locationId, dateStr],
     enabled: !!user && !!memberId && !!locationId,
@@ -183,8 +184,8 @@ export function useCheckDuplicate(memberId: string | null, locationId: string | 
         .select('id')
         .eq('member_id', memberId)
         .eq('location_id', locationId)
-        .gte('check_in_time', `${dateStr}T00:00:00`)
-        .lt('check_in_time', `${dateStr}T23:59:59`)
+        .gte('check_in_time', dayRange.start)
+        .lt('check_in_time', dayRange.end)
         .limit(1);
       if (error) throw error;
       return (data?.length ?? 0) > 0;

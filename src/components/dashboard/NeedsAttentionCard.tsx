@@ -128,7 +128,9 @@ const NeedsAttentionCard = () => {
                         <p className="text-xs font-medium truncate">{member.name}</p>
                         <p className="text-[11px] text-muted-foreground">{member.phone}</p>
                       </div>
-                      <span className="text-[11px] text-destructive">{member.expiryDate}</span>
+                      <span className="text-[11px] text-destructive">
+                        {member.daysLeft === null ? '-' : member.daysLeft <= 0 ? t('dashboard.expired') : `${member.daysLeft}d`}
+                      </span>
                     </button>
                   ))}
                 </div>
