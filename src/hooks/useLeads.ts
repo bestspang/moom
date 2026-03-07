@@ -140,10 +140,10 @@ export const useDeleteLead = () => {
         entity_type: 'lead',
         entity_id: id,
       });
-      toast.success('Lead deleted successfully');
+      toast.success(i18n.t('toast.leadDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadDeleteFailed'));
     },
   });
 };
