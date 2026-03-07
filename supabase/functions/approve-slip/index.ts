@@ -38,6 +38,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // --- ACCESS LEVEL CHECK: require level_3_manager ---
+    const { data: accessCheck } = await supabase.rpc('has_min_access_level', {
+      _user_id: userId,
+      _min_level: 'level_3_manager',
+    })
+    if (!accessCheck) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     // Parse input
     const { slipId, packageId, note } = await req.json()
     if (!slipId) {
@@ -95,9 +104,8 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle()
 
-    // 4. Generate transaction number
-    const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true })
-    const txNo = `T-${String((count || 0) + 1).padStart(7, '0')}`
+    // 4. Generate transaction number (atomic via DB sequence)
+    const { data: txNo } = await supabase.rpc('next_transaction_number')
 
     // 5. Calculate VAT
     const amountGross = Number(slip.amount_thb)
@@ -216,7 +224,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('approve-slip error:', err)
     return new Response(
-      JSON.stringify({ error: err.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

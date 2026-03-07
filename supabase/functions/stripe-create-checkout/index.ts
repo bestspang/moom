@@ -45,6 +45,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // --- ACCESS LEVEL CHECK: require level_3_manager ---
+    const { data: accessCheck } = await supabase.rpc('has_min_access_level', {
+      _user_id: userId,
+      _min_level: 'level_3_manager',
+    })
+    if (!accessCheck) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
+    }
+
     const { member_id, package_id, location_id, nonce } = await req.json()
     if (!member_id || !package_id) {
       return new Response(JSON.stringify({ error: 'member_id and package_id are required' }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
@@ -94,9 +103,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Generate transaction number via DB sequence-like approach
-    const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true })
-    const txNo = `T-${String((count || 0) + 1).padStart(7, '0')}`
+    // Generate transaction number via DB sequence (atomic, no race condition)
+    const { data: txNo } = await supabase.rpc('next_transaction_number')
 
     // VAT calc
     const amountGross = Number(pkg.price)
@@ -197,7 +205,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('stripe-create-checkout error:', err)
     return new Response(
-      JSON.stringify({ error: err.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

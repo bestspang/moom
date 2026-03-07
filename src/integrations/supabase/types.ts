@@ -2727,6 +2727,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      next_transaction_number: { Args: never; Returns: string }
     }
     Enums: {
       access_level:

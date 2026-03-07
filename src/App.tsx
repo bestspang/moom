@@ -61,6 +61,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 import Profile from "./pages/Profile";
 import ComingSoon from "./pages/ComingSoon";
 import MemberAppPreview from "./pages/MemberAppPreview";
@@ -88,6 +89,7 @@ const App = () => (
               {/* <Route path="/signup" element={<Signup />} /> */}
               <Route path="/signup" element={<Navigate to="/login" replace />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* QR Check-in redemption (public) */}
               <Route path="/checkin" element={<CheckinRedeem />} />
