@@ -245,9 +245,9 @@ export const useBulkDeletePackages = () => {
         activity: `${ids.length} packages deleted`,
         entity_type: 'package',
       });
-      toast.success(`${ids.length} packages deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
