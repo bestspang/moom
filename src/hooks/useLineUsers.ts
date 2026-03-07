@@ -178,10 +178,10 @@ export const useLinkLineAccount = () => {
       queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
       queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
-      toast.success('LINE account linked successfully');
+      toast.success(i18n.t('toast.lineLinked'));
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to link LINE account');
+      toast.error(error.message || i18n.t('toast.lineLinkFailed'));
       console.error('Link LINE account error:', error);
     },
   });
