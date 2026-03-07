@@ -97,10 +97,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Use setTimeout to avoid Supabase deadlock
-          setTimeout(() => fetchUserRole(session.user.id), 0);
+          setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
         } else {
           setRole(null);
           setAccessLevel(null);
+          setStaffStatus(null);
         }
         
         setLoading(false);
