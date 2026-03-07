@@ -256,7 +256,7 @@ export const useDeleteStaff = () => {
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member deleted successfully');
+      toast.success(i18n.t('toast.staffDeleted'));
 
       logActivity({
         event_type: 'staff_deleted',
