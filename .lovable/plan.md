@@ -1,40 +1,47 @@
 
 
-# Plan: Add Stripe Connection Status to Settings
+# Fix: Promotions export missing columns in Settings
 
-## What We're Building
-A new "Integrations" tab in the Settings page showing Stripe configuration status (connected/not connected) and the webhook URL for reference.
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Steps
+## Fix (surgical, 1 file)
 
-### 1. Add "Integrations" tab to Settings router
-- Add a new tab entry in `src/pages/Settings.tsx` with path `/setting/integrations`
-- Add route in `src/App.tsx` for the new settings sub-page
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 2. Create `src/pages/settings/SettingsIntegrations.tsx`
-- New page component with a `SettingsLayout` sidebar containing a single "Stripe" menu item (expandable later for other integrations)
-- Shows:
-  - **Connection status**: Calls `supabase.functions.invoke('stripe-create-checkout', { body: { health_check: true } })` or simply checks if the `credit_card_enabled` setting is on — simpler approach: just show static config info since secrets are server-side only
-  - **Webhook URL**: Display the endpoint URL as a read-only copyable field
-  - **Configured events**: `checkout.session.completed`, `charge.refunded`
-  - **Test mode reminder**: Note about using test card `4242 4242 4242 4242`
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Since we can't verify secrets from the client side, the status will reflect whether Stripe payment is enabled in general settings (`credit_card_enabled`). The webhook URL is a known constant.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 3. Add i18n keys
-- Add `settings.tabs.integrations` and `settings.integrations.*` keys to both `en.ts` and `th.ts`
-
-### Files Modified/Created
-
-| File | Action |
-|---|---|
-| `src/pages/settings/SettingsIntegrations.tsx` | New — Stripe status card |
-| `src/pages/Settings.tsx` | Add "Integrations" tab |
-| `src/App.tsx` | Add route for integrations settings |
-| `src/i18n/locales/en.ts` | Add i18n keys |
-| `src/i18n/locales/th.ts` | Add i18n keys |
-
-### Risk
-- **Zero regression**: Additive only — new tab, new page, new i18n keys
-- No existing files modified beyond adding a tab entry and a route
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
