@@ -38,6 +38,8 @@ export default {
     yes: 'Yes',
     no: 'No',
     or: 'or',
+    of: 'of',
+    noResults: 'No results found',
   },
 
   // Bulk actions
