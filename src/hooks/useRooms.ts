@@ -157,10 +157,10 @@ export const useUpdateRoom = () => {
         old_value: variables.oldData as Record<string, unknown> | undefined,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Room updated successfully');
+      toast.success(i18n.t('toast.roomUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update room: ${error.message}`);
+      toast.error(i18n.t('toast.roomUpdateFailed'));
     },
   });
 };
