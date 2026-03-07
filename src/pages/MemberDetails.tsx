@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PurchasePackageDialog } from '@/components/members/PurchasePackageDialog';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { MemberTimeline } from '@/components/members/MemberTimeline';
