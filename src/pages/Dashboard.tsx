@@ -22,6 +22,8 @@ import { useExpiringPackages } from '@/hooks/useExpiringPackages';
 import { useHighRiskMembers } from '@/hooks/useDashboardStats';
 import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
 import { useDashboardTrends } from '@/hooks/useDashboardTrends';
+import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
+import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
@@ -138,6 +140,9 @@ const Dashboard = () => {
       {/* AI Daily Briefing — compact */}
       <DailyBriefingCard stats={briefingStats} />
 
+      {/* Business Health Score */}
+      <BusinessHealthCard />
+
       {/* KPI Stats — full width row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {statsLoading ? (
@@ -249,8 +254,11 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Needs Attention — unified action items */}
-      <NeedsAttentionCard />
+      {/* Revenue Forecast + Needs Attention */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <RevenueForecastCard />
+        <NeedsAttentionCard />
+      </div>
 
       {/* Quick Check-in FAB */}
       <Button

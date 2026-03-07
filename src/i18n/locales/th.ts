@@ -78,6 +78,7 @@ export default {
     transferSlips: 'สลิปโอนเงิน',
     reports: 'รายงาน',
     analytics: 'วิเคราะห์',
+    insights: 'วิเคราะห์ธุรกิจ',
     settings: 'ตั้งค่า',
     notifications: 'การแจ้งเตือน',
     comingSoon: 'เร็วๆ นี้',
@@ -1833,6 +1834,36 @@ export default {
     thisMonth: 'เดือนนี้',
     nextMonth: 'เดือนหน้า',
     projected: 'ประมาณการ',
+  },
+
+  // Business Health
+  businessHealth: {
+    title: 'สุขภาพธุรกิจ',
+    retention: 'การรักษาลูกค้า',
+    revenue: 'รายได้',
+    classUtil: 'อัตราใช้คลาส',
+    leadConv: 'แปลงลีด',
+  },
+
+  // Insights
+  insights: {
+    title: 'วิเคราะห์ธุรกิจ',
+    overview: 'ภาพรวม',
+    revenue: 'รายได้',
+    members: 'สมาชิก',
+    classes: 'คลาส',
+    packages: 'แพ็คเกจ',
+    arpu: 'ARPU',
+    perMember: 'ต่อสมาชิกที่ใช้งาน',
+    retentionRate: 'อัตราการรักษาลูกค้า',
+    classUtilization: 'อัตราใช้คลาส',
+    leadConversion: 'อัตราแปลงลีด',
+    activeMembers: 'สมาชิกที่ใช้งาน',
+    monthlyRevenue: 'รายได้รายเดือน',
+    estLtv: 'LTV ประมาณการ',
+    lifetime: 'มูลค่าตลอดชีพ',
+    revenueTrend30d: 'แนวโน้มรายได้ (30 วัน)',
+    detailedReports: 'รายงานโดยละเอียด',
   },
 
   // Toast messages

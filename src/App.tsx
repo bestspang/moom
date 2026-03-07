@@ -41,6 +41,7 @@ import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
+import Insights from "./pages/Insights";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
 import ActiveMembers from "./pages/reports/ActiveMembers";
 import ClassCapacityByHour from "./pages/reports/ClassCapacityByHour";
@@ -139,8 +140,9 @@ const App = () => (
                 <Route path="workout-list" element={<WorkoutList />} />
                 <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
                 <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="report" element={<Reports />} />
+                <Route path="insights" element={<Insights />} />
+                <Route path="analytics" element={<Navigate to="/insights" replace />} />
+                <Route path="report" element={<Navigate to="/insights" replace />} />
                 <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
                 <Route path="report/member/active-members" element={<ActiveMembers />} />
                 <Route path="report/class/capacity-by-hour" element={<ClassCapacityByHour />} />
