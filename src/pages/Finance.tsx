@@ -427,6 +427,7 @@ const Finance = () => {
             )}
           </TabsTrigger>
           <TabsTrigger value="forecasting">{t('finance.forecasting')}</TabsTrigger>
+          <TabsTrigger value="pnl">{t('finance.pnl')}</TabsTrigger>
         </TabsList>
 
         {/* ===== Overview Tab ===== */}
