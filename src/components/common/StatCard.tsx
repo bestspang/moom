@@ -57,7 +57,7 @@ const sparklineColors: Record<string, string> = {
   default: 'hsl(var(--primary))',
 };
 
-export const StatCard = ({
+export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(({
   title,
   value,
   subtitle,
@@ -67,7 +67,7 @@ export const StatCard = ({
   icon,
   action,
   onClick,
-}: StatCardProps) => {
+}, ref) => {
   const getColorClasses = () => {
     switch (color) {
       case 'teal':
