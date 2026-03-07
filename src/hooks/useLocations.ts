@@ -98,10 +98,10 @@ export const useCreateLocation = () => {
         entity_type: 'location',
         entity_id: data.id,
       });
-      toast.success('Location created successfully');
+      toast.success(i18n.t('toast.locationCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create location: ${error.message}`);
+      toast.error(i18n.t('toast.locationCreateFailed'));
     },
   });
 };
@@ -131,10 +131,10 @@ export const useUpdateLocation = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Location updated successfully');
+      toast.success(i18n.t('toast.locationUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update location: ${error.message}`);
+      toast.error(i18n.t('toast.locationUpdateFailed'));
     },
   });
 };
@@ -161,10 +161,10 @@ export const useDeleteLocation = () => {
         entity_type: 'location',
         entity_id: id,
       });
-      toast.success('Location deleted successfully');
+      toast.success(i18n.t('toast.locationDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete location: ${error.message}`);
+      toast.error(i18n.t('toast.locationDeleteFailed'));
     },
   });
 };

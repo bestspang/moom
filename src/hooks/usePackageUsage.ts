@@ -147,13 +147,13 @@ export const useRecordUsage = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Usage recorded');
+      toast.success(i18n.t('toast.usageRecorded'));
     },
     onError: (error: Error) => {
       if (error.message.includes('Insufficient')) {
-        toast.error('Insufficient sessions remaining');
+        toast.error(i18n.t('toast.insufficientSessions'));
       } else {
-        toast.error('Failed to record usage');
+        toast.error(i18n.t('toast.usageRecordFailed'));
       }
       console.error('Record usage error:', error);
     },
@@ -218,10 +218,10 @@ export const useRefundUsage = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Sessions refunded');
+      toast.success(i18n.t('toast.sessionsRefunded'));
     },
     onError: (error) => {
-      toast.error('Failed to refund sessions');
+      toast.error(i18n.t('toast.sessionsRefundFailed'));
       console.error('Refund usage error:', error);
     },
   });
@@ -285,10 +285,10 @@ export const useAdjustBalance = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      toast.success('Balance adjusted');
+      toast.success(i18n.t('toast.balanceAdjusted'));
     },
     onError: (error) => {
-      toast.error('Failed to adjust balance');
+      toast.error(i18n.t('toast.balanceAdjustFailed'));
       console.error('Adjust balance error:', error);
     },
   });

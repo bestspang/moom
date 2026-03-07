@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
@@ -289,9 +290,9 @@ export function useBulkToggleTrainings() {
         activity: `${ids.length} trainings set to ${is_active ? 'active' : 'inactive'}`,
         entity_type: 'training',
       });
-      toast.success(`${ids.length} trainings updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }
 
@@ -309,9 +310,9 @@ export function useBulkDeleteTrainings() {
         activity: `${ids.length} trainings deleted`,
         entity_type: 'training',
       });
-      toast.success(`${ids.length} trainings deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }
 
@@ -349,8 +350,8 @@ export function useBulkDuplicateTrainings() {
         activity: `${trainings.length} trainings duplicated`,
         entity_type: 'training',
       });
-      toast.success(`${trainings.length} trainings duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: trainings.length }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 }

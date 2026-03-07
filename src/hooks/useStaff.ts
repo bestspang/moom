@@ -129,10 +129,10 @@ export const useCreateStaff = () => {
         entity_type: 'staff',
         entity_id: data.id,
       });
-      toast.success('Staff member created successfully');
+      toast.success(i18n.t('toast.staffCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffCreateFailed'));
     },
   });
 };
@@ -197,10 +197,10 @@ export const useCreateStaffWithPositions = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member created successfully');
+      toast.success(i18n.t('toast.staffCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffCreateFailed'));
     },
   });
 };
@@ -224,7 +224,7 @@ export const useUpdateStaff = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member updated successfully');
+      toast.success(i18n.t('toast.staffUpdated'));
 
       logActivity({
         event_type: 'staff_updated',
@@ -235,7 +235,7 @@ export const useUpdateStaff = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to update staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
@@ -256,7 +256,7 @@ export const useDeleteStaff = () => {
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member deleted successfully');
+      toast.success(i18n.t('toast.staffDeleted'));
 
       logActivity({
         event_type: 'staff_deleted',
@@ -266,7 +266,7 @@ export const useDeleteStaff = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to delete staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffDeleteFailed'));
     },
   });
 };
@@ -288,7 +288,7 @@ export const useAddStaffPosition = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-positions', variables.staff_id] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Position added');
+      toast.success(i18n.t('toast.positionAdded'));
       logActivity({
         event_type: 'staff_position_added',
         activity: `Position added to staff`,
@@ -297,7 +297,7 @@ export const useAddStaffPosition = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to add position: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
@@ -315,7 +315,7 @@ export const useRemoveStaffPosition = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-positions', result.staff_id] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Position removed');
+      toast.success(i18n.t('toast.positionRemoved'));
       logActivity({
         event_type: 'staff_position_removed',
         activity: `Position removed from staff`,
@@ -324,7 +324,7 @@ export const useRemoveStaffPosition = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to remove position: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
@@ -340,7 +340,7 @@ export const useInviteStaff = () => {
       return data;
     },
     onError: (error) => {
-      toast.error(`Failed to send invitation: ${error.message}`);
+      toast.error(i18n.t('toast.inviteFailed'));
     },
   });
 };
@@ -365,9 +365,9 @@ export const useBulkUpdateStaffStatus = () => {
         activity: `${ids.length} staff status changed to ${status}`,
         entity_type: 'staff',
       });
-      toast.success(`${ids.length} staff updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -386,9 +386,9 @@ export const useBulkDeleteStaff = () => {
         activity: `${ids.length} staff deleted`,
         entity_type: 'staff',
       });
-      toast.success(`${ids.length} staff deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -413,8 +413,8 @@ export const useBulkDuplicateStaff = () => {
         activity: `${rows.length} staff duplicated`,
         entity_type: 'staff',
       });
-      toast.success(`${rows.length} staff duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: rows.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

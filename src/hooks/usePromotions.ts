@@ -101,10 +101,10 @@ export const useCreatePromotion = () => {
         entity_type: 'promotion',
         entity_id: data.id,
       });
-      toast.success('Promotion created successfully');
+      toast.success(i18n.t('toast.promotionCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionCreateFailed'));
     },
   });
 };
@@ -135,10 +135,10 @@ export const useUpdatePromotion = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Promotion updated successfully');
+      toast.success(i18n.t('toast.promotionUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionUpdateFailed'));
     },
   });
 };
@@ -165,10 +165,10 @@ export const useDeletePromotion = () => {
         entity_type: 'promotion',
         entity_id: id,
       });
-      toast.success('Promotion deleted successfully');
+      toast.success(i18n.t('toast.promotionDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete promotion: ${error.message}`);
+      toast.error(i18n.t('toast.promotionDeleteFailed'));
     },
   });
 };
@@ -193,9 +193,9 @@ export const useBulkUpdatePromotionStatus = () => {
         activity: `${ids.length} promotions status changed to ${status}`,
         entity_type: 'promotion',
       });
-      toast.success(`${ids.length} promotions updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -214,9 +214,9 @@ export const useBulkDeletePromotions = () => {
         activity: `${ids.length} promotions deleted`,
         entity_type: 'promotion',
       });
-      toast.success(`${ids.length} promotions deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -243,8 +243,8 @@ export const useBulkDuplicatePromotions = () => {
         activity: `${promos.length} promotions duplicated`,
         entity_type: 'promotion',
       });
-      toast.success(`${promos.length} promotions duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: promos.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

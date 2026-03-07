@@ -165,10 +165,10 @@ export const useApproveSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      toast.success('Slip approved successfully');
+      toast.success(i18n.t('toast.slipApproved'));
     },
     onError: (error) => {
-      toast.error(`Failed to approve slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipApproveFailed'));
     },
   });
 };
@@ -225,10 +225,10 @@ export const useRejectSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
-      toast.success('Slip rejected');
+      toast.success(i18n.t('toast.slipRejected'));
     },
     onError: (error) => {
-      toast.error(`Failed to reject slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipRejectFailed'));
     },
   });
 };
@@ -303,10 +303,10 @@ export const useVoidSlip = () => {
       queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
       queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      toast.success('Slip voided');
+      toast.success(i18n.t('toast.slipVoided'));
     },
     onError: (error) => {
-      toast.error(`Failed to void slip: ${error.message}`);
+      toast.error(i18n.t('toast.slipVoidFailed'));
     },
   });
 };

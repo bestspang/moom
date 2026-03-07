@@ -123,10 +123,10 @@ export const useCreateRoom = () => {
           categories: data.categories,
         } as Record<string, unknown>,
       });
-      toast.success('Room created successfully');
+      toast.success(i18n.t('toast.roomCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create room: ${error.message}`);
+      toast.error(i18n.t('toast.roomCreateFailed'));
     },
   });
 };
@@ -157,10 +157,10 @@ export const useUpdateRoom = () => {
         old_value: variables.oldData as Record<string, unknown> | undefined,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Room updated successfully');
+      toast.success(i18n.t('toast.roomUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update room: ${error.message}`);
+      toast.error(i18n.t('toast.roomUpdateFailed'));
     },
   });
 };
@@ -187,10 +187,10 @@ export const useDeleteRoom = () => {
         entity_type: 'room',
         entity_id: id,
       });
-      toast.success('Room deleted successfully');
+      toast.success(i18n.t('toast.roomDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete room: ${error.message}`);
+      toast.error(i18n.t('toast.roomDeleteFailed'));
     },
   });
 };

@@ -223,10 +223,10 @@ export const useCreateClass = () => {
         entity_id: data.id,
         new_value: data as unknown as Record<string, unknown>,
       });
-      toast.success('Class created successfully');
+      toast.success(i18n.t('toast.classCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create class: ${error.message}`);
+      toast.error(i18n.t('toast.classCreateFailed'));
     },
   });
 };
@@ -259,10 +259,10 @@ export const useUpdateClass = () => {
         old_value: oldData as Record<string, unknown> | undefined,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Class updated successfully');
+      toast.success(i18n.t('toast.classUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update class: ${error.message}`);
+      toast.error(i18n.t('toast.classUpdateFailed'));
     },
   });
 };
@@ -289,10 +289,10 @@ export const useDeleteClass = () => {
         entity_type: 'class',
         entity_id: id,
       });
-      toast.success('Class deleted successfully');
+      toast.success(i18n.t('toast.classDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(i18n.t('toast.classDeleteFailed'));
     },
   });
 };
@@ -317,9 +317,9 @@ export const useBulkUpdateClassStatus = () => {
         activity: `${ids.length} classes status changed to ${status}`,
         entity_type: 'class',
       });
-      toast.success(`${ids.length} classes updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -338,9 +338,9 @@ export const useBulkDeleteClasses = () => {
         activity: `${ids.length} classes deleted`,
         entity_type: 'class',
       });
-      toast.success(`${ids.length} classes deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -365,8 +365,8 @@ export const useBulkDuplicateClasses = () => {
         activity: `${cls.length} classes duplicated`,
         entity_type: 'class',
       });
-      toast.success(`${cls.length} classes duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: cls.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

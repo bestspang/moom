@@ -102,10 +102,10 @@ export const useCreatePackage = () => {
         entity_type: 'package',
         entity_id: data.id,
       });
-      toast.success('Package created successfully');
+      toast.success(i18n.t('toast.packageCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create package: ${error.message}`);
+      toast.error(i18n.t('toast.packageCreateFailed'));
     },
   });
 };
@@ -136,10 +136,10 @@ export const useUpdatePackage = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Package updated successfully');
+      toast.success(i18n.t('toast.packageUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update package: ${error.message}`);
+      toast.error(i18n.t('toast.packageUpdateFailed'));
     },
   });
 };
@@ -166,10 +166,10 @@ export const useDeletePackage = () => {
         entity_type: 'package',
         entity_id: id,
       });
-      toast.success('Package deleted successfully');
+      toast.success(i18n.t('toast.packageDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete package: ${error.message}`);
+      toast.error(i18n.t('toast.packageDeleteFailed'));
     },
   });
 };
@@ -196,10 +196,10 @@ export const useArchivePackage = () => {
         entity_type: 'package',
         entity_id: id,
       });
-      toast.success('Package archived successfully');
+      toast.success(i18n.t('toast.packageArchived'));
     },
     onError: (error) => {
-      toast.error(`Failed to archive package: ${error.message}`);
+      toast.error(i18n.t('toast.packageArchiveFailed'));
     },
   });
 };
@@ -224,9 +224,9 @@ export const useBulkUpdatePackageStatus = () => {
         activity: `${ids.length} packages status changed to ${status}`,
         entity_type: 'package',
       });
-      toast.success(`${ids.length} packages updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -245,9 +245,9 @@ export const useBulkDeletePackages = () => {
         activity: `${ids.length} packages deleted`,
         entity_type: 'package',
       });
-      toast.success(`${ids.length} packages deleted`);
+      toast.success(i18n.t('toast.bulkDeleted', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
@@ -272,8 +272,8 @@ export const useBulkDuplicatePackages = () => {
         activity: `${pkgs.length} packages duplicated`,
         entity_type: 'package',
       });
-      toast.success(`${pkgs.length} packages duplicated`);
+      toast.success(i18n.t('toast.bulkDuplicated', { count: pkgs.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };

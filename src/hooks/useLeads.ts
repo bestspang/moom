@@ -79,10 +79,10 @@ export const useCreateLead = () => {
         entity_type: 'lead',
         entity_id: data.id,
       });
-      toast.success('Lead created successfully');
+      toast.success(i18n.t('toast.leadCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadCreateFailed'));
     },
   });
 };
@@ -111,10 +111,10 @@ export const useUpdateLead = () => {
         entity_id: variables.id,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Lead updated successfully');
+      toast.success(i18n.t('toast.leadUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadUpdateFailed'));
     },
   });
 };
@@ -140,10 +140,10 @@ export const useDeleteLead = () => {
         entity_type: 'lead',
         entity_id: id,
       });
-      toast.success('Lead deleted successfully');
+      toast.success(i18n.t('toast.leadDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadDeleteFailed'));
     },
   });
 };
@@ -173,7 +173,7 @@ export const useConvertLeadToMember = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to convert lead: ${error.message}`);
+      toast.error(i18n.t('toast.leadConvertFailed'));
     },
   });
 };

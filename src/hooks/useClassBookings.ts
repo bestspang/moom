@@ -114,13 +114,13 @@ export const useCreateBooking = () => {
         entity_id: data.id,
         member_id: variables.memberId,
       });
-      toast.success('Booking created successfully');
+      toast.success(i18n.t('toast.bookingCreated'));
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate key')) {
-        toast.error('Member is already booked for this class');
+        toast.error(i18n.t('toast.bookingAlreadyExists'));
       } else {
-        toast.error('Failed to create booking');
+        toast.error(i18n.t('toast.bookingCreateFailed'));
       }
       console.error('Create booking error:', error);
     },
@@ -166,10 +166,10 @@ export const useCancelBooking = () => {
         entity_id: data.id,
         member_id: data.member_id,
       });
-      toast.success('Booking cancelled');
+      toast.success(i18n.t('toast.bookingCancelled'));
     },
     onError: (error) => {
-      toast.error('Failed to cancel booking');
+      toast.error(i18n.t('toast.bookingCancelFailed'));
       console.error('Cancel booking error:', error);
     },
   });
@@ -283,10 +283,10 @@ export const useMarkAttendance = () => {
         entity_id: variables.bookingId,
         member_id: data.member_id,
       });
-      toast.success('Attendance recorded');
+      toast.success(i18n.t('toast.attendanceRecorded'));
     },
     onError: (error) => {
-      toast.error('Failed to record attendance');
+      toast.error(i18n.t('toast.attendanceFailed'));
       console.error('Mark attendance error:', error);
     },
   });
@@ -387,10 +387,10 @@ export const useBatchMarkAttendance = () => {
         activity: `Batch attendance marked as ${variables.status} for ${variables.bookingIds.length} bookings`,
         entity_type: 'class_booking',
       });
-      toast.success('Attendance recorded for all members');
+      toast.success(i18n.t('toast.attendanceRecordedAll'));
     },
     onError: (error) => {
-      toast.error('Failed to record attendance');
+      toast.error(i18n.t('toast.attendanceFailed'));
       console.error('Batch mark attendance error:', error);
     },
   });
@@ -463,13 +463,13 @@ export const useJoinWaitlist = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-waitlist', variables.scheduleId] });
-      toast.success('Added to waitlist');
+      toast.success(i18n.t('toast.addedToWaitlist'));
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate key')) {
-        toast.error('Already on the waitlist');
+        toast.error(i18n.t('toast.alreadyOnWaitlist'));
       } else {
-        toast.error('Failed to join waitlist');
+        toast.error(i18n.t('toast.waitlistJoinFailed'));
       }
       console.error('Join waitlist error:', error);
     },
@@ -498,10 +498,10 @@ export const useLeaveWaitlist = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['class-waitlist', data.schedule_id] });
-      toast.success('Removed from waitlist');
+      toast.success(i18n.t('toast.removedFromWaitlist'));
     },
     onError: (error) => {
-      toast.error('Failed to leave waitlist');
+      toast.error(i18n.t('toast.waitlistLeaveFailed'));
       console.error('Leave waitlist error:', error);
     },
   });
@@ -560,10 +560,10 @@ export const usePromoteFromWaitlist = () => {
         entity_id: data.id,
         member_id: variables.memberId,
       });
-      toast.success('Member promoted from waitlist');
+      toast.success(i18n.t('toast.promotedFromWaitlist'));
     },
     onError: (error) => {
-      toast.error('Failed to promote from waitlist');
+      toast.error(i18n.t('toast.promoteFailed'));
       console.error('Promote from waitlist error:', error);
     },
   });

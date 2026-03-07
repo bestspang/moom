@@ -113,10 +113,10 @@ export const useUpdateTransactionStatus = () => {
         entity_id: variables.id,
         new_value: { status: variables.status },
       });
-      toast.success('Transaction status updated');
+      toast.success(i18n.t('toast.transactionStatusUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update status: ${error.message}`);
+      toast.error(i18n.t('toast.transactionStatusFailed'));
     },
   });
 };

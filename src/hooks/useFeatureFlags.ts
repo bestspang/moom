@@ -116,10 +116,10 @@ export const useToggleFeatureFlag = () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
-      toast.success('Feature flag updated');
+      toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update feature flag');
+      toast.error(i18n.t('toast.flagUpdateFailed'));
       console.error('Toggle feature flag error:', error);
     },
   });
@@ -156,10 +156,10 @@ export const useCreateFeatureFlag = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag created');
+      toast.success(i18n.t('toast.flagCreated'));
     },
     onError: (error) => {
-      toast.error('Failed to create feature flag');
+      toast.error(i18n.t('toast.flagCreateFailed'));
       console.error('Create feature flag error:', error);
     },
   });
@@ -197,10 +197,10 @@ export const useUpdateFeatureFlag = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
-      toast.success('Feature flag updated');
+      toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update feature flag');
+      toast.error(i18n.t('toast.flagUpdateFailed'));
       console.error('Update feature flag error:', error);
     },
   });
@@ -221,10 +221,10 @@ export const useDeleteFeatureFlag = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      toast.success('Feature flag deleted');
+      toast.success(i18n.t('toast.flagDeleted'));
     },
     onError: (error) => {
-      toast.error('Failed to delete feature flag');
+      toast.error(i18n.t('toast.flagDeleteFailed'));
       console.error('Delete feature flag error:', error);
     },
   });
@@ -271,10 +271,10 @@ export const useSetFlagAssignment = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
-      toast.success('Flag assignment updated');
+      toast.success(i18n.t('toast.flagAssignmentUpdated'));
     },
     onError: (error) => {
-      toast.error('Failed to update flag assignment');
+      toast.error(i18n.t('toast.flagAssignmentFailed'));
       console.error('Set flag assignment error:', error);
     },
   });

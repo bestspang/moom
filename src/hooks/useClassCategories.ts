@@ -98,10 +98,10 @@ export const useCreateClassCategory = () => {
         entity_type: 'class_category',
         entity_id: data.id,
       });
-      toast.success('Category created successfully');
+      toast.success(i18n.t('toast.categoryCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryCreateFailed'));
     },
   });
 };
@@ -132,10 +132,10 @@ export const useUpdateClassCategory = () => {
         old_value: variables.oldData ?? null,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Category updated successfully');
+      toast.success(i18n.t('toast.categoryUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryUpdateFailed'));
     },
   });
 };
@@ -161,10 +161,10 @@ export const useDeleteClassCategory = () => {
         entity_type: 'class_category',
         entity_id: id,
       });
-      toast.success('Category deleted successfully');
+      toast.success(i18n.t('toast.categoryDeleted'));
     },
     onError: (error) => {
-      toast.error(`Failed to delete category: ${error.message}`);
+      toast.error(i18n.t('toast.categoryDeleteFailed'));
     },
   });
 };
