@@ -25,7 +25,7 @@ const ResetPassword = () => {
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-const ResetPassword = () => {
+const ResetPasswordInner = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
