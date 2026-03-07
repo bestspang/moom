@@ -372,14 +372,10 @@ export const ImportCenterDialog = ({ open, onOpenChange, presetEntity, initialFi
     );
   };
 
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
-            {step === 'select' ? (language === 'th' ? 'เลือกประเภทข้อมูล' : 'Select Data Type') : `Import ${entityLabel}`}
-          </DialogTitle>
-        </DialogHeader>
+  const titleText = step === 'select' ? (language === 'th' ? 'เลือกประเภทข้อมูล' : 'Select Data Type') : `Import ${entityLabel}`;
+
+  const dialogBody = (
+    <>
 
         {/* Step: Select Entity */}
         {step === 'select' && (
