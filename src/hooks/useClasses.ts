@@ -223,10 +223,10 @@ export const useCreateClass = () => {
         entity_id: data.id,
         new_value: data as unknown as Record<string, unknown>,
       });
-      toast.success('Class created successfully');
+      toast.success(i18n.t('toast.classCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create class: ${error.message}`);
+      toast.error(i18n.t('toast.classCreateFailed'));
     },
   });
 };
