@@ -759,6 +759,10 @@ const MemberDetails = () => {
                   )}
                 </TabsContent>
 
+                <TabsContent value="communications" className="mt-6">
+                  {id && <MemberCommunicationLog memberId={id} />}
+                </TabsContent>
+
                 <TabsContent value="suspensions" className="mt-6">
                   <div className="flex justify-end mb-4">
                     <Dialog open={suspensionOpen} onOpenChange={setSuspensionOpen}>
