@@ -57,6 +57,7 @@ const Staff = () => {
   const statusTabs: StatusTab[] = [
     { key: 'active', label: t('common.active'), count: stats?.active || 0, color: 'teal' },
     { key: 'pending', label: t('common.pending'), count: stats?.pending || 0 },
+    { key: 'inactive', label: t('staff.inactive'), count: stats?.inactive || 0 },
     { key: 'terminated', label: t('staff.terminated'), count: stats?.terminated || 0 },
   ];
 
