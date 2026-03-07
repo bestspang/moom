@@ -797,6 +797,9 @@ export default {
       roomNotFound: 'Room not found',
     },
     noClassesForDate: 'No classes scheduled for this date',
+    listView: 'List',
+    timelineView: 'Timeline',
+    noRoom: 'No Room',
   },
 
   // Rooms
