@@ -1,47 +1,76 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Payment Flow for Package Purchase
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Current State
+The `PurchasePackageDialog` currently selects a package and immediately inserts a `member_packages` row with status `ready_to_use` — no payment step, no transaction record. This skips the entire billing flow.
 
-## Fix (surgical, 1 file)
+## Proposed Flow (Multi-Step Dialog)
+Transform the dialog into a 3-step wizard:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
-
-Replace the promotions export `cols` array to match the Promotions page export format:
-
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+```text
+Step 1: Select Package (existing)
+   ↓
+Step 2: Payment Details
+   - Choose payment method (cash, bank_transfer, credit_card, qr_promptpay)
+   - Select location (where the sale happens)
+   - Optional: notes
+   ↓
+Step 3: Summary & Confirm
+   - Package name, price, VAT breakdown
+   - Member name
+   - Payment method, location
+   - "Confirm Purchase" button
 ```
 
+## What Happens on Confirm
+
+**For cash / bank_transfer / qr_promptpay:**
+1. Create a `transactions` record (status: `paid`, payment_method chosen, amount from package price, VAT computed)
+2. Insert `member_packages` row (status: `ready_to_use`)
+3. Log activity
+4. Show success toast, close dialog
+
+**For card_stripe (future):**
+- Call `stripe-create-checkout` edge function (already exists)
+- Insert `member_packages` with status `pending` (webhook activates it)
+- For now, Stripe is staged/not live, so this option will show "Coming soon"
+
+## Files to Create/Modify
+
+| File | Change |
+|------|--------|
+| `src/components/members/PurchasePackageDialog.tsx` | Rewrite as 3-step wizard with payment method selection and summary |
+| `src/hooks/useMemberDetails.ts` | Update `useAssignPackageToMember` to also create a `transactions` record (or create a new `usePurchasePackage` mutation that does both atomically) |
+| `src/i18n/locales/en.ts` | Add keys: `members.selectPaymentMethod`, `members.purchaseSummary`, `members.paymentNotes`, `finance.cash`, `finance.bankTransfer`, `finance.creditCard`, `finance.qrPromptpay`, `members.totalWithVat`, `members.confirmPurchase` |
+| `src/i18n/locales/th.ts` | Same keys in Thai |
+
+## Technical Details
+
+### Transaction Creation
+The mutation will:
+1. Generate transaction_id via `supabase.rpc('next_transaction_number')`
+2. Compute VAT (7%): `amount_ex_vat = price / 1.07`, `amount_vat = price - amount_ex_vat`
+3. Insert into `transactions` with member_id, package_id, payment_method, location_id, status `paid`, source_type `pos`
+4. Insert into `member_packages` with status `ready_to_use`
+5. Invalidate `['member-packages']`, `['finance-transactions']`, `['members']`
+
+### Payment Method Options
+From existing enum: `cash`, `bank_transfer`, `credit_card`, `qr_promptpay`, `card_stripe` (disabled/coming soon), `other`
+
+### UI Design (Step 2 - Payment)
+- Radio group for payment methods with icons
+- Location dropdown (from `useLocations`)
+- Optional notes textarea
+
+### UI Design (Step 3 - Summary)
+- Card with package details (name, type, sessions, term)
+- Price breakdown (gross, VAT, total)
+- Member name, payment method label, location
+- Back button + Confirm Purchase button
+
 ## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+- **Low**: Additive change — the old "direct assign" path is replaced with assign + transaction
+- Existing `useAssignPackageToMember` callers: only `PurchasePackageDialog` uses it
+- `transactions` table and `member_packages` table already exist with correct schema
 
