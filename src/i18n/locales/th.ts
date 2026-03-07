@@ -40,6 +40,8 @@ export default {
     or: 'หรือ',
     of: 'จาก',
     noResults: 'ไม่พบผลลัพธ์',
+    confirm: 'ยืนยัน',
+    saving: 'กำลังบันทึก...',
   },
 
   // Bulk actions
@@ -1991,6 +1993,7 @@ export default {
     packageUpdateFailed: 'ไม่สามารถอัปเดตแพ็คเกจ',
     packageDeleteFailed: 'ไม่สามารถลบแพ็คเกจ',
     packageArchiveFailed: 'ไม่สามารถเก็บถาวรแพ็คเกจ',
+    packageAssigned: 'เพิ่มแพ็กเกจสำเร็จ',
 
     usageRecorded: 'บันทึกการใช้งานแล้ว',
     usageRecordFailed: 'ไม่สามารถบันทึกการใช้งาน',

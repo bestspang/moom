@@ -40,6 +40,8 @@ export default {
     or: 'or',
     of: 'of',
     noResults: 'No results found',
+    confirm: 'Confirm',
+    saving: 'Saving...',
   },
 
   // Bulk actions
@@ -2001,6 +2003,7 @@ export default {
     packageUpdateFailed: 'Failed to update package',
     packageDeleteFailed: 'Failed to delete package',
     packageArchiveFailed: 'Failed to archive package',
+    packageAssigned: 'Package assigned successfully',
 
     // Package Usage
     usageRecorded: 'Usage recorded',
