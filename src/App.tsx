@@ -84,7 +84,9 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* Signup disabled for security — staff must be invited by a manager */}
+              {/* <Route path="/signup" element={<Signup />} /> */}
+              <Route path="/signup" element={<Navigate to="/login" replace />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               
               {/* QR Check-in redemption (public) */}
