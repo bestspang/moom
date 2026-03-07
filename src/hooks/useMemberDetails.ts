@@ -549,13 +549,64 @@ export const useCreateMemberContract = () => {
   });
 };
 
+export interface PurchasePackageParams {
+  memberId: string;
+  memberName: string;
+  pkg: { id: string; name_en: string; price: number; sessions: number | null; type: string; term_days: number };
+  paymentMethod: 'cash' | 'bank_transfer' | 'credit_card' | 'qr_promptpay' | 'other';
+  locationId?: string;
+  locationName?: string;
+  notes?: string;
+}
+
 export const useAssignPackageToMember = () => {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
 
   return useMutation({
-    mutationFn: async ({ memberId, pkg }: { memberId: string; pkg: { id: string; name_en: string; sessions: number | null } }) => {
-      const { error } = await supabase
+    mutationFn: async (params: PurchasePackageParams) => {
+      const { memberId, memberName, pkg, paymentMethod, locationId, locationName, notes } = params;
+
+      // 1. Generate transaction number
+      const { data: txNo, error: txNoErr } = await supabase.rpc('next_transaction_number');
+      if (txNoErr) throw txNoErr;
+
+      // 2. Calculate VAT
+      const vatRate = 0.07;
+      const amountGross = pkg.price;
+      const amountExVat = Math.round((amountGross / (1 + vatRate)) * 100) / 100;
+      const amountVat = Math.round((amountGross - amountExVat) * 100) / 100;
+
+      // 3. Insert transaction
+      const { data: txn, error: txnErr } = await supabase
+        .from('transactions')
+        .insert({
+          transaction_id: txNo,
+          order_name: `Purchase: ${pkg.name_en}`,
+          member_id: memberId,
+          package_id: pkg.id,
+          type: 'purchase' as any,
+          amount: amountGross,
+          amount_gross: amountGross,
+          amount_ex_vat: amountExVat,
+          amount_vat: amountVat,
+          vat_rate: vatRate,
+          discount_amount: 0,
+          payment_method: paymentMethod as any,
+          status: 'paid' as any,
+          location_id: locationId || null,
+          source_type: 'pos',
+          package_name_snapshot: pkg.name_en,
+          sold_to_name: memberName,
+          notes: notes || null,
+          paid_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+      if (txnErr) throw txnErr;
+
+      // 4. Insert member_packages linked to transaction
+      const { error: mpErr } = await supabase
         .from('member_packages')
         .insert({
           member_id: memberId,
@@ -566,18 +617,29 @@ export const useAssignPackageToMember = () => {
           sessions_used: 0,
           status: 'ready_to_use',
           purchase_date: new Date().toISOString(),
+          purchase_transaction_id: txn.id,
         });
-      if (error) throw error;
+      if (mpErr) throw mpErr;
+
+      return { transactionNo: txNo, transactionId: txn.id };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
       queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['package-metrics'] });
       logActivity({
-        event_type: 'package_assigned',
-        activity: `Package "${variables.pkg.name_en}" assigned to member`,
+        event_type: 'package_purchased',
+        activity: `Package "${variables.pkg.name_en}" purchased for member (${result.transactionNo})`,
         entity_type: 'member',
         entity_id: variables.memberId,
-        new_value: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
+        new_value: {
+          package_id: variables.pkg.id,
+          package_name: variables.pkg.name_en,
+          transaction_no: result.transactionNo,
+          payment_method: variables.paymentMethod,
+          amount: variables.pkg.price,
+        },
       });
       toast.success(t('toast.packageAssigned'));
     },
