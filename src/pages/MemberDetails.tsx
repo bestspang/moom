@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PurchasePackageDialog } from '@/components/members/PurchasePackageDialog';
 import { ArrowLeft, Camera, Phone, Mail, MapPin, User, Calendar, DollarSign, FileText, AlertTriangle, PauseCircle, ClipboardList, Plus, Check, Activity } from 'lucide-react';
 import { LineIdentityCard } from '@/components/common/LineIdentityCard';
 import { MemberTimeline } from '@/components/members/MemberTimeline';
@@ -53,6 +54,7 @@ const MemberDetails = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [packageStatus, setPackageStatus] = useState('active');
   const [newNote, setNewNote] = useState('');
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
 
   // Profile edit state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -653,7 +655,7 @@ const MemberDetails = () => {
                         <TabsTrigger value="completed">{t('members.completed')}</TabsTrigger>
                       </TabsList>
                     </Tabs>
-                    <Button className="bg-primary hover:bg-primary/90">
+                    <Button className="bg-primary hover:bg-primary/90" onClick={() => setPurchaseOpen(true)}>
                       {t('members.purchasePackage')}
                     </Button>
                   </div>
@@ -862,6 +864,12 @@ const MemberDetails = () => {
           </Card>
         </div>
       </div>
+      <PurchasePackageDialog
+        open={purchaseOpen}
+        onOpenChange={setPurchaseOpen}
+        memberId={member.id}
+        memberName={`${member.first_name} ${member.last_name}`}
+      />
     </div>
   );
 };
