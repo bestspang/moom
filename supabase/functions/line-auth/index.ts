@@ -1,15 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://admin.moom.fit",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface LineVerifyResponse {
   iss: string;
-  sub: string; // LINE user ID
-  aud: string; // Channel ID
+  sub: string;
+  aud: string;
   exp: number;
   iat: number;
   nonce: string;
@@ -124,7 +124,6 @@ Deno.serve(async (req) => {
     }
 
     if (existingUser) {
-      // Update last login and profile info
       await supabaseAdmin
         .from("line_users")
         .update({

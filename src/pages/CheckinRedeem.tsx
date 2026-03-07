@@ -60,10 +60,17 @@ const CheckinRedeem = () => {
     try {
       // Look up member by phone or member_id
       const trimmed = identifier.trim();
+      // Sanitize: only allow alphanumeric, dash, plus, spaces (prevent PostgREST filter injection)
+      const sanitized = trimmed.replace(/[^a-zA-Z0-9\-+\s]/g, '');
+      if (!sanitized) {
+        setErrorMessage(t('checkinRedeem.memberNotFound'));
+        setLookupLoading(false);
+        return;
+      }
       const { data: members, error: lookupError } = await supabase
         .from('members')
         .select('id, first_name, last_name, nickname')
-        .or(`phone.eq.${trimmed},member_id.eq.${trimmed}`)
+        .or(`phone.eq."${sanitized}",member_id.eq."${sanitized}"`)
         .limit(1);
 
       if (lookupError) throw lookupError;
