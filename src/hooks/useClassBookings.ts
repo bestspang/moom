@@ -283,10 +283,10 @@ export const useMarkAttendance = () => {
         entity_id: variables.bookingId,
         member_id: data.member_id,
       });
-      toast.success('Attendance recorded');
+      toast.success(i18n.t('toast.attendanceRecorded'));
     },
     onError: (error) => {
-      toast.error('Failed to record attendance');
+      toast.error(i18n.t('toast.attendanceFailed'));
       console.error('Mark attendance error:', error);
     },
   });
