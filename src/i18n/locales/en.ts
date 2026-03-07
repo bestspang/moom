@@ -340,6 +340,7 @@ export default {
     noExpiringPackages: 'No packages expiring soon',
     urgent: 'urgent',
     soon: 'soon',
+    expired: 'Expired',
   },
 
   // Lobby
