@@ -197,10 +197,10 @@ export const useCreateStaffWithPositions = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
-      toast.success('Staff member created successfully');
+      toast.success(i18n.t('toast.staffCreated'));
     },
     onError: (error) => {
-      toast.error(`Failed to create staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffCreateFailed'));
     },
   });
 };
