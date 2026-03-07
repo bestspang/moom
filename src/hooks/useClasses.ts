@@ -317,9 +317,9 @@ export const useBulkUpdateClassStatus = () => {
         activity: `${ids.length} classes status changed to ${status}`,
         entity_type: 'class',
       });
-      toast.success(`${ids.length} classes updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
