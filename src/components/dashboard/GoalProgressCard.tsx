@@ -71,7 +71,7 @@ export const GoalProgressCard: React.FC = () => {
     );
   }
 
-  if (!goals?.length && !can('goals', 'write')) return null;
+  if (!goals?.length && !can('settings', 'write')) return null;
 
   return (
     <Card>
