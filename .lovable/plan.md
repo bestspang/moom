@@ -1,47 +1,35 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Add Bulk Actions to Members Page
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## What exists
+- `BulkActionBar` component already built with: Change Status, Export, Duplicate, Delete actions
+- `DataTable` already supports `selectable`, `selectedRows`, `onSelectRow`, `onSelectAll` props
+- `useDeleteMember` and `useUpdateMember` hooks exist for single-record operations
+- Members page currently has NO selection state or bulk bar
 
-## Fix (surgical, 1 file)
+## Plan
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### 1. Add bulk mutation hooks to `useMembers.ts`
+- `useBulkDeleteMembers`: Delete multiple members by ID array using `.in('id', ids)`
+- `useBulkUpdateMemberStatus`: Update status for multiple members using `.in('id', ids).update({ status })`
+- Both invalidate `['members']`, `['member-stats']` and log activity
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### 2. Wire selection state + BulkActionBar into `Members.tsx`
+- Add `selectedRows` state (`string[]`)
+- Add `onSelectRow` toggle and `onSelectAll` handler
+- Pass `selectable={true}` to DataTable (gated by `can('members', 'delete')` or `can('members', 'write')`)
+- Add `BulkActionBar` with:
+  - **Change Status**: options = active, suspended, on_hold, inactive → calls bulk update
+  - **Export Selected**: filter `members` by selectedRows, call `exportMembers`
+  - **Delete**: calls bulk delete with confirmation (already built into BulkActionBar)
+  - **Duplicate**: hidden/no-op for members (doesn't make sense to duplicate a person) — pass a no-op or hide
+- Clear selection on tab change, search change, page change
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### 3. No DB changes needed
+Existing RLS policies allow operators+ to manage members.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Files to modify
+- `src/hooks/useMembers.ts` — add `useBulkDeleteMembers`, `useBulkUpdateMemberStatus`
+- `src/pages/Members.tsx` — add selection state, import BulkActionBar, wire handlers
 
