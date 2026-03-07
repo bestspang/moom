@@ -233,7 +233,7 @@ export function useCreateSchedule() {
         entity_type: 'schedule',
         entity_id: data.id,
       });
-      toast.success('Class scheduled successfully');
+      toast.success(i18n.t('toast.scheduleCreated'));
     },
     onError: (error) => {
       toast.error(error.message);
