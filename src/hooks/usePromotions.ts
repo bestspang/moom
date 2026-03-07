@@ -193,9 +193,9 @@ export const useBulkUpdatePromotionStatus = () => {
         activity: `${ids.length} promotions status changed to ${status}`,
         entity_type: 'promotion',
       });
-      toast.success(`${ids.length} promotions updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
