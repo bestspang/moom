@@ -224,9 +224,9 @@ export const useBulkUpdatePackageStatus = () => {
         activity: `${ids.length} packages status changed to ${status}`,
         entity_type: 'package',
       });
-      toast.success(`${ids.length} packages updated`);
+      toast.success(i18n.t('toast.bulkUpdated', { count: ids.length }));
     },
-    onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    onError: () => toast.error(i18n.t('toast.bulkFailed')),
   });
 };
 
