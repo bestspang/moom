@@ -463,13 +463,13 @@ export const useJoinWaitlist = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-waitlist', variables.scheduleId] });
-      toast.success('Added to waitlist');
+      toast.success(i18n.t('toast.addedToWaitlist'));
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate key')) {
-        toast.error('Already on the waitlist');
+        toast.error(i18n.t('toast.alreadyOnWaitlist'));
       } else {
-        toast.error('Failed to join waitlist');
+        toast.error(i18n.t('toast.waitlistJoinFailed'));
       }
       console.error('Join waitlist error:', error);
     },
