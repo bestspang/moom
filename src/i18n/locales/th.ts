@@ -797,6 +797,9 @@ export default {
       roomNotFound: 'ไม่พบห้อง',
     },
     noClassesForDate: 'ไม่มีคลาสที่จัดไว้สำหรับวันนี้',
+    listView: 'รายการ',
+    timelineView: 'ตารางเวลา',
+    noRoom: 'ไม่มีห้อง',
   },
 
   // Rooms
