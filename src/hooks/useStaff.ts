@@ -235,7 +235,7 @@ export const useUpdateStaff = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to update staff member: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
