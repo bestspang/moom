@@ -288,7 +288,7 @@ export const useAddStaffPosition = () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-positions', variables.staff_id] });
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Position added');
+      toast.success(i18n.t('toast.positionAdded'));
       logActivity({
         event_type: 'staff_position_added',
         activity: `Position added to staff`,
