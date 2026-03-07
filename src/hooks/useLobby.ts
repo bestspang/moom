@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
+import { getBangkokDayRange } from '@/lib/dateRange';
 import { logActivity } from '@/lib/activityLogger';
 import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +19,7 @@ export type CheckInWithRelations = Tables<'member_attendance'> & {
 export function useCheckIns(date: Date, search: string = '') {
   const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const dayRange = getBangkokDayRange(date);
   
   return useQuery({
     queryKey: ['check-ins', dateStr, search],
@@ -33,8 +36,8 @@ export function useCheckIns(date: Date, search: string = '') {
           ),
           location:locations(*)
         `)
-        .gte('check_in_time', `${dateStr}T00:00:00`)
-        .lt('check_in_time', `${dateStr}T23:59:59`)
+        .gte('check_in_time', dayRange.start)
+        .lt('check_in_time', dayRange.end)
         .order('check_in_time', { ascending: false });
 
       const { data, error } = await query;
@@ -109,7 +112,7 @@ export function useCreateCheckIn() {
         },
       });
 
-      toast.success('Member checked in successfully');
+      toast.success(i18n.t('toast.checkInSuccess'));
     },
     onError: (error) => {
       toast.error(error.message);
@@ -171,6 +174,7 @@ export function useMemberPackages(memberId: string | null) {
 export function useCheckDuplicate(memberId: string | null, locationId: string | null, date: Date) {
   const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const dayRange = getBangkokDayRange(date);
   return useQuery({
     queryKey: ['check-in-duplicate', memberId, locationId, dateStr],
     enabled: !!user && !!memberId && !!locationId,
@@ -181,8 +185,8 @@ export function useCheckDuplicate(memberId: string | null, locationId: string | 
         .select('id')
         .eq('member_id', memberId)
         .eq('location_id', locationId)
-        .gte('check_in_time', `${dateStr}T00:00:00`)
-        .lt('check_in_time', `${dateStr}T23:59:59`)
+        .gte('check_in_time', dayRange.start)
+        .lt('check_in_time', dayRange.end)
         .limit(1);
       if (error) throw error;
       return (data?.length ?? 0) > 0;

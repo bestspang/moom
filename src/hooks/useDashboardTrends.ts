@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { queryKeys } from '@/lib/queryKeys';
 import { formatDateForDB } from '@/lib/formatters';
+import { getBangkokDayRange } from '@/lib/dateRange';
 
 export interface DashboardTrends {
   checkins7d: number[];
@@ -29,13 +30,14 @@ export const useDashboardTrends = () => {
       // Parallel: fetch checkins + classes for 7 days
       const [checkinResults, classResults] = await Promise.all([
         Promise.all(
-          days.map((day) =>
-            supabase
+          days.map((day) => {
+            const range = getBangkokDayRange(new Date(day + 'T00:00:00'));
+            return supabase
               .from('member_attendance')
               .select('*', { count: 'exact', head: true })
-              .gte('check_in_time', `${day}T00:00:00`)
-              .lt('check_in_time', `${day}T23:59:59`)
-          )
+              .gte('check_in_time', range.start)
+              .lt('check_in_time', range.end);
+          })
         ),
         Promise.all(
           days.map((day) =>

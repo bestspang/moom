@@ -340,6 +340,7 @@ export default {
     noExpiringPackages: 'No packages expiring soon',
     urgent: 'urgent',
     soon: 'soon',
+    expired: 'Expired',
   },
 
   // Lobby
@@ -1832,5 +1833,155 @@ export default {
     thisMonth: 'This month',
     nextMonth: 'Next month',
     projected: 'est.',
+  },
+
+  // Toast messages (used by hooks via i18n.t())
+  toast: {
+    // Check-in / Lobby
+    checkInSuccess: 'Member checked in successfully',
+    checkInFailed: 'Check-in failed',
+    qrGenerated: 'QR code generated',
+    qrGenerateFailed: 'Failed to generate QR code',
+    qrCheckInSuccess: 'Check-in successful!',
+    qrInvalid: 'Invalid QR code',
+
+    // Staff
+    staffCreated: 'Staff member created successfully',
+    staffUpdated: 'Staff member updated successfully',
+    staffDeleted: 'Staff member deleted successfully',
+    staffCreateFailed: 'Failed to create staff member',
+    staffUpdateFailed: 'Failed to update staff member',
+    staffDeleteFailed: 'Failed to delete staff member',
+    positionAdded: 'Position added',
+    positionRemoved: 'Position removed',
+    inviteFailed: 'Failed to send invitation',
+
+    // Rooms
+    roomCreated: 'Room created successfully',
+    roomUpdated: 'Room updated successfully',
+    roomDeleted: 'Room deleted successfully',
+    roomCreateFailed: 'Failed to create room',
+    roomUpdateFailed: 'Failed to update room',
+    roomDeleteFailed: 'Failed to delete room',
+
+    // Locations
+    locationCreated: 'Location created successfully',
+    locationUpdated: 'Location updated successfully',
+    locationDeleted: 'Location deleted successfully',
+    locationCreateFailed: 'Failed to create location',
+    locationUpdateFailed: 'Failed to update location',
+    locationDeleteFailed: 'Failed to delete location',
+
+    // Leads
+    leadCreated: 'Lead created successfully',
+    leadUpdated: 'Lead updated successfully',
+    leadDeleted: 'Lead deleted successfully',
+    leadCreateFailed: 'Failed to create lead',
+    leadUpdateFailed: 'Failed to update lead',
+    leadDeleteFailed: 'Failed to delete lead',
+    leadConvertFailed: 'Failed to convert lead',
+
+    // Classes
+    classCreated: 'Class created successfully',
+    classUpdated: 'Class updated successfully',
+    classDeleted: 'Class deleted successfully',
+    classCreateFailed: 'Failed to create class',
+    classUpdateFailed: 'Failed to update class',
+    classDeleteFailed: 'Failed to delete class',
+
+    // Class Categories
+    categoryCreated: 'Category created successfully',
+    categoryUpdated: 'Category updated successfully',
+    categoryDeleted: 'Category deleted successfully',
+    categoryCreateFailed: 'Failed to create category',
+    categoryUpdateFailed: 'Failed to update category',
+    categoryDeleteFailed: 'Failed to delete category',
+
+    // Bookings
+    bookingCreated: 'Booking created successfully',
+    bookingCancelled: 'Booking cancelled',
+    bookingAlreadyExists: 'Member is already booked for this class',
+    bookingCreateFailed: 'Failed to create booking',
+    bookingCancelFailed: 'Failed to cancel booking',
+    attendanceRecorded: 'Attendance recorded',
+    attendanceRecordedAll: 'Attendance recorded for all members',
+    attendanceFailed: 'Failed to record attendance',
+
+    // Waitlist
+    addedToWaitlist: 'Added to waitlist',
+    removedFromWaitlist: 'Removed from waitlist',
+    alreadyOnWaitlist: 'Already on the waitlist',
+    waitlistJoinFailed: 'Failed to join waitlist',
+    waitlistLeaveFailed: 'Failed to leave waitlist',
+    promotedFromWaitlist: 'Member promoted from waitlist',
+    promoteFailed: 'Failed to promote from waitlist',
+
+    // Packages
+    packageCreated: 'Package created successfully',
+    packageUpdated: 'Package updated successfully',
+    packageDeleted: 'Package deleted successfully',
+    packageArchived: 'Package archived successfully',
+    packageCreateFailed: 'Failed to create package',
+    packageUpdateFailed: 'Failed to update package',
+    packageDeleteFailed: 'Failed to delete package',
+    packageArchiveFailed: 'Failed to archive package',
+
+    // Package Usage
+    usageRecorded: 'Usage recorded',
+    usageRecordFailed: 'Failed to record usage',
+    insufficientSessions: 'Insufficient sessions remaining',
+    sessionsRefunded: 'Sessions refunded',
+    sessionsRefundFailed: 'Failed to refund sessions',
+    balanceAdjusted: 'Balance adjusted',
+    balanceAdjustFailed: 'Failed to adjust balance',
+
+    // Promotions
+    promotionCreated: 'Promotion created successfully',
+    promotionUpdated: 'Promotion updated successfully',
+    promotionDeleted: 'Promotion deleted successfully',
+    promotionCreateFailed: 'Failed to create promotion',
+    promotionUpdateFailed: 'Failed to update promotion',
+    promotionDeleteFailed: 'Failed to delete promotion',
+
+    // Schedule
+    scheduleCreated: 'Class scheduled successfully',
+    scheduleUpdated: 'Schedule updated successfully',
+    scheduleDeleted: 'Schedule deleted successfully',
+    scheduleCancelled: 'Class cancelled successfully',
+
+    // Transfer Slips
+    slipApproved: 'Slip approved successfully',
+    slipRejected: 'Slip rejected',
+    slipVoided: 'Slip voided',
+    slipApproveFailed: 'Failed to approve slip',
+    slipRejectFailed: 'Failed to reject slip',
+    slipVoidFailed: 'Failed to void slip',
+
+    // LINE
+    lineLinkSent: 'LINE link request sent',
+    lineLinkFailed: 'Failed to request LINE link',
+    lineUnlinked: 'LINE account unlinked',
+    lineUnlinkFailed: 'Failed to unlink LINE account',
+    lineLinked: 'LINE account linked successfully',
+
+    // Feature Flags
+    flagCreated: 'Feature flag created',
+    flagUpdated: 'Feature flag updated',
+    flagDeleted: 'Feature flag deleted',
+    flagCreateFailed: 'Failed to create feature flag',
+    flagUpdateFailed: 'Failed to update feature flag',
+    flagDeleteFailed: 'Failed to delete feature flag',
+    flagAssignmentUpdated: 'Flag assignment updated',
+    flagAssignmentFailed: 'Failed to update flag assignment',
+
+    // Finance
+    transactionStatusUpdated: 'Transaction status updated',
+    transactionStatusFailed: 'Failed to update status',
+
+    // Bulk
+    bulkUpdated: '{{count}} items updated',
+    bulkDeleted: '{{count}} items deleted',
+    bulkDuplicated: '{{count}} items duplicated',
+    bulkFailed: 'Bulk action failed',
   },
 };

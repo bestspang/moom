@@ -183,7 +183,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <Icon className="h-4 w-4 flex-shrink-0" />
         <span className="flex-1">{item.label}</span>
         {item.badge != null && item.badge > 0 && (
-          <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none font-semibold">
+          <span className={cn(
+            "ml-auto text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none font-semibold",
+            item.path === '/members'
+              ? "bg-amber-500 text-white"
+              : "bg-destructive text-destructive-foreground"
+          )}>
             {item.badge > 99 ? '99+' : item.badge}
           </span>
         )}

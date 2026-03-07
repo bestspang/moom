@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { getBangkokDayRange } from '@/lib/dateRange';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type GymCheckinRow = Tables<'member_attendance'> & {
   member: Tables<'members'> | null;
@@ -41,10 +43,13 @@ function mapToItem(row: GymCheckinRow): GymCheckinItem {
 }
 
 export function useGymCheckinsByDate(date: Date, search: string = '') {
+  const { user } = useAuth();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const dayRange = getBangkokDayRange(date);
 
   return useQuery({
     queryKey: queryKeys.gymCheckins(dateStr, search),
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('member_attendance')
@@ -58,8 +63,8 @@ export function useGymCheckinsByDate(date: Date, search: string = '') {
           location:locations(*)
         `)
         .is('schedule_id', null)
-        .gte('check_in_time', `${dateStr}T00:00:00`)
-        .lt('check_in_time', `${dateStr}T23:59:59`)
+        .gte('check_in_time', dayRange.start)
+        .lt('check_in_time', dayRange.end)
         .order('check_in_time', { ascending: false })
         .limit(200);
 

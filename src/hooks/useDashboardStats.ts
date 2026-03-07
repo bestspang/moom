@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDB } from '@/lib/formatters';
+import { getBangkokDayRange } from '@/lib/dateRange';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,7 +16,7 @@ export interface RiskMember {
   id: string;
   name: string;
   phone: string;
-  expiryDate: string;
+  daysLeft: number | null;
 }
 
 export interface HotLead {
@@ -38,19 +39,20 @@ export const useDashboardStats = () => {
     enabled: !!user,
     queryFn: async (): Promise<DashboardStats> => {
       const today = formatDateForDB(new Date());
-      const yesterday = formatDateForDB(new Date(Date.now() - 86400000));
+      const todayRange = getBangkokDayRange(new Date());
+      const yesterdayRange = getBangkokDayRange(new Date(Date.now() - 86400000));
 
       const { count: checkinsToday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
-        .gte('check_in_time', `${today}T00:00:00`)
-        .lt('check_in_time', `${today}T23:59:59`);
+        .gte('check_in_time', todayRange.start)
+        .lt('check_in_time', todayRange.end);
 
       const { count: checkinsYesterday } = await supabase
         .from('member_attendance')
         .select('*', { count: 'exact', head: true })
-        .gte('check_in_time', `${yesterday}T00:00:00`)
-        .lt('check_in_time', `${yesterday}T23:59:59`);
+        .gte('check_in_time', yesterdayRange.start)
+        .lt('check_in_time', yesterdayRange.end);
 
       const { count: classesToday } = await supabase
         .from('schedule')
@@ -115,23 +117,16 @@ export const useHighRiskMembers = () => {
           }
         });
 
-        let expiryText = '-';
+        let daysLeft: number | null = null;
         if (nearestExpiry) {
-          const daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 0) {
-            expiryText = 'Expired';
-          } else if (daysLeft === 1) {
-            expiryText = '1 day';
-          } else {
-            expiryText = `${daysLeft} days`;
-          }
+          daysLeft = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         }
 
         return {
           id: member.id,
           name: `${member.first_name} ${member.last_name}`,
           phone: member.phone || '-',
-          expiryDate: expiryText,
+          daysLeft,
         };
       });
     },
