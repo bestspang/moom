@@ -56,6 +56,7 @@ const MemberDetails = () => {
   const [packageStatus, setPackageStatus] = useState('active');
   const [newNote, setNewNote] = useState('');
   const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [deskNotes, setDeskNotes] = useState('');
 
   // Profile edit state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
