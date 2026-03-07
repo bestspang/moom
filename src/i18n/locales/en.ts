@@ -1554,6 +1554,14 @@ export default {
     googleLogin: 'Sign in with Google',
     accountInactive: 'Account pending approval',
     pendingApproval: 'Your account is pending approval. Please contact a manager to activate it.',
+    resetPasswordTitle: 'Reset Password',
+    resetPasswordDescription: 'Enter your new password below',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    updatePassword: 'Update Password',
+    passwordResetSuccess: 'Your password has been updated successfully.',
+    invalidResetLink: 'This reset link is invalid or has expired. Please request a new one.',
+    requestNewLink: 'Request New Link',
   },
 
   // Members form fields
