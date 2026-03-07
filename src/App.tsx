@@ -135,8 +135,8 @@ const App = () => (
                 <Route path="activity-log" element={<ActivityLog />} />
                 <Route path="announcement" element={<Announcements />} />
                 <Route path="workout-list" element={<WorkoutList />} />
-                <Route path="transfer-slip" element={<TransferSlips />} />
-                <Route path="finance" element={<Finance />} />
+                <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
+                <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="report" element={<Reports />} />
                 <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
