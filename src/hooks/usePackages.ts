@@ -196,10 +196,10 @@ export const useArchivePackage = () => {
         entity_type: 'package',
         entity_id: id,
       });
-      toast.success('Package archived successfully');
+      toast.success(i18n.t('toast.packageArchived'));
     },
     onError: (error) => {
-      toast.error(`Failed to archive package: ${error.message}`);
+      toast.error(i18n.t('toast.packageArchiveFailed'));
     },
   });
 };
