@@ -324,7 +324,7 @@ export const useRemoveStaffPosition = () => {
       });
     },
     onError: (error) => {
-      toast.error(`Failed to remove position: ${error.message}`);
+      toast.error(i18n.t('toast.staffUpdateFailed'));
     },
   });
 };
