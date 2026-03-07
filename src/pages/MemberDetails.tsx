@@ -670,9 +670,18 @@ const MemberDetails = () => {
 
                 <TabsContent value="billing" className="mt-6">
                   <div className="flex justify-end mb-4">
-                    <Button className="bg-primary hover:bg-primary/90">
-                      {t('members.addBilling')}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button className="bg-primary hover:bg-primary/90" disabled>
+                              {t('members.addBilling')}
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Coming soon</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   {billingLoading ? (
                     <Skeleton className="h-48" />
