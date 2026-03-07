@@ -864,6 +864,7 @@ export default {
     createStaff: 'Create staff',
     noStaff: 'No staff members found',
     terminated: 'Terminated',
+    inactive: 'Inactive',
     contactNumber: 'Contact number',
     createSuccess: 'Staff member created successfully',
     positions: 'Positions',
