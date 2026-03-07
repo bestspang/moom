@@ -13,10 +13,6 @@ import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
 import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
 import type { MemberWizardFormData } from '@/components/members/wizard/types';
-import { CreateLeadDialog } from '@/components/leads/CreateLeadDialog';
-import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
-import { CreateMemberDialog } from '@/components/members/CreateMemberDialog';
-import type { MemberWizardFormData } from '@/components/members/wizard/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
