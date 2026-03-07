@@ -387,10 +387,10 @@ export const useBatchMarkAttendance = () => {
         activity: `Batch attendance marked as ${variables.status} for ${variables.bookingIds.length} bookings`,
         entity_type: 'class_booking',
       });
-      toast.success('Attendance recorded for all members');
+      toast.success(i18n.t('toast.attendanceRecordedAll'));
     },
     onError: (error) => {
-      toast.error('Failed to record attendance');
+      toast.error(i18n.t('toast.attendanceFailed'));
       console.error('Batch mark attendance error:', error);
     },
   });
