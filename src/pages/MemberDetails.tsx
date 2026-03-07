@@ -102,6 +102,7 @@ const MemberDetails = () => {
     { value: 'billing', label: t('members.tabs.billing'), icon: DollarSign },
     { value: 'injuries', label: t('members.tabs.injuries'), icon: AlertTriangle },
     { value: 'notes', label: t('members.tabs.notes'), icon: ClipboardList },
+    { value: 'communications', label: t('members.tabs.communications'), icon: Activity },
     { value: 'suspensions', label: t('members.tabs.suspensions'), icon: PauseCircle },
     { value: 'contract', label: t('members.tabs.contract'), icon: FileText },
   ];
