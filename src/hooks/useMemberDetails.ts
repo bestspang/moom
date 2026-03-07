@@ -549,6 +549,42 @@ export const useCreateMemberContract = () => {
   });
 };
 
+export const useAssignPackageToMember = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ memberId, pkg }: { memberId: string; pkg: { id: string; name_en: string; sessions: number | null } }) => {
+      const { error } = await supabase
+        .from('member_packages')
+        .insert({
+          member_id: memberId,
+          package_id: pkg.id,
+          package_name_snapshot: pkg.name_en,
+          sessions_total: pkg.sessions,
+          sessions_remaining: pkg.sessions,
+          sessions_used: 0,
+          status: 'ready_to_use',
+          purchase_date: new Date().toISOString(),
+        });
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      logActivity({
+        event_type: 'package_assigned',
+        activity: `Package "${variables.pkg.name_en}" assigned to member`,
+        entity_type: 'member',
+        entity_id: variables.memberId,
+        new_value: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
+      });
+      toast.success(t('common.created'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
 // ─── Utilities ─────────────────────────────────────────────
 
 export const calculateDaysUntilExpiry = (packages: MemberPackage[]): number => {
