@@ -259,10 +259,10 @@ export const useUpdateClass = () => {
         old_value: oldData as Record<string, unknown> | undefined,
         new_value: variables.data as Record<string, unknown>,
       });
-      toast.success('Class updated successfully');
+      toast.success(i18n.t('toast.classUpdated'));
     },
     onError: (error) => {
-      toast.error(`Failed to update class: ${error.message}`);
+      toast.error(i18n.t('toast.classUpdateFailed'));
     },
   });
 };
