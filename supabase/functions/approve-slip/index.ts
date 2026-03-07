@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://admin.moom.fit',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle()
 
-    // 4. Generate transaction number (atomic via count)
+    // 4. Generate transaction number
     const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true })
     const txNo = `T-${String((count || 0) + 1).padStart(7, '0')}`
 

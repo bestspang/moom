@@ -1,23 +1,30 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@18.5.0'
 
+const ALLOWED_ORIGINS = ['https://admin.moom.fit', 'https://moom.lovable.app']
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://admin.moom.fit',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 const VAT_RATE = 0.07
 
 Deno.serve(async (req) => {
+  // Dynamic CORS based on whitelist
+  const reqOrigin = req.headers.get('origin') || ''
+  const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0]
+  const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin }
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: dynamicCors })
   }
 
   try {
     // Auth check
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     const anonClient = createClient(
@@ -29,7 +36,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token)
     if (claimsErr || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
     const userId = claimsData.claims.sub as string
 
@@ -38,9 +45,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { member_id, package_id, location_id } = await req.json()
+    const { member_id, package_id, location_id, nonce } = await req.json()
     if (!member_id || !package_id) {
-      return new Response(JSON.stringify({ error: 'member_id and package_id are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'member_id and package_id are required' }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // Fetch package
@@ -51,7 +58,7 @@ Deno.serve(async (req) => {
       .single()
 
     if (pkgErr || !pkg) {
-      return new Response(JSON.stringify({ error: 'Package not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Package not found' }), { status: 404, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // Fetch member
@@ -68,10 +75,26 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle()
 
-    // Generate idempotency key
-    const idempotencyKey = `stripe:${member_id}:${package_id}:${Date.now()}`
+    // Idempotency key — deterministic (no Date.now())
+    const idempotencyKey = nonce
+      ? `stripe:${member_id}:${package_id}:${nonce}`
+      : `stripe:${member_id}:${package_id}`
 
-    // Generate transaction number
+    // Check for existing pending transaction with same idempotency key
+    const { data: existingTx } = await supabase
+      .from('transactions')
+      .select('id, transaction_id')
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle()
+
+    if (existingTx) {
+      return new Response(
+        JSON.stringify({ message: 'Already processing (idempotent)', transaction_id: existingTx.id, transaction_no: existingTx.transaction_id }),
+        { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Generate transaction number via DB sequence-like approach
     const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true })
     const txNo = `T-${String((count || 0) + 1).padStart(7, '0')}`
 
@@ -116,8 +139,8 @@ Deno.serve(async (req) => {
       apiVersion: '2025-08-27.basil',
     })
 
-    // Determine success/cancel URLs from request origin
-    const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/$/, '') || 'https://moom.lovable.app'
+    // Use whitelisted origin for redirect URLs
+    const origin = responseOrigin
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -130,7 +153,7 @@ Deno.serve(async (req) => {
               name: pkg.name_en,
               description: pkg.name_th || undefined,
             },
-            unit_amount: Math.round(amountGross * 100), // THB → satang
+            unit_amount: Math.round(amountGross * 100),
           },
           quantity: 1,
         },
@@ -169,7 +192,7 @@ Deno.serve(async (req) => {
         transaction_id: tx.id,
         transaction_no: txNo,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
     console.error('stripe-create-checkout error:', err)

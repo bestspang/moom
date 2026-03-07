@@ -184,12 +184,7 @@ const Login = () => {
               Google
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
-              {t('auth.noAccount')}{' '}
-              <Link to="/signup" className="text-primary hover:underline">
-                {t('auth.signUp')}
-              </Link>
-            </p>
+            {/* Signup link removed — staff accounts are created by managers */}
           </form>
         </CardContent>
       </Card>
