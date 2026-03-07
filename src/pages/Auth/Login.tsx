@@ -56,7 +56,7 @@ const Login = () => {
       toast({
         variant: 'destructive',
         title: t('auth.loginFailed'),
-        description: 'Google sign-in failed',
+        description: t('auth.googleSignInFailed'),
       });
     } finally {
       setIsGoogleLoading(false);
