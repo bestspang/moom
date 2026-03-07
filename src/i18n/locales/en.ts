@@ -427,6 +427,7 @@ export default {
       notes: 'Notes',
       suspensions: 'Suspensions',
       contract: 'Contract',
+      communications: 'Communications',
     },
     accountDetails: 'Account details',
     purchasePackage: 'Purchase package for this member',
