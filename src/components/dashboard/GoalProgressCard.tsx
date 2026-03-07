@@ -81,7 +81,7 @@ export const GoalProgressCard: React.FC = () => {
             <Target className="h-4 w-4 text-primary" />
             {t('goals.title')}
           </CardTitle>
-          {can('goals', 'write') && (
+          {can('settings', 'write') && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
