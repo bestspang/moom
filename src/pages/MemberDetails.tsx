@@ -330,7 +330,7 @@ const MemberDetails = () => {
         <PageHeader
           title={t('members.memberDetails')}
           breadcrumbs={[
-            { label: t('nav.client') },
+            { label: t('nav.people') },
             { label: t('members.title'), href: '/members' },
           ]}
         />
