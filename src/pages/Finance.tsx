@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getDateLocale } from '@/lib/formatters';
 import { useFinanceTransactions, computeFinanceStats } from '@/hooks/useFinance';
+import { useExpenses, useCreateExpense, useDeleteExpense, computePnL } from '@/hooks/useExpenses';
 import { useTransferSlipsList, useTransferSlipStats } from '@/hooks/useTransferSlips';
 import { useRevenueForecast } from '@/hooks/useRevenueForecast';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
