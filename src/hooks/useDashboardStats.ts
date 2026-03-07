@@ -16,7 +16,7 @@ export interface RiskMember {
   id: string;
   name: string;
   phone: string;
-  expiryDate: string;
+  daysLeft: number | null;
 }
 
 export interface HotLead {
