@@ -1,54 +1,47 @@
 
 
-# Plan: Activate Full Stripe Integration
+# Fix: Promotions export missing columns in Settings
 
-## Current State
-- `STRIPE_SECRET_KEY` is already stored as a secret
-- `STRIPE_WEBHOOK_SECRET` needs to be added
-- Both edge functions exist but have Stripe SDK calls **commented out as stubs**
-- No `useStripeCheckout` hook exists yet
-- `config.toml` already has `verify_jwt = false` for both functions
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Steps
+## Fix (surgical, 1 file)
 
-### 1. Store `STRIPE_WEBHOOK_SECRET`
-Use the secrets tool to securely store the webhook signing secret.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 2. Activate `stripe-create-checkout/index.ts`
-Replace the stub comments with live Stripe SDK code:
-- Import `Stripe` from `https://esm.sh/stripe@18.5.0`
-- Create checkout session with `price_data` (THB, satang = amount × 100)
-- Set `metadata`: `{ transaction_id, member_id, package_id, location_id }`
-- Update `transactions.source_ref` with session ID
-- Return `{ checkout_url, transaction_id, transaction_no }`
-- Success/cancel URLs use the request origin + `/finance?payment=success|cancelled`
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 3. Activate `stripe-webhook/index.ts`
-Replace JSON.parse stub with proper signature verification:
-- Import `Stripe` from `https://esm.sh/stripe@18.5.0`
-- Use `stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)`
-- Return 400 on invalid signature
-- All existing business logic (idempotency, tx update, billing, entitlement, activity log) stays unchanged
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 4. Create `src/hooks/useStripeCheckout.ts`
-New hook that:
-- Calls `supabase.functions.invoke('stripe-create-checkout', { body })` 
-- Redirects to `checkout_url` on success
-- Returns loading state and error handling
-
-### 5. Wire "Pay with Stripe" in MemberDetails packages tab
-Add a small "Pay with Stripe" button when viewing a member's available packages, invoking the hook.
-
-### Files Modified/Created
-
-| File | Action |
-|---|---|
-| `supabase/functions/stripe-create-checkout/index.ts` | Activate Stripe SDK (replace stub) |
-| `supabase/functions/stripe-webhook/index.ts` | Activate signature verification |
-| `src/hooks/useStripeCheckout.ts` | New — checkout hook |
-
-### Risk Assessment
-- **Zero regression**: Edge functions only replace commented stubs with live code
-- **New hook is additive**: No existing code modified
-- **Idempotency preserved**: Existing patterns unchanged
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

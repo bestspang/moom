@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'https://esm.sh/stripe@18.5.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,7 +101,7 @@ Deno.serve(async (req) => {
         location_id: location_id || null,
         staff_id: staffRecord?.id || null,
         source_type: 'stripe',
-        source_ref: null, // Will be updated with checkout session ID
+        source_ref: null,
         idempotency_key: idempotencyKey,
         sold_to_name: member ? `${member.first_name} ${member.last_name}` : null,
         sold_to_contact: member?.phone || member?.email || null,
@@ -110,23 +111,46 @@ Deno.serve(async (req) => {
 
     if (txErr) throw txErr
 
-    // --- STRIPE STUB ---
-    // When STRIPE_SECRET_KEY is configured, this section will:
-    // 1. Create a Stripe Checkout Session with line items
-    // 2. Set metadata.transaction_id = tx.id
-    // 3. Update tx.source_ref = checkout_session.id
-    // 4. Return checkout_session.url
-    //
-    // const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
-    // const session = await stripe.checkout.sessions.create({
-    //   mode: 'payment',
-    //   line_items: [{ price_data: { currency: 'thb', product_data: { name: pkg.name_en }, unit_amount: amountGross * 100 }, quantity: 1 }],
-    //   metadata: { transaction_id: tx.id, member_id, package_id },
-    //   success_url: `${Deno.env.get('APP_URL')}/finance?payment=success`,
-    //   cancel_url: `${Deno.env.get('APP_URL')}/finance?payment=cancelled`,
-    // })
-    // await supabase.from('transactions').update({ source_ref: session.id }).eq('id', tx.id)
-    // return new Response(JSON.stringify({ checkout_url: session.url, transaction_id: tx.id }), ...)
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
+      apiVersion: '2025-08-27.basil',
+    })
+
+    // Determine success/cancel URLs from request origin
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/$/, '') || 'https://moom.lovable.app'
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'thb',
+            product_data: {
+              name: pkg.name_en,
+              description: pkg.name_th || undefined,
+            },
+            unit_amount: Math.round(amountGross * 100), // THB → satang
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        transaction_id: tx.id,
+        member_id,
+        package_id,
+        location_id: location_id || '',
+      },
+      customer_email: member?.email || undefined,
+      success_url: `${origin}/finance?payment=success`,
+      cancel_url: `${origin}/finance?payment=cancelled`,
+    })
+
+    // Update transaction with Stripe session ID
+    await supabase
+      .from('transactions')
+      .update({ source_ref: session.id })
+      .eq('id', tx.id)
 
     // Activity log
     await supabase.from('activity_log').insert({
@@ -136,15 +160,14 @@ Deno.serve(async (req) => {
       entity_id: tx.id,
       staff_id: staffRecord?.id || null,
       member_id,
-      new_value: { transaction_id: tx.id, transaction_no: txNo, package_id, amount: amountGross, status: 'pending' },
+      new_value: { transaction_id: tx.id, transaction_no: txNo, package_id, amount: amountGross, status: 'pending', stripe_session_id: session.id },
     })
 
     return new Response(
       JSON.stringify({
+        checkout_url: session.url,
         transaction_id: tx.id,
         transaction_no: txNo,
-        message: 'Stripe checkout stub — configure STRIPE_SECRET_KEY to enable live payments',
-        // checkout_url: session.url // uncomment when Stripe is live
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
