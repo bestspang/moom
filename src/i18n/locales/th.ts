@@ -1966,8 +1966,4 @@ export default {
     bulkDuplicated: 'ทำซ้ำ {{count}} รายการ',
     bulkFailed: 'การดำเนินการล้มเหลว',
   },
-
-  dashboard: {
-    expired: 'หมดอายุ',
-  },
 };
