@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGINS = ['https://admin.moom.fit', 'https://member.moom.fit', 'https://moom.lovable.app'];
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://admin.moom.fit",
   "Access-Control-Allow-Headers":

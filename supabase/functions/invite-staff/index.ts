@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGINS = ['https://admin.moom.fit', 'https://member.moom.fit', 'https://moom.lovable.app'];
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://admin.moom.fit",
   "Access-Control-Allow-Headers":
@@ -7,8 +9,12 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  const reqOrigin = req.headers.get('origin') || '';
+  const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0];
+  const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin };
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: dynamicCors });
   }
 
   try {
