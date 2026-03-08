@@ -12,6 +12,7 @@ import { BookingManagementDialog } from '@/components/schedule/BookingManagement
 import { ScheduleTimeline } from '@/components/schedule/ScheduleTimeline';
 
 const Schedule = () => {
+  const { can } = usePermissions();
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
