@@ -76,27 +76,27 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Name (EN) *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-            <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameEn')} {t('gamification.form.required')}</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameTh')}</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Description (EN)</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
-            <div><Label>Description (TH)</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionEn')}</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionTh')}</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Tier</Label>
+              <Label>{t('gamification.badges.tier')}</Label>
               <Select value={form.tier} onValueChange={v => setForm(f => ({ ...f, tier: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bronze">Bronze</SelectItem>
-                  <SelectItem value="silver">Silver</SelectItem>
-                  <SelectItem value="gold">Gold</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
+                  <SelectItem value="bronze">{t('gamification.badges.bronze')}</SelectItem>
+                  <SelectItem value="silver">{t('gamification.badges.silver')}</SelectItem>
+                  <SelectItem value="gold">{t('gamification.badges.gold')}</SelectItem>
+                  <SelectItem value="platinum">{t('gamification.badges.platinum')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Display Priority</Label><Input type="number" value={form.display_priority} onChange={e => setForm(f => ({ ...f, display_priority: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.badges.displayPriority')}</Label><Input type="number" value={form.display_priority} onChange={e => setForm(f => ({ ...f, display_priority: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />

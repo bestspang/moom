@@ -88,36 +88,36 @@ const CreateRewardDialog = ({ open, onOpenChange, editingReward }: Props) => {
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Name (EN) *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-            <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameEn')} {t('gamification.form.required')}</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameTh')}</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Description (EN)</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
-            <div><Label>Description (TH)</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionEn')}</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionTh')}</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
           </div>
           <div>
-            <Label>Category</Label>
+            <Label>{t('gamification.form.category')}</Label>
             <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="perk">Perk</SelectItem>
-                <SelectItem value="merch">Merch</SelectItem>
-                <SelectItem value="access">Access</SelectItem>
-                <SelectItem value="package_booster">Package Booster</SelectItem>
-                <SelectItem value="event">Event Access</SelectItem>
+                <SelectItem value="perk">{t('gamification.rewards.categoryPerk')}</SelectItem>
+                <SelectItem value="merch">{t('gamification.rewards.categoryMerch')}</SelectItem>
+                <SelectItem value="access">{t('gamification.rewards.categoryAccess')}</SelectItem>
+                <SelectItem value="package_booster">{t('gamification.rewards.categoryPackageBooster')}</SelectItem>
+                <SelectItem value="event">{t('gamification.rewards.categoryEvent')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Points Cost *</Label><Input type="number" value={form.points_cost} onChange={e => setForm(f => ({ ...f, points_cost: Number(e.target.value) }))} /></div>
-            <div><Label>Level Required</Label><Input type="number" value={form.level_required} onChange={e => setForm(f => ({ ...f, level_required: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.rewards.pointsCost')} {t('gamification.form.required')}</Label><Input type="number" value={form.points_cost} onChange={e => setForm(f => ({ ...f, points_cost: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.rewards.levelRequired')}</Label><Input type="number" value={form.level_required} onChange={e => setForm(f => ({ ...f, level_required: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={form.is_unlimited} onCheckedChange={v => setForm(f => ({ ...f, is_unlimited: v }))} />
-            <Label>Unlimited Stock</Label>
+            <Label>{t('gamification.rewards.unlimitedStock')}</Label>
           </div>
           {!form.is_unlimited && (
-            <div><Label>{t('gamification.rewards.stock')}</Label><Input type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} placeholder="Total units" /></div>
+            <div><Label>{t('gamification.rewards.stock')}</Label><Input type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} placeholder={t('gamification.rewards.totalUnits')} /></div>
           )}
           <div className="flex items-center gap-2">
             <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />

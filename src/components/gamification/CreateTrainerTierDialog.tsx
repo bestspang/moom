@@ -52,7 +52,7 @@ const CreateTrainerTierDialog = ({ open, onOpenChange, editingTier, defaultType 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-trainer-tiers'] }); toast.success('Tier created'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-trainer-tiers'] }); toast.success(t('common.created')); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -62,7 +62,7 @@ const CreateTrainerTierDialog = ({ open, onOpenChange, editingTier, defaultType 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-trainer-tiers'] }); toast.success('Tier updated'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-trainer-tiers'] }); toast.success(t('common.saved')); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -96,11 +96,11 @@ const CreateTrainerTierDialog = ({ open, onOpenChange, editingTier, defaultType 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editingTier ? t('common.edit') : 'Add Trainer Tier'}</DialogTitle>
+          <DialogTitle>{editingTier ? t('common.edit') : t('gamification.trainers.addTier')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Trainer Type</Label>
+            <Label>{t('gamification.trainers.trainerType')}</Label>
             <Select value={form.trainer_type} onValueChange={v => setForm(f => ({ ...f, trainer_type: v }))} disabled={!!editingTier}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -110,12 +110,12 @@ const CreateTrainerTierDialog = ({ open, onOpenChange, editingTier, defaultType 
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Tier Name (EN) *</Label><Input value={form.tier_name_en} onChange={e => setForm(f => ({ ...f, tier_name_en: e.target.value }))} /></div>
-            <div><Label>Tier Name (TH)</Label><Input value={form.tier_name_th} onChange={e => setForm(f => ({ ...f, tier_name_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.tierNameEn')} {t('gamification.form.required')}</Label><Input value={form.tier_name_en} onChange={e => setForm(f => ({ ...f, tier_name_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.tierNameTh')}</Label><Input value={form.tier_name_th} onChange={e => setForm(f => ({ ...f, tier_name_th: e.target.value }))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{t('gamification.trainers.minScore')}</Label><Input type="number" value={form.min_score} onChange={e => setForm(f => ({ ...f, min_score: Number(e.target.value) }))} /></div>
-            <div><Label>Sort Order</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.trainers.sortOrder')}</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />

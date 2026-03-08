@@ -24,6 +24,12 @@ const GamificationChallenges = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GamificationChallenge | null>(null);
 
+  const statusLabelMap: Record<string, string> = {
+    draft: t('gamification.challenges.draft'),
+    active: t('common.active'),
+    ended: t('gamification.challenges.ended'),
+  };
+
   const statusTabs: StatusTab[] = [
     { key: 'all', label: t('common.all'), count: challenges?.length ?? 0 },
     { key: 'draft', label: t('gamification.challenges.draft'), count: challenges?.filter(c => c.status === 'draft').length ?? 0, color: 'gray' },
@@ -61,7 +67,7 @@ const GamificationChallenges = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium text-sm">{language === 'th' && c.name_th ? c.name_th : c.name_en}</h3>
-                      <StatusBadge variant={statusVariantMap[c.status] || 'default'}>{c.status}</StatusBadge>
+                      <StatusBadge variant={statusVariantMap[c.status] || 'default'}>{statusLabelMap[c.status] || c.status}</StatusBadge>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{language === 'th' && c.description_th ? c.description_th : c.description_en}</p>
                     <div className="flex gap-4 text-xs text-muted-foreground">
@@ -75,7 +81,7 @@ const GamificationChallenges = () => {
                       {c.reward_xp > 0 && <span className="text-accent-teal">+{c.reward_xp} XP</span>}
                       {c.reward_points > 0 && <span className="text-primary">+{c.reward_points} pts</span>}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(c)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={() => openEdit(c)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   </div>

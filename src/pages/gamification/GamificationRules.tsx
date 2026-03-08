@@ -113,10 +113,10 @@ const GamificationRules = () => {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editingId ? t('gamification.rules.editRule') : t('gamification.rules.addRule')}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>{t('gamification.rules.action')}</Label><Input value={form.action_key} onChange={(e) => setForm(f => ({ ...f, action_key: e.target.value }))} placeholder="e.g. check_in" disabled={!!editingId} /></div>
+            <div><Label>{t('gamification.rules.action')}</Label><Input value={form.action_key} onChange={(e) => setForm(f => ({ ...f, action_key: e.target.value }))} placeholder={t('gamification.challenges.goalActionKeyHint')} disabled={!!editingId} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Label (EN)</Label><Input value={form.label_en} onChange={(e) => setForm(f => ({ ...f, label_en: e.target.value }))} /></div>
-              <div><Label>Label (TH)</Label><Input value={form.label_th} onChange={(e) => setForm(f => ({ ...f, label_th: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.labelEn')}</Label><Input value={form.label_en} onChange={(e) => setForm(f => ({ ...f, label_en: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.labelTh')}</Label><Input value={form.label_th} onChange={(e) => setForm(f => ({ ...f, label_th: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>XP</Label><Input type="number" value={form.xp_value} onChange={(e) => setForm(f => ({ ...f, xp_value: Number(e.target.value) }))} /></div>

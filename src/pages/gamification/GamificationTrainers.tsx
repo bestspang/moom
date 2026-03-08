@@ -27,7 +27,7 @@ const GamificationTrainers = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2 text-sm"><Icon className="h-4 w-4" />{title}</CardTitle>
-        <Button size="sm" variant="outline" onClick={() => openCreate(type)}><Plus className="h-4 w-4 mr-1" />Add Tier</Button>
+        <Button size="sm" variant="outline" onClick={() => openCreate(type)}><Plus className="h-4 w-4 mr-1" />{t('gamification.trainers.addTier')}</Button>
       </CardHeader>
       <CardContent>
         {!items.length ? (
@@ -44,7 +44,7 @@ const GamificationTrainers = () => {
                   <span className={`text-xs ${tier.is_active ? 'text-accent-teal' : 'text-muted-foreground'}`}>
                     {tier.is_active ? t('common.active') : t('common.inactive')}
                   </span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(tier)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={() => openEdit(tier)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                 </div>

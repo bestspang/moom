@@ -21,6 +21,12 @@ interface LevelForm {
   is_active: boolean;
 }
 
+const presetColors = [
+  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
+  '#f97316', '#eab308', '#22c55e', '#14b8a6',
+  '#06b6d4', '#3b82f6',
+];
+
 const emptyForm: LevelForm = { level_number: 1, name_en: '', name_th: '', xp_required: 0, badge_color: '#6366f1', is_active: true };
 
 const GamificationLevels = () => {
@@ -86,7 +92,7 @@ const GamificationLevels = () => {
                   <span className={`text-xs ${level.is_active ? 'text-accent-teal' : 'text-muted-foreground'}`}>
                     {level.is_active ? t('common.active') : t('common.inactive')}
                   </span>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(level)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(level.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
@@ -101,13 +107,26 @@ const GamificationLevels = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{editingId ? t('gamification.levels.editLevel') : t('gamification.levels.addLevel')}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Level #</Label><Input type="number" value={form.level_number} onChange={(e) => setForm(f => ({ ...f, level_number: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.levels.levelNumber')}</Label><Input type="number" value={form.level_number} onChange={(e) => setForm(f => ({ ...f, level_number: Number(e.target.value) }))} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Name (EN)</Label><Input value={form.name_en} onChange={(e) => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-              <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={(e) => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.nameEn')}</Label><Input value={form.name_en} onChange={(e) => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.nameTh')}</Label><Input value={form.name_th} onChange={(e) => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
             </div>
-            <div><Label>XP Required</Label><Input type="number" value={form.xp_required} onChange={(e) => setForm(f => ({ ...f, xp_required: Number(e.target.value) }))} /></div>
-            <div><Label>{t('gamification.levels.color')}</Label><Input type="color" value={form.badge_color} onChange={(e) => setForm(f => ({ ...f, badge_color: e.target.value }))} className="h-9 w-16 p-1" /></div>
+            <div><Label>{t('gamification.levels.xpRequired')}</Label><Input type="number" value={form.xp_required} onChange={(e) => setForm(f => ({ ...f, xp_required: Number(e.target.value) }))} /></div>
+            <div>
+              <Label>{t('gamification.levels.color')}</Label>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {presetColors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`w-7 h-7 rounded-full border-2 transition-all ${form.badge_color === c ? 'border-foreground scale-110' : 'border-transparent'}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => setForm(f => ({ ...f, badge_color: c }))}
+                  />
+                ))}
+              </div>
+            </div>
             <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('common.active')}</Label></div>
           </div>
           <DialogFooter>
