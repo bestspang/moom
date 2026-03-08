@@ -1,47 +1,35 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Recheck Result: Shared Backend / API Platform Contract — All Clear
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Verification Summary
 
-## Fix (surgical, 1 file)
+I inspected all 7 Edge Functions and the `docs/PLATFORM_CONTRACT.md` document. **No issues found.**
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### What was checked
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+| Function | ALLOWED_ORIGINS (3) | Dynamic CORS | All response paths | Verdict |
+|----------|---------------------|--------------|-------------------|---------|
+| `approve-slip` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `auto-notifications` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `daily-briefing` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `invite-staff` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `line-auth` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `stripe-create-checkout` | Yes | Yes (`dynamicCors`) | All use `dynamicCors` | OK |
+| `stripe-webhook` | Yes (unused) | No (static) | Static `corsHeaders` | OK — server-to-server, no browser CORS needed |
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### Previous issues — confirmed fixed
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+1. **`stripe-create-checkout` error path**: Previously used static `corsHeaders` in catch block. Now uses `dynamicCors` on line 209. **Fixed.**
+2. **`auto-notifications` wildcard CORS**: Previously used `'*'`. Now uses dynamic origin matching with `ALLOWED_ORIGINS`. **Fixed.**
+
+### Residual note (cosmetic, not a bug)
+
+Four functions (`approve-slip`, `daily-briefing`, `invite-staff`, `line-auth`) still have a static `'Access-Control-Allow-Origin': 'https://admin.moom.fit'` in their `corsHeaders` base object. This is harmless because `dynamicCors` always overwrites it with the matched origin. It's dead code but not a bug — no action needed.
+
+### Platform contract document
+
+`docs/PLATFORM_CONTRACT.md` is up to date and consistent with the implementation. No changes needed.
+
+**No implementation required. The shared backend contract is correctly implemented.**
 
