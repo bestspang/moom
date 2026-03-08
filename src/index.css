@@ -87,6 +87,30 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+    /* Status colors */
+    --status-success: 152 55% 42%;
+    --status-warning: 38 92% 50%;
+    --status-info: 210 70% 55%;
+    --status-danger: 0 65% 52%;
+
+    /* Momentum / Gamification tokens */
+    --momentum-flame: 32 100% 50%;
+    --momentum-flame-glow: 38 92% 50%;
+    --tier-starter: 220 10% 60%;
+    --tier-regular: 32 80% 50%;
+    --tier-dedicated: 210 70% 55%;
+    --tier-elite: 280 65% 55%;
+    --tier-champion: 38 92% 50%;
+    --tier-legend: 45 93% 47%;
+    --xp-bar: 32 100% 50%;
+    --xp-bar-glow: 38 95% 58%;
+
+    /* Rarity system */
+    --rarity-common: 220 10% 60%;
+    --rarity-rare: 210 70% 55%;
+    --rarity-epic: 280 65% 55%;
+    --rarity-legendary: 45 93% 47%;
   }
 
   .dark {
