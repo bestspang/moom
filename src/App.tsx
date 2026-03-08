@@ -142,11 +142,19 @@ const App = () => (
                 {/* ===== Trainer Surface (mobile-first) ===== */}
                 <Route path="/trainer" element={<TrainerLayout />}>
                   <Route index element={<TrainerHomePage />} />
+                  <Route path="schedule" element={<TrainerSchedulePage />} />
+                  <Route path="roster" element={<TrainerRosterPage />} />
+                  <Route path="workouts" element={<TrainerWorkoutsPage />} />
+                  <Route path="profile" element={<TrainerProfilePage />} />
                 </Route>
 
                 {/* ===== Staff Surface (mobile-first) ===== */}
                 <Route path="/staff" element={<StaffLayout />}>
                   <Route index element={<StaffHomePage />} />
+                  <Route path="checkin" element={<StaffCheckinPage />} />
+                  <Route path="members" element={<StaffMembersPage />} />
+                  <Route path="payments" element={<StaffPaymentsPage />} />
+                  <Route path="profile" element={<StaffProfilePage />} />
                 </Route>
 
                 {/* ===== Admin Surface (desktop-first, existing) ===== */}
