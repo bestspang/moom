@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { SlipDetailDialog } from '@/components/transfer-slips/SlipDetailDialog';
 import { Eye } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TransferSlips = () => {
   const { t, language } = useLanguage();
