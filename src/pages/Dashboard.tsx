@@ -144,10 +144,12 @@ const Dashboard = () => {
       <DailyBriefingCard stats={briefingStats} />
 
       {/* Business Health Score + Goals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <BusinessHealthCard />
-        <GoalProgressCard />
-      </div>
+      {can('finance', 'read') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BusinessHealthCard />
+          <GoalProgressCard />
+        </div>
+      )}
 
       {/* KPI Stats — full width row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
