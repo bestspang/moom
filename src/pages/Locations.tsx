@@ -10,6 +10,7 @@ import { EditLocationDialog } from '@/components/locations/EditLocationDialog';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type Location = Tables<'locations'>;
 
