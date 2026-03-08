@@ -309,6 +309,96 @@ export type Database = {
           },
         ]
       }
+      badge_earnings: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          event_ref: string | null
+          id: string
+          member_id: string
+          metadata: Json | null
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          event_ref?: string | null
+          id?: string
+          member_id: string
+          metadata?: Json | null
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          event_ref?: string | null
+          id?: string
+          member_id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_earnings_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "badge_earnings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_progress: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          current_value: number
+          id: string
+          member_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["challenge_progress_status"]
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          current_value?: number
+          id?: string
+          member_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["challenge_progress_status"]
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          current_value?: number
+          id?: string
+          member_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["challenge_progress_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_progress_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkin_qr_tokens: {
         Row: {
           created_at: string | null
@@ -1628,6 +1718,66 @@ export type Database = {
           },
         ]
       }
+      member_gamification_profiles: {
+        Row: {
+          available_points: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          id: string
+          last_activity_at: string | null
+          longest_streak: number
+          member_id: string
+          season_id: string | null
+          total_points: number
+          total_xp: number
+          updated_at: string
+        }
+        Insert: {
+          available_points?: number
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          id?: string
+          last_activity_at?: string | null
+          longest_streak?: number
+          member_id: string
+          season_id?: string | null
+          total_points?: number
+          total_xp?: number
+          updated_at?: string
+        }
+        Update: {
+          available_points?: number
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          id?: string
+          last_activity_at?: string | null
+          longest_streak?: number
+          member_id?: string
+          season_id?: string | null
+          total_points?: number
+          total_xp?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_gamification_profiles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_gamification_profiles_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_injuries: {
         Row: {
           created_at: string | null
@@ -2187,6 +2337,77 @@ export type Database = {
         }
         Relationships: []
       }
+      points_ledger: {
+        Row: {
+          balance_after: number
+          created_at: string
+          delta: number
+          event_type: Database["public"]["Enums"]["gamification_event_type"]
+          id: string
+          idempotency_key: string
+          location_id: string | null
+          member_id: string
+          metadata: Json | null
+          redemption_id: string | null
+          rule_id: string | null
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string
+          delta: number
+          event_type: Database["public"]["Enums"]["gamification_event_type"]
+          id?: string
+          idempotency_key: string
+          location_id?: string | null
+          member_id: string
+          metadata?: Json | null
+          redemption_id?: string | null
+          rule_id?: string | null
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string
+          delta?: number
+          event_type?: Database["public"]["Enums"]["gamification_event_type"]
+          id?: string
+          idempotency_key?: string
+          location_id?: string | null
+          member_id?: string
+          metadata?: Json | null
+          redemption_id?: string | null
+          rule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_ledger_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_ledger_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_ledger_redemption_id_fkey"
+            columns: ["redemption_id"]
+            isOneToOne: false
+            referencedRelation: "reward_redemptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_ledger_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotion_packages: {
         Row: {
           created_at: string | null
@@ -2406,6 +2627,73 @@ export type Database = {
           usage_time_rules?: Json | null
         }
         Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          id: string
+          idempotency_key: string
+          member_id: string
+          metadata: Json | null
+          points_spent: number
+          reward_id: string
+          status: Database["public"]["Enums"]["reward_redemption_status"]
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          idempotency_key: string
+          member_id: string
+          metadata?: Json | null
+          points_spent: number
+          reward_id: string
+          status?: Database["public"]["Enums"]["reward_redemption_status"]
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          idempotency_key?: string
+          member_id?: string
+          metadata?: Json | null
+          points_spent?: number
+          reward_id?: string
+          status?: Database["public"]["Enums"]["reward_redemption_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -2632,6 +2920,109 @@ export type Database = {
         }
         Relationships: []
       }
+      squad_memberships: {
+        Row: {
+          id: string
+          joined_at: string
+          member_id: string
+          role: Database["public"]["Enums"]["squad_role"]
+          squad_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          member_id: string
+          role?: Database["public"]["Enums"]["squad_role"]
+          squad_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          member_id?: string
+          role?: Database["public"]["Enums"]["squad_role"]
+          squad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squad_memberships_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squad_memberships_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squads: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          location_id: string | null
+          max_members: number
+          name: string
+          season_id: string | null
+          total_xp: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          max_members?: number
+          name: string
+          season_id?: string | null
+          total_xp?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          max_members?: number
+          name?: string
+          season_id?: string | null
+          total_xp?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squads_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squads_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff: {
         Row: {
           address: string | null
@@ -2775,6 +3166,98 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_snapshots: {
+        Row: {
+          current_streak: number
+          id: string
+          last_activity_date: string
+          longest_streak: number
+          member_id: string
+          streak_type: string
+          updated_at: string
+        }
+        Insert: {
+          current_streak?: number
+          id?: string
+          last_activity_date: string
+          longest_streak?: number
+          member_id: string
+          streak_type?: string
+          updated_at?: string
+        }
+        Update: {
+          current_streak?: number
+          id?: string
+          last_activity_date?: string
+          longest_streak?: number
+          member_id?: string
+          streak_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_snapshots_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trainer_gamification_scores: {
+        Row: {
+          breakdown: Json | null
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          score: number
+          staff_id: string
+          tier_id: string | null
+          trainer_type: string
+          updated_at: string
+        }
+        Insert: {
+          breakdown?: Json | null
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          score?: number
+          staff_id: string
+          tier_id?: string | null
+          trainer_type?: string
+          updated_at?: string
+        }
+        Update: {
+          breakdown?: Json | null
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          score?: number
+          staff_id?: string
+          tier_id?: string | null
+          trainer_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_gamification_scores_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_gamification_scores_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_trainer_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -3154,6 +3637,67 @@ export type Database = {
         }
         Relationships: []
       }
+      xp_ledger: {
+        Row: {
+          balance_after: number
+          created_at: string
+          delta: number
+          event_type: Database["public"]["Enums"]["gamification_event_type"]
+          id: string
+          idempotency_key: string
+          location_id: string | null
+          member_id: string
+          metadata: Json | null
+          rule_id: string | null
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string
+          delta: number
+          event_type: Database["public"]["Enums"]["gamification_event_type"]
+          id?: string
+          idempotency_key: string
+          location_id?: string | null
+          member_id: string
+          metadata?: Json | null
+          rule_id?: string | null
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string
+          delta?: number
+          event_type?: Database["public"]["Enums"]["gamification_event_type"]
+          id?: string
+          idempotency_key?: string
+          location_id?: string | null
+          member_id?: string
+          metadata?: Json | null
+          rule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xp_ledger_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "xp_ledger_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "xp_ledger_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3208,10 +3752,31 @@ export type Database = {
       announcement_status: "active" | "scheduled" | "completed"
       app_role: "owner" | "admin" | "trainer" | "front_desk"
       booking_status: "booked" | "cancelled" | "attended" | "no_show"
+      challenge_progress_status:
+        | "in_progress"
+        | "completed"
+        | "failed"
+        | "expired"
       class_level: "all_levels" | "beginner" | "intermediate" | "advanced"
       class_type: "class" | "pt"
       event_status: "pending" | "processing" | "done" | "failed"
       flag_scope: "global" | "location" | "user"
+      gamification_event_type:
+        | "check_in"
+        | "class_attended"
+        | "class_booked"
+        | "package_purchased"
+        | "package_renewed"
+        | "streak_maintained"
+        | "challenge_completed"
+        | "reward_redeemed"
+        | "referral_converted"
+        | "profile_completed"
+        | "first_visit"
+        | "merch_purchased"
+        | "review_submitted"
+        | "manual_adjustment"
+        | "rollback"
       gender: "male" | "female" | "other"
       lead_status:
         | "new"
@@ -3240,10 +3805,16 @@ export type Database = {
         | "other"
       promotion_status: "active" | "scheduled" | "drafts" | "archive"
       promotion_type: "discount" | "promo_code"
+      reward_redemption_status:
+        | "pending"
+        | "fulfilled"
+        | "cancelled"
+        | "rolled_back"
       risk_level: "high" | "medium" | "low"
       room_layout_type: "open" | "fixed"
       room_status: "open" | "closed"
       schedule_status: "scheduled" | "cancelled" | "completed"
+      squad_role: "leader" | "member"
       staff_status: "active" | "pending" | "terminated" | "inactive"
       transaction_status:
         | "paid"
@@ -3395,10 +3966,33 @@ export const Constants = {
       announcement_status: ["active", "scheduled", "completed"],
       app_role: ["owner", "admin", "trainer", "front_desk"],
       booking_status: ["booked", "cancelled", "attended", "no_show"],
+      challenge_progress_status: [
+        "in_progress",
+        "completed",
+        "failed",
+        "expired",
+      ],
       class_level: ["all_levels", "beginner", "intermediate", "advanced"],
       class_type: ["class", "pt"],
       event_status: ["pending", "processing", "done", "failed"],
       flag_scope: ["global", "location", "user"],
+      gamification_event_type: [
+        "check_in",
+        "class_attended",
+        "class_booked",
+        "package_purchased",
+        "package_renewed",
+        "streak_maintained",
+        "challenge_completed",
+        "reward_redeemed",
+        "referral_converted",
+        "profile_completed",
+        "first_visit",
+        "merch_purchased",
+        "review_submitted",
+        "manual_adjustment",
+        "rollback",
+      ],
       gender: ["male", "female", "other"],
       lead_status: [
         "new",
@@ -3430,10 +4024,17 @@ export const Constants = {
       ],
       promotion_status: ["active", "scheduled", "drafts", "archive"],
       promotion_type: ["discount", "promo_code"],
+      reward_redemption_status: [
+        "pending",
+        "fulfilled",
+        "cancelled",
+        "rolled_back",
+      ],
       risk_level: ["high", "medium", "low"],
       room_layout_type: ["open", "fixed"],
       room_status: ["open", "closed"],
       schedule_status: ["scheduled", "cancelled", "completed"],
+      squad_role: ["leader", "member"],
       staff_status: ["active", "pending", "terminated", "inactive"],
       transaction_status: [
         "paid",
