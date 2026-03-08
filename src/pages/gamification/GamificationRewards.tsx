@@ -29,7 +29,7 @@ const GamificationRewards = () => {
       </div>
 
       {!rewards?.length ? (
-        <EmptyState icon={Gift} title={t('gamification.rewards.noRewards')} description={t('gamification.rewards.noRewardsDesc')} />
+        <EmptyState icon={<Gift className="h-12 w-12" />} message={t('gamification.rewards.noRewards')} description={t('gamification.rewards.noRewardsDesc')} />
       ) : (
         <div className="space-y-3">
           {rewards.map((reward) => {

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useGamificationRules, useCreateGamificationRule, useUpdateGamificationRule, useDeleteGamificationRule } from '@/hooks/useGamificationRules';
-import { useGamificationAudit } from '@/hooks/useGamificationAudit';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,7 +29,6 @@ const emptyForm: RuleForm = { action_key: '', label_en: '', label_th: '', xp_val
 const GamificationRules = () => {
   const { t, language } = useLanguage();
   const { data: rules, isLoading } = useGamificationRules();
-  const { data: seasons } = useGamificationAudit();
   const createRule = useCreateGamificationRule();
   const updateRule = useUpdateGamificationRule();
   const deleteRule = useDeleteGamificationRule();
@@ -66,7 +64,7 @@ const GamificationRules = () => {
       </div>
 
       {!rules?.length ? (
-        <EmptyState icon={Plus} title={t('gamification.rules.noRules')} description={t('gamification.rules.noRulesDesc')} />
+        <EmptyState icon={<Plus className="h-12 w-12" />} message={t('gamification.rules.noRules')} description={t('gamification.rules.noRulesDesc')} />
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -111,51 +109,24 @@ const GamificationRules = () => {
         </Card>
       )}
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingId ? t('gamification.rules.editRule') : t('gamification.rules.addRule')}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? t('gamification.rules.editRule') : t('gamification.rules.addRule')}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>{t('gamification.rules.action')}</Label>
-              <Input value={form.action_key} onChange={(e) => setForm(f => ({ ...f, action_key: e.target.value }))} placeholder="e.g. check_in" disabled={!!editingId} />
+            <div><Label>{t('gamification.rules.action')}</Label><Input value={form.action_key} onChange={(e) => setForm(f => ({ ...f, action_key: e.target.value }))} placeholder="e.g. check_in" disabled={!!editingId} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Label (EN)</Label><Input value={form.label_en} onChange={(e) => setForm(f => ({ ...f, label_en: e.target.value }))} /></div>
+              <div><Label>Label (TH)</Label><Input value={form.label_th} onChange={(e) => setForm(f => ({ ...f, label_th: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Label (EN)</Label>
-                <Input value={form.label_en} onChange={(e) => setForm(f => ({ ...f, label_en: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Label (TH)</Label>
-                <Input value={form.label_th} onChange={(e) => setForm(f => ({ ...f, label_th: e.target.value }))} />
-              </div>
+              <div><Label>XP</Label><Input type="number" value={form.xp_value} onChange={(e) => setForm(f => ({ ...f, xp_value: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.rules.points')}</Label><Input type="number" value={form.points_value} onChange={(e) => setForm(f => ({ ...f, points_value: Number(e.target.value) }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>XP</Label>
-                <Input type="number" value={form.xp_value} onChange={(e) => setForm(f => ({ ...f, xp_value: Number(e.target.value) }))} />
-              </div>
-              <div>
-                <Label>{t('gamification.rules.points')}</Label>
-                <Input type="number" value={form.points_value} onChange={(e) => setForm(f => ({ ...f, points_value: Number(e.target.value) }))} />
-              </div>
+              <div><Label>{t('gamification.rules.cooldown')} (min)</Label><Input type="number" value={form.cooldown_minutes} onChange={(e) => setForm(f => ({ ...f, cooldown_minutes: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.rules.maxDay')}</Label><Input type="number" value={form.max_per_day ?? ''} onChange={(e) => setForm(f => ({ ...f, max_per_day: e.target.value ? Number(e.target.value) : null }))} placeholder="∞" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>{t('gamification.rules.cooldown')} (min)</Label>
-                <Input type="number" value={form.cooldown_minutes} onChange={(e) => setForm(f => ({ ...f, cooldown_minutes: Number(e.target.value) }))} />
-              </div>
-              <div>
-                <Label>{t('gamification.rules.maxDay')}</Label>
-                <Input type="number" value={form.max_per_day ?? ''} onChange={(e) => setForm(f => ({ ...f, max_per_day: e.target.value ? Number(e.target.value) : null }))} placeholder="∞" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.is_active} onCheckedChange={(v) => setForm(f => ({ ...f, is_active: v }))} />
-              <Label>{t('common.active')}</Label>
-            </div>
+            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('common.active')}</Label></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
@@ -166,13 +137,9 @@ const GamificationRules = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('common.confirmDelete')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('gamification.rules.deleteConfirm')}</AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>{t('common.confirmDelete')}</AlertDialogTitle><AlertDialogDescription>{t('gamification.rules.deleteConfirm')}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteId) deleteRule.mutate(deleteId); setDeleteId(null); }}>{t('common.delete')}</AlertDialogAction>

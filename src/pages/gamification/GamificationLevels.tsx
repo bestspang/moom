@@ -67,7 +67,7 @@ const GamificationLevels = () => {
       </div>
 
       {!levels?.length ? (
-        <EmptyState icon={Plus} title={t('gamification.levels.noLevels')} description={t('gamification.levels.noLevelsDesc')} />
+        <EmptyState icon={<Plus className="h-12 w-12" />} message={t('gamification.levels.noLevels')} description={t('gamification.levels.noLevelsDesc')} />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {levels.map((level) => (
@@ -99,14 +99,9 @@ const GamificationLevels = () => {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{editingId ? t('gamification.levels.editLevel') : t('gamification.levels.addLevel')}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? t('gamification.levels.editLevel') : t('gamification.levels.addLevel')}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Level #</Label>
-              <Input type="number" value={form.level_number} onChange={(e) => setForm(f => ({ ...f, level_number: Number(e.target.value) }))} />
-            </div>
+            <div><Label>Level #</Label><Input type="number" value={form.level_number} onChange={(e) => setForm(f => ({ ...f, level_number: Number(e.target.value) }))} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Name (EN)</Label><Input value={form.name_en} onChange={(e) => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
               <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={(e) => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>

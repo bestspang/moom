@@ -40,7 +40,7 @@ export const useCreateGamificationReward = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (reward: Partial<GamificationReward>) => {
-      const { data, error } = await supabase.from('gamification_rewards').insert(reward).select().single();
+      const { data, error } = await supabase.from('gamification_rewards').insert([reward as any]).select().single();
       if (error) throw error;
       return data;
     },

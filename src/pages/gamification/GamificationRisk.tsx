@@ -18,7 +18,6 @@ const GamificationRisk = () => {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{t('gamification.risk.description')}</p>
 
-      {/* Flagged activity */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -28,7 +27,7 @@ const GamificationRisk = () => {
         </CardHeader>
         <CardContent>
           {!flagged?.length ? (
-            <EmptyState icon={ShieldAlert} title={t('gamification.risk.noFlags')} description={t('gamification.risk.noFlagsDesc')} compact />
+            <EmptyState icon={<ShieldAlert className="h-12 w-12" />} message={t('gamification.risk.noFlags')} description={t('gamification.risk.noFlagsDesc')} />
           ) : (
             <div className="space-y-2">
               {flagged.map((entry) => (
@@ -43,10 +42,6 @@ const GamificationRisk = () => {
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
                     <p>{format(new Date(entry.created_at), 'dd MMM HH:mm')}</p>
-                    <div className="flex gap-2 mt-0.5">
-                      {entry.xp_delta !== 0 && <span>{entry.xp_delta > 0 ? '+' : ''}{entry.xp_delta} XP</span>}
-                      {entry.points_delta !== 0 && <span>{entry.points_delta > 0 ? '+' : ''}{entry.points_delta} pts</span>}
-                    </div>
                   </div>
                 </div>
               ))}
@@ -55,11 +50,8 @@ const GamificationRisk = () => {
         </CardContent>
       </Card>
 
-      {/* Full Audit Log */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t('gamification.risk.auditLog')}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-sm">{t('gamification.risk.auditLog')}</CardTitle></CardHeader>
         <CardContent>
           {!allAudit?.length ? (
             <p className="text-sm text-muted-foreground">{t('common.noData')}</p>

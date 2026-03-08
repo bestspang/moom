@@ -2,17 +2,16 @@ import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/common';
-import { Users, Zap, Gift, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { Zap, Gift, Target, TrendingUp, BarChart3 } from 'lucide-react';
 import { useGamificationRules } from '@/hooks/useGamificationRules';
 import { useGamificationChallenges } from '@/hooks/useGamificationChallenges';
 import { useGamificationBadges } from '@/hooks/useGamificationBadges';
 import { useGamificationRewards } from '@/hooks/useGamificationRewards';
 import { useGamificationAudit } from '@/hooks/useGamificationAudit';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const GamificationOverview = () => {
   const { t } = useLanguage();
-  const { data: rules, isLoading: rulesLoading } = useGamificationRules();
+  const { data: rules } = useGamificationRules();
   const { data: challenges } = useGamificationChallenges();
   const { data: badges } = useGamificationBadges();
   const { data: rewards } = useGamificationRewards();
@@ -27,22 +26,18 @@ const GamificationOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard icon={Zap} label={t('gamification.overview.activeRules')} value={activeRules} />
-        <StatCard icon={Target} label={t('gamification.overview.activeChallenges')} value={activeChallenges} />
-        <StatCard icon={Gift} label={t('gamification.overview.totalBadges')} value={totalBadges} />
-        <StatCard icon={Gift} label={t('gamification.overview.activeRewards')} value={activeRewards} />
-        <StatCard icon={TrendingUp} label={t('gamification.overview.xpDistributed')} value={totalXpDistributed.toLocaleString()} />
-        <StatCard icon={BarChart3} label={t('gamification.overview.flaggedEvents')} value={flaggedEvents} variant={flaggedEvents > 0 ? 'warning' : 'default'} />
+        <StatCard icon={<Zap className="h-5 w-5" />} title={t('gamification.overview.activeRules')} value={activeRules} />
+        <StatCard icon={<Target className="h-5 w-5" />} title={t('gamification.overview.activeChallenges')} value={activeChallenges} />
+        <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.totalBadges')} value={totalBadges} />
+        <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.activeRewards')} value={activeRewards} />
+        <StatCard icon={<TrendingUp className="h-5 w-5" />} title={t('gamification.overview.xpDistributed')} value={totalXpDistributed.toLocaleString()} />
+        <StatCard icon={<BarChart3 className="h-5 w-5" />} title={t('gamification.overview.flaggedEvents')} value={flaggedEvents} color={flaggedEvents > 0 ? 'orange' : 'default'} />
       </div>
 
-      {/* Info Cards */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('gamification.overview.recentActivity')}</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.recentActivity')}</CardTitle></CardHeader>
           <CardContent>
             {!auditLog?.length ? (
               <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
@@ -67,27 +62,13 @@ const GamificationOverview = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">{t('gamification.overview.systemStatus')}</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.systemStatus')}</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('gamification.overview.activeRules')}</span>
-                <span className="font-medium">{activeRules} / {rules?.length ?? 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('gamification.overview.activeChallenges')}</span>
-                <span className="font-medium">{activeChallenges} / {challenges?.length ?? 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('gamification.overview.activeRewards')}</span>
-                <span className="font-medium">{activeRewards} / {rewards?.length ?? 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('gamification.overview.totalBadges')}</span>
-                <span className="font-medium">{totalBadges}</span>
-              </div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('gamification.overview.activeRules')}</span><span className="font-medium">{activeRules} / {rules?.length ?? 0}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('gamification.overview.activeChallenges')}</span><span className="font-medium">{activeChallenges} / {challenges?.length ?? 0}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('gamification.overview.activeRewards')}</span><span className="font-medium">{activeRewards} / {rewards?.length ?? 0}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('gamification.overview.totalBadges')}</span><span className="font-medium">{totalBadges}</span></div>
             </div>
           </CardContent>
         </Card>

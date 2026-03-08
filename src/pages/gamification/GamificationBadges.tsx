@@ -28,7 +28,7 @@ const GamificationBadges = () => {
       </div>
 
       {!badges?.length ? (
-        <EmptyState icon={Award} title={t('gamification.badges.noBadges')} description={t('gamification.badges.noBadgesDesc')} />
+        <EmptyState icon={<Award className="h-12 w-12" />} message={t('gamification.badges.noBadges')} description={t('gamification.badges.noBadgesDesc')} />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {badges.map((badge) => (

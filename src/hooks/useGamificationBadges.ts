@@ -35,7 +35,7 @@ export const useCreateGamificationBadge = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (badge: Partial<GamificationBadge>) => {
-      const { data, error } = await supabase.from('gamification_badges').insert(badge).select().single();
+      const { data, error } = await supabase.from('gamification_badges').insert([badge as any]).select().single();
       if (error) throw error;
       return data;
     },

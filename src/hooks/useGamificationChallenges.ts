@@ -42,7 +42,7 @@ export const useCreateGamificationChallenge = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (challenge: Partial<GamificationChallenge>) => {
-      const { data, error } = await supabase.from('gamification_challenges').insert(challenge).select().single();
+      const { data, error } = await supabase.from('gamification_challenges').insert([challenge as any]).select().single();
       if (error) throw error;
       return data;
     },

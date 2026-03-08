@@ -10,8 +10,8 @@ const GamificationTrainers = () => {
   const { t, language } = useLanguage();
   const { data: tiers, isLoading } = useGamificationTrainerTiers();
 
-  const inHouse = tiers?.filter(t => t.trainer_type === 'in_house') ?? [];
-  const freelance = tiers?.filter(t => t.trainer_type === 'freelance') ?? [];
+  const inHouse = tiers?.filter((t: any) => t.trainer_type === 'in_house') ?? [];
+  const freelance = tiers?.filter((t: any) => t.trainer_type === 'freelance') ?? [];
 
   if (isLoading) return <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}</div>;
 
@@ -19,17 +19,13 @@ const GamificationTrainers = () => {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{t('gamification.trainers.description')}</p>
 
-      {/* In-house */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <UserCheck className="h-4 w-4" />
-            {t('gamification.trainers.inHouse')}
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-sm"><UserCheck className="h-4 w-4" />{t('gamification.trainers.inHouse')}</CardTitle>
         </CardHeader>
         <CardContent>
           {!inHouse.length ? (
-            <EmptyState icon={UserCheck} title={t('gamification.trainers.noTiers')} description={t('gamification.trainers.noTiersDesc')} compact />
+            <EmptyState icon={<UserCheck className="h-12 w-12" />} message={t('gamification.trainers.noTiers')} description={t('gamification.trainers.noTiersDesc')} />
           ) : (
             <div className="space-y-2">
               {inHouse.map((tier: any) => (
@@ -48,17 +44,13 @@ const GamificationTrainers = () => {
         </CardContent>
       </Card>
 
-      {/* Freelance */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Handshake className="h-4 w-4" />
-            {t('gamification.trainers.freelance')}
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-sm"><Handshake className="h-4 w-4" />{t('gamification.trainers.freelance')}</CardTitle>
         </CardHeader>
         <CardContent>
           {!freelance.length ? (
-            <EmptyState icon={Handshake} title={t('gamification.trainers.noTiers')} description={t('gamification.trainers.noTiersDesc')} compact />
+            <EmptyState icon={<Handshake className="h-12 w-12" />} message={t('gamification.trainers.noTiers')} description={t('gamification.trainers.noTiersDesc')} />
           ) : (
             <div className="space-y-2">
               {freelance.map((tier: any) => (

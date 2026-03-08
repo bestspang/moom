@@ -10,6 +10,12 @@ import { StatusBadge } from '@/components/common';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const statusVariantMap: Record<string, any> = {
+  draft: 'default',
+  active: 'active',
+  ended: 'inactive',
+};
+
 const GamificationChallenges = () => {
   const { t, language } = useLanguage();
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,7 +45,7 @@ const GamificationChallenges = () => {
       <StatusTabs tabs={statusTabs} activeTab={statusFilter} onChange={setStatusFilter} />
 
       {!challenges?.length ? (
-        <EmptyState icon={Target} title={t('gamification.challenges.noChallenges')} description={t('gamification.challenges.noChallengesDesc')} />
+        <EmptyState icon={<Target className="h-12 w-12" />} message={t('gamification.challenges.noChallenges')} description={t('gamification.challenges.noChallengesDesc')} />
       ) : (
         <div className="space-y-3">
           {challenges.map((c) => (
@@ -49,7 +55,7 @@ const GamificationChallenges = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium text-sm">{language === 'th' && c.name_th ? c.name_th : c.name_en}</h3>
-                      <StatusBadge status={c.status as any} />
+                      <StatusBadge variant={statusVariantMap[c.status] || 'default'}>{c.status}</StatusBadge>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{language === 'th' && c.description_th ? c.description_th : c.description_en}</p>
                     <div className="flex gap-4 text-xs text-muted-foreground">
