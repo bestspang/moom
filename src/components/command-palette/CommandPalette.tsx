@@ -145,10 +145,13 @@ export function CommandPalette() {
     return QUICK_ACTIONS.filter((a) => a.label.toLowerCase().includes(q));
   }, [query]);
 
-  const handleSelect = (path: string) => {
+  const handleSelect = (path: string, command?: string) => {
     setOpen(false);
     setQuery('');
     navigate(path);
+    if (command) {
+      setTimeout(() => dispatchCommand(command), 150);
+    }
   };
 
   return (
