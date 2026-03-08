@@ -1,58 +1,47 @@
 
 
-# Milestone 6: Dashboard Role-Aware Rendering
+# Fix: Promotions export missing columns in Settings
 
-## Completed Milestones
-1. Route security hardening ✅
-2. Finance.tsx split ✅
-3. MemberDetails.tsx split ✅
-4. Permission guards (9 pages) ✅
-5. Permission guards (remaining 4 pages) ✅
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Problem Confirmed
+## Fix (surgical, 1 file)
 
-The Dashboard (`src/pages/Dashboard.tsx`, 280 lines) renders **identical content to all roles** — it does not import `useAuth` or `usePermissions`. This means:
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-- A **front desk** user (level 1) sees BusinessHealthCard, GoalProgressCard, RevenueForecastCard — all owner/manager-level data
-- A **trainer** (level 2) sees finance forecasts and business health scores they don't need
-- The **owner/manager** sees the same quick-action layout as front desk, missing strategic emphasis
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-The Dashboard should feel like a **role-aware operations console**, not a one-size-fits-all stats page.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-## What Exists Today (Dashboard)
-- `DailyBriefingCard` — AI briefing (all roles could benefit, but content is generic)
-- `BusinessHealthCard` — owner/manager only
-- `GoalProgressCard` — owner/manager only (already uses `usePermissions` internally for create/delete)
-- 3x `StatCard` KPIs — check-ins, in-class, classes today (all roles)
-- Schedule/gym check-in table with tabs (all roles)
-- `RevenueForecastCard` — owner/manager only
-- `NeedsAttentionCard` — partially role-aware (shows different alerts)
-- Quick check-in FAB (all roles)
-
-## Plan
-
-Add `usePermissions` to Dashboard and conditionally render sections by role:
-
-| Section | Who sees it |
-|---------|-------------|
-| DailyBriefingCard | `can('dashboard', 'read')` — all roles |
-| BusinessHealthCard + GoalProgressCard | `can('finance', 'read')` — managers/owners |
-| KPI StatCards (check-ins, classes) | All roles |
-| Schedule/Check-in table | All roles |
-| RevenueForecastCard | `can('finance', 'read')` — managers/owners |
-| NeedsAttentionCard | All roles (already self-filters) |
-| Quick Check-in FAB | `can('lobby', 'write')` |
-
-Additionally, guard the Leads manage dropdown and create button in `Leads.tsx` which were missed:
-- Wrap manage dropdown in `can('leads', 'write')`
-- Wrap create button in `can('leads', 'write')`
-
-### Files to modify
-- `src/pages/Dashboard.tsx` — add `usePermissions`, wrap finance-level sections
-- `src/pages/Leads.tsx` — wrap manage dropdown + create button in `can('leads', 'write')`
-
-### Risk
-- Zero regression: Only adding conditional renders around existing components
-- Components already handle their own loading/empty states
-- `GoalProgressCard` already uses `usePermissions` internally
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

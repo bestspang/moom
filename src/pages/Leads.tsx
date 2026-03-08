@@ -197,7 +197,7 @@ const Leads = () => {
       <PageHeader
         title={t('leads.title')}
         breadcrumbs={[{ label: t('nav.people'), href: '/members' }, { label: t('leads.title') }]}
-        actions={
+        actions={can('leads', 'write') ? (
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -237,7 +237,7 @@ const Leads = () => {
               {t('leads.createLead')}
             </Button>
           </div>
-        }
+        ) : undefined}
       />
 
       <div className="mb-6">

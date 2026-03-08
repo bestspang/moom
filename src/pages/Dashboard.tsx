@@ -25,6 +25,7 @@ import { useDashboardTrends } from '@/hooks/useDashboardTrends';
 import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
 import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
@@ -52,6 +53,7 @@ const TableRowSkeleton = () => (
 const Dashboard = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('classes');
   const [searchInput, setSearchInput] = useState('');
@@ -142,10 +144,12 @@ const Dashboard = () => {
       <DailyBriefingCard stats={briefingStats} />
 
       {/* Business Health Score + Goals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <BusinessHealthCard />
-        <GoalProgressCard />
-      </div>
+      {can('finance', 'read') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BusinessHealthCard />
+          <GoalProgressCard />
+        </div>
+      )}
 
       {/* KPI Stats — full width row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -260,19 +264,21 @@ const Dashboard = () => {
 
       {/* Revenue Forecast + Needs Attention */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RevenueForecastCard />
+        {can('finance', 'read') && <RevenueForecastCard />}
         <NeedsAttentionCard />
       </div>
 
       {/* Quick Check-in FAB */}
-      <Button
-        onClick={() => setQuickCheckInOpen(true)}
-        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-30 lg:h-auto lg:w-auto lg:rounded-md lg:px-4 lg:gap-2"
-        size="icon"
-      >
-        <DoorOpen className="h-5 w-5" />
-        <span className="hidden lg:inline text-sm">{t('lobby.checkIn')}</span>
-      </Button>
+      {can('lobby', 'write') && (
+        <Button
+          onClick={() => setQuickCheckInOpen(true)}
+          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-30 lg:h-auto lg:w-auto lg:rounded-md lg:px-4 lg:gap-2"
+          size="icon"
+        >
+          <DoorOpen className="h-5 w-5" />
+          <span className="hidden lg:inline text-sm">{t('lobby.checkIn')}</span>
+        </Button>
+      )}
 
       <CheckInDialog open={quickCheckInOpen} onOpenChange={setQuickCheckInOpen} />
     </div>
