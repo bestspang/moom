@@ -13,6 +13,7 @@ import { CreateRoomDialog } from '@/components/rooms/CreateRoomDialog';
 
 const Rooms = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
