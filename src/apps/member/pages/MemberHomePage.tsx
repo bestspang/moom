@@ -12,6 +12,8 @@ import { Calendar, Package, Bell, Sparkles, ChevronRight, Megaphone } from 'luci
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { MomentumCard } from '../features/momentum/MomentumCard';
+import { SquadCard } from '../features/momentum/SquadCard';
+import { UpcomingMilestones } from '../features/momentum/UpcomingMilestones';
 import { format } from 'date-fns';
 import { useState } from 'react';
 
