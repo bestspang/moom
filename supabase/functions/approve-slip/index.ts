@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Auth check
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     const anonClient = createClient(
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token)
     if (claimsErr || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
     const userId = claimsData.claims.sub as string
 
@@ -50,13 +50,13 @@ Deno.serve(async (req) => {
       _min_level: 'level_3_manager',
     })
     if (!accessCheck) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // Parse input
     const { slipId, packageId, note } = await req.json()
     if (!slipId) {
-      return new Response(JSON.stringify({ error: 'slipId is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'slipId is required' }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // Idempotency check
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (existingTx) {
-      return new Response(JSON.stringify({ data: existingTx, message: 'Already processed (idempotent)' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ data: existingTx, message: 'Already processed (idempotent)' }), { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // 1. Fetch slip with relations
@@ -84,15 +84,15 @@ Deno.serve(async (req) => {
       .single()
 
     if (slipErr || !slip) {
-      return new Response(JSON.stringify({ error: 'Slip not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Slip not found' }), { status: 404, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     if (slip.status !== 'needs_review') {
-      return new Response(JSON.stringify({ error: `Slip status is '${slip.status}', expected 'needs_review'` }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: `Slip status is '${slip.status}', expected 'needs_review'` }), { status: 409, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     if (Number(slip.amount_thb) <= 0) {
-      return new Response(JSON.stringify({ error: 'Amount must be > 0' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Amount must be > 0' }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
     }
 
     // 2. Resolve package (override if packageId provided)
@@ -225,13 +225,13 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ data: tx, message: 'Slip approved successfully' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
     console.error('approve-slip error:', err)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     )
   }
 })

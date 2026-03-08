@@ -22,14 +22,18 @@ interface LineVerifyResponse {
 }
 
 Deno.serve(async (req) => {
+  const reqOrigin = req.headers.get('origin') || '';
+  const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0];
+  const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin };
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: dynamicCors });
   }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...dynamicCors, "Content-Type": "application/json" },
     });
   }
 
@@ -41,7 +45,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "idToken is required" }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -58,7 +62,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -120,7 +124,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Database error" }),
         {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -153,7 +157,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -176,7 +180,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Failed to create LINE user record" }),
         {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         }
       );
     }
@@ -199,7 +203,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
@@ -208,7 +212,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       }
     );
   }
