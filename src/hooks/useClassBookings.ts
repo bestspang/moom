@@ -401,6 +401,20 @@ export const useBatchMarkAttendance = () => {
         entity_type: 'class_booking',
       });
       toast.success(i18n.t('toast.attendanceRecordedAll'));
+
+      // Fire gamification events for each attended booking (fire-and-forget)
+      if (variables.status === 'attended' && data) {
+        for (const booking of data) {
+          const schedule = (booking as any).schedule;
+          fireGamificationEvent({
+            event_type: 'class_attended',
+            member_id: booking.member_id,
+            idempotency_key: `class_attended:${booking.id}`,
+            location_id: schedule?.location_id,
+            metadata: { schedule_id: booking.schedule_id, booking_id: booking.id },
+          });
+        }
+      }
     },
     onError: (error) => {
       toast.error(i18n.t('toast.attendanceFailed'));
