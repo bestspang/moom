@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -8,14 +8,20 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { SummaryCard } from '@/apps/shared/components/SummaryCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Package, Bell, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
+import { Calendar, Package, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
+import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { SquadCard } from '../features/momentum/SquadCard';
 import { UpcomingMilestones } from '../features/momentum/UpcomingMilestones';
+import { TodayCard } from '../features/momentum/TodayCard';
+import { NotificationBell } from '../features/momentum/NotificationBell';
+import { ChallengeCard } from '../features/momentum/ChallengeCard';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -28,6 +34,7 @@ export default function MemberHomePage() {
   const navigate = useNavigate();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading: loadingBookings } = useQuery({
     queryKey: ['member-bookings', memberId],
@@ -47,6 +54,33 @@ export default function MemberHomePage() {
     enabled: isAuthenticated,
   });
 
+  const { data: activeChallenges } = useQuery({
+    queryKey: ['active-challenges'],
+    queryFn: fetchActiveChallenges,
+    enabled: isAuthenticated,
+  });
+
+  const { data: myProgress } = useQuery({
+    queryKey: ['my-challenges', memberId],
+    queryFn: () => fetchMyChallengeProgress(memberId!),
+    enabled: !!memberId,
+  });
+
+  const joinChallenge = useMutation({
+    mutationFn: async (challengeId: string) => {
+      if (!memberId) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('challenge_progress')
+        .insert({ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'active' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
+      toast.success('Challenge joined! 🎯');
+    },
+    onError: () => toast.error('Failed to join challenge'),
+  });
+
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
   const latestAnnouncement = announcements?.[0];
@@ -54,26 +88,34 @@ export default function MemberHomePage() {
   const greeting = getTimeGreeting();
   const title = firstName ? `${greeting}, ${firstName}` : `${greeting}!`;
 
-  const todayBookings = upcomingBookings.filter(b => b.schedule.date === new Date().toISOString().slice(0, 10));
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayBookings = upcomingBookings.filter(b => b.schedule.date === todayStr);
   const subtitle = todayBookings.length > 0
     ? `You have ${todayBookings.length} booking${todayBookings.length > 1 ? 's' : ''} today`
     : 'Ready to train?';
 
   const isNewUser = upcomingBookings.length === 0 && activePackages.length === 0;
 
+  // Find the next upcoming today booking for TodayCard
+  const nextTodayBooking = todayBookings[0];
+
+  // Build progress lookup for challenges
+  const progressMap = new Map(
+    (myProgress ?? []).map(p => [p.challengeId, { current_value: p.currentValue, status: p.status }])
+  );
+
+  // Filter active challenges that are relevant (not completed)
+  const visibleChallenges = (activeChallenges ?? []).filter(c => {
+    const prog = progressMap.get(c.id);
+    return !prog || prog.status !== 'completed';
+  }).slice(0, 3);
+
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader
         title={title}
         subtitle={subtitle}
-        action={
-          <button
-            onClick={() => navigate('/member/notifications')}
-            className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-        }
+        action={<NotificationBell onClick={() => navigate('/member/notifications')} />}
       />
 
       {/* Onboarding for new users */}
@@ -104,6 +146,16 @@ export default function MemberHomePage() {
               </li>
             </ol>
           </div>
+        </Section>
+      )}
+
+      {/* Today's next class urgency card */}
+      {nextTodayBooking && (
+        <Section className="mb-4">
+          <TodayCard
+            booking={nextTodayBooking}
+            onTap={() => navigate(`/member/bookings/${nextTodayBooking.id}`)}
+          />
         </Section>
       )}
 
@@ -155,6 +207,31 @@ export default function MemberHomePage() {
           </div>
         )}
       </Section>
+
+      {/* Active Challenges */}
+      {visibleChallenges.length > 0 && (
+        <Section
+          title="Challenges"
+          action={
+            <button onClick={() => navigate('/member/check-in')} className="text-xs font-medium text-primary flex items-center gap-0.5">
+              View all <ChevronRight className="h-3 w-3" />
+            </button>
+          }
+          className="mb-4"
+        >
+          <div className="space-y-3">
+            {visibleChallenges.map(challenge => (
+              <ChallengeCard
+                key={challenge.id}
+                challenge={challenge}
+                progress={progressMap.get(challenge.id) ?? null}
+                onJoin={(id) => joinChallenge.mutate(id)}
+                joining={joinChallenge.isPending}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* Momentum */}
       {memberId && (

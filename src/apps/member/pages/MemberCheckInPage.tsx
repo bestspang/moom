@@ -125,6 +125,8 @@ export default function MemberCheckInPage() {
           {scanning ? (
             <div className="relative w-full max-w-xs aspect-square rounded-xl overflow-hidden border-2 border-primary bg-foreground/5">
               <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
+              {/* Scan line */}
+              <div className="absolute left-2 right-2 h-0.5 bg-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.5)] animate-scan-line pointer-events-none" />
               {/* Corner markers */}
               {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((pos, i) => (
                 <div
