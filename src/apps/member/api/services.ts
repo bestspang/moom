@@ -185,3 +185,183 @@ export async function fetchActiveAnnouncements() {
   if (error) throw error;
   return data ?? [];
 }
+
+// ─── Booking Detail ───
+export interface BookingDetail {
+  id: string;
+  status: string;
+  bookedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  schedule: {
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    className: string;
+    trainerName: string | null;
+  };
+}
+
+export async function fetchBookingById(bookingId: string): Promise<BookingDetail | null> {
+  const { data, error } = await supabase
+    .from('class_bookings')
+    .select(`
+      *,
+      schedule:schedule(
+        id, scheduled_date, start_time, end_time,
+        class:classes(name),
+        trainer:staff!schedule_trainer_id_fkey(first_name, last_name)
+      )
+    `)
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const row: any = data;
+  return {
+    id: row.id,
+    status: row.status ?? 'booked',
+    bookedAt: row.booked_at,
+    cancelledAt: row.cancelled_at,
+    cancelReason: row.cancellation_reason,
+    schedule: {
+      id: row.schedule?.id ?? '',
+      date: row.schedule?.scheduled_date ?? '',
+      startTime: row.schedule?.start_time ?? '',
+      endTime: row.schedule?.end_time ?? '',
+      className: row.schedule?.class?.name ?? 'Class',
+      trainerName: row.schedule?.trainer
+        ? `${row.schedule.trainer.first_name} ${row.schedule.trainer.last_name}`.trim()
+        : null,
+    },
+  };
+}
+
+// ─── Cancel Booking ───
+export async function cancelBooking(bookingId: string, reason?: string): Promise<void> {
+  const { error } = await supabase
+    .from('class_bookings')
+    .update({
+      status: 'cancelled' as any,
+      cancelled_at: new Date().toISOString(),
+      cancellation_reason: reason ?? null,
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+}
+
+// ─── Schedule Detail (single) ───
+export async function fetchScheduleById(scheduleId: string): Promise<ScheduleItem | null> {
+  const { data, error } = await supabase
+    .from('schedule')
+    .select(`
+      *,
+      class:classes(name, name_th, category:class_categories(name)),
+      trainer:staff!schedule_trainer_id_fkey(first_name, last_name),
+      room:rooms(name),
+      location:locations(name)
+    `)
+    .eq('id', scheduleId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const row: any = data;
+  return {
+    id: row.id,
+    scheduledDate: row.scheduled_date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    capacity: row.capacity ?? 20,
+    checkedIn: row.checked_in ?? 0,
+    status: row.status,
+    className: row.class?.name ?? 'Class',
+    classNameTh: row.class?.name_th ?? null,
+    categoryName: row.class?.category?.name ?? null,
+    trainerName: row.trainer ? `${row.trainer.first_name} ${row.trainer.last_name}`.trim() : null,
+    roomName: row.room?.name ?? null,
+    locationName: row.location?.name ?? null,
+  };
+}
+
+// ─── Create Booking ───
+export async function createBooking(scheduleId: string, memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from('class_bookings')
+    .insert({
+      schedule_id: scheduleId,
+      member_id: memberId,
+      status: 'booked' as any,
+      booked_at: new Date().toISOString(),
+    });
+
+  if (error) throw error;
+}
+
+// ─── Update Profile ───
+export async function updateMyProfile(data: { first_name: string; last_name: string; phone?: string; preferred_language?: string }): Promise<void> {
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      phone: data.phone,
+      preferred_language: data.preferred_language,
+    },
+  });
+
+  if (error) throw error;
+}
+
+// ─── Upload Transfer Slip ───
+export async function uploadTransferSlip(data: { amount: number; bank_name: string; transfer_date: string }): Promise<void> {
+  // For now, create a pending transaction record. Real file upload TBD.
+  const { error } = await supabase
+    .from('transactions')
+    .insert({
+      amount: data.amount,
+      payment_method: 'bank_transfer' as any,
+      type: 'package_purchase' as any,
+      status: 'pending' as any,
+      order_name: `SLIP-${Date.now()}`,
+      transaction_id: `TXN-${Date.now()}`,
+      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}`,
+    });
+
+  if (error) throw error;
+}
+
+// ─── My Attendance ───
+export interface AttendanceRecord {
+  id: string;
+  checkInTime: string;
+  checkInType: string;
+  className: string | null;
+}
+
+export async function fetchMyAttendance(memberId: string): Promise<AttendanceRecord[]> {
+  if (!memberId) return [];
+
+  const { data, error } = await supabase
+    .from('member_attendance')
+    .select(`
+      id, check_in_time, check_in_type,
+      schedule:schedule(class:classes(name))
+    `)
+    .eq('member_id', memberId)
+    .order('check_in_time', { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    checkInTime: row.check_in_time,
+    checkInType: row.check_in_type ?? 'class',
+    className: row.schedule?.class?.name ?? null,
+  }));
+}
