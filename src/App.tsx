@@ -114,21 +114,21 @@ const App = () => (
                 <Route path="members" element={<Members />} />
                 <Route path="members/:id/detail" element={<MemberDetails />} />
                 <Route path="leads" element={<Leads />} />
-                <Route path="package" element={<Packages />} />
-                <Route path="package/create" element={<CreatePackage />} />
-                <Route path="package/:id/edit" element={<CreatePackage />} />
-                <Route path="package/:id" element={<PackageDetails />} />
-                <Route path="promotion" element={<Promotions />} />
-                <Route path="promotion/create" element={<CreatePromotion />} />
-                <Route path="promotion/:id" element={<PromotionDetails />} />
-                <Route path="calendar" element={<Schedule />} />
-                <Route path="room" element={<Rooms />} />
-                <Route path="room/:id" element={<RoomDetails />} />
-                <Route path="class" element={<Classes />} />
-                <Route path="class/create" element={<CreateClass />} />
-                <Route path="class/:id" element={<ClassDetails />} />
-                <Route path="class-category" element={<ClassCategories />} />
-                <Route path="class-category/:id" element={<ClassCategoryDetails />} />
+                <Route path="package" element={<ProtectedRoute minAccessLevel="level_2_operator"><Packages /></ProtectedRoute>} />
+                <Route path="package/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
+                <Route path="package/:id/edit" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
+                <Route path="package/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageDetails /></ProtectedRoute>} />
+                <Route path="promotion" element={<ProtectedRoute minAccessLevel="level_2_operator"><Promotions /></ProtectedRoute>} />
+                <Route path="promotion/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePromotion /></ProtectedRoute>} />
+                <Route path="promotion/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PromotionDetails /></ProtectedRoute>} />
+                <Route path="calendar" element={<ProtectedRoute minAccessLevel="level_2_operator"><Schedule /></ProtectedRoute>} />
+                <Route path="room" element={<ProtectedRoute minAccessLevel="level_2_operator"><Rooms /></ProtectedRoute>} />
+                <Route path="room/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><RoomDetails /></ProtectedRoute>} />
+                <Route path="class" element={<ProtectedRoute minAccessLevel="level_2_operator"><Classes /></ProtectedRoute>} />
+                <Route path="class/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreateClass /></ProtectedRoute>} />
+                <Route path="class/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassDetails /></ProtectedRoute>} />
+                <Route path="class-category" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategories /></ProtectedRoute>} />
+                <Route path="class-category/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategoryDetails /></ProtectedRoute>} />
                 <Route path="admin" element={<ProtectedRoute minAccessLevel="level_3_manager"><Staff /></ProtectedRoute>} />
                 <Route path="admin/:id" element={<ProtectedRoute minAccessLevel="level_3_manager"><StaffDetails /></ProtectedRoute>} />
                 <Route path="roles" element={<ProtectedRoute minAccessLevel="level_4_master"><Roles /></ProtectedRoute>} />

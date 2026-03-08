@@ -1,7 +1,8 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Database } from '@/integrations/supabase/types';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
@@ -16,6 +17,26 @@ const accessLevelOrder: Record<AccessLevel, number> = {
   level_2_operator: 2,
   level_3_manager: 3,
   level_4_master: 4,
+};
+
+const AccessDenied: React.FC = () => {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 text-center max-w-sm px-4">
+        <div className="rounded-full bg-destructive/10 p-4">
+          <ShieldX className="h-10 w-10 text-destructive" />
+        </div>
+        <h1 className="text-xl font-semibold text-foreground">Access Denied</h1>
+        <p className="text-sm text-muted-foreground">
+          You don't have permission to view this page. Contact your administrator if you believe this is an error.
+        </p>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          Back to Dashboard
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
@@ -40,13 +61,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check access level if required
   if (minAccessLevel && accessLevel) {
     const userLevel = accessLevelOrder[accessLevel];
     const requiredLevel = accessLevelOrder[minAccessLevel];
     
     if (userLevel < requiredLevel) {
-      return <Navigate to="/" replace />;
+      return <AccessDenied />;
     }
   }
 
