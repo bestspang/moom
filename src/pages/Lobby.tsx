@@ -103,16 +103,18 @@ const Lobby = () => {
             className="flex-1 max-w-md"
           />
         </div>
-        <div className="flex items-center gap-2 sm:hidden">
-          <Button variant="outline" className="flex-1" onClick={() => setQrDialogOpen(true)}>
-            <QrCode className="h-4 w-4 mr-1" />
-            {t('lobby.qrCode')}
-          </Button>
-          <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            {t('lobby.checkIn')}
-          </Button>
-        </div>
+        {can('lobby', 'write') && (
+          <div className="flex items-center gap-2 sm:hidden">
+            <Button variant="outline" className="flex-1" onClick={() => setQrDialogOpen(true)}>
+              <QrCode className="h-4 w-4 mr-1" />
+              {t('lobby.qrCode')}
+            </Button>
+            <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              {t('lobby.checkIn')}
+            </Button>
+          </div>
+        )}
         <div className="hidden sm:flex sm:items-center sm:gap-2 sm:self-end sm:-mt-[52px]">
           <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
             <QrCode className="h-4 w-4 mr-1" />
