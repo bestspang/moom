@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, ScanLine, Users, CreditCard, User } from 'lucide-react';
+import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Home, ScanLine, Users, CreditCard, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STAFF_NAV = [
   { label: 'Home', path: '/staff', icon: Home },
@@ -12,6 +13,19 @@ const STAFF_NAV = [
 
 export function StaffLayout() {
   const location = useLocation();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: { pathname: '/staff' } }} replace />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
