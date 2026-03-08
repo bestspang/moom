@@ -103,30 +103,32 @@ const Insights = () => {
           </div>
 
           {/* 30-day revenue sparkline */}
-          <Card className="mb-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{t('insights.revenueTrend30d')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dailyLoading ? (
-                <Skeleton className="h-[120px] w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={120}>
-                  <AreaChart data={dailyRevenue}>
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={4} />
-                    <Tooltip formatter={(v: number) => [formatCurrency(v), t('insights.revenue')]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
-                    <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+          {canFinance && (
+            <Card className="mb-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">{t('insights.revenueTrend30d')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {dailyLoading ? (
+                  <Skeleton className="h-[120px] w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={dailyRevenue}>
+                      <defs>
+                        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={4} />
+                      <Tooltip formatter={(v: number) => [formatCurrency(v), t('insights.revenue')]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
+                      <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Lead funnel */}
           <Card>
