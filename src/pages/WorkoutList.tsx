@@ -209,19 +209,25 @@ const WorkoutList = () => {
                     {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     {training.name}
                   </CollapsibleTrigger>
-                  <Switch
-                    checked={training.is_active}
-                    onCheckedChange={(checked) => updateTraining.mutate({ id: training.id, is_active: checked })}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {training.is_active ? t('workouts.active') : t('workouts.inactive')}
-                  </span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTraining(training)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTraining(training)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {can('workout_list', 'write') && (
+                    <>
+                      <Switch
+                        checked={training.is_active}
+                        onCheckedChange={(checked) => updateTraining.mutate({ id: training.id, is_active: checked })}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {training.is_active ? t('workouts.active') : t('workouts.inactive')}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTraining(training)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                  {can('workout_list', 'delete') && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTraining(training)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
                 <CollapsibleContent>
                   <DataTable columns={columns} data={training.workout_items} rowKey={(row) => row.id} />
