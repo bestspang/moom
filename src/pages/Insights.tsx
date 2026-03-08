@@ -189,7 +189,7 @@ const Insights = () => {
               <ReportItem title={t('reports.packageSalesOverTimeTitle')} description={t('reports.packageSalesOverTimeDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales-over-time')} icon={<Calendar className="h-4 w-4" />} accentColor="primary" />
             </div>
           </div>
-        </TabsContent>
+        </TabsContent>}
 
         {/* ========== MEMBERS TAB ========== */}
         <TabsContent value="members">
