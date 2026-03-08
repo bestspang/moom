@@ -10,6 +10,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 const ClassCategories = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
