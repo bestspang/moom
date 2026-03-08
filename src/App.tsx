@@ -134,21 +134,21 @@ const App = () => (
                 <Route path="roles" element={<ProtectedRoute minAccessLevel="level_4_master"><Roles /></ProtectedRoute>} />
                 <Route path="roles/create" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
                 <Route path="roles/:id" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
-                <Route path="location" element={<Locations />} />
+                <Route path="location" element={<ProtectedRoute minAccessLevel="level_3_manager"><Locations /></ProtectedRoute>} />
                 <Route path="activity-log" element={<ActivityLog />} />
                 <Route path="announcement" element={<Announcements />} />
-                <Route path="workout-list" element={<WorkoutList />} />
+                <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
                 <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
                 <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
-                <Route path="insights" element={<Insights />} />
+                <Route path="insights" element={<ProtectedRoute minAccessLevel="level_2_operator"><Insights /></ProtectedRoute>} />
                 <Route path="analytics" element={<Navigate to="/insights" replace />} />
                 <Route path="report" element={<Navigate to="/insights" replace />} />
-                <Route path="report/member/members-at-risk" element={<MembersAtRisk />} />
-                <Route path="report/member/active-members" element={<ActiveMembers />} />
-                <Route path="report/class/capacity-by-hour" element={<ClassCapacityByHour />} />
-                <Route path="report/class/capacity-over-time" element={<ClassCapacityOverTime />} />
-                <Route path="report/package/sales" element={<PackageSales />} />
-                <Route path="report/package/sales-over-time" element={<PackageSalesOverTime />} />
+                <Route path="report/member/members-at-risk" element={<ProtectedRoute minAccessLevel="level_2_operator"><MembersAtRisk /></ProtectedRoute>} />
+                <Route path="report/member/active-members" element={<ProtectedRoute minAccessLevel="level_2_operator"><ActiveMembers /></ProtectedRoute>} />
+                <Route path="report/class/capacity-by-hour" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityByHour /></ProtectedRoute>} />
+                <Route path="report/class/capacity-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityOverTime /></ProtectedRoute>} />
+                <Route path="report/package/sales" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSales /></ProtectedRoute>} />
+                <Route path="report/package/sales-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSalesOverTime /></ProtectedRoute>} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="coming-soon" element={<ComingSoon />} />
