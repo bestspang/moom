@@ -1,60 +1,47 @@
 
 
-# Milestone 9: Insights Page Permission Guards + ReportItem Dedup
+# Fix: Promotions export missing columns in Settings
 
-## Completed Milestones
-1. Route security hardening ✅
-2. Finance.tsx split ✅
-3. MemberDetails.tsx split ✅
-4. Permission guards (9 pages) ✅
-5. Permission guards (remaining 4 pages) ✅
-6. Dashboard role-aware rendering + Leads guards ✅
-7. Members.tsx header guards + export dedup ✅
-8. WorkoutList + Announcements permission fixes ✅
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Current State Summary
+## Fix (surgical, 1 file)
 
-Permission guards are now comprehensive across all CRUD pages. The remaining gap is the **Insights page** (`src/pages/Insights.tsx`, 327 lines):
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-- **No `usePermissions` import** — all tabs (revenue charts, financial KPIs like ARPU/LTV/monthly revenue, business health scores) are visible to every role
-- **Duplicated `ReportItem` component** — identical component exists in both `Insights.tsx` (lines 28-57) and `Reports.tsx` (lines 21-66)
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-All other pages (Dashboard, Members, Leads, Packages, Promotions, Schedule, Rooms, Classes, Staff, Locations, ClassCategories, Announcements, WorkoutList, TransferSlips) are properly guarded.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-## What Must Be Preserved
-
-- All existing Insights tabs and chart rendering
-- All report navigation links
-- The `ReportItem` component behavior and styling
-
-## Problems Confirmed
-
-### Issue 1: Insights shows finance data to all roles
-The Overview tab displays ARPU, monthly revenue, estimated LTV, and revenue trend charts. The Revenue tab shows revenue bar charts. These should only be visible to users with `can('finance', 'read')` — consistent with the Dashboard milestone 6 pattern.
-
-### Issue 2: Duplicated ReportItem
-Both `Insights.tsx` and `Reports.tsx` define their own `ReportItem`. The versions are nearly identical (minor styling differences). This should be extracted to a shared component.
-
-## Plan
-
-### Fix 1: Add permission-based tab visibility
-- Import `usePermissions` in `Insights.tsx`
-- Gate the "Revenue" tab and revenue-related KPIs (ARPU, monthly revenue, LTV) behind `can('finance', 'read')`
-- Keep members/classes/packages tabs visible to all (they show operational data, not financial)
-- Gate the revenue sparkline in Overview behind `can('finance', 'read')`
-
-### Fix 2: Extract shared ReportItem
-- Create `src/components/reports/ReportItem.tsx` with the component
-- Update both `Insights.tsx` and `Reports.tsx` to import from the shared location
-- Remove inline definitions from both files
-
-### Files to modify
-- `src/components/reports/ReportItem.tsx` — new shared component
-- `src/pages/Insights.tsx` — add permission guards + import shared ReportItem
-- `src/pages/Reports.tsx` — import shared ReportItem, remove inline definition
-
-### Risk
-- Zero regression: conditional renders only + extracting identical component
-- Charts and report links work exactly as before for authorized users
-- Non-finance tabs remain fully visible to all roles
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

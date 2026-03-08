@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   BarChart3, Users, Calendar, Package, TrendingUp, 
-  AlertTriangle, Clock, PieChart, Download 
+  AlertTriangle, Clock, PieChart
 } from 'lucide-react';
 import { useInsightsOverview, useRevenueDaily } from '@/hooks/useInsightsMetrics';
 import { useRevenueByMonth, useMemberGrowth, useClassFillRate, useLeadFunnel } from '@/hooks/useAnalytics';
@@ -20,46 +20,18 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ReportItem } from '@/components/reports/ReportItem';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => `${i + 6}:00`);
-
-// -- Report list items (from Reports.tsx) --
-interface ReportItemProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-  accentColor?: string;
-}
-
-const accentMap: Record<string, string> = {
-  primary: 'border-l-primary',
-  warning: 'border-l-warning',
-  teal: 'border-l-accent-teal',
-  purple: 'border-l-purple-500',
-};
-
-const ReportItem = ({ title, description, buttonText, onClick, icon, accentColor = 'primary' }: ReportItemProps) => (
-  <div className={cn('py-3 px-4 border-l-4 bg-card/50 rounded-r-lg mb-2 hover:bg-card/80 transition-colors', accentMap[accentColor] || accentMap.primary)}>
-    <div className="flex items-start gap-3">
-      <div className="shrink-0 mt-0.5 text-muted-foreground">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <h3 className="text-primary font-medium text-sm mb-0.5">{title}</h3>
-        <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
-      </div>
-      <Button variant="outline" size="sm" className="shrink-0 text-xs" onClick={onClick}>
-        {buttonText}
-      </Button>
-    </div>
-  </div>
-);
 
 const Insights = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { can } = usePermissions();
+  const canFinance = can('finance', 'read');
 
   const { data: overview, isLoading: overviewLoading } = useInsightsOverview();
   const { data: healthData } = useBusinessHealth();
@@ -86,10 +58,12 @@ const Insights = () => {
             <BarChart3 className="h-3.5 w-3.5" />
             {t('insights.overview')}
           </TabsTrigger>
-          <TabsTrigger value="revenue" className="gap-1.5">
-            <TrendingUp className="h-3.5 w-3.5" />
-            {t('insights.revenue')}
-          </TabsTrigger>
+          {canFinance && (
+            <TabsTrigger value="revenue" className="gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {t('insights.revenue')}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="members" className="gap-1.5">
             <Users className="h-3.5 w-3.5" />
             {t('insights.members')}
@@ -114,7 +88,7 @@ const Insights = () => {
               ))
             ) : (
               <>
-                <StatCard title={t('insights.arpu')} value={formatCurrency(overview?.arpu || 0)} color="teal" subtitle={t('insights.perMember')} />
+                {canFinance && <StatCard title={t('insights.arpu')} value={formatCurrency(overview?.arpu || 0)} color="teal" subtitle={t('insights.perMember')} />}
                 <StatCard title={t('insights.retentionRate')} value={`${overview?.retentionRate || 0}%`} color="blue" />
                 <StatCard title={t('insights.classUtilization')} value={`${overview?.classUtilization || 0}%`} color="orange" />
                 <StatCard title={t('insights.leadConversion')} value={`${overview?.leadConversionRate || 0}%`} color="teal" />
@@ -124,35 +98,37 @@ const Insights = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
             <StatCard title={t('insights.activeMembers')} value={overview?.activeMembers || 0} color="blue" />
-            <StatCard title={t('insights.monthlyRevenue')} value={formatCurrency(overview?.totalRevenue || 0)} color="teal" />
-            <StatCard title={t('insights.estLtv')} value={formatCurrency(overview?.ltv || 0)} color="orange" subtitle={t('insights.lifetime')} />
+            {canFinance && <StatCard title={t('insights.monthlyRevenue')} value={formatCurrency(overview?.totalRevenue || 0)} color="teal" />}
+            {canFinance && <StatCard title={t('insights.estLtv')} value={formatCurrency(overview?.ltv || 0)} color="orange" subtitle={t('insights.lifetime')} />}
           </div>
 
           {/* 30-day revenue sparkline */}
-          <Card className="mb-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{t('insights.revenueTrend30d')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dailyLoading ? (
-                <Skeleton className="h-[120px] w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={120}>
-                  <AreaChart data={dailyRevenue}>
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={4} />
-                    <Tooltip formatter={(v: number) => [formatCurrency(v), t('insights.revenue')]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
-                    <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+          {canFinance && (
+            <Card className="mb-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">{t('insights.revenueTrend30d')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {dailyLoading ? (
+                  <Skeleton className="h-[120px] w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={dailyRevenue}>
+                      <defs>
+                        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} interval={4} />
+                      <Tooltip formatter={(v: number) => [formatCurrency(v), t('insights.revenue')]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
+                      <Area type="monotone" dataKey="amount" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Lead funnel */}
           <Card>
@@ -184,8 +160,8 @@ const Insights = () => {
           </Card>
         </TabsContent>
 
-        {/* ========== REVENUE TAB ========== */}
-        <TabsContent value="revenue">
+        {/* ========== REVENUE TAB (finance-gated) ========== */}
+        {canFinance && <TabsContent value="revenue">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
@@ -213,7 +189,7 @@ const Insights = () => {
               <ReportItem title={t('reports.packageSalesOverTimeTitle')} description={t('reports.packageSalesOverTimeDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales-over-time')} icon={<Calendar className="h-4 w-4" />} accentColor="primary" />
             </div>
           </div>
-        </TabsContent>
+        </TabsContent>}
 
         {/* ========== MEMBERS TAB ========== */}
         <TabsContent value="members">
