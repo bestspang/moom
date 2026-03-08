@@ -136,6 +136,24 @@
 }
 
 @layer utilities {
+  /* Safe area utilities for mobile surfaces */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Badge variants */
   .badge-new {
     @apply bg-accent-teal text-white;

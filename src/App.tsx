@@ -5,11 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout";
 import "@/i18n";
 
-// Pages
+// Admin Pages (existing)
 import Dashboard from "./pages/Dashboard";
 import Lobby from "./pages/Lobby";
 import Members from "./pages/Members";
@@ -39,8 +40,6 @@ import Announcements from "./pages/Announcements";
 import WorkoutList from "./pages/WorkoutList";
 import TransferSlips from "./pages/TransferSlips";
 import Finance from "./pages/Finance";
-import Analytics from "./pages/Analytics";
-import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
 import ActiveMembers from "./pages/reports/ActiveMembers";
@@ -60,7 +59,6 @@ import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import SettingsIntegrations from "./pages/settings/SettingsIntegrations";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import Profile from "./pages/Profile";
@@ -82,116 +80,152 @@ import GamificationRewards from "./pages/gamification/GamificationRewards";
 import GamificationTrainers from "./pages/gamification/GamificationTrainers";
 import GamificationRisk from "./pages/gamification/GamificationRisk";
 
+// Experience Surface Layouts
+import { MemberLayout } from "@/apps/member";
+import { TrainerLayout } from "@/apps/trainer";
+import { StaffLayout } from "@/apps/staff";
+
+// Experience Surface Pages
+import MemberHomePage from "@/apps/member/pages/MemberHomePage";
+import MemberSchedulePage from "@/apps/member/pages/MemberSchedulePage";
+import MemberBookingsPage from "@/apps/member/pages/MemberBookingsPage";
+import MemberPackagesPage from "@/apps/member/pages/MemberPackagesPage";
+import MemberProfilePage from "@/apps/member/pages/MemberProfilePage";
+import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
+import StaffHomePage from "@/apps/staff/pages/StaffHomePage";
+import DiagnosticsSurfacePage from "@/apps/shared/pages/DiagnosticsSurfacePage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              {/* Signup disabled for security — staff must be invited by a manager */}
-              {/* <Route path="/signup" element={<Signup />} /> */}
-              <Route path="/signup" element={<Navigate to="/login" replace />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* QR Check-in redemption (public) */}
-              <Route path="/checkin" element={<CheckinRedeem />} />
-              
-              {/* LIFF public routes */}
-              <Route path="/liff/member" element={<LiffMemberApp />} />
-              <Route path="/liff/trainer" element={<LiffTrainerApp />} />
-              <Route path="/liff/callback" element={<LiffCallback />} />
-              
-              {/* Protected routes - wrap with ProtectedRoute which handles auth check before rendering MainLayout */}
-              <Route 
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="lobby" element={<Lobby />} />
-                <Route path="members" element={<Members />} />
-                <Route path="members/:id/detail" element={<MemberDetails />} />
-                <Route path="leads" element={<Leads />} />
-                <Route path="package" element={<ProtectedRoute minAccessLevel="level_2_operator"><Packages /></ProtectedRoute>} />
-                <Route path="package/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
-                <Route path="package/:id/edit" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
-                <Route path="package/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageDetails /></ProtectedRoute>} />
-                <Route path="promotion" element={<ProtectedRoute minAccessLevel="level_2_operator"><Promotions /></ProtectedRoute>} />
-                <Route path="promotion/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePromotion /></ProtectedRoute>} />
-                <Route path="promotion/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PromotionDetails /></ProtectedRoute>} />
-                <Route path="calendar" element={<ProtectedRoute minAccessLevel="level_2_operator"><Schedule /></ProtectedRoute>} />
-                <Route path="room" element={<ProtectedRoute minAccessLevel="level_2_operator"><Rooms /></ProtectedRoute>} />
-                <Route path="room/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><RoomDetails /></ProtectedRoute>} />
-                <Route path="class" element={<ProtectedRoute minAccessLevel="level_2_operator"><Classes /></ProtectedRoute>} />
-                <Route path="class/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreateClass /></ProtectedRoute>} />
-                <Route path="class/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassDetails /></ProtectedRoute>} />
-                <Route path="class-category" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategories /></ProtectedRoute>} />
-                <Route path="class-category/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategoryDetails /></ProtectedRoute>} />
-                <Route path="admin" element={<ProtectedRoute minAccessLevel="level_3_manager"><Staff /></ProtectedRoute>} />
-                <Route path="admin/:id" element={<ProtectedRoute minAccessLevel="level_3_manager"><StaffDetails /></ProtectedRoute>} />
-                <Route path="roles" element={<ProtectedRoute minAccessLevel="level_4_master"><Roles /></ProtectedRoute>} />
-                <Route path="roles/create" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
-                <Route path="roles/:id" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
-                <Route path="location" element={<ProtectedRoute minAccessLevel="level_3_manager"><Locations /></ProtectedRoute>} />
-                <Route path="activity-log" element={<ActivityLog />} />
-                <Route path="announcement" element={<Announcements />} />
-                <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
-                <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
-                <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
-                <Route path="insights" element={<ProtectedRoute minAccessLevel="level_2_operator"><Insights /></ProtectedRoute>} />
-                <Route path="analytics" element={<Navigate to="/insights" replace />} />
-                <Route path="report" element={<Navigate to="/insights" replace />} />
-                <Route path="report/member/members-at-risk" element={<ProtectedRoute minAccessLevel="level_2_operator"><MembersAtRisk /></ProtectedRoute>} />
-                <Route path="report/member/active-members" element={<ProtectedRoute minAccessLevel="level_2_operator"><ActiveMembers /></ProtectedRoute>} />
-                <Route path="report/class/capacity-by-hour" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityByHour /></ProtectedRoute>} />
-                <Route path="report/class/capacity-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityOverTime /></ProtectedRoute>} />
-                <Route path="report/package/sales" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSales /></ProtectedRoute>} />
-                <Route path="report/package/sales-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSalesOverTime /></ProtectedRoute>} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="coming-soon" element={<ComingSoon />} />
-                <Route path="member-app" element={<MemberAppPreview />} />
-                <Route path="trainer-app" element={<TrainerAppPreview />} />
-                <Route path="setting" element={<ProtectedRoute minAccessLevel="level_3_manager"><Settings /></ProtectedRoute>}>
-                  <Route index element={<Navigate to="general" replace />} />
-                  <Route path="general" element={<SettingsGeneral />} />
-                  <Route path="class-management" element={<SettingsClass />} />
-                  <Route path="client-management" element={<SettingsClient />} />
-                  <Route path="setting-package" element={<SettingsPackage />} />
-                  <Route path="member-contracts" element={<SettingsContracts />} />
-                  <Route path="feature-flags" element={<SettingsFeatureFlags />} />
-                  <Route path="import-export" element={<SettingsImportExport />} />
-                  <Route path="integrations" element={<SettingsIntegrations />} />
+      <SurfaceProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* ===== Public routes ===== */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Navigate to="/login" replace />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/checkin" element={<CheckinRedeem />} />
+
+                {/* LIFF public routes */}
+                <Route path="/liff/member" element={<LiffMemberApp />} />
+                <Route path="/liff/trainer" element={<LiffTrainerApp />} />
+                <Route path="/liff/callback" element={<LiffCallback />} />
+
+                {/* ===== Diagnostics (dev only) ===== */}
+                <Route path="/diagnostics/surface" element={<DiagnosticsSurfacePage />} />
+
+                {/* ===== Member Surface (mobile-first) ===== */}
+                <Route path="/member" element={<MemberLayout />}>
+                  <Route index element={<MemberHomePage />} />
+                  <Route path="schedule" element={<MemberSchedulePage />} />
+                  <Route path="bookings" element={<MemberBookingsPage />} />
+                  <Route path="packages" element={<MemberPackagesPage />} />
+                  <Route path="profile" element={<MemberProfilePage />} />
                 </Route>
-                <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
-                  <Route index element={<Navigate to="overview" replace />} />
-                  <Route path="overview" element={<GamificationOverview />} />
-                  <Route path="rules" element={<GamificationRules />} />
-                  <Route path="levels" element={<GamificationLevels />} />
-                  <Route path="challenges" element={<GamificationChallenges />} />
-                  <Route path="badges" element={<GamificationBadges />} />
-                  <Route path="rewards" element={<GamificationRewards />} />
-                  <Route path="trainers" element={<GamificationTrainers />} />
-                  <Route path="risk" element={<GamificationRisk />} />
+
+                {/* ===== Trainer Surface (mobile-first) ===== */}
+                <Route path="/trainer" element={<TrainerLayout />}>
+                  <Route index element={<TrainerHomePage />} />
                 </Route>
-                <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </LanguageProvider>
+
+                {/* ===== Staff Surface (mobile-first) ===== */}
+                <Route path="/staff" element={<StaffLayout />}>
+                  <Route index element={<StaffHomePage />} />
+                </Route>
+
+                {/* ===== Admin Surface (desktop-first, existing) ===== */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Dashboard />} />
+                  <Route path="lobby" element={<Lobby />} />
+                  <Route path="members" element={<Members />} />
+                  <Route path="members/:id/detail" element={<MemberDetails />} />
+                  <Route path="leads" element={<Leads />} />
+                  <Route path="package" element={<ProtectedRoute minAccessLevel="level_2_operator"><Packages /></ProtectedRoute>} />
+                  <Route path="package/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
+                  <Route path="package/:id/edit" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
+                  <Route path="package/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageDetails /></ProtectedRoute>} />
+                  <Route path="promotion" element={<ProtectedRoute minAccessLevel="level_2_operator"><Promotions /></ProtectedRoute>} />
+                  <Route path="promotion/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePromotion /></ProtectedRoute>} />
+                  <Route path="promotion/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><PromotionDetails /></ProtectedRoute>} />
+                  <Route path="calendar" element={<ProtectedRoute minAccessLevel="level_2_operator"><Schedule /></ProtectedRoute>} />
+                  <Route path="room" element={<ProtectedRoute minAccessLevel="level_2_operator"><Rooms /></ProtectedRoute>} />
+                  <Route path="room/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><RoomDetails /></ProtectedRoute>} />
+                  <Route path="class" element={<ProtectedRoute minAccessLevel="level_2_operator"><Classes /></ProtectedRoute>} />
+                  <Route path="class/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreateClass /></ProtectedRoute>} />
+                  <Route path="class/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassDetails /></ProtectedRoute>} />
+                  <Route path="class-category" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategories /></ProtectedRoute>} />
+                  <Route path="class-category/:id" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategoryDetails /></ProtectedRoute>} />
+                  <Route path="admin" element={<ProtectedRoute minAccessLevel="level_3_manager"><Staff /></ProtectedRoute>} />
+                  <Route path="admin/:id" element={<ProtectedRoute minAccessLevel="level_3_manager"><StaffDetails /></ProtectedRoute>} />
+                  <Route path="roles" element={<ProtectedRoute minAccessLevel="level_4_master"><Roles /></ProtectedRoute>} />
+                  <Route path="roles/create" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
+                  <Route path="roles/:id" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
+                  <Route path="location" element={<ProtectedRoute minAccessLevel="level_3_manager"><Locations /></ProtectedRoute>} />
+                  <Route path="activity-log" element={<ActivityLog />} />
+                  <Route path="announcement" element={<Announcements />} />
+                  <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
+                  <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
+                  <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
+                  <Route path="insights" element={<ProtectedRoute minAccessLevel="level_2_operator"><Insights /></ProtectedRoute>} />
+                  <Route path="analytics" element={<Navigate to="/insights" replace />} />
+                  <Route path="report" element={<Navigate to="/insights" replace />} />
+                  <Route path="report/member/members-at-risk" element={<ProtectedRoute minAccessLevel="level_2_operator"><MembersAtRisk /></ProtectedRoute>} />
+                  <Route path="report/member/active-members" element={<ProtectedRoute minAccessLevel="level_2_operator"><ActiveMembers /></ProtectedRoute>} />
+                  <Route path="report/class/capacity-by-hour" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityByHour /></ProtectedRoute>} />
+                  <Route path="report/class/capacity-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityOverTime /></ProtectedRoute>} />
+                  <Route path="report/package/sales" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSales /></ProtectedRoute>} />
+                  <Route path="report/package/sales-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSalesOverTime /></ProtectedRoute>} />
+                  <Route path="notifications" element={<Notifications />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="coming-soon" element={<ComingSoon />} />
+                  <Route path="member-app" element={<MemberAppPreview />} />
+                  <Route path="trainer-app" element={<TrainerAppPreview />} />
+                  <Route path="setting" element={<ProtectedRoute minAccessLevel="level_3_manager"><Settings /></ProtectedRoute>}>
+                    <Route index element={<Navigate to="general" replace />} />
+                    <Route path="general" element={<SettingsGeneral />} />
+                    <Route path="class-management" element={<SettingsClass />} />
+                    <Route path="client-management" element={<SettingsClient />} />
+                    <Route path="setting-package" element={<SettingsPackage />} />
+                    <Route path="member-contracts" element={<SettingsContracts />} />
+                    <Route path="feature-flags" element={<SettingsFeatureFlags />} />
+                    <Route path="import-export" element={<SettingsImportExport />} />
+                    <Route path="integrations" element={<SettingsIntegrations />} />
+                  </Route>
+                  <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
+                    <Route index element={<Navigate to="overview" replace />} />
+                    <Route path="overview" element={<GamificationOverview />} />
+                    <Route path="rules" element={<GamificationRules />} />
+                    <Route path="levels" element={<GamificationLevels />} />
+                    <Route path="challenges" element={<GamificationChallenges />} />
+                    <Route path="badges" element={<GamificationBadges />} />
+                    <Route path="rewards" element={<GamificationRewards />} />
+                    <Route path="trainers" element={<GamificationTrainers />} />
+                    <Route path="risk" element={<GamificationRisk />} />
+                  </Route>
+                  <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
+                </Route>
+
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
+      </SurfaceProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
