@@ -13,6 +13,7 @@ import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { getInitials } from '@/lib/formatters';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
