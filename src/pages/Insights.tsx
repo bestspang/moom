@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   BarChart3, Users, Calendar, Package, TrendingUp, 
-  AlertTriangle, Clock, PieChart, Download 
+  AlertTriangle, Clock, PieChart
 } from 'lucide-react';
 import { useInsightsOverview, useRevenueDaily } from '@/hooks/useInsightsMetrics';
 import { useRevenueByMonth, useMemberGrowth, useClassFillRate, useLeadFunnel } from '@/hooks/useAnalytics';
@@ -20,41 +20,8 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => `${i + 6}:00`);
-
-// -- Report list items (from Reports.tsx) --
-interface ReportItemProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-  accentColor?: string;
-}
-
-const accentMap: Record<string, string> = {
-  primary: 'border-l-primary',
-  warning: 'border-l-warning',
-  teal: 'border-l-accent-teal',
-  purple: 'border-l-purple-500',
-};
-
-const ReportItem = ({ title, description, buttonText, onClick, icon, accentColor = 'primary' }: ReportItemProps) => (
-  <div className={cn('py-3 px-4 border-l-4 bg-card/50 rounded-r-lg mb-2 hover:bg-card/80 transition-colors', accentMap[accentColor] || accentMap.primary)}>
-    <div className="flex items-start gap-3">
-      <div className="shrink-0 mt-0.5 text-muted-foreground">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <h3 className="text-primary font-medium text-sm mb-0.5">{title}</h3>
-        <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
-      </div>
-      <Button variant="outline" size="sm" className="shrink-0 text-xs" onClick={onClick}>
-        {buttonText}
-      </Button>
-    </div>
-  </div>
-);
+import { usePermissions } from '@/hooks/usePermissions';
+import { ReportItem } from '@/components/reports/ReportItem';
 
 const Insights = () => {
   const { t } = useLanguage();

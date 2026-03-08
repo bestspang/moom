@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { 
-  Download, 
   Users, 
   AlertTriangle, 
   Package, 
@@ -16,60 +15,7 @@ import {
   PieChart
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-
-interface ReportItemProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  buttonVariant: 'view' | 'export';
-  onClick: () => void;
-  icon: React.ReactNode;
-  accentColor?: 'primary' | 'warning' | 'teal' | 'purple';
-}
-
-const accentColors = {
-  primary: 'border-l-primary',
-  warning: 'border-l-warning',
-  teal: 'border-l-accent-teal',
-  purple: 'border-l-purple-500',
-};
-
-const ReportItem = ({ 
-  title, 
-  description, 
-  buttonText, 
-  buttonVariant, 
-  onClick,
-  icon,
-  accentColor = 'primary'
-}: ReportItemProps) => (
-  <div className={cn(
-    'py-4 px-4 border-l-4 bg-card/50 rounded-r-lg mb-3 hover:bg-card/80 transition-colors',
-    accentColors[accentColor]
-  )}>
-    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="shrink-0 mt-0.5 text-muted-foreground">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-primary font-medium mb-1">{title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-        </div>
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 border-primary text-primary hover:bg-primary/10 w-full sm:w-auto"
-        onClick={onClick}
-      >
-        {buttonVariant === 'export' && <Download className="h-4 w-4 mr-1.5" />}
-        {buttonText}
-      </Button>
-    </div>
-  </div>
-);
+import { ReportItem } from '@/components/reports/ReportItem';
 
 const Reports = () => {
   const { t } = useLanguage();
