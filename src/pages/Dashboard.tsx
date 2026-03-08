@@ -53,6 +53,7 @@ const TableRowSkeleton = () => (
 const Dashboard = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('classes');
   const [searchInput, setSearchInput] = useState('');
