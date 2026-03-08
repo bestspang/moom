@@ -577,37 +577,104 @@ export function usePackageSalesOverTime(
   return useQuery({
     queryKey: ['package-sales-over-time', dateRange, filters, timePeriod],
     queryFn: async () => {
+      let query = supabase
+        .from('transactions')
+        .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
+        .eq('status', 'paid')
+        .not('package_id', 'is', null)
+        .gte('paid_at', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('paid_at', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      const { data: txData, error } = await query;
+      if (error) throw error;
+
+      // Determine grouping key function
+      const getGroupKey = (dateStr: string): string => {
+        const d = new Date(dateStr);
+        switch (timePeriod) {
+          case 'week': return format(startOfWeek(d), 'd MMM');
+          case 'month': return format(startOfMonth(d), 'MMM yyyy');
+          case 'year': return format(startOfYear(d), 'yyyy');
+          default: return format(d, 'd MMM');
+        }
+      };
+
+      // Filter and group
+      const groupMap = new Map<string, { units: number; revenue: number }>();
+
+      (txData || []).forEach((tx: any) => {
+        const pkg = tx.packages;
+        if (!pkg || !tx.paid_at) return;
+
+        const pkgType = pkg.type || 'other';
+        const pkgCategory = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+
+        if (filters.packageType !== 'all' && pkgType !== filters.packageType) return;
+        if (filters.category !== 'all' && pkgCategory !== filters.category) return;
+        if (filters.package !== 'all' && pkg.name_en !== filters.package) return;
+
+        const key = getGroupKey(tx.paid_at);
+        const existing = groupMap.get(key) || { units: 0, revenue: 0 };
+        existing.units += 1;
+        existing.revenue += Number(tx.amount) || 0;
+        groupMap.set(key, existing);
+      });
+
+      // Build chart data from all periods
       const days = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => {
-        const units = Math.floor(Math.random() * 10) + 1;
-        return {
-          date: format(day, 'd MMM'),
-          units,
-          revenue: units * (Math.floor(Math.random() * 3000) + 2000),
-        };
+      // For day view, show each day; for others, show grouped
+      const seenKeys = new Set<string>();
+      const chartData: { date: string; units: number; revenue: number }[] = [];
+
+      days.forEach((day) => {
+        const key = getGroupKey(format(day, 'yyyy-MM-dd'));
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+        const entry = groupMap.get(key) || { units: 0, revenue: 0 };
+        chartData.push({
+          date: key,
+          units: entry.units,
+          revenue: Math.round(entry.revenue / 1000),
+        });
       });
 
       const totalUnits = chartData.reduce((sum, d) => sum + d.units, 0);
-      const totalRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
+      const totalRevenue = (txData || [])
+        .filter((tx: any) => {
+          const pkg = tx.packages;
+          if (!pkg) return false;
+          if (filters.packageType !== 'all' && pkg.type !== filters.packageType) return false;
+          if (filters.category !== 'all') {
+            const cat = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+            if (cat !== filters.category) return false;
+          }
+          if (filters.package !== 'all' && pkg.name_en !== filters.package) return false;
+          return true;
+        })
+        .reduce((sum: number, tx: any) => sum + (Number(tx.amount) || 0), 0);
+
+      const numPeriods = chartData.length || 1;
 
       const stats: PackageSalesOverTimeStats = {
         totalPackagesSold: totalUnits,
-        avgPackagesPerDay: Math.round(totalUnits / (chartData.length || 1)),
+        avgPackagesPerDay: Math.round(totalUnits / numPeriods),
         revenue: totalRevenue,
-        avgRevenuePerDay: Math.round(totalRevenue / (chartData.length || 1)),
+        avgRevenuePerDay: Math.round(totalRevenue / numPeriods),
       };
 
-      const tableData: PackageSaleTimeRow[] = chartData.slice(0, 10).map((d) => ({
-        date: d.date,
-        packageName: 'Various',
-        packageType: 'Mixed',
-        category: 'All',
-        unitsSold: d.units,
-        revenue: d.revenue,
-      }));
+      const tableData: PackageSaleTimeRow[] = chartData
+        .filter((d) => d.units > 0)
+        .map((d) => ({
+          date: d.date,
+          packageName: filters.package === 'all' ? 'Various' : filters.package,
+          packageType: filters.packageType === 'all' ? 'Mixed' : filters.packageType,
+          category: filters.category === 'all' ? 'All' : filters.category,
+          unitsSold: d.units,
+          revenue: d.revenue * 1000, // Convert back from chart scale
+        }));
 
       return { stats, chartData, tableData };
     },
