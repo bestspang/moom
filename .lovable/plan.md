@@ -1,47 +1,95 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Gamification Platform: Cross-Project Architecture Assessment
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Critical Finding: Your Platform Already Uses Shared Backend
 
-## Fix (surgical, 1 file)
+Your `PLATFORM_CONTRACT.md` (line 11) explicitly states:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+> "Both apps use the same Supabase project via `@supabase/supabase-js`"
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+Your `gamification-architecture.md` (line 5-7) confirms:
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+> "Architecture: Option B — Shared Supabase Backend. Both Admin App and Experience App share ONE Supabase project."
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+Your memory note `architecture/project-split` confirms:
+
+> "แพลตฟอร์มถูกออกแบบให้แยกโครงการ Frontend เป็น 2 โปรเจกต์หลัก...โดยเชื่อมต่อกับ Backend เดียวกัน"
+
+**You have two separate frontend projects but ONE shared Supabase backend.** The gamification tables, Edge Functions, RLS policies, and auth system are already deployed in this shared backend. Both apps connect to the same database via the same Supabase URL.
+
+---
+
+## Architecture Recommendation
+
+### Option A: Central Gamification Service (Separate DB)
+- Requires building a third system (API gateway + DB) just for gamification
+- Adds network hops, deployment complexity, and a new failure domain
+- **Not recommended** — overkill for your scale
+
+### Option B: Shared DB, Admin Owns Config, Experience Produces Events (CURRENT)
+- Already implemented and working
+- Admin App: CRUD on config tables (rules, levels, badges, challenges, rewards, tiers, seasons)
+- Experience App: calls Edge Functions to produce events, reads own profiles via RLS
+- Edge Functions: enforce all business logic (XP, points, streaks, anti-abuse)
+- RLS: data isolation by role
+- **Recommended — this IS your architecture already**
+
+### Option C: Federated Dual-DB with Event Sync
+- Would require: event bus, dead-letter queue, reconciliation jobs, idempotent projections, conflict resolution
+- All for zero benefit since both apps already share one DB
+- **Not recommended** — unnecessary complexity
+
+### Verdict
+
+**Option B is already implemented.** Two Lovable frontend projects sharing one Supabase backend is the correct architecture. It gives you:
+- Zero sync lag (direct table access)
+- Zero reconciliation burden
+- Atomic multi-step mutations via Edge Functions
+- RLS-based data isolation (admin sees all, members see own)
+- Single source of truth for all gamification state
+
+If the Experience App were ever moved to its own Supabase project (separate Lovable Cloud), **then** you would need cross-database sync. But that is not the current architecture and would add significant complexity with no clear benefit.
+
+---
+
+## What Is Already Built (Phase 1 Complete)
+
+| Component | Status |
+|-----------|--------|
+| 8 config tables (rules, levels, badges, challenges, rewards, tiers, seasons, audit) | Deployed |
+| 9 member-side tables (profiles, XP/points ledgers, streaks, badge earnings, challenge progress, redemptions, squads) | Deployed |
+| `gamification-process-event` Edge Function | Deployed |
+| `gamification-redeem-reward` Edge Function | Deployed |
+| Admin Studio UI (8 tabs, full CRUD) | Deployed |
+| RLS policies (manager manage, staff read, member own) | Deployed |
+| Idempotency via `idempotency_key` unique constraints | Deployed |
+| Anti-abuse (cooldowns, daily limits, audit flagging) | Deployed |
+| Append-only ledgers with rollback support | Deployed |
+
+---
+
+## What Remains (Phase 2-4)
+
+### Phase 2: Wire Events + Experience App Screens
+- Wire check-in/booking/purchase flows to call `gamification-process-event`
+- Build Experience App member screens (profile, challenges, rewards)
+
+### Phase 3: Advanced Features
+- Squad management UI + Edge Function
+- Trainer scoring computation (in-house vs freelance)
+- Season management UI in Admin
+
+### Phase 4: Optimization
+- Reconciliation job (verify ledger totals match profile snapshots)
+- Analytics charts in Admin Overview
+- Background notifications via `event_outbox`
+
+---
+
+## No Action Required
+
+The architecture question is already resolved. Your system uses Option B (shared backend) which is the optimal choice. All gamification tables, Edge Functions, and RLS policies are deployed and working.
+
+The next actionable step is **Phase 2**: wiring the Experience App's real-world events (check-in, booking, purchase) to the `gamification-process-event` Edge Function.
 
