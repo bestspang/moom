@@ -1,107 +1,47 @@
 
 
-# Phase 2 Complete — Phase 3 Plan: Trainer & Staff Surfaces + Remaining Migration Gaps
+# Fix: Promotions export missing columns in Settings
 
-## Current State Assessment
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### What's DONE (Phase 1 + Phase 2):
-- Surface detection, SurfaceContext, hostname utilities ✓
-- Member layout with BottomNav ✓
-- Trainer/Staff layouts with BottomNav (correct nav items, matching MOOM Connect's config) ✓
-- 5 member pages (Home, Schedule, Bookings, Packages, Profile) — all data-wired ✓
-- Member API services (`services.ts`) querying this project's schema ✓
-- Momentum feature module (types, api, UI components) ✓
-- `useMemberSession` hook ✓
-- Shared components (FilterChips, QueryError, MobileStatusBadge, EmptyState, ListCard, Section, SummaryCard, MobilePageHeader) ✓
-- Routes in App.tsx for all 4 surfaces ✓
-- Diagnostics page ✓
+## Fix (surgical, 1 file)
 
-### What's REMAINING (Phases 3-5):
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-**Trainer surface** — currently a static placeholder. MOOM Connect has:
-- `TrainerHome` with schedule data, today's classes, CoachImpactCard/PartnerReputationCard
-- Schedule, Roster, Workouts, Profile pages
-- Only `/trainer` index route exists; no sub-routes
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**Staff surface** — currently a static placeholder. MOOM Connect has:
-- `StaffHome` with member search, check-in, stats, pending slips, leads
-- Check-in, Members, Payments, Profile pages
-- Only `/staff` index route exists; no sub-routes
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-**Missing sub-routes** for all surfaces (e.g., `/member/notifications`, `/member/attendance`, `/trainer/schedule`, `/staff/checkin`, etc.) — these currently 404.
-
-**No auth guard** on member/trainer/staff layouts — anyone can access without login.
-
----
-
-## Phase 3 Implementation Plan
-
-### Step 1 — Wire Trainer Home with real data
-**File:** `src/apps/trainer/pages/TrainerHomePage.tsx`
-- Replace static placeholder with data-fetching version
-- Query `schedule` table filtered by trainer's staff ID
-- Show today's classes, total bookings stats
-- Add announcements section
-- Use `useAuth()` for trainer identity (user → staff record)
-
-### Step 2 — Wire Staff Home with real data
-**File:** `src/apps/staff/pages/StaffHomePage.tsx`
-- Replace static placeholder with data-fetching version
-- Member search with Enter key → navigate to `/staff/members?search=...`
-- Stats: today's classes count, pending transfer slips, hot leads
-- Today's classes list, pending slips list
-
-### Step 3 — Add missing Trainer sub-routes
-Add placeholder pages + routes in App.tsx:
-- `/trainer/schedule` → reuse `MemberSchedulePage` pattern (trainer sees all classes)
-- `/trainer/roster` → placeholder
-- `/trainer/workouts` → placeholder
-- `/trainer/profile` → profile page similar to member but with trainer role items
-
-### Step 4 — Add missing Staff sub-routes
-- `/staff/checkin` → placeholder (check-in scanner)
-- `/staff/members` → placeholder (member list)
-- `/staff/payments` → placeholder (payment/slip management)
-- `/staff/profile` → profile page with staff role items
-
-### Step 5 — Add auth guards to experience layouts
-Update `MemberLayout`, `TrainerLayout`, `StaffLayout`:
-- Check `useAuth()` — if no session, redirect to `/login`
-- Show loading spinner while auth is loading
-- Keep it lightweight (no role enforcement yet — that's Phase 4)
-
-### Step 6 — Shared components index fix
-Update `src/apps/shared/components/index.ts` to export all components (FilterChips, QueryError, MobileStatusBadge, EmptyState are missing from the barrel export).
-
----
-
-## Files to Create
-| File | Purpose |
-|---|---|
-| `src/apps/trainer/pages/TrainerSchedulePage.tsx` | Schedule view for trainers |
-| `src/apps/trainer/pages/TrainerRosterPage.tsx` | Roster placeholder |
-| `src/apps/trainer/pages/TrainerWorkoutsPage.tsx` | Workouts placeholder |
-| `src/apps/trainer/pages/TrainerProfilePage.tsx` | Trainer profile with menu |
-| `src/apps/staff/pages/StaffCheckinPage.tsx` | Check-in placeholder |
-| `src/apps/staff/pages/StaffMembersPage.tsx` | Members list placeholder |
-| `src/apps/staff/pages/StaffPaymentsPage.tsx` | Payments placeholder |
-| `src/apps/staff/pages/StaffProfilePage.tsx` | Staff profile with menu |
-
-## Files to Modify
-| File | Change |
-|---|---|
-| `src/apps/trainer/pages/TrainerHomePage.tsx` | Replace static with data-wired |
-| `src/apps/staff/pages/StaffHomePage.tsx` | Replace static with data-wired |
-| `src/apps/member/layouts/MemberLayout.tsx` | Add auth guard |
-| `src/apps/trainer/layouts/TrainerLayout.tsx` | Add auth guard |
-| `src/apps/staff/layouts/StaffLayout.tsx` | Add auth guard |
-| `src/apps/shared/components/index.ts` | Add missing exports |
-| `src/App.tsx` | Add trainer + staff sub-routes |
-| `src/apps/trainer/index.ts` | Export new pages |
-| `src/apps/staff/index.ts` | Export new pages |
-
-## Risks
-- Trainer identity resolution: need to map auth user → staff record to filter "my classes". Will use same pattern as `useMemberSession` but for staff/trainer.
-- Sub-pages are placeholders for now — full functionality (check-in scanner, payment flows) is deferred to later phases.
-- Zero changes to existing admin pages/routes/components.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, Calendar, Users, Dumbbell, User } from 'lucide-react';
+import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Home, Calendar, Users, Dumbbell, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TRAINER_NAV = [
   { label: 'Home', path: '/trainer', icon: Home },
@@ -12,6 +13,19 @@ const TRAINER_NAV = [
 
 export function TrainerLayout() {
   const location = useLocation();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: { pathname: '/trainer' } }} replace />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

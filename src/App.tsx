@@ -92,7 +92,15 @@ import MemberBookingsPage from "@/apps/member/pages/MemberBookingsPage";
 import MemberPackagesPage from "@/apps/member/pages/MemberPackagesPage";
 import MemberProfilePage from "@/apps/member/pages/MemberProfilePage";
 import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
+import TrainerSchedulePage from "@/apps/trainer/pages/TrainerSchedulePage";
+import TrainerRosterPage from "@/apps/trainer/pages/TrainerRosterPage";
+import TrainerWorkoutsPage from "@/apps/trainer/pages/TrainerWorkoutsPage";
+import TrainerProfilePage from "@/apps/trainer/pages/TrainerProfilePage";
 import StaffHomePage from "@/apps/staff/pages/StaffHomePage";
+import StaffCheckinPage from "@/apps/staff/pages/StaffCheckinPage";
+import StaffMembersPage from "@/apps/staff/pages/StaffMembersPage";
+import StaffPaymentsPage from "@/apps/staff/pages/StaffPaymentsPage";
+import StaffProfilePage from "@/apps/staff/pages/StaffProfilePage";
 import DiagnosticsSurfacePage from "@/apps/shared/pages/DiagnosticsSurfacePage";
 
 const queryClient = new QueryClient();
@@ -134,11 +142,19 @@ const App = () => (
                 {/* ===== Trainer Surface (mobile-first) ===== */}
                 <Route path="/trainer" element={<TrainerLayout />}>
                   <Route index element={<TrainerHomePage />} />
+                  <Route path="schedule" element={<TrainerSchedulePage />} />
+                  <Route path="roster" element={<TrainerRosterPage />} />
+                  <Route path="workouts" element={<TrainerWorkoutsPage />} />
+                  <Route path="profile" element={<TrainerProfilePage />} />
                 </Route>
 
                 {/* ===== Staff Surface (mobile-first) ===== */}
                 <Route path="/staff" element={<StaffLayout />}>
                   <Route index element={<StaffHomePage />} />
+                  <Route path="checkin" element={<StaffCheckinPage />} />
+                  <Route path="members" element={<StaffMembersPage />} />
+                  <Route path="payments" element={<StaffPaymentsPage />} />
+                  <Route path="profile" element={<StaffProfilePage />} />
                 </Route>
 
                 {/* ===== Admin Surface (desktop-first, existing) ===== */}
