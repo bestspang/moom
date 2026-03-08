@@ -14,6 +14,7 @@ const TEMPLATE_HEADERS = ['name', 'access_level', 'description'];
 
 const Roles = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
