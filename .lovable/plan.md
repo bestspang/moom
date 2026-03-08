@@ -1,47 +1,56 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Milestone 3: Split MemberDetails.tsx (901 lines) into Tab Components
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Current State
 
-## Fix (surgical, 1 file)
+`MemberDetails.tsx` is 901 lines containing:
+- 10 tab contents (home, profile, attendance, packages, billing, injuries, notes, communications, suspensions, contract)
+- 6 inline form dialogs (injury, suspension, contract) with their own state
+- 6 column definition arrays
+- Profile edit state and handlers
+- All wired to 12+ hooks
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+Previous milestones completed:
+1. Route security hardening (all routes now guarded)
+2. Finance.tsx split (806 → ~270 lines + 5 sub-components)
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## Why This Milestone
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+MemberDetails is the most complex page in the app and the hardest to maintain. Each tab is functionally independent, making extraction safe and high-value. Same proven pattern as Finance split.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## Plan
+
+Extract each tab's content + column definitions + inline dialogs into dedicated components under `src/components/members/tabs/`:
+
+| New File | Contents | ~Lines |
+|----------|----------|--------|
+| `MemberHomeTab.tsx` | Account details grid + MemberTimeline | ~50 |
+| `MemberProfileTab.tsx` | Profile edit form + draft state + handlers | ~100 |
+| `MemberAttendanceTab.tsx` | Attendance columns + DataTable | ~30 |
+| `MemberPackagesTab.tsx` | Package status sub-tabs + columns + DataTable + purchase button | ~60 |
+| `MemberBillingTab.tsx` | Billing columns + DataTable | ~30 |
+| `MemberInjuriesTab.tsx` | Injury columns + add injury dialog + mark recovered | ~80 |
+| `MemberNotesTab.tsx` | Notes list + add note form | ~50 |
+| `MemberSuspensionsTab.tsx` | Suspension columns + add suspension dialog + end suspension | ~70 |
+| `MemberContractsTab.tsx` | Contract columns + add contract dialog | ~50 |
+| `index.ts` | Barrel exports | ~10 |
+
+**Modify:** `src/pages/MemberDetails.tsx` → reduced to ~250 lines: hooks, sidebar profile/contact cards, stats, tab shell, front desk notes, purchase dialog.
+
+### Approach
+- Each tab component receives only the data/handlers it needs as props
+- Dialog state (injury form, suspension form, contract form) moves INTO its tab component
+- Column definitions move INTO their respective tab components
+- Profile edit state + handlers move into `MemberProfileTab`
+- Parent keeps: member data fetching, sidebar rendering, stats, tab navigation shell
+- Zero behavior change
+
+### Risk
+- **Zero regression**: Pure extraction. No logic changes, no hook changes.
+- **Rollback**: Revert the files.
+
+### Files
+- **Create**: 10 files in `src/components/members/tabs/`
+- **Modify**: `src/pages/MemberDetails.tsx` (reduce from 901 to ~250 lines)
 
