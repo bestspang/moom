@@ -9,6 +9,7 @@ import { useCheckIns, type CheckInWithRelations } from '@/hooks/useLobby';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
 import { CheckInQRCodeDialog } from '@/components/lobby/CheckInQRCodeDialog';
 import { QrCode, Plus } from 'lucide-react';
+import { useCommandListener } from '@/lib/commandEvents';
 
 const Lobby = () => {
   const { t } = useLanguage();
