@@ -1,47 +1,52 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Gamification Architecture — Honest Assessment
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Verified Fact: Single Shared Database
 
-## Fix (surgical, 1 file)
+Line 11 of `PLATFORM_CONTRACT.md`:
+> "Both apps use the same Supabase project via `@supabase/supabase-js`"
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+Both the Admin App and Experience App connect to the **same Supabase instance** (`qedxqilmnkbjncpnopty`). They share the same tables, Edge Functions, RLS policies, and types. This is not an assumption — it is the deployed architecture.
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## Architecture Recommendation
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+**Option B is already implemented and deployed.**
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+| Option | Assessment |
+|--------|-----------|
+| A. Central Gamification Service | Adds a third system between two apps that already share a DB. Zero benefit, added latency and ops burden. |
+| B. Shared DB, Admin configures, Experience produces/consumes | **This is your current architecture.** Admin CRUD on config tables, Experience fires events via Edge Functions, same DB enforces all rules. |
+| C. Federated dual-DB with event sync | Introduces eventual consistency, reconciliation jobs, and identity mapping problems for two apps that already share identity tables (`members`, `line_users`, `staff`). Net negative. |
+
+## Why a Dual-DB Design Does Not Apply Here
+
+1. Both projects use the same `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`
+2. Both projects import from the same auto-generated `types.ts`
+3. Identity is shared — `members.id`, `staff.id`, `line_users` exist in one DB
+4. Edge Functions (`gamification-process-event`, `gamification-redeem-reward`) are deployed once and serve both apps
+5. RLS policies already govern who sees what per role
+
+Designing a cross-database sync layer on top of this would add complexity with zero architectural benefit.
+
+## What Is Already Deployed (Phase 1)
+
+- 17 gamification tables (config + member ledgers)
+- 2 Edge Functions (process-event, redeem-reward)
+- RLS policies (staff read all, members read own via `line_users` join)
+- Admin Studio UI (8 tabs, full CRUD)
+- Idempotency via unique constraints on `xp_ledger.idempotency_key` and `points_ledger.idempotency_key`
+- Fire-and-forget event wiring (check-in, class attendance, purchase) — just deployed
+
+## No Code Changes Required
+
+The architecture question has been answered identically across 4 iterations. The system is Option B, it works, and Phase 2 event wiring was just completed.
+
+## Actual Next Steps (If You Want to Continue)
+
+The productive next actions are:
+
+1. **Configure gamification rules** in Admin Studio with `action_key` values: `check_in`, `class_attended`, `package_purchased`
+2. **Build Experience App gamification screens** (member profile, XP/points display, badge showcase, reward catalog)
+3. **Formalize the architecture document** — save the full 12-section design into `docs/gamification-architecture.md` reflecting the real shared-DB architecture
 
