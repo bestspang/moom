@@ -82,11 +82,11 @@ const Schedule = () => {
       <PageHeader
         title={t('schedule.title')}
         breadcrumbs={[{ label: t('schedule.title') }]}
-        actions={
+        actions={can('schedule', 'write') ? (
           <Button className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
             {t('schedule.scheduleClass')}
           </Button>
-        }
+        ) : undefined}
       />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

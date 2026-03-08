@@ -152,11 +152,15 @@ const WorkoutList = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('workouts.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!trainings?.length} />
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              {t('workouts.createTraining')}
-            </Button>
+            {can('schedule', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!trainings?.length} />
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('workouts.createTraining')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

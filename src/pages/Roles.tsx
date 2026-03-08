@@ -82,9 +82,11 @@ const Roles = () => {
               onDownloadTemplate={handleDownloadTemplate}
               exportDisabled={!roles?.length}
             />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/roles/create')}>
-              {t('roles.createRole')}
-            </Button>
+            {can('roles', 'write') && (
+              <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/roles/create')}>
+                {t('roles.createRole')}
+              </Button>
+            )}
           </div>
         } 
       />

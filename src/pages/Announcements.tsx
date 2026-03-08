@@ -120,14 +120,14 @@ const Announcements = () => {
           { label: t('nav.yourGym') },
           { label: t('announcements.title') },
         ]}
-        actions={
+        actions={can('announcements', 'write') ? (
           <Button
             onClick={() => setDialogOpen(true)}
             className="bg-primary hover:bg-primary-hover"
           >
             {t('common.create')}
           </Button>
-        }
+        ) : undefined}
       />
 
       <SearchBar

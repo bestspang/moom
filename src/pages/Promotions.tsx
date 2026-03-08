@@ -155,10 +155,14 @@ const Promotions = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('promotions.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!promotions?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
-              {t('promotions.createPromotion')}
-            </Button>
+            {can('promotions', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!promotions?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
+                  {t('promotions.createPromotion')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

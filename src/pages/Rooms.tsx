@@ -57,14 +57,14 @@ const Rooms = () => {
       <PageHeader 
         title={t('rooms.title')} 
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('rooms.title') }]} 
-        actions={
+        actions={can('rooms', 'write') ? (
           <Button 
             className="bg-primary hover:bg-primary-hover"
             onClick={() => setCreateDialogOpen(true)}
           >
             {t('rooms.createRoom')}
           </Button>
-        } 
+        ) : undefined}
       />
       
       <div className="flex items-center gap-3 mb-6">

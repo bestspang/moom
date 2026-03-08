@@ -169,10 +169,14 @@ const Packages = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
-              {t('packages.createPackage')}
-            </Button>
+            {can('packages', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
+                  {t('packages.createPackage')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

@@ -126,10 +126,14 @@ const Classes = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('classes.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!classes?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/class/create')}>
-              {t('classes.createClass')}
-            </Button>
+            {can('classes', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!classes?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/class/create')}>
+                  {t('classes.createClass')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />
