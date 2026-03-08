@@ -155,7 +155,7 @@ export async function fetchAvailablePackages(): Promise<AvailablePackage[]> {
   const { data, error } = await supabase
     .from('packages')
     .select('*')
-    .eq('status', 'active')
+    .eq('status', 'on_sale')
     .order('price', { ascending: true });
 
   if (error) throw error;
