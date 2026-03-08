@@ -377,29 +377,69 @@ export function useClassCapacityOverTime(
   return useQuery({
     queryKey: ['class-capacity-over-time', dateRange, filters],
     queryFn: async () => {
+      let query = supabase
+        .from('schedule')
+        .select('scheduled_date, capacity, checked_in, trainer_id, location_id')
+        .gte('scheduled_date', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(dateRange.end!, 'yyyy-MM-dd'))
+        .neq('status', 'cancelled');
+
+      if (filters.trainer !== 'all') {
+        query = query.eq('trainer_id', filters.trainer);
+      }
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: scheduleData, error } = await query;
+      if (error) throw error;
+
+      // Group by date
+      const dateMap = new Map<string, { totalCapPct: number; count: number; withBookings: number }>();
+
+      (scheduleData || []).forEach((row: any) => {
+        const dateKey = format(new Date(row.scheduled_date), 'd MMM');
+        const capPct = row.capacity > 0 ? Math.round((row.checked_in / row.capacity) * 100) : 0;
+        const existing = dateMap.get(dateKey) || { totalCapPct: 0, count: 0, withBookings: 0 };
+        existing.totalCapPct += capPct;
+        existing.count += 1;
+        if (row.checked_in > 0) existing.withBookings += 1;
+        dateMap.set(dateKey, existing);
+      });
+
       const days = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => ({
-        date: format(day, 'd MMM'),
-        capacity: Math.floor(Math.random() * 40) + 50,
-        classes: Math.floor(Math.random() * 10) + 5,
-      }));
+      const chartData = days.map((day) => {
+        const key = format(day, 'd MMM');
+        const entry = dateMap.get(key);
+        return {
+          date: key,
+          capacity: entry ? Math.round(entry.totalCapPct / entry.count) : 0,
+          classes: entry?.count || 0,
+        };
+      });
+
+      const totalClasses = chartData.reduce((sum, d) => sum + d.classes, 0);
+      const totalCapacity = chartData.reduce((sum, d) => sum + d.capacity * d.classes, 0);
+      const totalWithBookings = Array.from(dateMap.values()).reduce((sum, d) => sum + d.withBookings, 0);
 
       const stats: ClassCapacityOverTimeStats = {
-        avgCapacity: 72,
-        classesWithBookings: 189,
-        avgClassesPerDay: 8,
+        avgCapacity: totalClasses > 0 ? Math.round(totalCapacity / totalClasses) : 0,
+        classesWithBookings: totalWithBookings,
+        avgClassesPerDay: days.length > 0 ? Math.round(totalClasses / days.length) : 0,
       };
 
-      const tableData: ClassCapacityRow[] = chartData.slice(0, 10).map((d) => ({
-        date: d.date,
-        trainer: 'All Trainers',
-        location: 'Main Branch',
-        classesBooked: d.classes,
-        avgCapacity: d.capacity,
-      }));
+      const tableData: ClassCapacityRow[] = chartData
+        .filter((d) => d.classes > 0)
+        .map((d) => ({
+          date: d.date,
+          trainer: filters.trainer === 'all' ? 'All Trainers' : filters.trainer,
+          location: filters.location === 'all' ? 'All Locations' : filters.location,
+          classesBooked: d.classes,
+          avgCapacity: d.capacity,
+        }));
 
       return { stats, chartData, tableData };
     },
