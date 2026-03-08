@@ -136,14 +136,14 @@ export function CommandPalette() {
   const filteredPages = useMemo(() => {
     if (!query) return PAGE_ITEMS;
     const q = query.toLowerCase();
-    return PAGE_ITEMS.filter((p) => p.label.toLowerCase().includes(q));
-  }, [query]);
+    return PAGE_ITEMS.filter((p) => t(p.labelKey).toLowerCase().includes(q));
+  }, [query, t]);
 
   const filteredActions = useMemo(() => {
     if (!query) return QUICK_ACTIONS;
     const q = query.toLowerCase();
-    return QUICK_ACTIONS.filter((a) => a.label.toLowerCase().includes(q));
-  }, [query]);
+    return QUICK_ACTIONS.filter((a) => t(a.labelKey).toLowerCase().includes(q));
+  }, [query, t]);
 
   const handleSelect = (path: string, command?: string) => {
     setOpen(false);
