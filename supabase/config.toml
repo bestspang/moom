@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.gamification-process-event]
+verify_jwt = false
+
+[functions.gamification-redeem-reward]
+verify_jwt = false
