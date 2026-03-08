@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Target } from 'lucide-react';
+import { Plus, Calendar, Target, Pencil } from 'lucide-react';
 import { StatusTabs, type StatusTab } from '@/components/common/StatusTabs';
 import { EmptyState } from '@/components/common';
-import { useGamificationChallenges } from '@/hooks/useGamificationChallenges';
+import { useGamificationChallenges, type GamificationChallenge } from '@/hooks/useGamificationChallenges';
 import { StatusBadge } from '@/components/common';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import CreateChallengeDialog from '@/components/gamification/CreateChallengeDialog';
 
 const statusVariantMap: Record<string, any> = {
   draft: 'default',
@@ -20,6 +21,8 @@ const GamificationChallenges = () => {
   const { t, language } = useLanguage();
   const [statusFilter, setStatusFilter] = useState('all');
   const { data: challenges, isLoading } = useGamificationChallenges(statusFilter);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<GamificationChallenge | null>(null);
 
   const statusTabs: StatusTab[] = [
     { key: 'all', label: t('common.all'), count: challenges?.length ?? 0 },
@@ -33,13 +36,16 @@ const GamificationChallenges = () => {
     return map[type] || type;
   };
 
+  const openCreate = () => { setEditing(null); setDialogOpen(true); };
+  const openEdit = (c: GamificationChallenge) => { setEditing(c); setDialogOpen(true); };
+
   if (isLoading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">{t('gamification.challenges.description')}</p>
-        <Button size="sm" disabled><Plus className="h-4 w-4 mr-1" />{t('gamification.challenges.create')}</Button>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />{t('gamification.challenges.create')}</Button>
       </div>
 
       <StatusTabs tabs={statusTabs} activeTab={statusFilter} onChange={setStatusFilter} />
@@ -49,7 +55,7 @@ const GamificationChallenges = () => {
       ) : (
         <div className="space-y-3">
           {challenges.map((c) => (
-            <Card key={c.id}>
+            <Card key={c.id} className="group">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -63,12 +69,15 @@ const GamificationChallenges = () => {
                       <span className="flex items-center gap-1"><Target className="h-3 w-3" />{c.goal_value}× {c.goal_action_key || c.goal_type}</span>
                     </div>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-xs flex flex-col items-end gap-1">
                     <span className="inline-block px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">{typeLabel(c.type)}</span>
-                    <div className="mt-1 space-x-2">
+                    <div className="space-x-2">
                       {c.reward_xp > 0 && <span className="text-accent-teal">+{c.reward_xp} XP</span>}
                       {c.reward_points > 0 && <span className="text-primary">+{c.reward_points} pts</span>}
                     </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(c)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -76,6 +85,8 @@ const GamificationChallenges = () => {
           ))}
         </div>
       )}
+
+      <CreateChallengeDialog open={dialogOpen} onOpenChange={setDialogOpen} editingChallenge={editing} />
     </div>
   );
 };
