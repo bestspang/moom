@@ -25,6 +25,7 @@ import { useDashboardTrends } from '@/hooks/useDashboardTrends';
 import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
 import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
