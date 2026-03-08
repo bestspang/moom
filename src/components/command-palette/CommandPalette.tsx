@@ -27,41 +27,41 @@ interface SearchResult {
 }
 
 const PAGE_ITEMS = [
-  { label: 'Dashboard', path: '/', icon: Home, group: 'pages' },
-  { label: 'Lobby', path: '/lobby', icon: DoorOpen, group: 'pages' },
-  { label: 'Schedule', path: '/calendar', icon: Calendar, group: 'pages' },
-  { label: 'Rooms', path: '/room', icon: LayoutGrid, group: 'pages' },
-  { label: 'Classes', path: '/class', icon: List, group: 'pages' },
-  { label: 'Class Categories', path: '/class-category', icon: Grid3X3, group: 'pages' },
-  { label: 'Members', path: '/members', icon: Users, group: 'pages' },
-  { label: 'Leads', path: '/leads', icon: Star, group: 'pages' },
-  { label: 'Packages', path: '/package', icon: Tag, group: 'pages' },
-  { label: 'Promotions', path: '/promotion', icon: Gift, group: 'pages' },
-  { label: 'Staff', path: '/admin', icon: UserCheck, group: 'pages' },
-  { label: 'Roles', path: '/roles', icon: Shield, group: 'pages' },
-  { label: 'Locations', path: '/location', icon: MapPin, group: 'pages' },
-  { label: 'Activity Log', path: '/activity-log', icon: FileText, group: 'pages' },
-  { label: 'Announcements', path: '/announcement', icon: Megaphone, group: 'pages' },
-  { label: 'Workouts', path: '/workout-list', icon: Dumbbell, group: 'pages' },
-  { label: 'Transfer Slips', path: '/transfer-slip', icon: Receipt, group: 'pages' },
-  { label: 'Finance', path: '/finance', icon: DollarSign, group: 'pages' },
-  { label: 'Reports', path: '/report', icon: BarChart3, group: 'pages' },
-  { label: 'Settings', path: '/setting/general', icon: Settings, group: 'pages' },
+  { labelKey: 'commandPalette.pageDashboard', path: '/', icon: Home, group: 'pages' },
+  { labelKey: 'commandPalette.pageLobby', path: '/lobby', icon: DoorOpen, group: 'pages' },
+  { labelKey: 'commandPalette.pageSchedule', path: '/calendar', icon: Calendar, group: 'pages' },
+  { labelKey: 'commandPalette.pageRooms', path: '/room', icon: LayoutGrid, group: 'pages' },
+  { labelKey: 'commandPalette.pageClasses', path: '/class', icon: List, group: 'pages' },
+  { labelKey: 'commandPalette.pageClassCategories', path: '/class-category', icon: Grid3X3, group: 'pages' },
+  { labelKey: 'commandPalette.pageMembers', path: '/members', icon: Users, group: 'pages' },
+  { labelKey: 'commandPalette.pageLeads', path: '/leads', icon: Star, group: 'pages' },
+  { labelKey: 'commandPalette.pagePackages', path: '/package', icon: Tag, group: 'pages' },
+  { labelKey: 'commandPalette.pagePromotions', path: '/promotion', icon: Gift, group: 'pages' },
+  { labelKey: 'commandPalette.pageStaff', path: '/admin', icon: UserCheck, group: 'pages' },
+  { labelKey: 'commandPalette.pageRoles', path: '/roles', icon: Shield, group: 'pages' },
+  { labelKey: 'commandPalette.pageLocations', path: '/location', icon: MapPin, group: 'pages' },
+  { labelKey: 'commandPalette.pageActivityLog', path: '/activity-log', icon: FileText, group: 'pages' },
+  { labelKey: 'commandPalette.pageAnnouncements', path: '/announcement', icon: Megaphone, group: 'pages' },
+  { labelKey: 'commandPalette.pageWorkouts', path: '/workout-list', icon: Dumbbell, group: 'pages' },
+  { labelKey: 'commandPalette.pageTransferSlips', path: '/transfer-slip', icon: Receipt, group: 'pages' },
+  { labelKey: 'commandPalette.pageFinance', path: '/finance', icon: DollarSign, group: 'pages' },
+  { labelKey: 'commandPalette.pageReports', path: '/report', icon: BarChart3, group: 'pages' },
+  { labelKey: 'commandPalette.pageSettings', path: '/setting/general', icon: Settings, group: 'pages' },
 ];
 
 interface QuickAction {
-  label: string;
+  labelKey: string;
   icon: typeof Plus;
   path: string;
   command?: string;
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Quick Check-in', path: '/lobby', icon: DoorOpen, command: 'open-checkin' },
-  { label: 'Create Member', path: '/members', icon: Plus, command: 'open-create-member' },
-  { label: 'Create Lead', path: '/leads', icon: Plus, command: 'open-create-lead' },
-  { label: 'Create Class', path: '/class/create', icon: Plus },
-  { label: 'Create Package', path: '/package/create', icon: Plus },
+  { labelKey: 'commandPalette.checkIn', path: '/lobby', icon: DoorOpen, command: 'open-checkin' },
+  { labelKey: 'commandPalette.actionCreateMember', path: '/members', icon: Plus, command: 'open-create-member' },
+  { labelKey: 'commandPalette.actionCreateLead', path: '/leads', icon: Plus, command: 'open-create-lead' },
+  { labelKey: 'commandPalette.actionCreateClass', path: '/class/create', icon: Plus },
+  { labelKey: 'commandPalette.actionCreatePackage', path: '/package/create', icon: Plus },
 ];
 
 export function CommandPalette() {
@@ -136,14 +136,14 @@ export function CommandPalette() {
   const filteredPages = useMemo(() => {
     if (!query) return PAGE_ITEMS;
     const q = query.toLowerCase();
-    return PAGE_ITEMS.filter((p) => p.label.toLowerCase().includes(q));
-  }, [query]);
+    return PAGE_ITEMS.filter((p) => t(p.labelKey).toLowerCase().includes(q));
+  }, [query, t]);
 
   const filteredActions = useMemo(() => {
     if (!query) return QUICK_ACTIONS;
     const q = query.toLowerCase();
-    return QUICK_ACTIONS.filter((a) => a.label.toLowerCase().includes(q));
-  }, [query]);
+    return QUICK_ACTIONS.filter((a) => t(a.labelKey).toLowerCase().includes(q));
+  }, [query, t]);
 
   const handleSelect = (path: string, command?: string) => {
     setOpen(false);
@@ -204,7 +204,7 @@ export function CommandPalette() {
                   onSelect={() => handleSelect(action.path, action.command)}
                 >
                   <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{action.label}</span>
+                  <span>{t(action.labelKey)}</span>
                 </CommandItem>
               );
             })}
@@ -224,7 +224,7 @@ export function CommandPalette() {
                   onSelect={() => handleSelect(page.path)}
                 >
                   <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{page.label}</span>
+                  <span>{t(page.labelKey)}</span>
                 </CommandItem>
               );
             })}
