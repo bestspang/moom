@@ -73,6 +73,7 @@ export default function MemberBookingsPage() {
                 subtitle={`${format(parseISO(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
                 meta={booking.schedule.trainerName ? `with ${booking.schedule.trainerName}` : undefined}
                 trailing={<MobileStatusBadge status={booking.status} />}
+                onClick={() => navigate(`/member/bookings/${booking.id}`)}
               />
             ))}
           </div>
