@@ -154,14 +154,14 @@ const TransferSlips = () => {
         title={t('transferSlips.title')}
         breadcrumbs={[{ label: t('nav.business') }, { label: t('transferSlips.title') }]}
         actions={
-          {can('transfer_slips', 'write') && (
+          can('transfer_slips', 'write') ? (
             <ManageDropdown
               onExport={handleExport}
               onDownloadTemplate={handleDownloadTemplate}
               onImport={() => setImportOpen(true)}
               exportDisabled={!slips?.length}
             />
-          )}
+          ) : undefined
         }
       />
 
