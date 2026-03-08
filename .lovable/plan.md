@@ -1,47 +1,93 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 4 + 5 — Domain-Aware Behavior and Cleanup
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Status: Phases 1-3 Complete
 
-## Fix (surgical, 1 file)
+All surface routes, layouts, pages, auth guards, and shared components are in place. What's missing:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+1. **No domain-aware redirect** — if a member user hits `admin.moom.fit/member`, nothing redirects them to `member.moom.fit/member`. Similarly, admin routes on `member.moom.fit` are accessible.
+2. **No root redirect based on hostname** — `member.moom.fit/` currently shows the admin Dashboard (since `/` maps to admin `MainLayout`).
+3. **Diagnostics page** exists but lacks redirect logic result display.
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+---
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+## Phase 4 — Domain-Aware Redirect
+
+### Approach: `SurfaceGuard` component at the top of `<Routes>`
+
+Create `src/apps/shared/SurfaceGuard.tsx` — a component rendered as a wrapper inside `BrowserRouter` that:
+
+1. On **production hosts only** (not dev/lovable.app):
+   - `member.moom.fit` + path starts with admin routes (`/lobby`, `/members/:id/detail`, `/finance`, etc.) → redirect to `admin.moom.fit` + same path
+   - `admin.moom.fit` + path starts with `/member`, `/trainer`, `/staff` → redirect to `member.moom.fit` + same path
+   - `member.moom.fit/` (root) → redirect to `/member`
+   - `admin.moom.fit/` (root) → stays at `/` (admin dashboard, existing behavior)
+
+2. On **dev environments**: no redirects (use `?surface=` param for testing).
+
+### Implementation
+
+**New file: `src/apps/shared/SurfaceGuard.tsx`**
+- Uses `useLocation()` from React Router
+- Checks `isMemberHost()` / `isAdminHost()` / `isDevEnvironment()`
+- For wrong-host routes: `window.location.href = buildCrossSurfaceUrl(...)` (full page redirect needed for cross-domain)
+- For root path on member host: `<Navigate to="/member" replace />`
+- Otherwise: renders `children`
+
+**Modify: `src/App.tsx`**
+- Wrap `<Routes>` content inside `<SurfaceGuard>` (or add it as a layout route at the top)
+- Minimal change — just wrap the existing routes
+
+### Route Classification
+
+```text
+ADMIN-ONLY routes (redirect away from member.moom.fit):
+  /, /lobby, /members, /members/:id/detail, /leads, /package/*,
+  /promotion/*, /calendar, /room/*, /class/*, /class-category/*,
+  /admin/*, /roles/*, /location, /activity-log, /announcement,
+  /workout-list, /transfer-slip, /finance, /insights, /report/*,
+  /notifications, /profile (admin), /setting/*, /gamification/*,
+  /diagnostics/data-audit, /coming-soon, /member-app, /trainer-app
+
+MEMBER-HOST routes (redirect away from admin.moom.fit):
+  /member/*, /trainer/*, /staff/*
+
+SHARED routes (accessible on both hosts):
+  /login, /forgot-password, /reset-password, /checkin,
+  /liff/*, /diagnostics/surface
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+---
+
+## Phase 5 — Cleanup
+
+### 5a. Update Diagnostics page
+Add "Redirect Logic Result" to diagnostics showing what the SurfaceGuard would do for the current host+path.
+
+### 5b. Verify shared components index
+Already fixed — `FilterChips`, `QueryError`, `MobileStatusBadge`, `EmptyState` all exported.
+
+### 5c. No other cleanup needed
+- No duplicated contexts (single `AuthContext`, single `SurfaceContext`)
+- No duplicated backend client (single `supabase` import)
+- Layouts are distinct per surface
+- Design tokens shared via CSS variables
+
+---
+
+## Files to Create/Modify
+
+| File | Action |
+|---|---|
+| `src/apps/shared/SurfaceGuard.tsx` | **Create** — domain-aware redirect logic |
+| `src/App.tsx` | **Modify** — wrap routes with SurfaceGuard |
+| `src/apps/shared/hostname.ts` | **Modify** — add `getRouteHostAffinity()` helper |
+| `src/apps/shared/pages/DiagnosticsSurfacePage.tsx` | **Modify** — add redirect result display |
+| `src/apps/shared/index.ts` | **Modify** — export SurfaceGuard |
+
+## Risks
+- Cross-domain redirect uses `window.location.href` (full page load, not SPA nav) — this is intentional and correct for different domains
+- Dev environment is never affected (all guards skip when `isDevEnvironment()`)
+- Zero changes to admin pages, member pages, or any existing layouts
 
