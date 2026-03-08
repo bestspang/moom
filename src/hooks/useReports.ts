@@ -273,30 +273,75 @@ export function useClassCapacityByHour(
   return useQuery({
     queryKey: ['class-capacity-by-hour', dateRange, filters],
     queryFn: async () => {
-      // Generate mock heatmap data
+      let query = supabase
+        .from('schedule')
+        .select('scheduled_date, start_time, capacity, checked_in, trainer_id, location_id')
+        .gte('scheduled_date', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(dateRange.end!, 'yyyy-MM-dd'))
+        .neq('status', 'cancelled');
+
+      if (filters.trainer !== 'all') {
+        query = query.eq('trainer_id', filters.trainer);
+      }
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: scheduleData, error } = await query;
+      if (error) throw error;
+
+      // Aggregate by day-of-week + hour
+      const cellMap = new Map<string, { totalCapPct: number; count: number }>();
+
+      let totalCapPct = 0;
+      let totalClasses = 0;
+      let classesWithBookingsCount = 0;
+
+      (scheduleData || []).forEach((row: any) => {
+        const dayOfWeek = getDay(new Date(row.scheduled_date)); // 0=Sun
+        const hour = parseInt(row.start_time?.split(':')[0] || '0', 10);
+        const key = `${dayOfWeek}-${hour}`;
+        const capPct = row.capacity > 0 ? Math.round((row.checked_in / row.capacity) * 100) : 0;
+
+        const existing = cellMap.get(key) || { totalCapPct: 0, count: 0 };
+        existing.totalCapPct += capPct;
+        existing.count += 1;
+        cellMap.set(key, existing);
+
+        totalCapPct += capPct;
+        totalClasses++;
+        if (row.checked_in > 0) classesWithBookingsCount++;
+      });
+
+      // Build heatmap
       const heatmapData: HeatmapCell[] = [];
+      let peakCapacity = 0;
+      let peakKey = '';
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
       for (let day = 0; day < 7; day++) {
         for (let hour = 0; hour < 24; hour++) {
-          // Simulate higher capacity during typical gym hours
-          let capacity = 0;
-          if (hour >= 6 && hour <= 21) {
-            if (hour >= 17 && hour <= 20) {
-              capacity = Math.floor(Math.random() * 40) + 60; // Peak hours
-            } else if (hour >= 9 && hour <= 11) {
-              capacity = Math.floor(Math.random() * 30) + 40; // Morning
-            } else {
-              capacity = Math.floor(Math.random() * 30) + 10;
-            }
+          const key = `${day}-${hour}`;
+          const cell = cellMap.get(key);
+          const avgCap = cell ? Math.round(cell.totalCapPct / cell.count) : 0;
+          heatmapData.push({ day, hour, capacity: avgCap });
+
+          if (avgCap > peakCapacity) {
+            peakCapacity = avgCap;
+            peakKey = `${dayNames[day]} ${hour.toString().padStart(2, '0')}:00`;
           }
-          heatmapData.push({ day, hour, capacity });
         }
       }
 
+      const numDays = dateRange.start && dateRange.end
+        ? differenceInDays(dateRange.end, dateRange.start) + 1
+        : 1;
+
       const stats: ClassCapacityByHourStats = {
-        avgCapacity: 67,
-        classesWithBookings: 245,
-        avgClassesPerDay: 12,
-        peakCapacityTime: 'Tue 18:00',
+        avgCapacity: totalClasses > 0 ? Math.round(totalCapPct / totalClasses) : 0,
+        classesWithBookings: classesWithBookingsCount,
+        avgClassesPerDay: Math.round(totalClasses / numDays),
+        peakCapacityTime: peakKey || '-',
       };
 
       return { stats, heatmapData };
