@@ -223,6 +223,34 @@ Deno.serve(async (req) => {
       },
     })
 
+    // 11. Fire gamification event for purchase (fire-and-forget)
+    if (slip.member_id) {
+      try {
+        const gamificationUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/gamification-process-event`
+        await fetch(gamificationUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({
+            event_type: 'package_purchased',
+            member_id: slip.member_id,
+            idempotency_key: `purchase:${tx.id}`,
+            location_id: slip.location_id || undefined,
+            metadata: {
+              transaction_id: tx.id,
+              package_id: resolvedPkgId,
+              package_name: pkg?.name_en,
+              amount: amountGross,
+            },
+          }),
+        })
+      } catch (gamErr) {
+        console.warn('[approve-slip] Gamification event failed (non-blocking):', gamErr)
+      }
+    }
+
     return new Response(
       JSON.stringify({ data: tx, message: 'Slip approved successfully' }),
       { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
