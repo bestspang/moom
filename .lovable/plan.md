@@ -1,47 +1,43 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Milestone 8: Fix Permission Inconsistencies in WorkoutList and Announcements
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Completed Milestones
+1. Route security hardening ✅
+2. Finance.tsx split ✅
+3. MemberDetails.tsx split ✅
+4. Permission guards (9 pages) ✅
+5. Permission guards (remaining 4 pages) ✅
+6. Dashboard role-aware rendering + Leads guards ✅
+7. Members.tsx header guards + export dedup ✅
 
-## Fix (surgical, 1 file)
+## Problems Confirmed
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### Issue 1: WorkoutList uses wrong resource key
+`src/pages/WorkoutList.tsx` line 155 uses `can('schedule', 'write')` to guard workout management actions. The correct resource key is `workout_list` (defined in `usePermissions.ts` ALL_RESOURCES). This means a user with `schedule` write but NOT `workout_list` write can incorrectly manage workouts, and vice versa.
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### Issue 2: WorkoutList inline edit/delete buttons are unguarded
+Lines 136-140 (edit/delete per workout item) and lines 209-219 (edit name / toggle active / delete per training group) render for all users regardless of permissions. These destructive actions should be gated by `can('workout_list', 'write')` and `can('workout_list', 'delete')`.
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### Issue 3: Announcements delete button is unguarded
+`src/pages/Announcements.tsx` lines 190-213 render a delete button with confirmation dialog for every announcement row, visible to all users. The create button IS properly guarded (line 123), but delete is not. Should be wrapped in `can('announcements', 'delete')`.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## Plan
+
+### WorkoutList.tsx
+- Change `can('schedule', 'write')` → `can('workout_list', 'write')` for header actions (ManageDropdown + Create button)
+- Wrap inline edit/delete buttons on workout items in `can('workout_list', 'write')` check
+- Wrap training-level edit/toggle/delete controls in `can('workout_list', 'write')` check
+- Guard BulkActionBar selectable behavior with permission check
+
+### Announcements.tsx  
+- Wrap the delete button (AlertDialog trigger) in `can('announcements', 'delete')` check
+
+### Files to modify
+- `src/pages/WorkoutList.tsx`
+- `src/pages/Announcements.tsx`
+
+### Risk
+- Zero regression: Only fixing conditional renders and correcting a resource key
+- Identical pattern to all previous permission guard milestones
 
