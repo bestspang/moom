@@ -40,6 +40,7 @@ const TRAINING_STATUS_OPTIONS = [
 
 const WorkoutList = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [filterTrainingId, setFilterTrainingId] = useState<string | undefined>(undefined);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
