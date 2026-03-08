@@ -27,6 +27,7 @@ import {
   Briefcase,
   Wallet,
   UserPlus,
+  Trophy,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
