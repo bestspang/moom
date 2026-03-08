@@ -263,12 +263,10 @@ const Dashboard = () => {
       </Card>
 
       {/* Revenue Forecast + Needs Attention */}
-      {can('finance', 'read') && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RevenueForecastCard />
-          <NeedsAttentionCard />
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {can('finance', 'read') && <RevenueForecastCard />}
+        <NeedsAttentionCard />
+      </div>
 
       {/* Quick Check-in FAB */}
       {can('lobby', 'write') && (
