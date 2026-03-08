@@ -40,6 +40,7 @@ type AnnouncementStatus = Database['public']['Enums']['announcement_status'];
 
 const Announcements = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('active');
