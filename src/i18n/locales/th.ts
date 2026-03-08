@@ -1886,6 +1886,7 @@ export default {
     people: 'บุคคล',
     quickActions: 'การดำเนินการด่วน',
     goTo: 'ไปที่',
+    checkIn: 'เช็คอินด่วน',
   },
 
   // Daily Briefing

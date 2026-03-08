@@ -20,6 +20,8 @@ const Lobby = () => {
 
   const { data: checkInData = [], isLoading } = useCheckIns(selectedDate, search);
 
+  useCommandListener('open-checkin', React.useCallback(() => setDialogOpen(true), []));
+
   const methodVariant = (method: string | null | undefined) => {
     switch (method) {
       case 'qr': return 'active' as const;

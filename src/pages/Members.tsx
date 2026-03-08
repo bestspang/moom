@@ -38,6 +38,7 @@ const Members = () => {
   const [activeTab, setActiveTab] = useState<MemberStatus | 'all'>('active');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  useCommandListener('open-create-member', React.useCallback(() => setCreateDialogOpen(true), []));
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithLocation | null>(null);

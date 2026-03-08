@@ -1886,6 +1886,7 @@ export default {
     people: 'People',
     quickActions: 'Quick Actions',
     goTo: 'Go to',
+    checkIn: 'Quick Check-in',
   },
 
   // Daily Briefing

@@ -200,8 +200,8 @@ export function CommandPalette() {
               const Icon = action.icon;
               return (
                 <CommandItem
-                  key={action.path}
-                  onSelect={() => handleSelect(action.path)}
+                  key={action.path + (action.command || '')}
+                  onSelect={() => handleSelect(action.path, action.command)}
                 >
                   <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>{action.label}</span>

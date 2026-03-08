@@ -33,6 +33,7 @@ const Leads = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  useCommandListener('open-create-lead', React.useCallback(() => setCreateDialogOpen(true), []));
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [convertLead, setConvertLead] = useState<Lead | null>(null);
