@@ -23,10 +23,15 @@ import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ReportItem } from '@/components/reports/ReportItem';
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => `${i + 6}:00`);
+
 const Insights = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { can } = usePermissions();
+  const canFinance = can('finance', 'read');
 
   const { data: overview, isLoading: overviewLoading } = useInsightsOverview();
   const { data: healthData } = useBusinessHealth();
