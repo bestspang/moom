@@ -27,6 +27,7 @@ const PROMO_STATUS_OPTIONS = [
 
 const Promotions = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const locale = getDateLocale(language);
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
