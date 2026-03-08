@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -284,6 +285,18 @@ export const useMarkAttendance = () => {
         member_id: data.member_id,
       });
       toast.success(i18n.t('toast.attendanceRecorded'));
+
+      // Fire gamification event for attended bookings (fire-and-forget)
+      if (variables.status === 'attended') {
+        const schedule = (data as any).schedule;
+        fireGamificationEvent({
+          event_type: 'class_attended',
+          member_id: data.member_id,
+          idempotency_key: `class_attended:${variables.bookingId}`,
+          location_id: schedule?.location_id,
+          metadata: { schedule_id: data.schedule_id, booking_id: variables.bookingId },
+        });
+      }
     },
     onError: (error) => {
       toast.error(i18n.t('toast.attendanceFailed'));
@@ -373,7 +386,7 @@ export const useBatchMarkAttendance = () => {
 
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
@@ -388,6 +401,20 @@ export const useBatchMarkAttendance = () => {
         entity_type: 'class_booking',
       });
       toast.success(i18n.t('toast.attendanceRecordedAll'));
+
+      // Fire gamification events for each attended booking (fire-and-forget)
+      if (variables.status === 'attended' && data) {
+        for (const booking of data) {
+          const schedule = (booking as any).schedule;
+          fireGamificationEvent({
+            event_type: 'class_attended',
+            member_id: booking.member_id,
+            idempotency_key: `class_attended:${booking.id}`,
+            location_id: schedule?.location_id,
+            metadata: { schedule_id: booking.schedule_id, booking_id: booking.id },
+          });
+        }
+      }
     },
     onError: (error) => {
       toast.error(i18n.t('toast.attendanceFailed'));

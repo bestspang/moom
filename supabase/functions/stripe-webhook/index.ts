@@ -131,6 +131,34 @@ Deno.serve(async (req) => {
         member_id: tx.member_id || null,
         new_value: { status: 'paid', stripe_session_id: session.id, amount: tx.amount },
       })
+
+      // Fire gamification event for purchase (fire-and-forget)
+      if (tx.member_id) {
+        try {
+          const gamificationUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/gamification-process-event`
+          await fetch(gamificationUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              event_type: 'package_purchased',
+              member_id: tx.member_id,
+              idempotency_key: `purchase:${tx.id}`,
+              metadata: {
+                transaction_id: tx.id,
+                package_id: tx.package_id,
+                package_name: tx.package_name_snapshot,
+                amount: tx.amount,
+                source: 'stripe',
+              },
+            }),
+          })
+        } catch (gamErr) {
+          console.warn('[stripe-webhook] Gamification event failed (non-blocking):', gamErr)
+        }
+      }
     } else if (eventType === 'charge.refunded') {
       const charge = event.data.object as Stripe.Charge
       const paymentIntentId = charge.payment_intent

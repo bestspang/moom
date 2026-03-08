@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { getBangkokDayRange } from '@/lib/dateRange';
 import { logActivity } from '@/lib/activityLogger';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -113,6 +114,18 @@ export function useCreateCheckIn() {
       });
 
       toast.success(i18n.t('toast.checkInSuccess'));
+
+      // Fire gamification event (fire-and-forget)
+      fireGamificationEvent({
+        event_type: 'check_in',
+        member_id: variables.member_id,
+        idempotency_key: `checkin:${data.id}`,
+        location_id: variables.location_id,
+        metadata: {
+          checkin_method: variables.checkin_method || 'manual',
+          member_package_id: variables.member_package_id,
+        },
+      });
     },
     onError: (error) => {
       toast.error(error.message);
