@@ -163,6 +163,20 @@ export default function MemberHomePage() {
         </Section>
       )}
 
+      {/* Squad */}
+      {memberId && (
+        <Section className="mb-4">
+          <SquadCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* Upcoming milestones nudge */}
+      {memberId && (
+        <Section className="mb-4">
+          <UpcomingMilestones memberId={memberId} nudgeOnly max={1} />
+        </Section>
+      )}
+
       {/* Pinned announcement */}
       {latestAnnouncement && (
         <Section className="mb-4">

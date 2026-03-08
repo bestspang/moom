@@ -152,6 +152,10 @@ const App = () => (
                   <Route path="packages" element={<MemberPackagesPage />} />
                   <Route path="packages/:id/purchase" element={<MemberPurchasePage />} />
                   <Route path="upload-slip" element={<MemberUploadSlipPage />} />
+                  <Route path="check-in" element={<MemberCheckInPage />} />
+                  <Route path="rewards" element={<MemberRewardsPage />} />
+                  <Route path="badges" element={<MemberBadgeGalleryPage />} />
+                  <Route path="squad" element={<MemberSquadPage />} />
                   <Route path="profile" element={<MemberProfilePage />} />
                   <Route path="profile/edit" element={<MemberEditProfilePage />} />
                   <Route path="attendance" element={<MemberAttendancePage />} />
