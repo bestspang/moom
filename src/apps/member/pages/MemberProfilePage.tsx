@@ -1,21 +1,41 @@
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMemberSession } from '../hooks/useMemberSession';
+import { useQuery } from '@tanstack/react-query';
+import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
+import { TierBadge } from '../features/momentum/TierBadge';
+import { XPProgressBar } from '../features/momentum/XPProgressBar';
+import { StreakFlame } from '../features/momentum/StreakFlame';
+import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
-import { LogOut, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MemberProfilePage() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
+  const { firstName, lastName, email, memberId } = useMemberSession();
   const navigate = useNavigate();
-  const firstName = user?.user_metadata?.first_name ?? '';
-  const lastName = user?.user_metadata?.last_name ?? '';
 
-  const profileItems = [
-    { label: 'Edit Profile', path: '/member/profile/edit' },
-    { label: 'Attendance History', path: '/member/attendance' },
-    { label: 'Notifications', path: '/member/notifications' },
-    { label: 'Support', path: '/member/support' },
+  const { data: momentum } = useQuery({
+    queryKey: ['momentum-profile', memberId],
+    queryFn: () => fetchMomentumProfile(memberId!),
+    enabled: !!memberId,
+  });
+
+  const { data: badges } = useQuery({
+    queryKey: ['my-badges', memberId],
+    queryFn: () => fetchMyBadges(memberId!),
+    enabled: !!memberId,
+  });
+
+  const menuItems = [
+    { label: 'Edit Profile', icon: User, path: '/member/profile/edit' },
+    { label: 'Attendance History', icon: CalendarCheck, path: '/member/attendance' },
+    { label: 'Badge Collection', icon: Award, path: '/member/badges' },
+    { label: 'Notifications', icon: Bell, path: '/member/notifications' },
+    { label: 'Medical & Emergency', icon: Heart, path: '/member/medical' },
+    { label: 'Support', icon: HelpCircle, path: '/member/support' },
   ];
 
   return (
@@ -24,40 +44,80 @@ export default function MemberProfilePage() {
 
       {/* Avatar & name */}
       <Section className="mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 rounded-lg bg-card p-4 shadow-sm border border-border">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
             {firstName.charAt(0)}{lastName.charAt(0)}
           </div>
-          <div>
-            <p className="text-lg font-semibold text-foreground">
-              {firstName} {lastName}
-            </p>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-foreground">{firstName} {lastName}</h2>
+            <p className="text-sm text-muted-foreground">{email}</p>
+            {momentum && (
+              <div className="mt-1">
+                <TierBadge tier={momentum.tier} level={momentum.level} />
+              </div>
+            )}
           </div>
         </div>
       </Section>
 
+      {/* Momentum showcase */}
+      {momentum && memberId && (
+        <Section className="mb-6">
+          <div className="rounded-xl border bg-card shadow-sm p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <StreakFlame weeklyCheckinDays={momentum.weeklyCheckinDays} currentStreakWeeks={momentum.currentStreak} />
+              <div className="text-right">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Reward Points</p>
+                <p className="text-lg font-bold text-foreground">
+                  {momentum.availablePoints.toLocaleString()} <span className="text-xs text-muted-foreground font-medium">RP</span>
+                </p>
+              </div>
+            </div>
+
+            <XPProgressBar totalXP={momentum.totalXp} level={momentum.level} />
+
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{badges?.length ?? 0}</span> badges earned
+              </p>
+              <button
+                onClick={() => navigate('/member/badges')}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                View all →
+              </button>
+            </div>
+
+            <BadgeGrid memberId={memberId} max={6} />
+          </div>
+        </Section>
+      )}
+
       {/* Menu items */}
       <Section className="mb-6">
-        <div className="rounded-lg bg-card overflow-hidden divide-y divide-border">
-          {profileItems.map(item => (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-muted/50 transition-colors"
-            >
-              <span className="text-sm font-medium text-foreground">{item.label}</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          ))}
+        <div className="space-y-1">
+          {menuItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted"
+              >
+                <Icon className="h-5 w-5 text-muted-foreground" />
+                <span className="flex-1 text-sm font-medium text-foreground">{item.label}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            );
+          })}
         </div>
       </Section>
 
       {/* Sign out */}
-      <Section>
+      <Section className="mb-8">
         <Button
           variant="outline"
-          className="w-full text-destructive border-destructive/30 hover:bg-destructive/5"
+          className="w-full text-destructive border-destructive/20 hover:bg-destructive/5"
           onClick={() => signOut()}
         >
           <LogOut className="h-4 w-4 mr-2" />
