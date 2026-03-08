@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
     console.error('stripe-create-checkout error:', err)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     )
   }
 })
