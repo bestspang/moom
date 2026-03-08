@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('staff')
         .select('status')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (staffError) {
         console.error('Error fetching staff status:', staffError);
