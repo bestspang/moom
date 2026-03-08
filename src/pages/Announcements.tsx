@@ -158,7 +158,7 @@ const Announcements = () => {
                 <TableHead>{t('announcements.channels')}</TableHead>
                 <TableHead>{t('announcements.targetLocations')}</TableHead>
                 <TableHead>{t('common.status')}</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                {can('announcements', 'delete') && <TableHead className="w-[50px]"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
