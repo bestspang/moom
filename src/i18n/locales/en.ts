@@ -89,6 +89,7 @@ export default {
     comingSoon: 'Coming Soon',
     people: 'People',
     business: 'Business',
+    gamification: 'Gamification',
   },
 
   // Roadmap

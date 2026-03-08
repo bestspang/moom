@@ -89,6 +89,7 @@ export default {
     comingSoon: 'เร็วๆ นี้',
     people: 'บุคคล',
     business: 'ธุรกิจ',
+    gamification: 'Gamification',
   },
 
   // Roadmap

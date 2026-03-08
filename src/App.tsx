@@ -174,6 +174,17 @@ const App = () => (
                   <Route path="import-export" element={<SettingsImportExport />} />
                   <Route path="integrations" element={<SettingsIntegrations />} />
                 </Route>
+                <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<GamificationOverview />} />
+                  <Route path="rules" element={<GamificationRules />} />
+                  <Route path="levels" element={<GamificationLevels />} />
+                  <Route path="challenges" element={<GamificationChallenges />} />
+                  <Route path="badges" element={<GamificationBadges />} />
+                  <Route path="rewards" element={<GamificationRewards />} />
+                  <Route path="trainers" element={<GamificationTrainers />} />
+                  <Route path="risk" element={<GamificationRisk />} />
+                </Route>
                 <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<NotFound />} />

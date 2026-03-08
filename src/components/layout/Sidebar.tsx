@@ -131,6 +131,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           { label: t('nav.promotions'), path: '/promotion', icon: Gift, resource: 'promotions' },
           { label: t('nav.finance'), path: '/finance', icon: DollarSign, resource: 'finance', badge: pendingSlips },
           { label: t('nav.insights'), path: '/insights', icon: TrendingUp, resource: 'reports' },
+          { label: t('nav.gamification'), path: '/gamification', icon: Trophy, minLevel: 'level_3_manager', resource: 'gamification' },
         ],
       },
     },
