@@ -1235,6 +1235,45 @@ export type Database = {
         }
         Relationships: []
       }
+      identity_map: {
+        Row: {
+          admin_entity_id: string
+          created_at: string
+          entity_type: string
+          experience_entity_id: string | null
+          experience_user_id: string | null
+          id: string
+          is_verified: boolean
+          shared_identifier: string | null
+          shared_identifier_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_entity_id: string
+          created_at?: string
+          entity_type: string
+          experience_entity_id?: string | null
+          experience_user_id?: string | null
+          id?: string
+          is_verified?: boolean
+          shared_identifier?: string | null
+          shared_identifier_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_entity_id?: string
+          created_at?: string
+          entity_type?: string
+          experience_entity_id?: string | null
+          experience_user_id?: string | null
+          id?: string
+          is_verified?: boolean
+          shared_identifier?: string | null
+          shared_identifier_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           address: string | null

@@ -18,12 +18,287 @@ function getCorsHeaders(req: Request) {
 
 interface GamificationEventRequest {
   event_type: string;
-  member_id: string;
+  member_id?: string;           // Admin DB member ID (direct calls)
+  experience_user_id?: string;  // Experience DB auth.users.id (cross-project calls)
   idempotency_key: string;
   location_id?: string;
+  branch_id?: string;           // Experience DB branch ID
   metadata?: Record<string, unknown>;
   occurred_at?: string;
 }
+
+// ---------- Identity Resolution ----------
+
+async function resolveMemberId(
+  db: ReturnType<typeof createClient>,
+  body: GamificationEventRequest
+): Promise<{ member_id: string; location_id: string | null } | null> {
+  // Case 1: Direct member_id from Admin App
+  if (body.member_id) {
+    return { member_id: body.member_id, location_id: body.location_id ?? null };
+  }
+
+  // Case 2: experience_user_id from Experience App → resolve via identity_map
+  if (body.experience_user_id) {
+    const { data: mapping } = await db
+      .from("identity_map")
+      .select("admin_entity_id")
+      .eq("entity_type", "member")
+      .eq("experience_user_id", body.experience_user_id)
+      .eq("is_verified", true)
+      .maybeSingle();
+
+    if (!mapping) return null;
+
+    // Resolve branch → location if provided
+    let locationId: string | null = body.location_id ?? null;
+    if (!locationId && body.branch_id) {
+      const { data: locMapping } = await db
+        .from("identity_map")
+        .select("admin_entity_id")
+        .eq("entity_type", "location")
+        .eq("experience_entity_id", body.branch_id)
+        .maybeSingle();
+      locationId = locMapping?.admin_entity_id ?? null;
+    }
+
+    return { member_id: mapping.admin_entity_id, location_id: locationId };
+  }
+
+  return null;
+}
+
+// ---------- Core Logic Helpers ----------
+
+async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: string) {
+  const { data: rules } = await db
+    .from("gamification_rules")
+    .select("*")
+    .eq("action_key", eventType)
+    .eq("is_active", true)
+    .limit(1);
+  return rules?.[0] ?? null;
+}
+
+async function checkCooldown(
+  db: ReturnType<typeof createClient>,
+  memberId: string,
+  eventType: string,
+  cooldownMinutes: number
+): Promise<boolean> {
+  const threshold = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
+  const { data } = await db
+    .from("xp_ledger")
+    .select("id")
+    .eq("member_id", memberId)
+    .eq("event_type", eventType)
+    .gte("created_at", threshold)
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
+async function checkDailyLimit(
+  db: ReturnType<typeof createClient>,
+  memberId: string,
+  eventType: string,
+  maxPerDay: number
+): Promise<{ exceeded: boolean; count: number }> {
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const { count } = await db
+    .from("xp_ledger")
+    .select("id", { count: "exact", head: true })
+    .eq("member_id", memberId)
+    .eq("event_type", eventType)
+    .gte("created_at", todayStart.toISOString());
+  const c = count ?? 0;
+  return { exceeded: c >= maxPerDay, count: c };
+}
+
+async function getOrCreateProfile(db: ReturnType<typeof createClient>, memberId: string) {
+  let { data: profile } = await db
+    .from("member_gamification_profiles")
+    .select("*")
+    .eq("member_id", memberId)
+    .maybeSingle();
+
+  if (!profile) {
+    const { data: newProfile, error } = await db
+      .from("member_gamification_profiles")
+      .insert({ member_id: memberId, total_xp: 0, total_points: 0, available_points: 0, current_level: 1 })
+      .select()
+      .single();
+    if (error) throw error;
+    profile = newProfile;
+  }
+  return profile;
+}
+
+async function updateStreak(db: ReturnType<typeof createClient>, memberId: string, currentLongest: number) {
+  const today = new Date().toISOString().split("T")[0];
+  const { data: streak } = await db
+    .from("streak_snapshots")
+    .select("*")
+    .eq("member_id", memberId)
+    .eq("streak_type", "daily")
+    .maybeSingle();
+
+  let newStreak = 1;
+  let newLongest = currentLongest;
+
+  if (streak) {
+    const lastDate = streak.last_activity_date;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    if (lastDate === today) {
+      newStreak = streak.current_streak;
+    } else if (lastDate === yesterday) {
+      newStreak = streak.current_streak + 1;
+    }
+    newLongest = Math.max(streak.longest_streak, newStreak);
+    await db.from("streak_snapshots").update({
+      current_streak: newStreak,
+      longest_streak: newLongest,
+      last_activity_date: today,
+    }).eq("id", streak.id);
+  } else {
+    await db.from("streak_snapshots").insert({
+      member_id: memberId,
+      current_streak: 1,
+      longest_streak: 1,
+      last_activity_date: today,
+      streak_type: "daily",
+    });
+    newLongest = Math.max(newLongest, 1);
+  }
+
+  return { newStreak, newLongest };
+}
+
+async function checkLevelUp(db: ReturnType<typeof createClient>, totalXp: number, currentLevel: number) {
+  const { data: levels } = await db
+    .from("gamification_levels")
+    .select("*")
+    .eq("is_active", true)
+    .order("level_number", { ascending: true });
+
+  let newLevel = currentLevel;
+  let leveledUp = false;
+  if (levels) {
+    for (const lvl of levels) {
+      if (totalXp >= lvl.xp_required && lvl.level_number > newLevel) {
+        newLevel = lvl.level_number;
+        leveledUp = true;
+      }
+    }
+  }
+  return { newLevel, leveledUp };
+}
+
+async function processChallenges(
+  db: ReturnType<typeof createClient>,
+  memberId: string,
+  eventType: string,
+  xpDelta: number,
+  newStreak: number,
+  newTotalXp: number,
+  newAvailablePoints: number,
+) {
+  const { data: activeChallenges } = await db
+    .from("gamification_challenges")
+    .select("*")
+    .eq("status", "active")
+    .lte("start_date", new Date().toISOString())
+    .gte("end_date", new Date().toISOString());
+
+  const results: Array<{ challenge_id: string; completed: boolean }> = [];
+  if (!activeChallenges) return results;
+
+  for (const challenge of activeChallenges) {
+    const matchesGoal =
+      (challenge.goal_type === "action_count" && challenge.goal_action_key === eventType) ||
+      (challenge.goal_type === "xp_threshold") ||
+      (challenge.goal_type === "class_count" && eventType === "class_attended") ||
+      (challenge.goal_type === "streak" && eventType === "check_in");
+
+    if (!matchesGoal) continue;
+
+    let { data: progress } = await db
+      .from("challenge_progress")
+      .select("*")
+      .eq("challenge_id", challenge.id)
+      .eq("member_id", memberId)
+      .maybeSingle();
+
+    if (!progress) {
+      const { data: newProgress } = await db
+        .from("challenge_progress")
+        .insert({ challenge_id: challenge.id, member_id: memberId, current_value: 0, status: "in_progress" })
+        .select()
+        .single();
+      progress = newProgress;
+    }
+
+    if (!progress || progress.status !== "in_progress") continue;
+
+    let incrementValue = 1;
+    if (challenge.goal_type === "xp_threshold") incrementValue = xpDelta;
+    else if (challenge.goal_type === "streak") incrementValue = 0;
+
+    const newValue = challenge.goal_type === "streak"
+      ? newStreak
+      : (progress.current_value || 0) + incrementValue;
+
+    const completed = newValue >= challenge.goal_value;
+
+    await db.from("challenge_progress").update({
+      current_value: newValue,
+      status: completed ? "completed" : "in_progress",
+      completed_at: completed ? new Date().toISOString() : null,
+    }).eq("id", progress.id);
+
+    if (completed) {
+      const rewardXp = challenge.reward_xp || 0;
+      const rewardPoints = challenge.reward_points || 0;
+      const challengeIdemKey = `challenge_complete:${challenge.id}:${memberId}`;
+
+      if (rewardXp > 0) {
+        await db.from("xp_ledger").insert({
+          member_id: memberId,
+          event_type: "challenge_completed",
+          delta: rewardXp,
+          balance_after: newTotalXp + rewardXp,
+          idempotency_key: `xp:${challengeIdemKey}`,
+          metadata: { challenge_id: challenge.id },
+        }).onConflict("idempotency_key").ignoreDuplicates();
+      }
+
+      if (rewardPoints > 0) {
+        await db.from("points_ledger").insert({
+          member_id: memberId,
+          event_type: "challenge_completed",
+          delta: rewardPoints,
+          balance_after: newAvailablePoints + rewardPoints,
+          idempotency_key: `pts:${challengeIdemKey}`,
+          metadata: { challenge_id: challenge.id },
+        }).onConflict("idempotency_key").ignoreDuplicates();
+      }
+
+      if (challenge.reward_badge_id) {
+        await db.from("badge_earnings").insert({
+          member_id: memberId,
+          badge_id: challenge.reward_badge_id,
+          event_ref: challengeIdemKey,
+        }).onConflict("member_id,badge_id").ignoreDuplicates();
+      }
+    }
+
+    results.push({ challenge_id: challenge.id, completed });
+  }
+
+  return results;
+}
+
+// ---------- Main Handler ----------
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
@@ -50,29 +325,29 @@ Deno.serve(async (req) => {
     const db = createClient(supabaseUrl, serviceKey);
 
     const body: GamificationEventRequest = await req.json();
-    const { event_type, member_id, idempotency_key, location_id, metadata } = body;
+    const { event_type, idempotency_key, metadata } = body;
 
-    if (!event_type || !member_id || !idempotency_key) {
-      return new Response(JSON.stringify({ error: "Missing required fields: event_type, member_id, idempotency_key" }), { status: 400, headers: cors });
+    if (!event_type || !idempotency_key) {
+      return new Response(JSON.stringify({ error: "Missing required fields: event_type, idempotency_key" }), { status: 400, headers: cors });
     }
 
-    // 1) IDEMPOTENCY CHECK — if xp_ledger already has this key, skip
+    // Identity resolution — supports both direct member_id and cross-project experience_user_id
+    const identity = await resolveMemberId(db, body);
+    if (!identity) {
+      return new Response(JSON.stringify({ error: "Could not resolve member identity. Provide member_id or a mapped experience_user_id." }), { status: 400, headers: cors });
+    }
+
+    const { member_id, location_id } = identity;
+
+    // 1) IDEMPOTENCY CHECK
     const { data: existing } = await db.from("xp_ledger").select("id").eq("idempotency_key", idempotency_key).maybeSingle();
     if (existing) {
       return new Response(JSON.stringify({ status: "already_processed", idempotency_key }), { status: 200, headers: cors });
     }
 
     // 2) FIND MATCHING ACTIVE RULE
-    const { data: rules } = await db
-      .from("gamification_rules")
-      .select("*")
-      .eq("action_key", event_type)
-      .eq("is_active", true)
-      .limit(1);
-
-    const rule = rules?.[0];
+    const rule = await findMatchingRule(db, event_type);
     if (!rule) {
-      // No rule configured for this event — log audit and skip
       await db.from("gamification_audit_log").insert({
         member_id,
         event_type: "no_rule_match",
@@ -85,18 +360,10 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ status: "no_matching_rule", event_type }), { status: 200, headers: cors });
     }
 
-    // 3) ANTI-ABUSE: cooldown check
+    // 3) ANTI-ABUSE: cooldown
     if (rule.cooldown_minutes && rule.cooldown_minutes > 0) {
-      const cooldownThreshold = new Date(Date.now() - rule.cooldown_minutes * 60 * 1000).toISOString();
-      const { data: recentEntries } = await db
-        .from("xp_ledger")
-        .select("id")
-        .eq("member_id", member_id)
-        .eq("event_type", event_type)
-        .gte("created_at", cooldownThreshold)
-        .limit(1);
-
-      if (recentEntries && recentEntries.length > 0) {
+      const blocked = await checkCooldown(db, member_id, event_type, rule.cooldown_minutes);
+      if (blocked) {
         await db.from("gamification_audit_log").insert({
           member_id,
           event_type: "cooldown_blocked",
@@ -111,18 +378,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4) ANTI-ABUSE: max_per_day check
+    // 4) ANTI-ABUSE: max_per_day
     if (rule.max_per_day && rule.max_per_day > 0) {
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-      const { count } = await db
-        .from("xp_ledger")
-        .select("id", { count: "exact", head: true })
-        .eq("member_id", member_id)
-        .eq("event_type", event_type)
-        .gte("created_at", todayStart.toISOString());
-
-      if ((count ?? 0) >= rule.max_per_day) {
+      const { exceeded, count } = await checkDailyLimit(db, member_id, event_type, rule.max_per_day);
+      if (exceeded) {
         await db.from("gamification_audit_log").insert({
           member_id,
           event_type: "daily_limit_blocked",
@@ -138,21 +397,7 @@ Deno.serve(async (req) => {
     }
 
     // 5) GET OR CREATE MEMBER PROFILE
-    let { data: profile } = await db
-      .from("member_gamification_profiles")
-      .select("*")
-      .eq("member_id", member_id)
-      .maybeSingle();
-
-    if (!profile) {
-      const { data: newProfile, error: createErr } = await db
-        .from("member_gamification_profiles")
-        .insert({ member_id, total_xp: 0, total_points: 0, available_points: 0, current_level: 1 })
-        .select()
-        .single();
-      if (createErr) throw createErr;
-      profile = newProfile;
-    }
+    const profile = await getOrCreateProfile(db, member_id);
 
     const xpDelta = rule.xp_value || 0;
     const pointsDelta = rule.points_value || 0;
@@ -160,31 +405,17 @@ Deno.serve(async (req) => {
     const newTotalPoints = (profile.total_points || 0) + pointsDelta;
     const newAvailablePoints = (profile.available_points || 0) + pointsDelta;
 
-    // 6) INSERT XP LEDGER
-    if (xpDelta !== 0) {
-      await db.from("xp_ledger").insert({
-        member_id,
-        event_type,
-        delta: xpDelta,
-        balance_after: newTotalXp,
-        rule_id: rule.id,
-        idempotency_key,
-        location_id: location_id || null,
-        metadata: metadata || {},
-      });
-    } else {
-      // Still insert for idempotency tracking even with 0 XP
-      await db.from("xp_ledger").insert({
-        member_id,
-        event_type,
-        delta: 0,
-        balance_after: newTotalXp,
-        rule_id: rule.id,
-        idempotency_key,
-        location_id: location_id || null,
-        metadata: metadata || {},
-      });
-    }
+    // 6) INSERT XP LEDGER (always insert for idempotency tracking)
+    await db.from("xp_ledger").insert({
+      member_id,
+      event_type,
+      delta: xpDelta,
+      balance_after: newTotalXp,
+      rule_id: rule.id,
+      idempotency_key,
+      location_id: location_id || null,
+      metadata: metadata || {},
+    });
 
     // 7) INSERT POINTS LEDGER
     if (pointsDelta !== 0) {
@@ -201,65 +432,10 @@ Deno.serve(async (req) => {
     }
 
     // 8) CHECK LEVEL UP
-    const { data: levels } = await db
-      .from("gamification_levels")
-      .select("*")
-      .eq("is_active", true)
-      .order("level_number", { ascending: true });
-
-    let newLevel = profile.current_level || 1;
-    let leveledUp = false;
-    if (levels) {
-      for (const lvl of levels) {
-        if (newTotalXp >= lvl.xp_required && lvl.level_number > newLevel) {
-          newLevel = lvl.level_number;
-          leveledUp = true;
-        }
-      }
-    }
+    const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1);
 
     // 9) UPDATE STREAK
-    const today = new Date().toISOString().split("T")[0];
-    const { data: streak } = await db
-      .from("streak_snapshots")
-      .select("*")
-      .eq("member_id", member_id)
-      .eq("streak_type", "daily")
-      .maybeSingle();
-
-    let newStreak = 1;
-    let newLongest = profile.longest_streak || 0;
-
-    if (streak) {
-      const lastDate = streak.last_activity_date;
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-      if (lastDate === today) {
-        // Same day — no streak change
-        newStreak = streak.current_streak;
-      } else if (lastDate === yesterday) {
-        // Consecutive day
-        newStreak = streak.current_streak + 1;
-      }
-      // else: streak resets to 1
-
-      newLongest = Math.max(streak.longest_streak, newStreak);
-
-      await db.from("streak_snapshots").update({
-        current_streak: newStreak,
-        longest_streak: newLongest,
-        last_activity_date: today,
-      }).eq("id", streak.id);
-    } else {
-      await db.from("streak_snapshots").insert({
-        member_id,
-        current_streak: 1,
-        longest_streak: 1,
-        last_activity_date: today,
-        streak_type: "daily",
-      });
-      newLongest = Math.max(newLongest, 1);
-    }
+    const { newStreak, newLongest } = await updateStreak(db, member_id, profile.longest_streak || 0);
 
     // 10) UPDATE PROFILE
     await db.from("member_gamification_profiles").update({
@@ -273,107 +449,9 @@ Deno.serve(async (req) => {
     }).eq("member_id", member_id);
 
     // 11) CHECK CHALLENGE PROGRESS
-    const { data: activeChallenges } = await db
-      .from("gamification_challenges")
-      .select("*")
-      .eq("status", "active")
-      .lte("start_date", new Date().toISOString())
-      .gte("end_date", new Date().toISOString());
-
-    const challengeResults: Array<{ challenge_id: string; completed: boolean }> = [];
-
-    if (activeChallenges) {
-      for (const challenge of activeChallenges) {
-        // Check if this event matches the challenge goal
-        const matchesGoal =
-          (challenge.goal_type === "action_count" && challenge.goal_action_key === event_type) ||
-          (challenge.goal_type === "xp_threshold") ||
-          (challenge.goal_type === "class_count" && event_type === "class_attended") ||
-          (challenge.goal_type === "streak" && event_type === "check_in");
-
-        if (!matchesGoal) continue;
-
-        // Get or create progress
-        let { data: progress } = await db
-          .from("challenge_progress")
-          .select("*")
-          .eq("challenge_id", challenge.id)
-          .eq("member_id", member_id)
-          .maybeSingle();
-
-        if (!progress) {
-          const { data: newProgress } = await db
-            .from("challenge_progress")
-            .insert({ challenge_id: challenge.id, member_id, current_value: 0, status: "in_progress" })
-            .select()
-            .single();
-          progress = newProgress;
-        }
-
-        if (!progress || progress.status !== "in_progress") continue;
-
-        let incrementValue = 1;
-        if (challenge.goal_type === "xp_threshold") {
-          incrementValue = xpDelta;
-        } else if (challenge.goal_type === "streak") {
-          incrementValue = 0; // Streak challenges check streak value directly
-        }
-
-        const newValue = challenge.goal_type === "streak"
-          ? newStreak
-          : (progress.current_value || 0) + incrementValue;
-
-        const completed = newValue >= challenge.goal_value;
-
-        await db.from("challenge_progress").update({
-          current_value: newValue,
-          status: completed ? "completed" : "in_progress",
-          completed_at: completed ? new Date().toISOString() : null,
-        }).eq("id", progress.id);
-
-        if (completed) {
-          // Grant challenge rewards
-          const rewardXp = challenge.reward_xp || 0;
-          const rewardPoints = challenge.reward_points || 0;
-          const challengeIdemKey = `challenge_complete:${challenge.id}:${member_id}`;
-
-          if (rewardXp > 0) {
-            const xpAfter = newTotalXp + rewardXp;
-            await db.from("xp_ledger").insert({
-              member_id,
-              event_type: "challenge_completed",
-              delta: rewardXp,
-              balance_after: xpAfter,
-              idempotency_key: `xp:${challengeIdemKey}`,
-              metadata: { challenge_id: challenge.id },
-            }).onConflict("idempotency_key").ignoreDuplicates();
-          }
-
-          if (rewardPoints > 0) {
-            const ptsAfter = newAvailablePoints + rewardPoints;
-            await db.from("points_ledger").insert({
-              member_id,
-              event_type: "challenge_completed",
-              delta: rewardPoints,
-              balance_after: ptsAfter,
-              idempotency_key: `pts:${challengeIdemKey}`,
-              metadata: { challenge_id: challenge.id },
-            }).onConflict("idempotency_key").ignoreDuplicates();
-          }
-
-          // Award badge if configured
-          if (challenge.reward_badge_id) {
-            await db.from("badge_earnings").insert({
-              member_id,
-              badge_id: challenge.reward_badge_id,
-              event_ref: challengeIdemKey,
-            }).onConflict("member_id,badge_id").ignoreDuplicates();
-          }
-        }
-
-        challengeResults.push({ challenge_id: challenge.id, completed });
-      }
-    }
+    const challengeResults = await processChallenges(
+      db, member_id, event_type, xpDelta, newStreak, newTotalXp, newAvailablePoints
+    );
 
     // 12) AUDIT LOG
     await db.from("gamification_audit_log").insert({
@@ -390,6 +468,7 @@ Deno.serve(async (req) => {
         leveled_up: leveledUp,
         streak: newStreak,
         challenges: challengeResults,
+        source: body.experience_user_id ? "experience_app" : "admin_app",
         ...(metadata || {}),
       },
       flagged: false,
@@ -408,8 +487,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 14) Fetch badges earned (for cross-project response)
+    const { data: recentBadges } = await db
+      .from("badge_earnings")
+      .select("badge_id, gamification_badges(id, name_en, icon_url)")
+      .eq("member_id", member_id)
+      .order("earned_at", { ascending: false })
+      .limit(5);
+
+    const badgesEarned = (recentBadges || [])
+      .filter((b: any) => b.gamification_badges)
+      .map((b: any) => ({
+        id: b.gamification_badges.id,
+        name: b.gamification_badges.name_en,
+        icon_url: b.gamification_badges.icon_url,
+      }));
+
     return new Response(JSON.stringify({
       status: "processed",
+      // Standard response
       xp_granted: xpDelta,
       points_granted: pointsDelta,
       total_xp: newTotalXp,
@@ -418,6 +514,14 @@ Deno.serve(async (req) => {
       leveled_up: leveledUp,
       streak: newStreak,
       challenges: challengeResults,
+      // Cross-project response fields
+      new_total_xp: newTotalXp,
+      new_level: newLevel,
+      badges_earned: badgesEarned,
+      challenge_updates: challengeResults.map((c) => ({
+        id: c.challenge_id,
+        completed: c.completed,
+      })),
     }), { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
 
   } catch (err) {
