@@ -40,7 +40,7 @@ export default function StaffHomePage() {
       const { count, error } = await supabase
         .from('transfer_slips')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
+        .eq('status', 'needs_review');
       if (error) throw error;
       return count ?? 0;
     },

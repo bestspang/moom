@@ -35,7 +35,7 @@ export default function TrainerHomePage() {
       const { data, error } = await supabase
         .from('announcements')
         .select('id, message, publish_date')
-        .eq('status', 'published')
+        .eq('status', 'active')
         .order('publish_date', { ascending: false })
         .limit(3);
       if (error) throw error;
