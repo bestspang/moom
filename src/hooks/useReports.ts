@@ -210,35 +210,70 @@ export function useActiveMembers(
   return useQuery({
     queryKey: ['active-members', dateRange, filters],
     queryFn: async () => {
-      // For demo purposes, generate mock data
-      const days = dateRange.start && dateRange.end
+      let query = supabase
+        .from('member_attendance')
+        .select('check_in_time, member_id, location_id, members!inner(gender, date_of_birth)')
+        .gte('check_in_time', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('check_in_time', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: attendanceData, error } = await query;
+      if (error) throw error;
+
+      const allDays = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => ({
-        date: format(day, 'd MMM'),
-        activeMembers: Math.floor(Math.random() * 50) + 20,
-      }));
+      // Group unique members by date
+      const dateMap = new Map<string, Set<string>>();
+      allDays.forEach((day) => dateMap.set(format(day, 'd MMM'), new Set()));
+
+      (attendanceData || []).forEach((row: any) => {
+        if (!row.check_in_time) return;
+        const memberGender = row.members?.gender;
+        if (filters.gender !== 'all' && memberGender !== filters.gender) return;
+        if (filters.age !== 'all' && row.members?.date_of_birth) {
+          const age = differenceInDays(new Date(), new Date(row.members.date_of_birth)) / 365;
+          const [minAge, maxAge] = filters.age === '46+' ? [46, 200] : filters.age.split('-').map(Number);
+          if (age < minAge || age > maxAge) return;
+        }
+        const dateKey = format(new Date(row.check_in_time), 'd MMM');
+        dateMap.get(dateKey)?.add(row.member_id);
+      });
+
+      const chartData = allDays.map((day) => {
+        const key = format(day, 'd MMM');
+        return { date: key, activeMembers: dateMap.get(key)?.size || 0 };
+      });
 
       const activeCounts = chartData.map((d) => d.activeMembers);
-      const maxActive = Math.max(...activeCounts);
-      const minActive = Math.min(...activeCounts);
+      const maxActive = activeCounts.length > 0 ? Math.max(...activeCounts) : 0;
+      const minActive = activeCounts.length > 0 ? Math.min(...activeCounts) : 0;
+      const totalActive = activeCounts.reduce((a, b) => a + b, 0);
+
+      const uniqueMembers = new Set<string>();
+      (attendanceData || []).forEach((row: any) => {
+        if (row.member_id) uniqueMembers.add(row.member_id);
+      });
 
       const stats: ActiveMembersStats = {
         mostActiveDay: maxActive,
         mostActiveDayDate: chartData.find((d) => d.activeMembers === maxActive)?.date || '-',
         leastActiveDay: minActive,
         leastActiveDayDate: chartData.find((d) => d.activeMembers === minActive)?.date || '-',
-        avgActivePerDay: Math.round(activeCounts.reduce((a, b) => a + b, 0) / activeCounts.length) || 0,
-        newActivePerDay: Math.floor(Math.random() * 5) + 1,
+        avgActivePerDay: chartData.length > 0 ? Math.round(totalActive / chartData.length) : 0,
+        newActivePerDay: chartData.length > 0 ? Math.round(uniqueMembers.size / chartData.length) : 0,
       };
 
-      const tableData: ActiveMemberRow[] = chartData.slice(0, 10).map((d) => ({
+      const tableData: ActiveMemberRow[] = chartData.map((d) => ({
         date: d.date,
         activeMembers: d.activeMembers,
-        location: 'Main Branch',
-        ageGroup: '26-35',
-        gender: 'Mixed',
+        location: filters.location === 'all' ? 'All Locations' : filters.location,
+        ageGroup: filters.age === 'all' ? 'All' : filters.age,
+        gender: filters.gender === 'all' ? 'All' : filters.gender,
       }));
 
       return { stats, chartData, tableData };
