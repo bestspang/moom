@@ -88,7 +88,7 @@ const Insights = () => {
               ))
             ) : (
               <>
-                <StatCard title={t('insights.arpu')} value={formatCurrency(overview?.arpu || 0)} color="teal" subtitle={t('insights.perMember')} />
+                {canFinance && <StatCard title={t('insights.arpu')} value={formatCurrency(overview?.arpu || 0)} color="teal" subtitle={t('insights.perMember')} />}
                 <StatCard title={t('insights.retentionRate')} value={`${overview?.retentionRate || 0}%`} color="blue" />
                 <StatCard title={t('insights.classUtilization')} value={`${overview?.classUtilization || 0}%`} color="orange" />
                 <StatCard title={t('insights.leadConversion')} value={`${overview?.leadConversionRate || 0}%`} color="teal" />
