@@ -26,6 +26,7 @@ import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
+import { useCommandListener } from '@/lib/commandEvents';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
 
