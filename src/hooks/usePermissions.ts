@@ -9,7 +9,8 @@ export type ResourceKey =
   | 'dashboard' | 'lobby' | 'schedule' | 'rooms' | 'classes' | 'class_categories'
   | 'members' | 'leads' | 'packages' | 'promotions' | 'staff' | 'roles'
   | 'locations' | 'activity_log' | 'announcements' | 'workout_list'
-  | 'transfer_slips' | 'finance' | 'reports' | 'settings' | 'notifications';
+  | 'transfer_slips' | 'finance' | 'reports' | 'settings' | 'notifications'
+  | 'gamification';
 
 export type PermissionAction = 'read' | 'write' | 'delete';
 
