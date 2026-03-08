@@ -14,6 +14,7 @@ import { useCommandListener } from '@/lib/commandEvents';
 
 const Lobby = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
