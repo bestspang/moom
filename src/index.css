@@ -178,6 +178,50 @@
     display: none;
   }
 
+  /* Momentum animations */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px currentColor) brightness(1); }
+    50% { filter: drop-shadow(0 0 10px currentColor) brightness(1.2); }
+  }
+  @keyframes flame-flicker {
+    0%, 100% { transform: scaleY(1) scaleX(1); }
+    25% { transform: scaleY(1.08) scaleX(0.96); }
+    50% { transform: scaleY(0.95) scaleX(1.04); }
+    75% { transform: scaleY(1.05) scaleX(0.98); }
+  }
+  @keyframes bounce-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes stamp-in {
+    0% { transform: scale(2) rotate(-15deg); opacity: 0; }
+    60% { transform: scale(0.9) rotate(-12deg); }
+    100% { transform: scale(1) rotate(-12deg); opacity: 1; }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background-size: 200% 100%;
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  .animate-flame-flicker {
+    animation: flame-flicker 0.8s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  .animate-bounce-in {
+    animation: bounce-in 0.4s ease-out both;
+  }
+  .animate-stamp-in {
+    animation: stamp-in 0.4s ease-out both;
+  }
+
   /* Badge variants */
   .badge-new {
     @apply bg-accent-teal text-white;
