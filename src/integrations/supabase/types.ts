@@ -718,6 +718,400 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_audit_log: {
+        Row: {
+          action_key: string | null
+          created_at: string | null
+          event_type: string
+          flag_reason: string | null
+          flagged: boolean | null
+          id: string
+          member_id: string | null
+          metadata: Json | null
+          points_delta: number | null
+          staff_id: string | null
+          xp_delta: number | null
+        }
+        Insert: {
+          action_key?: string | null
+          created_at?: string | null
+          event_type: string
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          member_id?: string | null
+          metadata?: Json | null
+          points_delta?: number | null
+          staff_id?: string | null
+          xp_delta?: number | null
+        }
+        Update: {
+          action_key?: string | null
+          created_at?: string | null
+          event_type?: string
+          flag_reason?: string | null
+          flagged?: boolean | null
+          id?: string
+          member_id?: string | null
+          metadata?: Json | null
+          points_delta?: number | null
+          staff_id?: string | null
+          xp_delta?: number | null
+        }
+        Relationships: []
+      }
+      gamification_badges: {
+        Row: {
+          created_at: string | null
+          description_en: string | null
+          description_th: string | null
+          display_priority: number | null
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name_en: string
+          name_th: string | null
+          tier: string
+          unlock_condition: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          display_priority?: number | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name_en: string
+          name_th?: string | null
+          tier?: string
+          unlock_condition?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          display_priority?: number | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_th?: string | null
+          tier?: string
+          unlock_condition?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gamification_challenges: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description_en: string | null
+          description_th: string | null
+          eligibility: Json | null
+          end_date: string
+          goal_action_key: string | null
+          goal_type: string
+          goal_value: number
+          id: string
+          name_en: string
+          name_th: string | null
+          reward_badge_id: string | null
+          reward_points: number | null
+          reward_xp: number | null
+          start_date: string
+          status: string
+          target_location_ids: string[] | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          eligibility?: Json | null
+          end_date: string
+          goal_action_key?: string | null
+          goal_type?: string
+          goal_value?: number
+          id?: string
+          name_en: string
+          name_th?: string | null
+          reward_badge_id?: string | null
+          reward_points?: number | null
+          reward_xp?: number | null
+          start_date: string
+          status?: string
+          target_location_ids?: string[] | null
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          eligibility?: Json | null
+          end_date?: string
+          goal_action_key?: string | null
+          goal_type?: string
+          goal_value?: number
+          id?: string
+          name_en?: string
+          name_th?: string | null
+          reward_badge_id?: string | null
+          reward_points?: number | null
+          reward_xp?: number | null
+          start_date?: string
+          status?: string
+          target_location_ids?: string[] | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gamification_challenges_reward_badge_id_fkey"
+            columns: ["reward_badge_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gamification_levels: {
+        Row: {
+          badge_color: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean
+          level_number: number
+          name_en: string
+          name_th: string | null
+          perks: Json | null
+          updated_at: string | null
+          xp_required: number
+        }
+        Insert: {
+          badge_color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          level_number: number
+          name_en: string
+          name_th?: string | null
+          perks?: Json | null
+          updated_at?: string | null
+          xp_required?: number
+        }
+        Update: {
+          badge_color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          level_number?: number
+          name_en?: string
+          name_th?: string | null
+          perks?: Json | null
+          updated_at?: string | null
+          xp_required?: number
+        }
+        Relationships: []
+      }
+      gamification_rewards: {
+        Row: {
+          available_from: string | null
+          available_until: string | null
+          category: string
+          created_at: string | null
+          description_en: string | null
+          description_th: string | null
+          id: string
+          is_active: boolean
+          is_unlimited: boolean
+          level_required: number | null
+          linked_package_id: string | null
+          name_en: string
+          name_th: string | null
+          points_cost: number
+          redeemed_count: number | null
+          stock: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          available_from?: string | null
+          available_until?: string | null
+          category?: string
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          level_required?: number | null
+          linked_package_id?: string | null
+          name_en: string
+          name_th?: string | null
+          points_cost?: number
+          redeemed_count?: number | null
+          stock?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          available_from?: string | null
+          available_until?: string | null
+          category?: string
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          level_required?: number | null
+          linked_package_id?: string | null
+          name_en?: string
+          name_th?: string | null
+          points_cost?: number
+          redeemed_count?: number | null
+          stock?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gamification_rewards_linked_package_id_fkey"
+            columns: ["linked_package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gamification_rules: {
+        Row: {
+          action_key: string
+          cooldown_minutes: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean
+          label_en: string
+          label_th: string | null
+          max_per_day: number | null
+          points_value: number
+          sort_order: number | null
+          updated_at: string | null
+          xp_value: number
+        }
+        Insert: {
+          action_key: string
+          cooldown_minutes?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          label_en: string
+          label_th?: string | null
+          max_per_day?: number | null
+          points_value?: number
+          sort_order?: number | null
+          updated_at?: string | null
+          xp_value?: number
+        }
+        Update: {
+          action_key?: string
+          cooldown_minutes?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          label_en?: string
+          label_th?: string | null
+          max_per_day?: number | null
+          points_value?: number
+          sort_order?: number | null
+          updated_at?: string | null
+          xp_value?: number
+        }
+        Relationships: []
+      }
+      gamification_seasons: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          name_en: string
+          name_th: string | null
+          reset_points: boolean
+          reset_xp: boolean
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          name_en: string
+          name_th?: string | null
+          reset_points?: boolean
+          reset_xp?: boolean
+          start_date: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          name_en?: string
+          name_th?: string | null
+          reset_points?: boolean
+          reset_xp?: boolean
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gamification_trainer_tiers: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          min_score: number
+          perks: Json | null
+          sort_order: number | null
+          tier_name_en: string
+          tier_name_th: string | null
+          trainer_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_score?: number
+          perks?: Json | null
+          sort_order?: number | null
+          tier_name_en: string
+          tier_name_th?: string | null
+          trainer_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_score?: number
+          perks?: Json | null
+          sort_order?: number | null
+          tier_name_en?: string
+          tier_name_th?: string | null
+          trainer_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string | null

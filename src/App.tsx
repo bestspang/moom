@@ -72,6 +72,15 @@ import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
+import GamificationStudio from "./pages/gamification/GamificationStudio";
+import GamificationOverview from "./pages/gamification/GamificationOverview";
+import GamificationRules from "./pages/gamification/GamificationRules";
+import GamificationLevels from "./pages/gamification/GamificationLevels";
+import GamificationChallenges from "./pages/gamification/GamificationChallenges";
+import GamificationBadges from "./pages/gamification/GamificationBadges";
+import GamificationRewards from "./pages/gamification/GamificationRewards";
+import GamificationTrainers from "./pages/gamification/GamificationTrainers";
+import GamificationRisk from "./pages/gamification/GamificationRisk";
 
 const queryClient = new QueryClient();
 
@@ -164,6 +173,17 @@ const App = () => (
                   <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                   <Route path="import-export" element={<SettingsImportExport />} />
                   <Route path="integrations" element={<SettingsIntegrations />} />
+                </Route>
+                <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<GamificationOverview />} />
+                  <Route path="rules" element={<GamificationRules />} />
+                  <Route path="levels" element={<GamificationLevels />} />
+                  <Route path="challenges" element={<GamificationChallenges />} />
+                  <Route path="badges" element={<GamificationBadges />} />
+                  <Route path="rewards" element={<GamificationRewards />} />
+                  <Route path="trainers" element={<GamificationTrainers />} />
+                  <Route path="risk" element={<GamificationRisk />} />
                 </Route>
                 <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
               </Route>

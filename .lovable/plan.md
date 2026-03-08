@@ -1,215 +1,47 @@
 
 
-# Gamification Studio — Admin Module Plan
+# Fix: Promotions export missing columns in Settings
 
-## 1. Information Architecture
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        GAMIFICATION STUDIO                               │
-├─────────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │  Overview   │  │   Rules     │  │  Challenges │  │   Badges    │    │
-│  │  (KPIs &    │  │   Engine    │  │   Builder   │  │   Builder   │    │
-│  │  Analytics) │  │             │  │             │  │             │    │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
-│                                                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │  Rewards    │  │  Trainer    │  │   Squads    │  │   Risk &    │    │
-│  │  Catalog    │  │   Tiers     │  │  Management │  │   Audit     │    │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
-└─────────────────────────────────────────────────────────────────────────┘
+## Fix (surgical, 1 file)
+
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+
+Replace the promotions export `cols` array to match the Promotions page export format:
+
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-## 2. Route Structure
-
-| Route | Component | Purpose |
-|-------|-----------|---------|
-| `/gamification` | GamificationStudio.tsx | Shell with tabs (like Settings/Finance pattern) |
-| `/gamification/overview` | GamificationOverview.tsx | KPIs, participation, lift metrics |
-| `/gamification/rules` | GamificationRules.tsx | XP/Points mapping, streaks, anti-abuse |
-| `/gamification/challenges` | GamificationChallenges.tsx | Challenge CRUD + targeting |
-| `/gamification/badges` | GamificationBadges.tsx | Badge CRUD + conditions |
-| `/gamification/rewards` | GamificationRewards.tsx | Reward catalog management |
-| `/gamification/trainers` | GamificationTrainers.tsx | In-house & freelance tier rules |
-| `/gamification/squads` | GamificationSquads.tsx | Squad management |
-| `/gamification/risk` | GamificationRisk.tsx | Abuse detection, audit logs |
-
-## 3. Sidebar Integration
-
-Add new group "Gamification" in Sidebar.tsx under the Business section:
-- Icon: `Trophy` or `Gamepad2` from lucide-react
-- Minimum access: `level_3_manager`
-- New resource key: `gamification`
-
-## 4. Key Screens & Components
-
-### A. Overview Tab
-- StatCards: Participation rate, XP distributed, Points redeemed, Active challenges
-- Charts: Repeat visit lift trend, Package renewal correlation, Merch attach rate
-- Trainer leaderboard widget (top 5)
-- Recent reward redemptions feed
-
-### B. Rules Engine Tab
-- Action-to-XP table (editable): check_in, class_attended, streak_7_day, etc.
-- Action-to-Points table
-- Streak configuration panel (thresholds, multipliers)
-- Cooldown settings (anti-gaming: max XP/day, min interval)
-- Season configuration (start/end, reset behavior)
-
-### C. Challenge Builder Tab
-- DataTable listing challenges with status filter
-- CreateChallengeDialog with:
-  - Name, description (bilingual)
-  - Type: daily/weekly/seasonal
-  - Eligibility: all members, package holders, tier X+, location
-  - Goal: action count, XP threshold, class count
-  - Reward: XP bonus, points, badge unlock, package booster
-  - Start/end dates, branch targeting
-
-### D. Badge Builder Tab
-- Visual grid of badges with tier indicators
-- CreateBadgeDialog:
-  - Name, icon upload, tier (bronze/silver/gold/platinum)
-  - Unlock conditions (XP threshold, challenge completion, attendance streak)
-  - Display priority
-
-### E. Reward Catalog Tab
-- DataTable with categories: Perk, Merch, Access, Package Booster, Event
-- CreateRewardDialog:
-  - Name, description, category
-  - Points cost, level requirement
-  - Stock/limit (finite or unlimited)
-  - Availability period
-  - Linked package ID (for boosters)
-
-### F. Trainer Tiers Tab
-- In-house trainer section: impact scoring rules, recognition thresholds
-- Freelance partner section: separate reputation system, tier definitions
-- Clear visual separation between the two systems
-
-### G. Squads Tab
-- Squad list with member counts
-- CreateSquadDialog: name, captain assignment, max size
-- Challenge assignment to squads
-
-### H. Risk & Audit Tab
-- Suspicious activity feed (rapid point farming, unusual patterns)
-- Abuse flags table with dismiss/escalate actions
-- XP/Points audit log with filters
-
-## 5. Database Schema (New Tables)
-
-```sql
--- Core gamification tables
-gamification_actions        -- action definitions (check_in, class, etc.)
-gamification_rules          -- XP/points per action, cooldowns
-gamification_levels         -- level tier definitions
-gamification_streaks        -- streak thresholds & multipliers
-gamification_seasons        -- season config
-
--- Challenges
-gamification_challenges     -- challenge definitions
-gamification_challenge_entries -- member progress
-
--- Badges
-gamification_badges         -- badge definitions
-gamification_badge_awards   -- member awards
-
--- Rewards
-gamification_rewards        -- reward catalog
-gamification_redemptions    -- redemption records
-
--- Trainer
-gamification_trainer_tiers  -- tier definitions
-gamification_trainer_scores -- individual scores
-
--- Squads
-gamification_squads
-gamification_squad_members
-
--- Audit
-gamification_audit_log      -- all point/XP changes
-gamification_abuse_flags    -- flagged activity
-```
-
-## 6. First Implementation Milestone
-
-**Phase 1 (MVP):**
-1. Create base tables: `gamification_rules`, `gamification_levels`, `gamification_challenges`, `gamification_badges`, `gamification_rewards`
-2. Build GamificationStudio shell with tab navigation
-3. Implement Overview tab with placeholder KPIs
-4. Implement Rules Engine tab with basic CRUD
-5. Add sidebar navigation entry
-6. Add i18n keys for all new labels
-
-**Phase 2:**
-- Challenge Builder with full targeting
-- Badge Builder with visual uploads
-- Reward Catalog with stock management
-
-**Phase 3:**
-- Trainer Tiers (separate in-house vs freelance)
-- Squads management
-- Risk & Audit dashboard
-
-## 7. Files to Create
-
-```text
-src/pages/
-  gamification/
-    GamificationStudio.tsx       -- Shell (pattern from Settings.tsx)
-    GamificationOverview.tsx
-    GamificationRules.tsx
-    GamificationChallenges.tsx
-    GamificationBadges.tsx
-    GamificationRewards.tsx
-    GamificationTrainers.tsx
-    GamificationSquads.tsx
-    GamificationRisk.tsx
-
-src/components/gamification/
-    ChallengeDialog.tsx
-    BadgeDialog.tsx
-    RewardDialog.tsx
-    RuleEditor.tsx
-    SquadDialog.tsx
-    AbuseReviewCard.tsx
-
-src/hooks/
-    useGamificationRules.ts
-    useGamificationChallenges.ts
-    useGamificationBadges.ts
-    useGamificationRewards.ts
-    useGamificationAnalytics.ts
-    useGamificationAudit.ts
-```
-
-## 8. Files to Modify
-
-- `src/App.tsx` — Add routes under ProtectedRoute (level_3_manager)
-- `src/components/layout/Sidebar.tsx` — Add Gamification nav group
-- `src/hooks/usePermissions.ts` — Add `gamification` to ResourceKey
-- `src/i18n/locales/en.ts` — Add gamification section
-- `src/i18n/locales/th.ts` — Add Thai translations
-- `src/types/domain.ts` — Add gamification entity types
-
-## 9. Backend Dependencies
-
-| Dependency | Status | Notes |
-|------------|--------|-------|
-| Database tables | Required | 12+ new tables |
-| RLS policies | Required | Manager+ access |
-| Edge Functions | Future | Point calculation, abuse detection |
-| Realtime | Optional | Live leaderboards |
-| Storage bucket | Future | Badge icon uploads |
-
-## 10. Assumptions
-
-1. XP/Points are calculated by backend Edge Functions (not frontend)
-2. Member-facing display lives in Experience App (this is admin control only)
-3. Seasons can overlap with challenges
-4. Trainer tiers are business-rule-separate from member tiers
-5. Redemption stock is enforced at DB level with triggers
-6. Abuse detection is rule-based initially (not ML)
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
