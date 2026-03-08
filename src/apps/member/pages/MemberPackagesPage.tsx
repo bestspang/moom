@@ -119,7 +119,7 @@ export default function MemberPackagesPage() {
                       <Check className="h-3 w-3 text-primary flex-shrink-0" />{pkg.termDays} day term
                     </li>
                   </ul>
-                  <Button size="sm" className="w-full">Purchase</Button>
+                  <Button size="sm" className="w-full" onClick={() => navigate(`/member/packages/${pkg.id}/purchase`)}>Purchase</Button>
                 </div>
               ))}
             </div>

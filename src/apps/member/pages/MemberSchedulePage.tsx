@@ -82,6 +82,7 @@ export default function MemberSchedulePage() {
                       ? <span className="text-xs font-medium text-primary">Book</span>
                       : <span className="text-xs text-muted-foreground">Full</span>
                   }
+                  onClick={() => navigate(`/member/schedule/${cls.id}`)}
                 />
               ))}
             </div>
