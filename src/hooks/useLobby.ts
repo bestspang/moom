@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { getBangkokDayRange } from '@/lib/dateRange';
 import { logActivity } from '@/lib/activityLogger';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
