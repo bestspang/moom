@@ -1,29 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader, StatCard, DateRangePicker, SearchBar, DataTable, StatusBadge, StatusTabs, ManageDropdown, type Column, type StatusTab } from '@/components/common';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency, getDateLocale } from '@/lib/formatters';
+import { PageHeader, ManageDropdown } from '@/components/common';
 import { useFinanceTransactions, computeFinanceStats } from '@/hooks/useFinance';
 import { useExpenses, useCreateExpense, useDeleteExpense, computePnL } from '@/hooks/useExpenses';
 import { useTransferSlipsList, useTransferSlipStats } from '@/hooks/useTransferSlips';
 import { useRevenueForecast } from '@/hooks/useRevenueForecast';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { SlipDetailDialog } from '@/components/transfer-slips/SlipDetailDialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus } from 'lucide-react';
-
-const PAGE_SIZE = 50;
+import {
+  FinanceOverview,
+  FinanceTransactions,
+  FinanceTransferSlips,
+  FinanceForecasting,
+  FinancePnL,
+} from '@/components/finance';
 
 const PAYMENT_COLORS: Record<string, string> = {
   cash: 'hsl(var(--primary))',
@@ -37,7 +32,7 @@ const PAYMENT_COLORS: Record<string, string> = {
 
 const Finance = () => {
   const { t, language } = useLanguage();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
 
   const [activeMainTab, setActiveMainTab] = useState(initialTab);
@@ -57,47 +52,23 @@ const Finance = () => {
   const [selectedSlipId, setSelectedSlipId] = useState<string | null>(null);
   const [slipDetailOpen, setSlipDetailOpen] = useState(false);
 
-  // Finance transactions data
+  // Data hooks
   const { data: transactions, isLoading: txLoading } = useFinanceTransactions({
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-    search,
-    status: statusFilter,
-    paymentMethod: paymentMethodFilter,
+    startDate: dateRange.start, endDate: dateRange.end, search, status: statusFilter, paymentMethod: paymentMethodFilter,
   });
-
-  // Transfer slips data
   const { data: slips, isLoading: slipsLoading } = useTransferSlipsList({
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-    search: slipSearch,
-    status: slipStatusTab,
+    startDate: dateRange.start, endDate: dateRange.end, search: slipSearch, status: slipStatusTab,
   });
   const { data: slipStats } = useTransferSlipStats();
-
-  // Revenue forecast
   const { data: forecast, isLoading: forecastLoading } = useRevenueForecast();
-
-  // Expenses for P&L
-  const { data: expenses, isLoading: expensesLoading } = useExpenses({
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-  });
+  const { data: expenses, isLoading: expensesLoading } = useExpenses({ startDate: dateRange.start, endDate: dateRange.end });
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
-  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
-  const [expenseForm, setExpenseForm] = useState({ date: '', category: 'rent', amount: '', description: '' });
 
   const stats = useMemo(() => computeFinanceStats(transactions), [transactions]);
+  const pnl = useMemo(() => computePnL(transactions, expenses), [transactions, expenses]);
 
-  // Client-side pagination for transactions
-  const paginatedData = useMemo(() => {
-    if (!transactions) return [];
-    const start = (page - 1) * PAGE_SIZE;
-    return transactions.slice(start, start + PAGE_SIZE);
-  }, [transactions, page]);
-
-  // Overview charts data
+  // Overview chart data
   const dailyRevenueData = useMemo(() => {
     if (!transactions) return [];
     const dayMap = new Map<string, number>();
@@ -106,9 +77,7 @@ const Finance = () => {
       const day = format(new Date(tx.created_at), 'MM/dd');
       dayMap.set(day, (dayMap.get(day) || 0) + Number(tx.amount));
     });
-    return Array.from(dayMap.entries())
-      .map(([day, amount]) => ({ day, amount }))
-      .sort((a, b) => a.day.localeCompare(b.day));
+    return Array.from(dayMap.entries()).map(([day, amount]) => ({ day, amount })).sort((a, b) => a.day.localeCompare(b.day));
   }, [transactions]);
 
   const paymentBreakdown = useMemo(() => {
@@ -120,51 +89,27 @@ const Finance = () => {
       methodMap.set(method, (methodMap.get(method) || 0) + Number(tx.amount));
     });
     return Array.from(methodMap.entries()).map(([method, amount]) => ({
-      name: method,
-      value: amount,
-      color: PAYMENT_COLORS[method] || 'hsl(var(--muted-foreground))',
+      name: method, value: amount, color: PAYMENT_COLORS[method] || 'hsl(var(--muted-foreground))',
     }));
   }, [transactions]);
 
-  const forecastChartData = useMemo(() => {
-    if (!forecast) return [];
-    return [
-      { label: t('revenueForecast.lastMonth'), amount: forecast.lastMonth },
-      { label: t('revenueForecast.thisMonth'), amount: forecast.thisMonth },
-      { label: t('revenueForecast.nextMonth'), amount: forecast.projectedNextMonth },
-    ];
-  }, [forecast, t]);
-
-  const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
-    setter(value);
-    setPage(1);
-  };
-
-  const getStatusVariant = (status: string | null) => {
-    switch (status) {
-      case 'paid': return 'paid';
-      case 'pending': return 'pending';
-      case 'voided': return 'voided';
-      case 'needs_review': return 'pending';
-      case 'refunded': return 'voided';
-      case 'failed': return 'inactive';
-      default: return 'default';
-    }
+  const methodLabel = (method: string) => {
+    const map: Record<string, string> = {
+      cash: t('finance.cash'), bank_transfer: t('finance.bankTransfer'), credit_card: t('finance.creditCard'),
+      promptpay: t('finance.promptpay'), card_stripe: 'Stripe Card', qr_promptpay_stripe: 'Stripe PromptPay',
+    };
+    return map[method] || method;
   };
 
   const formatPaymentMethod = (method: string | null): string => {
     const map: Record<string, string> = {
-      cash: t('finance.cash'),
-      bank_transfer: t('finance.bankTransfer'),
-      credit_card: t('finance.creditCard'),
-      promptpay: t('finance.promptpay'),
-      card_stripe: t('finance.stripeCard'),
-      qr_promptpay_stripe: t('finance.stripePromptpay'),
-      other: t('finance.other'),
+      cash: t('finance.cash'), bank_transfer: t('finance.bankTransfer'), credit_card: t('finance.creditCard'),
+      promptpay: t('finance.promptpay'), card_stripe: t('finance.stripeCard'), qr_promptpay_stripe: t('finance.stripePromptpay'), other: t('finance.other'),
     };
     return method ? (map[method] || method) : '-';
   };
 
+  // Export handlers
   const handleExportCsv = () => {
     if (!transactions?.length) return;
     const csvColumns: CsvColumn<any>[] = [
@@ -183,8 +128,7 @@ const Finance = () => {
       { key: 'status', header: 'Status', accessor: (r) => r.status || '-' },
       { key: 'staff', header: 'Staff', accessor: (r) => r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : '-' },
     ];
-    const date = new Date().toISOString().split('T')[0];
-    exportToCsv(transactions, csvColumns, `finance-export-${date}`);
+    exportToCsv(transactions, csvColumns, `finance-export-${new Date().toISOString().split('T')[0]}`);
     toast.success(t('common.export'));
   };
 
@@ -198,215 +142,44 @@ const Finance = () => {
       { key: 'amount', header: 'Amount', accessor: (r) => r.amount_thb },
       { key: 'status', header: 'Status', accessor: (r) => r.status || '' },
     ];
-    const date = new Date().toISOString().split('T')[0];
-    exportToCsv(slips, csvColumns, `transfer-slips-${date}`);
+    exportToCsv(slips, csvColumns, `transfer-slips-${new Date().toISOString().split('T')[0]}`);
     toast.success(t('common.export'));
   };
 
-  const handleDownloadTxTemplate = () => {
-    const headers = ['Date & Time', 'Transaction no.', 'Order name', 'Type', 'Sold to', 'Register location', 'Price excluding vat', 'VAT @7%', 'Price including vat', 'Sold at', 'Payment method', 'Tax invoice no.', 'Status', 'Staff'];
+  const downloadTemplate = (headers: string[], filename: string) => {
     const csv = headers.join(',');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'transactions-template.csv';
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast.success(t('common.downloadTemplate'));
-  };
-
-  const handleDownloadSlipTemplate = () => {
-    const headers = ['transaction_id', 'order_name', 'amount', 'status'];
-    const csv = headers.join(',');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'transfer-slips-template.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(t('common.downloadTemplate'));
-  };
-
-  const formatSourceType = (source: string | null): string => {
-    const map: Record<string, string> = {
-      stripe: 'Stripe',
-      transfer_slip: 'Transfer',
-      cash: 'Cash',
-      bank_transfer: 'Bank Transfer',
-      manual: 'Manual',
-    };
-    return source ? (map[source] || source) : 'Manual';
-  };
-
-  const txColumns: Column<any>[] = [
-    { 
-      key: 'dateTime', 
-      header: t('finance.dateTime'), 
-      cell: (row) => format(new Date(row.paid_at || row.created_at), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) })
-    },
-    { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.transaction_id },
-    { key: 'orderName', header: t('finance.orderName'), cell: (row) => row.order_name },
-    {
-      key: 'source',
-      header: 'Source',
-      cell: (row) => (
-        <StatusBadge variant={row.source_type === 'stripe' ? 'active' : 'default'}>
-          {formatSourceType(row.source_type)}
-        </StatusBadge>
-      )
-    },
-    { 
-      key: 'type', 
-      header: t('packages.type'), 
-      cell: (row) => (
-        <StatusBadge variant="default">
-          {row.type || '-'}
-        </StatusBadge>
-      )
-    },
-    { 
-      key: 'soldTo', 
-      header: t('finance.soldTo'), 
-      cell: (row) => row.sold_to_name || (row.member ? `${row.member.first_name} ${row.member.last_name}` : '-')
-    },
-    {
-      key: 'location',
-      header: t('finance.location'),
-      cell: (row) => row.location?.name || '-',
-    },
-    { 
-      key: 'amount', 
-      header: t('finance.amount'), 
-      cell: (row) => {
-        const gross = Number(row.amount);
-        const vat = row.amount_vat != null ? Number(row.amount_vat) : null;
-        return (
-          <div className="text-right">
-            <span className="font-medium">{formatCurrency(gross)}</span>
-            {vat != null && (
-              <span className="block text-[10px] text-muted-foreground">VAT {formatCurrency(vat)}</span>
-            )}
-          </div>
-        );
-      }
-    },
-    {
-      key: 'paymentMethod',
-      header: t('finance.paymentMethod'),
-      cell: (row) => formatPaymentMethod(row.payment_method),
-    },
-    { 
-      key: 'status', 
-      header: t('common.status'), 
-      cell: (row) => {
-        const statusLabels: Record<string, string> = {
-          paid: t('transferSlips.paid'),
-          pending: t('common.pending'),
-          needs_review: t('transferSlips.needsReview'),
-          voided: t('transferSlips.voided'),
-          failed: t('finance.failed'),
-          refunded: t('finance.refunded'),
-        };
-        return (
-          <StatusBadge variant={getStatusVariant(row.status) as any}>
-            {statusLabels[row.status] || row.status || '-'}
-          </StatusBadge>
-        );
-      }
-    },
-  ];
-
-  const slipColumns: Column<any>[] = [
-    { 
-      key: 'dateTime', 
-      header: t('finance.dateTime'), 
-      cell: (row) => row.slip_datetime ? format(new Date(row.slip_datetime), 'd MMM yyyy HH:mm', { locale: getDateLocale(language) }) : '-'
-    },
-    { key: 'transactionId', header: t('finance.transactionNo'), cell: (row) => row.linked_transaction ? (row.linked_transaction as any).transaction_id : '-' },
-    { 
-      key: 'packageName', 
-      header: t('transferSlips.packageName'), 
-      cell: (row) => row.package ? (language === 'th' && row.package.name_th ? row.package.name_th : row.package.name_en) : '-'
-    },
-    { 
-      key: 'packageType', 
-      header: t('transferSlips.packageType'), 
-      cell: (row) => row.package?.type ? (
-        <StatusBadge variant="default">
-          {row.package.type}
-        </StatusBadge>
-      ) : '-'
-    },
-    { 
-      key: 'soldTo', 
-      header: t('transferSlips.soldTo'), 
-      cell: (row) => row.member ? `${row.member.first_name} ${row.member.last_name}` : row.member_name_text || '-'
-    },
-    { 
-      key: 'amount', 
-      header: t('finance.amount'), 
-      cell: (row) => formatCurrency(Number(row.amount_thb))
-    },
-    { 
-      key: 'status', 
-      header: t('common.status'), 
-      cell: (row) => {
-        const statusLabels: Record<string, string> = {
-          approved: t('transferSlips.paid'),
-          needs_review: t('transferSlips.needsReview'),
-          rejected: t('transferSlips.rejected'),
-          voided: t('transferSlips.voided'),
-        };
-        return (
-          <StatusBadge variant={getStatusVariant(row.status) as any}>
-            {statusLabels[row.status] || row.status || '-'}
-          </StatusBadge>
-        );
-      }
-    },
-  ];
-
-  const slipStatusTabs: StatusTab[] = [
-    { key: 'needs_review', label: t('transferSlips.needsReview'), count: slipStats?.needs_review || 0, color: 'red' },
-    { key: 'approved', label: t('transferSlips.paid'), count: slipStats?.approved || 0, color: 'teal' },
-    { key: 'voided', label: t('transferSlips.voided'), count: slipStats?.voided || 0, color: 'gray' },
-  ];
-
-  const methodLabel = (method: string) => {
-    const map: Record<string, string> = {
-      cash: t('finance.cash'),
-      bank_transfer: t('finance.bankTransfer'),
-      credit_card: t('finance.creditCard'),
-      promptpay: t('finance.promptpay'),
-      card_stripe: 'Stripe Card',
-      qr_promptpay_stripe: 'Stripe PromptPay',
-    };
-    return map[method] || method;
   };
 
   return (
     <div>
-      <PageHeader 
-        title={t('finance.title')} 
+      <PageHeader
+        title={t('finance.title')}
         breadcrumbs={[{ label: t('finance.title') }]}
         actions={
           activeMainTab === 'transactions' ? (
             <ManageDropdown
               onExport={handleExportCsv}
-              onDownloadTemplate={handleDownloadTxTemplate}
+              onDownloadTemplate={() => downloadTemplate(
+                ['Date & Time', 'Transaction no.', 'Order name', 'Type', 'Sold to', 'Register location', 'Price excluding vat', 'VAT @7%', 'Price including vat', 'Sold at', 'Payment method', 'Tax invoice no.', 'Status', 'Staff'],
+                'transactions-template.csv'
+              )}
               onImport={() => setImportOpen(true)}
               exportDisabled={!transactions?.length}
             />
           ) : activeMainTab === 'slips' ? (
             <ManageDropdown
               onExport={handleExportSlips}
-              onDownloadTemplate={handleDownloadSlipTemplate}
+              onDownloadTemplate={() => downloadTemplate(['transaction_id', 'order_name', 'amount', 'status'], 'transfer-slips-template.csv')}
               onImport={() => setImportOpen(true)}
               exportDisabled={!slips?.length}
             />
@@ -430,370 +203,63 @@ const Finance = () => {
           <TabsTrigger value="pnl">{t('finance.pnl')}</TabsTrigger>
         </TabsList>
 
-        {/* ===== Overview Tab ===== */}
-        <TabsContent value="overview" className="mt-4 space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard title={t('finance.transactions')} value={stats.transactions} color="blue" />
-            <StatCard title={t('finance.totalSales')} value={formatCurrency(stats.totalSales)} color="magenta" />
-            <StatCard title={t('finance.netIncome')} value={formatCurrency(stats.netIncome)} color="orange" />
-            <StatCard title={t('finance.refundsGiven')} value={formatCurrency(stats.refunds)} color="gray" />
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-3">
-            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Daily Revenue */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t('finance.dailyRevenue')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {txLoading ? (
-                  <Skeleton className="h-[220px] w-full" />
-                ) : dailyRevenueData.length === 0 ? (
-                  <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">{t('finance.noTransactions')}</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={dailyRevenueData}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="day" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), t('finance.amount')]}
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                      />
-                      <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Payment Method Breakdown */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t('finance.paymentBreakdown')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {txLoading ? (
-                  <Skeleton className="h-[220px] w-full" />
-                ) : paymentBreakdown.length === 0 ? (
-                  <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">{t('finance.noTransactions')}</div>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height={220}>
-                      <PieChart>
-                        <Pie data={paymentBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={45}>
-                          {paymentBreakdown.map((entry, idx) => (
-                            <Cell key={idx} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number, name: string) => [formatCurrency(value), methodLabel(name)]}
-                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-2">
-                      {paymentBreakdown.map((entry) => (
-                        <div key={entry.name} className="flex items-center gap-2 text-sm">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                          <span>{methodLabel(entry.name)}</span>
-                          <span className="text-muted-foreground ml-auto">{formatCurrency(entry.value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="overview" className="mt-4">
+          <FinanceOverview
+            stats={stats}
+            dailyRevenueData={dailyRevenueData}
+            paymentBreakdown={paymentBreakdown}
+            isLoading={txLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            methodLabel={methodLabel}
+          />
         </TabsContent>
 
-        {/* ===== Transactions Tab ===== */}
         <TabsContent value="transactions" className="mt-4">
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-3 mb-4">
-            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
-            <SearchBar 
-              placeholder={t('finance.searchPlaceholder')} 
-              value={search} 
-              onChange={(v) => { setSearch(v); setPage(1); }} 
-              className="max-w-md" 
-            />
-            <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder={t('finance.allStatuses')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('finance.allStatuses')}</SelectItem>
-                <SelectItem value="paid">{t('transferSlips.paid')}</SelectItem>
-                <SelectItem value="pending">{t('common.pending')}</SelectItem>
-                <SelectItem value="needs_review">{t('transferSlips.needsReview')}</SelectItem>
-                <SelectItem value="voided">{t('transferSlips.voided')}</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={paymentMethodFilter} onValueChange={handleFilterChange(setPaymentMethodFilter)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('finance.allPaymentMethods')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('finance.allPaymentMethods')}</SelectItem>
-                <SelectItem value="cash">{t('finance.cash')}</SelectItem>
-                <SelectItem value="bank_transfer">{t('finance.bankTransfer')}</SelectItem>
-                <SelectItem value="credit_card">{t('finance.creditCard')}</SelectItem>
-                <SelectItem value="promptpay">{t('finance.promptpay')}</SelectItem>
-                <SelectItem value="card_stripe">Stripe Card</SelectItem>
-                <SelectItem value="qr_promptpay_stripe">Stripe PromptPay</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {txLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : (
-            <DataTable
-              columns={txColumns}
-              data={paginatedData}
-              rowKey={(row) => row.id}
-              emptyMessage={t('finance.noTransactions')}
-              emptyVariant="finance"
-              pagination={{ page, perPage: PAGE_SIZE, total: transactions?.length || 0 }}
-              onPageChange={setPage}
-            />
-          )}
+          <FinanceTransactions
+            transactions={transactions}
+            isLoading={txLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(v) => { setStatusFilter(v); setPage(1); }}
+            paymentMethodFilter={paymentMethodFilter}
+            onPaymentMethodFilterChange={(v) => { setPaymentMethodFilter(v); setPage(1); }}
+            page={page}
+            onPageChange={setPage}
+          />
         </TabsContent>
 
-        {/* ===== Transfer Slips Tab ===== */}
         <TabsContent value="slips" className="mt-4">
-          <div className="flex flex-col md:flex-row gap-3 mb-4">
-            <DateRangePicker startDate={dateRange.start} endDate={dateRange.end} onChange={setDateRange} />
-            <SearchBar 
-              placeholder={t('transferSlips.searchPlaceholder')} 
-              value={slipSearch} 
-              onChange={setSlipSearch} 
-              className="max-w-md" 
-            />
-          </div>
-
-          <StatusTabs tabs={slipStatusTabs} activeTab={slipStatusTab} onChange={setSlipStatusTab} />
-
-          {slipsLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : (
-            <DataTable
-              columns={slipColumns}
-              data={slips || []}
-              rowKey={(row) => row.id}
-              onRowClick={(row) => { setSelectedSlipId(row.id); setSlipDetailOpen(true); }}
-              emptyMessage={t('transferSlips.noSlips')}
-            />
-          )}
+          <FinanceTransferSlips
+            slips={slips}
+            slipStats={slipStats}
+            isLoading={slipsLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            search={slipSearch}
+            onSearchChange={setSlipSearch}
+            statusTab={slipStatusTab}
+            onStatusTabChange={setSlipStatusTab}
+            onSlipClick={(id) => { setSelectedSlipId(id); setSlipDetailOpen(true); }}
+          />
         </TabsContent>
 
-        {/* ===== Forecasting Tab ===== */}
-        <TabsContent value="forecasting" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard title={t('revenueForecast.lastMonth')} value={formatCurrency(forecast?.lastMonth || 0)} color="gray" />
-            <StatCard title={t('revenueForecast.thisMonth')} value={formatCurrency(forecast?.thisMonth || 0)} color="blue" />
-            <StatCard title={`${t('revenueForecast.nextMonth')} (${t('revenueForecast.projected')})`} value={formatCurrency(forecast?.projectedNextMonth || 0)} color="magenta" />
-          </div>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('finance.revenueComparison')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {forecastLoading ? (
-                <Skeleton className="h-[250px] w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={forecastChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <Tooltip
-                      formatter={(value: number) => [formatCurrency(value), t('finance.amount')]}
-                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                    />
-                    <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="forecasting" className="mt-4">
+          <FinanceForecasting forecast={forecast} isLoading={forecastLoading} />
         </TabsContent>
 
-        {/* ===== P&L Tab ===== */}
-        <TabsContent value="pnl" className="mt-4 space-y-4">
-          {(() => {
-            const pnl = computePnL(transactions, expenses);
-            return (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard title={t('finance.pnlRevenue')} value={formatCurrency(pnl.revenue.total)} color="teal" />
-                  <StatCard title={t('finance.pnlExpenses')} value={formatCurrency(pnl.expenseTotal)} color="orange" />
-                  <StatCard
-                    title={t('finance.pnlNetProfit')}
-                    value={formatCurrency(pnl.netProfit)}
-                    color={pnl.netProfit >= 0 ? 'blue' : 'gray'}
-                  />
-                  <StatCard title={t('finance.pnlMargin')} value={pnl.revenue.total > 0 ? `${Math.round((pnl.netProfit / pnl.revenue.total) * 100)}%` : '0%'} color="magenta" />
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Revenue breakdown */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">{t('finance.revenueBreakdown')}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t('finance.pnlPackages')}</span>
-                          <span className="font-medium">{formatCurrency(pnl.revenue.packages)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t('finance.pnlPT')}</span>
-                          <span className="font-medium">{formatCurrency(pnl.revenue.pt)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t('finance.pnlOther')}</span>
-                          <span className="font-medium">{formatCurrency(pnl.revenue.other)}</span>
-                        </div>
-                        <div className="border-t border-border pt-2 flex justify-between text-sm font-semibold">
-                          <span>{t('finance.pnlTotalRevenue')}</span>
-                          <span>{formatCurrency(pnl.revenue.total)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Expenses */}
-                  <Card>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                      <CardTitle className="text-sm font-medium">{t('finance.pnlExpenses')}</CardTitle>
-                      <Dialog open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Plus className="h-4 w-4 mr-1" />
-                            {t('finance.addExpense')}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>{t('finance.addExpense')}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-3">
-                            <div>
-                              <Label>{t('finance.dateTime')}</Label>
-                              <Input type="date" value={expenseForm.date} onChange={(e) => setExpenseForm((p) => ({ ...p, date: e.target.value }))} />
-                            </div>
-                            <div>
-                              <Label>{t('finance.expenseCategory')}</Label>
-                              <Select value={expenseForm.category} onValueChange={(v) => setExpenseForm((p) => ({ ...p, category: v }))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="rent">Rent</SelectItem>
-                                  <SelectItem value="utilities">Utilities</SelectItem>
-                                  <SelectItem value="salary">Salary</SelectItem>
-                                  <SelectItem value="equipment">Equipment</SelectItem>
-                                  <SelectItem value="marketing">Marketing</SelectItem>
-                                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                                  <SelectItem value="general">General</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>{t('finance.amount')}</Label>
-                              <Input type="number" value={expenseForm.amount} onChange={(e) => setExpenseForm((p) => ({ ...p, amount: e.target.value }))} />
-                            </div>
-                            <div>
-                              <Label>{t('members.description')}</Label>
-                              <Input value={expenseForm.description} onChange={(e) => setExpenseForm((p) => ({ ...p, description: e.target.value }))} />
-                            </div>
-                            <Button
-                              className="w-full"
-                              disabled={!expenseForm.amount || createExpense.isPending}
-                              onClick={() => {
-                                createExpense.mutate({
-                                  date: expenseForm.date || new Date().toISOString().split('T')[0],
-                                  category: expenseForm.category,
-                                  amount: Number(expenseForm.amount),
-                                  description: expenseForm.description || undefined,
-                                }, {
-                                  onSuccess: () => {
-                                    setExpenseDialogOpen(false);
-                                    setExpenseForm({ date: '', category: 'rent', amount: '', description: '' });
-                                  },
-                                });
-                              }}
-                            >
-                              {t('common.save')}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </CardHeader>
-                    <CardContent>
-                      {expensesLoading ? (
-                        <Skeleton className="h-[120px] w-full" />
-                      ) : pnl.expensesByCategory.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center py-6">{t('finance.noExpenses')}</div>
-                      ) : (
-                        <div className="space-y-2">
-                          {pnl.expensesByCategory.map((ec) => (
-                            <div key={ec.category} className="flex justify-between text-sm">
-                              <span className="text-muted-foreground capitalize">{ec.category}</span>
-                              <span className="font-medium">{formatCurrency(ec.amount)}</span>
-                            </div>
-                          ))}
-                          <div className="border-t border-border pt-2 flex justify-between text-sm font-semibold">
-                            <span>{t('finance.pnlTotalExpenses')}</span>
-                            <span>{formatCurrency(pnl.expenseTotal)}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Recent expenses list */}
-                      {(expenses || []).length > 0 && (
-                        <div className="mt-4 space-y-1 max-h-[200px] overflow-y-auto">
-                          {(expenses || []).slice(0, 20).map((exp) => (
-                            <div key={exp.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-                              <div>
-                                <span className="text-muted-foreground">{exp.date}</span>
-                                <span className="ml-2 capitalize">{exp.category}</span>
-                                {exp.description && <span className="ml-2 text-muted-foreground">— {exp.description}</span>}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{formatCurrency(Number(exp.amount))}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => deleteExpense.mutate(exp.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
-            );
-          })()}
+        <TabsContent value="pnl" className="mt-4">
+          <FinancePnL
+            pnl={pnl}
+            expenses={expenses}
+            expensesLoading={expensesLoading}
+            onCreateExpense={(data, opts) => createExpense.mutate(data, opts)}
+            isCreating={createExpense.isPending}
+            onDeleteExpense={(id) => deleteExpense.mutate(id)}
+          />
         </TabsContent>
       </Tabs>
 
