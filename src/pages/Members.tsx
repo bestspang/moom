@@ -286,7 +286,7 @@ const Members = () => {
       <PageHeader
         title={t('members.title')}
         breadcrumbs={[{ label: t('nav.people'), href: '/members' }, { label: t('members.title') }]}
-        actions={
+        actions={can('members', 'write') ? (
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
