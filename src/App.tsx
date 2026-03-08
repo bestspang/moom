@@ -115,6 +115,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <SurfaceGuard>
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
