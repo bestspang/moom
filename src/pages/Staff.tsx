@@ -21,6 +21,7 @@ const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender',
 
 const Staff = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
 
   const staffStatusOptions = [
     { value: 'active', label: t('common.active') },
