@@ -585,7 +585,7 @@ export const useAssignPackageToMember = () => {
           order_name: `Purchase: ${pkg.name_en}`,
           member_id: memberId,
           package_id: pkg.id,
-          type: 'purchase' as any,
+          type: pkg.type as any,
           amount: amountGross,
           amount_gross: amountGross,
           amount_ex_vat: amountExVat,
