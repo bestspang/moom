@@ -25,6 +25,7 @@ const formatOpeningHoursSummary = (hours: Record<string, { open: string; close: 
 
 const Locations = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
   const [createOpen, setCreateOpen] = useState(false);
