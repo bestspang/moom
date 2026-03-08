@@ -96,44 +96,44 @@ const Members = () => {
     }
   };
 
+  const mapMemberToExport = (m: MemberWithLocation): ExportableMember => ({
+    member_id: m.member_id,
+    first_name: m.first_name,
+    last_name: m.last_name,
+    nickname: m.nickname,
+    gender: m.gender,
+    date_of_birth: m.date_of_birth,
+    phone: m.phone,
+    email: m.email,
+    line_id: (m as any).line_id ?? null,
+    register_location_id: m.register_location_id,
+    register_location_name: m.register_location?.name ?? null,
+    status: m.status,
+    member_since: m.member_since,
+    address_1: m.address_1,
+    address_2: m.address_2,
+    subdistrict: m.subdistrict,
+    district: m.district,
+    province: m.province,
+    postal_code: m.postal_code,
+    emergency_first_name: (m as any).emergency_first_name ?? m.emergency_contact_name ?? null,
+    emergency_last_name: (m as any).emergency_last_name ?? null,
+    emergency_phone: (m as any).emergency_phone ?? m.emergency_contact_phone ?? null,
+    emergency_relationship: m.emergency_relationship,
+    has_medical_conditions: (m as any).has_medical_conditions ?? false,
+    medical_notes: (m as any).medical_notes ?? null,
+    allow_physical_contact: (m as any).allow_physical_contact ?? false,
+    source: m.source,
+    notes: m.notes,
+    recent_package_name: enrichment?.[m.id]?.recent_package ?? null,
+    last_attended: enrichment?.[m.id]?.last_attended ?? null,
+    has_contract: enrichment?.[m.id]?.has_contract ?? false,
+  });
+
   const handleExport = () => {
     if (members.length === 0) return;
-    const exportData: ExportableMember[] = members.map(m => ({
-      member_id: m.member_id,
-      first_name: m.first_name,
-      last_name: m.last_name,
-      nickname: m.nickname,
-      gender: m.gender,
-      date_of_birth: m.date_of_birth,
-      phone: m.phone,
-      email: m.email,
-      line_id: (m as any).line_id ?? null,
-      register_location_id: m.register_location_id,
-      register_location_name: m.register_location?.name ?? null,
-      status: m.status,
-      member_since: m.member_since,
-      address_1: m.address_1,
-      address_2: m.address_2,
-      subdistrict: m.subdistrict,
-      district: m.district,
-      province: m.province,
-      postal_code: m.postal_code,
-      emergency_first_name: (m as any).emergency_first_name ?? m.emergency_contact_name ?? null,
-      emergency_last_name: (m as any).emergency_last_name ?? null,
-      emergency_phone: (m as any).emergency_phone ?? m.emergency_contact_phone ?? null,
-      emergency_relationship: m.emergency_relationship,
-      has_medical_conditions: (m as any).has_medical_conditions ?? false,
-      medical_notes: (m as any).medical_notes ?? null,
-      allow_physical_contact: (m as any).allow_physical_contact ?? false,
-      source: m.source,
-      notes: m.notes,
-      recent_package_name: enrichment?.[m.id]?.recent_package ?? null,
-      last_attended: enrichment?.[m.id]?.last_attended ?? null,
-      has_contract: enrichment?.[m.id]?.has_contract ?? false,
-    }));
-    exportMembers(exportData);
+    exportMembers(members.map(mapMemberToExport));
   };
-
   const columns: Column<MemberWithLocation>[] = [
     {
       key: 'name',
