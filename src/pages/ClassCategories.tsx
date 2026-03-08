@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClassCategories, type ClassCategoryWithCount } from '@/hooks/useClassCategories';
 import CreateClassCategoryDialog from '@/components/categories/CreateClassCategoryDialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const ClassCategories = () => {
   const { t, language } = useLanguage();
