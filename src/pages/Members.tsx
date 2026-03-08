@@ -26,6 +26,7 @@ import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
+import { useCommandListener } from '@/lib/commandEvents';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
 
@@ -37,6 +38,7 @@ const Members = () => {
   const [activeTab, setActiveTab] = useState<MemberStatus | 'all'>('active');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  useCommandListener('open-create-member', React.useCallback(() => setCreateDialogOpen(true), []));
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithLocation | null>(null);
