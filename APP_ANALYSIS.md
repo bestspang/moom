@@ -1,458 +1,841 @@
-# Moom - Gym Management System: Comprehensive Analysis
+# MOOM - Gym Management Platform: Comprehensive Analysis
 
-## 1. Project Overview
+## สารบัญ (Table of Contents)
 
-**Moom** คือระบบจัดการฟิตเนส/ยิม (Gym Management System) แบบครบวงจร พัฒนาด้วย React + TypeScript บน Vite, ใช้ Supabase เป็น Backend-as-a-Service, และรองรับ LINE LIFF สำหรับ Member/Trainer App
-
-|항목 | รายละเอียด |
-|------|-----------|
-| **Framework** | React 18 + TypeScript + Vite |
-| **UI Library** | shadcn/ui (Radix UI + Tailwind CSS) |
-| **State Management** | TanStack React Query + React Context |
-| **Backend** | Supabase (PostgreSQL + Auth + Edge Functions + Realtime) |
-| **Routing** | React Router v6 |
-| **Internationalization** | react-i18next (EN/TH) |
-| **Forms** | React Hook Form + Zod validation |
-| **Charts** | Recharts |
-| **Mobile Integration** | LINE LIFF SDK |
-| **Styling** | Tailwind CSS + tailwindcss-animate |
-| **Testing** | Vitest + Testing Library |
-| **Build Tool** | Vite + SWC (via @vitejs/plugin-react-swc) |
-| **Source Files** | 175 files, ~26,223 lines of code |
+1. [ภาพรวมของระบบ (System Overview)](#1-ภาพรวมของระบบ)
+2. [Tech Stack & Architecture](#2-tech-stack--architecture)
+3. [Feature Analysis (วิเคราะห์ทุก Feature)](#3-feature-analysis)
+4. [Backend & Database Architecture](#4-backend--database-architecture)
+5. [AI & Intelligence Layer](#5-ai--intelligence-layer)
+6. [Security & Access Control](#6-security--access-control)
+7. [ประเมินจุดแข็ง (Strengths)](#7-ประเมินจุดแข็ง)
+8. [ประเมินจุดอ่อน & Technical Debt](#8-ประเมินจุดอ่อน--technical-debt)
+9. [System Suggestion & Roadmap](#9-system-suggestion--roadmap)
 
 ---
 
-## 2. Architecture Overview
+## 1. ภาพรวมของระบบ
 
+**MOOM** เป็นระบบบริหารจัดการยิม (Gym Management System) แบบครบวงจร ออกแบบมาเพื่อรองรับธุรกิจฟิตเนสที่มีหลายสาขา (Multi-location) โดยครอบคลุมตั้งแต่:
+
+- การจัดการสมาชิก (Member Lifecycle Management)
+- การจองคลาสและตารางเรียน (Class Scheduling & Booking)
+- การขายแพ็กเกจและโปรโมชัน (Package Sales & Promotions)
+- ระบบการเงิน (Finance & Payment Processing)
+- การเช็คอิน QR Code / LINE LIFF (Check-in System)
+- รายงานและ Analytics (Business Intelligence)
+- ระบบ AI แนะนำการตัดสินใจ (AI-Powered Suggestions)
+- การสื่อสารผ่าน LINE OA (LINE Integration)
+
+**Target Users:**
+| Role | Access Level | Description |
+|------|-------------|-------------|
+| Owner | Level 4 (Master) | เจ้าของยิม - เข้าถึงทุกอย่าง |
+| Admin/Manager | Level 3 (Manager) | ผู้จัดการ - จัดการ staff, การเงิน, packages |
+| Trainer | Level 2 (Operator) | ผู้ฝึกสอน - จัดการสมาชิก, คลาส, leads |
+| Front Desk | Level 1 (Minimum) | พนักงานหน้าเคาน์เตอร์ - เช็คอิน, ดูข้อมูลพื้นฐาน |
+
+---
+
+## 2. Tech Stack & Architecture
+
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| **React 18** + **TypeScript** | UI framework with type safety |
+| **Vite 5** (SWC) | Build tool with fast HMR |
+| **React Router v6** | Client-side routing (50+ routes) |
+| **TanStack React Query** | Server state management & caching |
+| **Tailwind CSS** + **shadcn/ui** | Styling & component library |
+| **Recharts** | Charts & data visualization |
+| **react-hook-form** + **Zod** | Form management & validation |
+| **i18next** | Internationalization (EN/TH) |
+| **Lucide React** | Icon library |
+| **date-fns** | Date manipulation |
+| **qrcode.react** | QR code generation |
+| **cmdk** | Command palette (Cmd+K) |
+
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| **Supabase** (PostgreSQL) | Database, Auth, Realtime, Storage |
+| **Supabase Edge Functions** (Deno) | Serverless backend logic (7 functions) |
+| **Supabase RLS** | Row-Level Security (27 tables protected) |
+| **Stripe** | Payment processing |
+| **LINE LIFF SDK** | LINE mini-app integration |
+| **LINE Login** | OAuth authentication for members |
+| **Lovable AI Gateway** (Gemini 3 Flash) | AI briefing generation |
+
+### Architecture Pattern
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                       │
-├──────────┬──────────┬──────────┬──────────┬─────────────────┤
-│  Pages   │Components│  Hooks   │ Contexts │   Libraries     │
-│ (30+)    │ (80+)    │ (25+)    │   (3)    │   (utils/i18n)  │
-├──────────┴──────────┴──────────┴──────────┴─────────────────┤
-│                  TanStack React Query                        │
-├─────────────────────────────────────────────────────────────┤
-│                 Supabase Client SDK                          │
-├──────────────────────┬──────────────────────────────────────┤
-│   Supabase Auth      │     Supabase PostgreSQL              │
-│   (Email/Password)   │     (30+ tables, RLS, enums)         │
-├──────────────────────┼──────────────────────────────────────┤
-│  Edge Functions      │     LINE API Integration             │
-│  (line-auth)         │     (LIFF SDK, OAuth2)               │
-└──────────────────────┴──────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                    Frontend (React SPA)              │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐           │
+│  │ React    │ │ React    │ │ i18n      │           │
+│  │ Router   │ │ Query    │ │ (EN/TH)   │           │
+│  └──────────┘ └──────────┘ └───────────┘           │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐           │
+│  │ Auth     │ │ Feature  │ │ Command   │           │
+│  │ Context  │ │ Flags    │ │ Palette   │           │
+│  └──────────┘ └──────────┘ └───────────┘           │
+├─────────────────────────────────────────────────────┤
+│                 Supabase Platform                    │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐           │
+│  │ Auth     │ │ Realtime │ │ Edge      │           │
+│  │ (JWT)    │ │ Sync     │ │ Functions │           │
+│  └──────────┘ └──────────┘ └───────────┘           │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐           │
+│  │PostgreSQL│ │ RLS      │ │ Storage   │           │
+│  │(27 tbls) │ │ Policies │ │           │           │
+│  └──────────┘ └──────────┘ └───────────┘           │
+├─────────────────────────────────────────────────────┤
+│              External Services                       │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐           │
+│  │ Stripe   │ │ LINE     │ │ Lovable   │           │
+│  │ Payment  │ │ LIFF/OA  │ │ AI Gateway│           │
+│  └──────────┘ └──────────┘ └───────────┘           │
+└─────────────────────────────────────────────────────┘
+```
+
+### State Management Strategy
+| Layer | Technology | Use Case |
+|-------|-----------|----------|
+| Server State | React Query | API data, caching (5-15 min stale time) |
+| Auth State | React Context (AuthContext) | User session, role, access level |
+| Language State | React Context (LanguageContext) | i18n language switching |
+| Form State | react-hook-form + Zod | Form validation & submission |
+| URL State | React Router (searchParams) | Filters, pagination, tabs |
+
+---
+
+## 3. Feature Analysis
+
+### 3.1 Dashboard (หน้าแรก)
+**หน้าที่:** ศูนย์กลางข้อมูลสำหรับ daily operations
+
+**ส่วนประกอบ:**
+- **KPI Cards:** เช็คอินวันนี้/เมื่อวาน, คนอยู่ในคลาสตอนนี้, คลาสวันนี้
+- **AI Daily Briefing:** สรุปข้อมูลจาก Gemini AI (check-ins, classes, expiring packages, high-risk members)
+- **Business Health Score:** คะแนนสุขภาพธุรกิจ composite (Retention 35% + Revenue 30% + Class Util 20% + Lead Conv 15%)
+- **Revenue Forecast:** เปรียบเทียบรายได้ เดือนก่อน / เดือนนี้ / เดือนหน้า (projected)
+- **Needs Attention Card:** แพ็กเกจใกล้หมด, สมาชิก high-risk, hot leads, transfer slips รอ approve
+- **Goal Progress:** ติดตามเป้าหมายธุรกิจ
+- **Expiring Packages:** แพ็กเกจที่กำลังจะหมดอายุใน 30 วัน
+- **Quick Check-in FAB:** ปุ่มเช็คอินด่วน
+
+**Technical Details:**
+- Hooks: `useDashboardStats`, `useScheduleByDate`, `useGymCheckinsByDate`, `useHighRiskMembers`, `useExpiringPackages`
+- Bangkok timezone handling via `getBangkokDayRange()` สำหรับ date boundaries ที่ถูกต้อง
+- Parallel data fetching ด้วย `Promise.all` สำหรับ efficiency
+
+---
+
+### 3.2 Members (จัดการสมาชิก)
+**หน้าที่:** CRM สำหรับสมาชิกทั้งหมด
+
+**ส่วนประกอบ:**
+- **Member List:** ตารางสมาชิกพร้อม pagination (50/page)
+- **Status Tabs:** Active / Suspended / On Hold / Inactive
+- **Search:** ค้นหาตามชื่อ, เบอร์โทร, อีเมล
+- **Bulk Actions:** ลบ, export, เปลี่ยนสถานะ หลายรายการพร้อมกัน
+- **CSV Import/Export:** นำเข้า-ส่งออกข้อมูลสมาชิก
+- **Engagement Score:** คะแนน engagement (high/medium/low) แสดงข้างชื่อ
+- **Create/Edit Dialog:** สร้าง/แก้ไขสมาชิก (6-step wizard)
+
+**Member Detail Page (หน้ารายละเอียด):**
+- 10 Tabs: Home, Profile, Attendance, Packages, Billing, Injuries, Notes, Communications, Suspensions, Contract
+- Stats: วันที่สมัคร, คลาสที่เข้าบ่อยสุด, ยอดใช้จ่าย, วันก่อนแพ็กเกจหมด
+- Risk Level Assessment
+- LINE Identity Card integration
+- Front Desk Notes with auto-save
+
+**Member Wizard (6 Steps):**
+1. Profile (ชื่อ, นามสกุล, ชื่อเล่น, วันเกิด, เพศ, สาขา)
+2. Contact (เบอร์โทร, อีเมล - ต้องมีอย่างน้อย 1)
+3. Address (ที่อยู่, รหัสไปรษณีย์)
+4. Emergency Contact (ชื่อผู้ติดต่อฉุกเฉิน, เบอร์โทร, ความสัมพันธ์)
+5. Medical Info (โรคประจำตัว, ยินยอม physical contact)
+6. Other (แหล่งที่มา, แพ็กเกจที่สนใจ, หมายเหตุ)
+
+**Technical Details:**
+- Engagement Score Formula: `Recency(40%) + Frequency(30%) + Usage(30%)`
+  - Recency = `max(0, 100 - daysSinceLastVisit/30 * 100)`
+  - Frequency = `min(100, visitsPerWeek/4 * 100)`
+  - Usage = `min(100, sessionsUsed/totalSessions * 100)`
+- Batch enrichment queries หลีกเลี่ยง N+1 problems
+- Set-based deduplication สำหรับ latest package/attendance per member
+
+---
+
+### 3.3 Schedule (ตารางคลาส)
+**หน้าที่:** จัดการตารางเรียนและการจอง
+
+**ส่วนประกอบ:**
+- **Date Picker:** เลือกวันที่ดูตาราง
+- **Trainer Filter:** กรองตาม trainer
+- **Dual View:** List view + Timeline view (grid by room x time)
+- **Stats:** จำนวนคลาส, PT, avg capacity, cancellations
+- **Booking Management Dialog:** จัดการจอง, waitlist, mark attendance
+- **Schedule Class Creation:** สร้างตารางคลาสใหม่
+
+**Timeline View Technical Details:**
+- Grid: Time column (6:00-22:00) x Room columns
+- Position calculation: `topPx = ((startMin - START_HOUR*60) / 60) * HOUR_HEIGHT`
+- 7-color rotation per unique class_id
+- Sticky headers for scroll navigation
+
+**Booking Operations:**
+- `markAttendance(bookingId, status)` -> attended / no_show
+- `cancelBooking(bookingId, cancelledBy)`
+- `promoteFromWaitlist(waitlistId, memberId)` -> สร้าง booking ใหม่จาก waitlist
+
+---
+
+### 3.4 Classes (คลาสเรียน)
+**หน้าที่:** จัดการ catalog คลาสทั้งหมด
+
+**ส่วนประกอบ:**
+- Status tabs: Active / Drafts / Archive
+- Type: Class vs PT (Personal Training)
+- Level: All Levels / Beginner / Intermediate / Advanced
+- Category assignment
+- Duration tracking
+- Bulk operations: ลบ, duplicate, เปลี่ยนสถานะ
+- CSV import/export
+
+---
+
+### 3.5 Leads (ลูกค้าเป้าหมาย)
+**หน้าที่:** Sales pipeline management
+
+**ส่วนประกอบ:**
+- **Lead Scoring:** คำนวณคะแนน (high/medium/low) อัตโนมัติ
+- **Status Pipeline:** New -> Contacted -> Interested -> Converted / Not Interested
+- **Source Tracking:** import, referral ฯลฯ
+- **Contact History:** จำนวนครั้งที่ติดต่อ, วันที่ติดต่อล่าสุด
+- **Lead-to-Member Conversion:** แปลง lead เป็น member พร้อมข้อมูล pre-filled
+- **CSV Import/Export**
+
+---
+
+### 3.6 Lobby (เช็คอิน)
+**หน้าที่:** สถานีเช็คอินสำหรับหน้าเคาน์เตอร์
+
+**ส่วนประกอบ:**
+- รายการเช็คอินแบบ realtime ตามวันที่
+- วิธีเช็คอิน: QR Code, LIFF (LINE), Manual
+- ติดตาม package usage (sessions used/remaining)
+- ค้นหาสมาชิกและ package
+- QR Code Check-in Dialog
+- Manual Check-in Dialog
+
+---
+
+### 3.7 Packages (แพ็กเกจสมาชิก)
+**หน้าที่:** จัดการแพ็กเกจที่ขาย
+
+**ส่วนประกอบ:**
+- **Types:** Unlimited / Session-based / PT (Personal Training)
+- **Usage Types:** Class Only / Gym Checkin Only / Both
+- Status: On Sale / Scheduled / Drafts / Archive
+- ราคา (with VAT 7%)
+- ระยะเวลา (validity days)
+- จำนวน session limit
+- Category & Location access control
+- Popular package marking
+- Bulk operations + CSV import/export
+
+---
+
+### 3.8 Promotions (โปรโมชัน)
+**หน้าที่:** จัดการส่วนลดและ promo codes
+
+**ส่วนประกอบ:**
+- **Types:** Promo Code / Discount
+- **Modes:** Percentage / Flat Rate
+- Date range scheduling
+- Promo code + copy-to-clipboard
+- Per-package discount overrides (via `promotion_packages` join table)
+- Status: Active / Scheduled / Drafts / Archive
+- Redemption tracking (usage_count)
+- Bulk operations + CSV export
+
+---
+
+### 3.9 Staff (พนักงาน)
+**หน้าที่:** จัดการพนักงานและ trainer
+
+**ส่วนประกอบ:**
+- Status: Active / Pending / Inactive / Terminated
+- Multi-role assignment (staff_positions many-to-many)
+- Location scope: All locations / specific
+- Invite workflow: `pending -> active -> terminated`
+- Contact info management
+- CSV export/import
+
+---
+
+### 3.10 Finance (การเงิน)
+**หน้าที่:** ระบบจัดการการเงินครบวงจร
+
+**5 Tabs:**
+
+**1. Overview:**
+- KPI: จำนวน transactions, total sales, net income, refunds
+- Daily revenue chart
+- Payment method breakdown (Pie chart)
+
+**2. Transactions:**
+- รายการ transactions พร้อม filters (status, payment method, date range)
+- Columns: Date, Transaction ID, Order, Source, Type, Member, Location, Amount, Payment, Status
+
+**3. Transfer Slips:**
+- สลิปโอนเงินรอ approve
+- Status: Needs Review / Approved / Voided
+- Slip detail dialog
+
+**4. Forecasting:**
+- เปรียบเทียบรายได้ 3 เดือน (last, this, next projected)
+- Bar chart visualization
+
+**5. P&L (Profit & Loss):**
+- Revenue breakdown: Packages / PT / Other
+- Expense categories: Rent, Utilities, Salary, Equipment, Marketing, Maintenance
+- Net profit & margin calculation
+
+**VAT Calculation (Thai standard 7%):**
+```
+exVat = grossAmount / 1.07
+vatAmount = grossAmount - exVat
 ```
 
 ---
 
-## 3. Routing Structure
+### 3.11 Analytics & Insights
+**หน้าที่:** Business Intelligence dashboard
 
-### Public Routes (ไม่ต้อง login)
-| Path | Page | Description |
-|------|------|-------------|
-| `/login` | Login | เข้าสู่ระบบ |
-| `/signup` | Signup | สมัครสมาชิก staff |
-| `/forgot-password` | ForgotPassword | ขอรีเซ็ตรหัสผ่าน |
-| `/liff/member` | LiffMemberApp | LINE LIFF app สำหรับสมาชิก |
-| `/liff/trainer` | LiffTrainerApp | LINE LIFF app สำหรับเทรนเนอร์ |
-| `/liff/callback` | LiffCallback | LINE OAuth callback |
+**Analytics Page:**
+- Revenue trends (monthly bar chart)
+- Member growth (new vs expired line chart)
+- Class fill rate heatmap (Day x Hour grid)
+- Lead funnel visualization with conversion %
 
-### Protected Routes (ต้อง login + role-based)
-| Path | Page | Access Level |
-|------|------|-------------|
-| `/` | Dashboard | ทุกคน |
-| `/lobby` | Lobby (Check-in) | ทุกคน |
-| `/members` | Members List | ทุกคน |
-| `/members/:id/detail` | Member Details | ทุกคน |
-| `/leads` | Lead Management | ทุกคน |
-| `/package` | Packages | operator+ |
-| `/package/create` | Create Package | operator+ |
-| `/promotion` | Promotions | operator+ |
-| `/calendar` | Schedule | manager+ |
-| `/room` | Rooms | manager+ |
-| `/class` | Classes | manager+ |
-| `/class-category` | Class Categories | manager+ |
-| `/admin` | Staff Management | manager+ |
-| `/roles` | Role Management | master only |
-| `/location` | Locations | manager+ |
-| `/activity-log` | Activity Log | manager+ |
-| `/announcement` | Announcements | manager+ |
-| `/workout-list` | Workout List | manager+ |
-| `/transfer-slip` | Transfer Slips | manager+ |
-| `/finance` | Finance | manager+ |
-| `/report` | Reports Hub | operator+ |
-| `/report/member/*` | Member Reports | operator+ |
-| `/report/class/*` | Class Reports | operator+ |
-| `/report/package/*` | Package Reports | operator+ |
-| `/setting/*` | Settings (5 sub-pages) | manager+ |
-| `/profile` | User Profile | ทุกคน |
-| `/coming-soon` | Feature Roadmap | operator+ |
-| `/member-app` | Member App Preview | - |
-| `/trainer-app` | Trainer App Preview | - |
+**Insights Page (Executive Dashboard):**
+- **ARPU** (Average Revenue Per User)
+- **Retention Rate**
+- **Class Utilization**
+- **Lead Conversion Rate**
+- **Estimated LTV** (Lifetime Value)
+- 30-day revenue trend sparkline
 
 ---
 
-## 4. Authentication & Authorization
+### 3.12 Reports
+**หน้าที่:** Structured reporting
 
-### Authentication
-- ใช้ **Supabase Auth** (email/password)
-- Session management ผ่าน `onAuthStateChange` listener
-- Sign up → auto-assign default role
-
-### Role-Based Access Control (RBAC)
-```
-Level 4: master (owner)      → เข้าถึงทุกอย่าง + จัดการ roles
-Level 3: manager (admin)     → เข้าถึงการตั้งค่า, การเงิน, staff
-Level 2: operator (trainer)  → เข้าถึง reports, packages
-Level 1: minimum (front_desk) → เข้าถึงพื้นฐาน (lobby, members, leads)
-```
-
-### App Roles → Access Levels Mapping
-| App Role | Access Level | Description |
-|----------|-------------|-------------|
-| `owner` | level_4_master | เจ้าของยิม |
-| `admin` | level_3_manager | ผู้จัดการ |
-| `trainer` | level_2_operator | เทรนเนอร์ |
-| `front_desk` | level_1_minimum | พนักงานหน้าเคาน์เตอร์ |
+**Member Reports:** Active Members, Members at Risk, Package Usage, Package at Risk
+**Class Reports:** Capacity by Hour, Capacity over Time, Category Popularity, Class Popularity
+**Package Reports:** Package Sales, Package Sales over Time
 
 ---
 
-## 5. Database Schema (30+ tables)
+### 3.13 Announcements (ประกาศ)
+**หน้าที่:** ส่งประกาศผ่าน In-App และ LINE
 
-### Core Domain: Members
-```
-members ─────────────────────────────────────────
-├── member_packages → packages (แพ็กเกจที่ซื้อ)
-│   └── package_usage_ledger (ประวัติการใช้ session)
-├── member_attendance → schedule, locations (ประวัติเข้าใช้)
-├── member_notes → staff (บันทึกส่วนตัว)
-├── member_injuries (ประวัติอาการบาดเจ็บ)
-├── member_suspensions (ประวัติพักสมาชิก)
-├── member_contracts (สัญญา)
-├── member_billing → transactions (ประวัติเรียกเก็บเงิน)
-└── line_users (เชื่อมต่อ LINE account)
-```
-
-### Core Domain: Classes & Scheduling
-```
-classes → class_categories
-schedule → classes, staff, rooms, locations
-├── class_bookings → member_packages (การจอง)
-└── class_waitlist → members (waitlist)
-```
-
-### Core Domain: Finance
-```
-transactions → members, packages
-├── payment_method: credit_card | bank_transfer | qr_promptpay
-└── status: paid | pending | voided | needs_review
-```
-
-### Core Domain: Operations
-```
-staff → roles (access_level)
-locations → rooms
-leads (sales pipeline)
-promotions (โปรโมชั่น)
-announcements → staff
-```
-
-### System Tables
-```
-notifications (การแจ้งเตือน)
-activity_log (audit trail)
-feature_flags → feature_flag_assignments (ระบบ feature flags)
-settings (configuration key-value)
-checkin_qr_tokens (QR check-in)
-user_roles (role mapping)
-event_outbox (event sourcing)
-```
-
-### Key Enums
-| Enum | Values |
-|------|--------|
-| `member_status` | active, suspended, on_hold, inactive |
-| `booking_status` | booked, cancelled, attended, no_show |
-| `package_type` | unlimited, session, pt |
-| `package_status` | on_sale, scheduled, drafts, archive |
-| `transaction_status` | paid, pending, voided, needs_review |
-| `payment_method` | credit_card, bank_transfer, qr_promptpay |
-| `lead_status` | new, contacted, interested, not_interested, converted |
-| `risk_level` | high, medium, low |
-| `class_type` | class, pt |
-| `class_level` | all_levels, beginner, intermediate, advanced |
+**ส่วนประกอบ:**
+- Bilingual support (EN/TH)
+- Multi-channel: In-App + LINE
+- Location targeting: All / Specific locations
+- Date range scheduling
+- Status: Active / Scheduled / Completed
 
 ---
 
-## 6. Data Layer (Custom Hooks)
+### 3.14 LINE LIFF Apps (Mini-Apps สำหรับ LINE)
+**หน้าที่:** LINE LIFF mini-apps สำหรับสมาชิกและ trainer
 
-ทุก hook ใช้ **TanStack React Query** สำหรับ caching, invalidation, และ optimistic updates
+**Member App:**
+- LINE profile integration (display name, avatar)
+- Member data linking
+- Tabs: Home / Booking / Packages / Check-in / Profile
 
-### Member Management
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useMembers` | members | LIST (paginated, filtered), CREATE, UPDATE, DELETE, STATS |
-| `useMemberDetails` | members + 6 related tables | READ (detailed), CREATE notes, UPDATE |
+**Trainer App:**
+- Tabs: Schedule / Attendance / PT Log / Members
+- (Coming Soon - placeholder)
 
-### Class & Booking
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useClasses` | classes, class_categories | LIST, READ, CREATE, UPDATE, DELETE, STATS |
-| `useClassCategories` | class_categories | CRUD + search |
-| `useClassBookings` | class_bookings + related | READ, CREATE, CANCEL, MARK ATTENDANCE (single/batch) |
-| `useSchedule` | schedule + related | LIST by date, CREATE, UPDATE, DELETE, STATS |
-
-### Package & Usage
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `usePackages` | packages | CRUD + ARCHIVE + STATS |
-| `usePackageUsage` | member_packages, package_usage_ledger | RECORD usage, REFUND, ADJUST, READ history |
-
-### Finance & Billing
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useFinance` | transactions + related | READ (filtered), STATS, UPDATE status |
-
-### Operations
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useStaff` | staff, roles | CRUD + STATS |
-| `useRoles` | roles, staff | CRUD + staff count |
-| `useLocations` | locations | CRUD + STATS |
-| `useRooms` | rooms, locations | CRUD + STATS |
-| `useLeads` | leads | CRUD + search |
-| `usePromotions` | promotions | CRUD + STATS |
-| `useAnnouncements` | announcements, staff | CRUD + STATS |
-
-### System
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useNotifications` | notifications | LIST, MARK READ (single/bulk), UNREAD count (auto-refresh 30s) |
-| `useActivityLog` | activity_log + related | READ (date range filtered) |
-| `useFeatureFlags` | feature_flags + assignments | CRUD + TOGGLE |
-| `useSettings` | settings | READ by section, UPDATE (upsert), BATCH update |
-| `useCheckinQR` | checkin_qr_tokens | GENERATE, VALIDATE, READ, CLEANUP expired |
-
-### LINE Integration
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useLineAuth` | (edge function) | Verify LINE ID token, link account |
-| `useLineUsers` | line_users, members | CRUD + LINK/UNLINK + SEARCH |
-
-### Reports & Analytics
-| Hook | Tables | Operations |
-|------|--------|-----------|
-| `useDashboardStats` | multiple | Check-ins, class counts, high-risk members, leads, birthdays |
-| `useReports` | multiple | Members at risk, active members, class capacity, package sales |
-| `useLobby` | member_attendance + related | Check-in operations |
+**Check-in Redeem:**
+- QR token validation + expiry checking
+- Member lookup by phone/member ID
+- Sanitization against injection attacks
+- State machine: Loading -> Member Input -> Checking In -> Success/Error
 
 ---
 
-## 7. Key Business Logic
-
-### Risk Level Algorithm (Members at Risk)
-```
-HIGH RISK:   ≤30 วันก่อนหมด OR (≤33% sessions เหลือ AND ≤3 sessions)
-MEDIUM RISK: ≤60 วันก่อนหมด OR (≤60% sessions เหลือ AND ≤15 sessions)
-LOW RISK:    >60 วัน AND >60% sessions AND >15 sessions
-```
-
-### Package Usage Ledger
-- **Ledger-based** tracking (immutable history)
-- ทุก operation (checkin, booking, pt_session, adjustment) สร้าง record ใหม่
-- Validates sufficient sessions ก่อน deduction
-- ป้องกัน negative balance
-- รองรับ refund และ manual adjustment
-
-### QR Check-in System
-- Token หมดอายุ 2 นาที (configurable)
-- Auto-invalidate token เก่าก่อนสร้างใหม่
-- ป้องกัน reuse (mark as used with staff_id)
-- Track location ที่ check-in
-
-### Member ID Generation
-- Format: `M-0000001` (auto-increment)
-- Query max existing ID → +1
+### 3.15 Locations & Rooms (สาขาและห้อง)
+**Locations:** จัดการสาขา (Open/Closed), เวลาเปิด-ปิด, categories
+**Rooms:** จัดการห้องเรียน, layout type (Fixed/Open Space), max capacity, category availability
 
 ---
 
-## 8. UI Component Architecture
+### 3.16 Roles & Permissions
+**หน้าที่:** RBAC (Role-Based Access Control) system
 
-### Layout System
+- 4-tier access levels (Master -> Manager -> Operator -> Minimum)
+- Granular permission matrix per resource x action
+- Multiple roles per staff (OR logic for permissions)
+- `usePermissions` hook returns `can(resource, action)` function
+- `ProtectedRoute` component enforces minimum access level
+
+---
+
+### 3.17 Workouts (โปรแกรมออกกำลังกาย)
+**หน้าที่:** จัดการ training templates และ workout items
+
+- Collapsible training templates
+- Nested workout items: Name, Metric, Unit, Goal Type
+- Active/Inactive toggle
+- Bulk operations + CSV export/import
+
+---
+
+### 3.18 Command Palette (Cmd+K)
+**หน้าที่:** Quick navigation system
+
+- Trigger: `Cmd/Ctrl+K`
+- 3 categories: People (members+leads), Quick Actions, Pages
+- Debounced search (250ms)
+- Searches across: first_name, last_name, nickname, phone, member_id
+- 20+ page navigation items
+
+---
+
+### 3.19 Settings
+**หน้าที่:** System configuration
+
+- General (gym settings)
+- Class Management
+- Client Management
+- Package Settings
+- Member Contracts
+- Feature Flags (global/location/user scope)
+- Import/Export
+- Integrations (LINE, Stripe)
+
+---
+
+## 4. Backend & Database Architecture
+
+### 4.1 Database Schema (27 Tables)
+
+**Core Tables:**
 ```
-MainLayout
-├── Header (fixed top)
-│   ├── Logo + Menu toggle
-│   ├── Support phone
-│   ├── Notifications dropdown (real-time unread count)
-│   ├── Language switcher (EN/TH)
-│   └── User avatar dropdown (profile + logout)
-├── Sidebar (fixed left, 220px, collapsible on mobile)
-│   ├── Hierarchical nav groups
-│   ├── Access level-based visibility
-│   └── Active route highlighting
-└── Content area (Outlet)
+locations ──── staff ──── user_roles ──── roles
+    |              |                        |
+    |              |                  role_permissions
+    |              |
+    |-- rooms      |-- staff_positions
+    |              |
+    |-- schedule --|
+    |   |          |
+    |   |-- class_bookings ── members ── leads
+    |   |-- class_waitlist      |
+    |   |                       |-- member_packages ── packages
+    |   |                       |-- member_attendance
+    |   |                       |-- member_billing
+    |   |                       |-- member_injuries
+    |   |                       |-- member_notes
+    |   |                       |-- member_suspensions
+    |   |                       |-- member_contracts
+    |   |                       |
+    |   |                       |-- transactions ── transfer_slips
+    |   |
+    |   |-- classes ── class_categories
+    |
+    |-- announcements
+    |-- workouts ── workout_items
+    |-- promotions ── promotion_packages
 ```
 
-### Shared Components (`src/components/common/`)
-| Component | Description |
-|-----------|-------------|
-| `PageHeader` | Title + breadcrumb + optional action buttons |
-| `DataTable` | Sortable, selectable, paginated table with mobile scroll |
-| `StatCard` | KPI card with trend indicator (5 color variants) |
-| `StatusBadge` | Color-coded status badges (12 variants) |
-| `SearchBar` | Real-time search input |
-| `EmptyState` | Empty data visualization (9 variants with icons) |
-| `StatusTabs` | Tab-style filters with counts |
-| `DatePicker` | Single date with navigation arrows |
-| `DateRangePicker` | Date range with 2-month calendar |
+**Supporting Tables:**
+- `activity_log` - Audit trail (event_type, entity_type, old_value/new_value JSONB)
+- `line_users` - LINE identity mapping
+- `line_message_log` - Message delivery tracking (pending/sent/failed)
+- `checkin_qr_tokens` - QR code check-in tokens
+- `package_usage_ledger` - Append-only usage audit trail
+- `event_outbox` - Async event queue (event sourcing pattern)
+- `feature_flags` + `feature_flag_assignments` - Feature toggles
+- `ai_runs` - AI service execution logs
+- `ai_suggestions` - AI-generated suggestions with approval workflow
 
-### Feature Components
-| Area | Components |
-|------|-----------|
-| Members | CreateMemberDialog, EditMemberDialog |
-| Schedule | ScheduleClassDialog, BookingManagementDialog, AddBookingForm |
-| Lobby | CheckInDialog (member search + package selection) |
-| Reports | ReportPageLayout, ReportFilters, ReportStatCard, ManageDropdown |
-| Rooms | CreateRoomDialog (with layout & access control) |
-| Announcements | CreateAnnouncementDialog |
-| Auth | ProtectedRoute (route guard) |
-| Settings | SettingsLayout, SettingsSidebar |
-| LIFF | LiffBottomNav, LiffComingSoon |
-| Roadmap | FeatureCard, VersionBadge, RoadmapCard |
+### 4.2 Edge Functions (7 Functions)
 
-### UI Primitives (shadcn/ui)
-48 UI component files based on Radix UI including: Button, Input, Dialog, Drawer, Tabs, Table, Card, Select, Checkbox, Toast, Calendar, Chart, Accordion, etc.
+| Function | Purpose | Auth Required |
+|----------|---------|---------------|
+| `line-auth` | LINE OAuth -> verify ID token, create/update line_users | No (initial auth) |
+| `daily-briefing` | AI daily summary via Gemini 3 Flash | Level 2+ |
+| `approve-slip` | Transfer slip approval + transaction creation | Level 3+ |
+| `auto-notifications` | Scheduled alerts (expiring packages, stale leads, inactive members) | System (cron) |
+| `stripe-create-checkout` | Create Stripe checkout session | Level 3+ |
+| `stripe-webhook` | Handle Stripe payment events (checkout.completed, charge.refunded) | Stripe signature |
+| `invite-staff` | Staff onboarding workflow initiation | Level 3+ |
 
----
+### 4.3 Key Backend Patterns
 
-## 9. Internationalization (i18n)
+**Idempotency:** ทุก financial operation ใช้ idempotency key ป้องกัน duplicate processing
+**Event Sourcing:** `event_outbox` table สำหรับ async event processing + retry
+**Append-Only Ledgers:** `package_usage_ledger`, `line_message_log` - ไม่มี UPDATE/DELETE (tamper-proof)
+**Atomic Sequences:** `next_transaction_number()` RPC function ป้องกัน race condition
+**Soft Deletes:** ใช้ status enum (active/suspended/terminated) แทนการลบจริง
 
-- **Supported Languages**: English (en), Thai (th)
-- **Library**: react-i18next
-- **Persistence**: localStorage
-- **Coverage**: UI labels, form validations, status texts, date formatting
-- **Date Locale**: date-fns locale support (en-US / th)
-- **Currency**: Thai Baht (฿) formatting
-- **Timezone**: Bangkok (GMT+7)
-
----
-
-## 10. LINE LIFF Integration
-
-### Architecture
+### 4.4 Transfer Slip Approval Workflow
 ```
-LINE App → LIFF SDK → /liff/callback → verify token → link to member
+Transfer Slip (needs_review)
+  -> Validate amount > 0
+  -> Calculate VAT (7% split)
+  -> Create Transaction (status: paid)
+  -> Create Member Billing entry
+  -> Provision Member Package (if package_id provided)
+    -> Set expiry_date = now + package.expiration_days
+    -> sessions_remaining = package.sessions
+  -> Update Slip status -> approved
+  -> Log activity with transaction details
 ```
 
-### Components
-- **LiffMemberApp**: Mini app สำหรับสมาชิกดู profile, schedule, check-in
-- **LiffTrainerApp**: Mini app สำหรับเทรนเนอร์ดู schedule, attendance
-- **LiffCallback**: OAuth2 callback handler
-- **LiffContext**: Global LIFF state management
-- **LiffBottomNav**: Mobile bottom navigation
-- **Edge Function `line-auth`**: Verify LINE ID token via LINE API, create/update line_users record
-
----
-
-## 11. Feature Completeness Assessment
-
-### Fully Implemented
-- Dashboard with KPIs (check-ins, classes, high-risk members, leads, birthdays)
-- Member CRUD with detailed profile (packages, attendance, billing, notes, injuries, suspensions, contracts)
-- Class & category management
-- Schedule management with booking & waitlist
-- Package CRUD with session tracking (ledger-based)
-- Lobby/Check-in system (manual + QR)
-- Staff & role management (4-level RBAC)
-- Location & room management
-- Lead pipeline management
-- Financial transactions & transfer slip tracking
-- Announcements
-- Promotions
-- Notifications (real-time refresh)
-- Activity log (audit trail)
-- Settings (5 sections: general, class, client, package, contracts)
-- Feature flags system
-- CSV export (members)
-- Report pages (6 reports: members at risk, active members, class capacity by hour/over time, package sales/over time)
-
-### In Development / Planned
-- Feature Flags UI in Settings (per .lovable/plan.md)
-- Enhanced booking management UI in Schedule (per .lovable/plan.md)
-- Workout list feature
-- Full LINE LIFF member/trainer apps
-
----
-
-## 12. Technical Patterns
-
-### State Management
-- **Server state**: TanStack React Query (caching, invalidation, background refresh)
-- **Client state**: React Context (auth, language, LIFF)
-- **Form state**: React Hook Form + Zod
-- **No Redux/Zustand** — clean architecture with hooks
-
-### Data Flow
+### 4.5 Stripe Payment Flow
 ```
-Page → Custom Hook → TanStack Query → Supabase Client → PostgreSQL
-                   ← Cache + Optimistic Update ←
+Create Checkout -> Stripe Session -> Member pays -> Webhook fires
+  -> checkout.session.completed:
+    -> Mark Transaction status -> paid
+    -> Create Member Billing record
+    -> Provision Member Package
+  -> charge.refunded:
+    -> Mark Transaction status -> refunded
+    -> Deactivate Member Packages
 ```
 
-### Mobile Responsiveness
-- `useIsMobile()` hook for adaptive UI
-- Dialog (desktop) ↔ Drawer (mobile) auto-switching
-- Collapsible sidebar
-- Horizontal scroll with gradient indicator for tables
-- Safe-area padding for LIFF bottom nav
-
-### Security
-- Supabase Row Level Security (RLS)
-- Protected routes with role verification
-- QR tokens with expiration
-- LINE ID token verification via edge function
-
-### Code Quality
-- TypeScript strict mode
-- ESLint configuration
-- Zod validation on all forms
-- Consistent error handling patterns
-- Loading skeletons for all data views
-- Empty states for all list views
+### 4.6 Auto-Notifications (Scheduled Job)
+4 alert categories:
+1. **Package Expiration** - แพ็กเกจหมดใน 7 วัน (urgent if <= 3 days)
+2. **Stale Leads** - Leads ไม่ได้ติดต่อ 5+ วัน
+3. **Inactive Members** - สมาชิก active ไม่เช็คอิน 14+ วัน
+4. **Pending Transfers** - Transfer slips รอ review
 
 ---
 
-## 13. Database Migrations
+## 5. AI & Intelligence Layer
 
-7 migration files found in `supabase/migrations/` (all from February 2026), indicating the schema was set up incrementally:
-1. Initial schema setup
-2. Additional tables and relationships
-3. Enums and constraints
-4. Feature flags system
-5. Booking and waitlist system
-6. QR check-in tokens
-7. Package usage ledger
+### 5.1 AI Daily Briefing
+- เรียก Lovable AI Gateway (Google Gemini 3 Flash)
+- สรุปข้อมูลประจำวัน: check-ins, classes, expiring packages, high-risk members
+- Fallback template ภาษาไทย/อังกฤษ เมื่อ AI ไม่ available
+- Structured response พร้อม navigation routes
+
+### 5.2 AI Suggestions Framework
+```
+AI generates suggestion -> User reviews (Dashboard card)
+  -> Approve (status='approved' + audit)
+  -> Reject (status='rejected')
+  -> Apply (status='applied' + timestamp)
+```
+- Confidence score tracking
+- Entity-type polymorphic (member, class, package etc.)
+- Logged to `ai_runs` for traceability
+
+### 5.3 Churn Prediction Algorithm
+```
+ChurnRisk = Members where:
+  - prior 30 days attendance >= 2 sessions
+  - last 30 days attendance < 50% of prior period
+
+Decline% = (1 - recent/prior) x 100
+Ranked by decline%, limited to top 20
+```
+ตรวจจับ **พฤติกรรมที่เปลี่ยนแปลง** (50%+ drop) ไม่ใช่แค่ low attendance
+
+### 5.4 Business Health Score
+```
+Score = Retention(35%) + RevenueTrend(30%) + ClassUtil(20%) + LeadConv(15%)
+
+Color coding:
+  >= 70: teal (healthy)
+  40-69: amber (caution)
+  < 40:  red (critical)
+
+Trend Signal:
+  "up"     if thisMonth > lastMonth x 1.05
+  "down"   if thisMonth < lastMonth x 0.95
+  "stable" otherwise
+```
+
+### 5.5 Engagement Score System
+```
+Score = Recency(40%) + Frequency(30%) + Usage(30%)
+
+Recency  = max(0, 100 - daysSinceLastVisit/30 * 100)
+Frequency = min(100, visitsPerWeek/4 * 100)
+Usage     = min(100, sessionsUsed/totalSessions * 100)
+
+Level: >= 60 = "high", 30-59 = "medium", < 30 = "low"
+```
+
+### 5.6 Revenue Forecasting
+```
+projectedNextMonth =
+  IF activePackages x avgPrice > 0:
+    activePackages x avgPrice
+  ELSE IF history available:
+    average(lastMonth, thisMonth)
+  ELSE: 0
+```
+
+### 5.7 Member Risk Assessment
+```
+HIGH RISK:   <= 30 days left OR (<= 33% sessions AND <= 3 sessions)
+MEDIUM RISK: <= 60 days left OR (<= 60% sessions AND <= 15 sessions)
+LOW RISK:    Complement of above
+```
 
 ---
 
-## 14. Edge Functions
+## 6. Security & Access Control
 
-### `line-auth` (Supabase Edge Function)
-- **Purpose**: Verify LINE ID tokens and manage LINE-member account linking
-- **Endpoint**: Called from `useLineAuth` hook
-- **Flow**: Receive ID token → Verify with LINE API → Create/update `line_users` → Return profile + linking status
-- **Environment**: Requires `LINE_CHANNEL_ID` env variable
+### 6.1 RLS Policies (Row-Level Security)
+- **27 tables** ทุกตารางมี RLS enabled
+- **4-tier access hierarchy** enforced at database level
+- `SECURITY DEFINER` functions สำหรับ access checks
+- Webhook signature verification (Stripe HMAC-SHA256)
+
+### 6.2 Access Control Matrix
+
+| Resource | Read | Write | Delete |
+|----------|------|-------|--------|
+| Members | Level 1+ | Level 2+ | Level 3+ |
+| Staff | Level 1+ | Level 3+ | Level 3+ |
+| Transactions | Level 3+ | Level 3+ | Level 4 |
+| Roles/Permissions | Level 4 | Level 4 | Level 4 |
+| Packages (catalog) | All auth | Level 3+ | Level 3+ |
+| Schedule | Level 1+ | Level 2+ | Level 3+ |
+| Feature Flags | Level 4 | Level 4 | Level 4 |
+
+### 6.3 Security Strengths
+- Financial data (transactions, billing) ต้องการ Level 3+
+- Append-only policies บน audit tables (ไม่สามารถ UPDATE/DELETE)
+- Auto-logout เมื่อ staff status เป็น inactive
+- QR token sanitization ป้องกัน injection attacks
+- Service role isolation สำหรับ sensitive operations
+- Idempotency keys ป้องกัน duplicate financial transactions
 
 ---
 
-## 15. Summary
+## 7. ประเมินจุดแข็ง
 
-**Moom** เป็นระบบจัดการยิมที่ครบถ้วนและออกแบบมาอย่างดี มีจุดเด่นคือ:
+### 7.1 Architecture
+- **Clean separation of concerns:** Hooks สำหรับ data, Components สำหรับ UI, Contexts สำหรับ global state
+- **Type safety:** TypeScript ตลอดทั้ง stack + auto-generated Supabase types
+- **Performance:** Parallel queries (`Promise.all`), batch operations, debounced search, proper caching (5-15 min stale time)
+- **Real-time:** Supabase Realtime subscriptions สำหรับ live updates
 
-1. **Architecture สะอาด**: แยก concerns ชัดเจน (pages → hooks → supabase)
-2. **Type-safe ตลอด**: TypeScript + Zod + Supabase generated types
-3. **Scalable**: Feature flags, role-based access, multi-location support
-4. **Bilingual**: รองรับ EN/TH อย่างสมบูรณ์
-5. **Mobile-ready**: Responsive UI + LINE LIFF integration
-6. **Audit-friendly**: Activity log + ledger-based tracking
-7. **Business-complete**: ครอบคลุมทุก workflow ของยิม (สมาชิก, คลาส, แพ็กเกจ, การเงิน, รายงาน)
+### 7.2 Business Logic
+- **Comprehensive member lifecycle:** Lead -> Member -> Active -> Suspended -> Inactive ครบวงจร
+- **Sophisticated analytics:** Engagement scoring, churn prediction, business health score, revenue forecasting
+- **Multi-channel integration:** LINE LIFF, QR Code, Stripe payments
+- **Bilingual support:** EN/TH ทั้ง UI และ database fields (name_en/name_th)
+
+### 7.3 Security
+- **Fine-grained RBAC:** 4-tier system + granular permissions per resource/action
+- **Idempotency:** ป้องกัน duplicate financial transactions
+- **Audit trail:** Activity log บันทึกทุก state change (old_value/new_value JSONB)
+- **Append-only ledgers:** Tamper-proof financial records (`package_usage_ledger`)
+
+### 7.4 Developer Experience
+- **Command Palette (Cmd+K):** Quick navigation สำหรับ power users
+- **Feature Flags:** Safe gradual rollout (global/location/user scope)
+- **CSV Import/Export:** ทุก module รองรับ data portability
+- **Diagnostics page:** Data audit สำหรับ debugging (master-only)
+- **i18n ready:** ไม่ต้อง refactor เพิ่มภาษา
+
+### 7.5 Thai Market Fit
+- Thai VAT 7% calculation built-in
+- Bangkok timezone handling (`getBangkokDayRange`)
+- LINE integration (ผู้ใช้ LINE ในไทย 50M+)
+- PromptPay/Bank Transfer payment methods
+- Thai language throughout
+
+---
+
+## 8. ประเมินจุดอ่อน & Technical Debt
+
+### 8.1 Mock Data in Reports (Critical)
+- `useReports` hooks ใช้ `Math.random()` สร้าง mock data แทน real database queries
+- ทุก report (Active Members, Class Capacity, Package Sales) เป็น placeholder
+- **Impact:** Reports ไม่สามารถใช้งานจริงได้ - ต้อง implement database queries
+
+### 8.2 AI Service is Stub
+- `aiService.ts` เป็น stub service - ยังไม่มี real AI implementation
+- AI actions layer มี Zod validation พร้อม แต่ service ยังเป็น placeholder
+- `daily-briefing` Edge Function ใช้ Lovable AI Gateway (external dependency)
+
+### 8.3 LINE LIFF Apps (Coming Soon)
+- Trainer App ทุก tab เป็น "Coming Soon" placeholder
+- Member App มี basic structure แต่ booking/packages ยังไม่ทำงาน
+- ขาด LINE push notification implementation จริง (มีแค่ log table)
+
+### 8.4 Client-Side Heavy Computation
+- Engagement scores, churn prediction, business health คำนวณ client-side
+- สำหรับยิมขนาดเล็ก-กลาง (< 5,000 members) OK
+- **จะเป็นปัญหาเมื่อมีสมาชิก 10,000+ คน** - ควรย้ายไป database views / Edge Functions
+
+### 8.5 Missing Features
+- **No email integration:** ไม่มี email notification system
+- **No SMS integration:** ไม่มี SMS alerts
+- **No offline support:** ต้องมี internet เสมอ
+- **No mobile native app:** มีแค่ LIFF (LINE mini-app)
+- **No automated billing/recurring:** ไม่มีระบบเก็บเงินอัตโนมัติ (Stripe Subscriptions)
+- **P&L expenses are mock data:** ยังไม่มี expense tracking จริง
+
+### 8.6 Scalability Concerns
+- Client-side aggregation จะช้าเมื่อข้อมูลมาก
+- ไม่มี database indexing strategy ที่ชัดเจน (missing composite indexes)
+- Transfer slip approval เป็น multi-step ที่ไม่ atomic (ไม่อยู่ใน database transaction)
+- `auto-notifications` batch limit 500 อาจไม่พอสำหรับยิมใหญ่
+- Offset-based pagination ไม่ efficient สำหรับข้อมูลมาก
+
+### 8.7 Testing Coverage
+- มี Vitest setup แต่ไม่พบ test files จำนวนมาก
+- ไม่มี E2E testing framework (Playwright/Cypress)
+- Missing integration tests สำหรับ Edge Functions
+
+---
+
+## 9. System Suggestion & Roadmap
+
+### 9.1 เร่งด่วน (High Priority - ควรทำก่อน Production)
+
+#### A. Implement Real Report Queries
+แทน mock data ด้วย real Supabase queries:
+- สร้าง database views สำหรับ report aggregation
+- ใช้ materialized views สำหรับ heavy computation
+- เพิ่ม date range filtering ที่ database level
+- **Estimated effort:** 2-3 weeks
+
+#### B. Move Heavy Computation to Backend
+สร้าง scheduled Edge Functions สำหรับ:
+- Engagement score calculation -> เก็บใน members table
+- Churn prediction -> เก็บใน members table (risk_level field มีแล้ว)
+- Business health -> เก็บใน settings/metrics table
+- Run ทุก 1-6 ชั่วโมง แทนการคำนวณ real-time ทุก page load
+- **Estimated effort:** 1-2 weeks
+
+#### C. Database Transaction Safety
+- Wrap `approve-slip` multi-step operations ใน database transaction
+- เพิ่ม composite indexes: `(member_id, created_at)`, `(schedule_id, status)`, `(location_id, scheduled_date)`
+- **Estimated effort:** 3-5 days
+
+#### D. Testing
+- เพิ่ม unit tests สำหรับ business logic (engagement score, churn prediction, VAT calculation)
+- เพิ่ม integration tests สำหรับ Edge Functions
+- **Estimated effort:** 1-2 weeks
+
+### 9.2 ระยะกลาง (Medium Priority - Post-Launch)
+
+#### E. Complete LINE LIFF Integration
+- Implement member booking flow ใน LIFF
+- Implement trainer schedule/attendance ใน LIFF
+- เพิ่ม LINE push notifications จริง (ไม่ใช่แค่ log)
+- Implement Rich Menu integration
+- **Estimated effort:** 3-4 weeks
+
+#### F. Automated Billing
+- Implement recurring payment via Stripe Subscriptions
+- Auto-renew packages ที่ใกล้หมด
+- Payment reminder notifications (3 days, 1 day before expiry)
+- Failed payment retry logic
+- **Estimated effort:** 2-3 weeks
+
+#### G. Notification System Overhaul
+- Implement multi-channel: LINE Push + In-App + Email
+- Notification preferences per member
+- Template system สำหรับ notification content
+- Delivery tracking + retry mechanism
+- **Estimated effort:** 2-3 weeks
+
+#### H. Real Expense Tracking
+- Implement expense CRUD (categories, recurring, one-time)
+- Receipt/document upload (Supabase Storage)
+- P&L report with real data
+- Budget vs actual comparison
+- **Estimated effort:** 2 weeks
+
+### 9.3 ระยะยาว (Long-term Vision)
+
+#### I. Real AI Integration
+แทน stub service ด้วย real ML models:
+- Member churn prediction model (trained on historical data)
+- Optimal class scheduling recommendation
+- Dynamic pricing suggestions
+- Member engagement optimization
+- ใช้ Supabase pg_vector สำหรับ embedding-based recommendations
+
+#### J. Mobile App (React Native / Expo)
+- Native app สำหรับ member self-service
+- Push notifications (FCM/APNs)
+- Offline check-in capability
+- Biometric authentication
+
+#### K. Multi-Tenant Architecture (SaaS)
+- ปัจจุบัน single-tenant (1 gym chain per deployment)
+- เพิ่ม tenant isolation layer
+- Per-tenant feature flags, branding, pricing
+- Shared infrastructure with isolated data
+
+#### L. Advanced Analytics
+- Data warehouse integration (BigQuery / Snowflake)
+- Custom report builder (drag & drop)
+- Cohort analysis
+- Predictive analytics dashboard
+- A/B testing framework สำหรับ promotions
+
+### 9.4 Recommended Architecture Evolution
+
+```
+Current (Good for < 5,000 members):
+  React SPA -> Supabase (DB + Auth + Edge Functions)
+
+Scale-up (5,000-50,000 members):
+  React SPA -> Supabase (DB + Auth + Realtime)
+             -> Dedicated API layer (Express/Fastify on Cloud Run)
+             -> Background jobs (Cloud Scheduler + Cloud Functions)
+             -> Redis cache (dashboard stats, engagement scores)
+             -> CDN for static assets
+
+Enterprise (50,000+ members):
+  React SPA -> API Gateway (Kong/Envoy)
+             -> Microservices (User, Billing, Scheduling, Notification)
+             -> Event bus (Pub/Sub / Kafka)
+             -> Read replicas + materialized views
+             -> ML pipeline (Vertex AI / SageMaker)
+             -> Mobile apps (React Native)
+```
+
+---
+
+## สรุป (Summary)
+
+MOOM เป็นระบบ Gym Management ที่ **ครอบคลุมและออกแบบมาดี** สำหรับธุรกิจฟิตเนสในไทย
+
+### What It Does Well:
+1. **Comprehensive feature set** - ครอบคลุมทุก workflow: lead -> member -> billing -> analytics
+2. **Thai market fit** - LINE, Thai VAT 7%, bilingual EN/TH, Bangkok timezone, PromptPay
+3. **Smart analytics** - Engagement scoring, churn prediction, business health, revenue forecast
+4. **Strong security** - 4-tier RBAC, RLS on 27 tables, audit trail, idempotent payments
+5. **Clean architecture** - TypeScript end-to-end, React Query caching, clean hook patterns
+
+### What Needs Work Before Production:
+1. **Reports** - แทน mock data ด้วย real database queries
+2. **LINE LIFF** - Complete member/trainer app features
+3. **Backend computation** - ย้าย heavy calculation ออกจาก client
+4. **Database optimization** - Indexes, transactions, cursor-based pagination
+5. **Testing** - Unit + integration + E2E tests
+
+### Overall Assessment: **7.5/10**
+โครงสร้างดีมาก มี features ครบถ้วนสำหรับ gym management ในไทย แต่ยังมี placeholder/mock data ใน features สำคัญ (Reports, AI, LIFF) ที่ต้อง implement ก่อนใช้งาน production จริง ระบบพร้อมรองรับ scale-up ด้วย architecture ที่ดี แต่ต้อง optimize performance สำหรับข้อมูลจำนวนมาก
