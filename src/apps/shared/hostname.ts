@@ -116,3 +116,20 @@ export function getDefaultRoute(surface: AppSurface): string {
       return '/staff';
   }
 }
+
+/** Route-host affinity: which hostname should serve this route? */
+export type RouteAffinity = 'admin' | 'member' | 'shared';
+
+const MEMBER_HOST_PREFIXES = ['/member', '/trainer', '/staff'];
+const SHARED_PREFIXES = ['/login', '/forgot-password', '/reset-password', '/checkin', '/liff', '/diagnostics/surface'];
+
+export function getRouteHostAffinity(pathname: string): RouteAffinity {
+  if (MEMBER_HOST_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return 'member';
+  }
+  if (SHARED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return 'shared';
+  }
+  // Everything else (/, /lobby, /finance, /setting, etc.) is admin
+  return 'admin';
+}
