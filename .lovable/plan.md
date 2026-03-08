@@ -1,47 +1,52 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Wire Real Actions into Command Palette (Phase 5b)
 
 ## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+The Command Palette quick actions (`Create Member`, `Create Lead`, etc.) navigate to URLs with `?action=create` query params, but **no page reads those params**. The actions just navigate to the page without opening any dialog. The "Check-in" shortcut is also missing entirely.
 
-## Fix (surgical, 1 file)
+## Solution
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### Approach: Event-based actions instead of URL params
+Rather than adding `useSearchParams` to every page (fragile, couples palette to page internals), use a **lightweight global event bus** so the CommandPalette can directly trigger dialog opens from anywhere.
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+**Two-part fix:**
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### 1. Create a tiny event helper (`src/lib/commandEvents.ts`)
+A simple `CustomEvent` dispatcher + hook pattern:
+- `dispatchCommand(action: string)` — fires a custom DOM event
+- `useCommandListener(action: string, callback: () => void)` — listens for it
+
+### 2. Update CommandPalette quick actions
+Replace URL-based navigation with:
+- **"Check In"** → navigate to `/lobby` + dispatch `command:open-checkin`
+- **"Create Member"** → navigate to `/members` + dispatch `command:open-create-member`
+- **"Create Lead"** → navigate to `/leads` + dispatch `command:open-create-lead`
+- **"Create Class"** / **"Create Package"** → keep existing path navigation (these go to dedicated `/create` routes that already work)
+- **Add "Quick Check-in"** as a new action with `DoorOpen` icon
+
+### 3. Wire listeners in target pages
+- **Lobby.tsx**: `useCommandListener('open-checkin', () => setDialogOpen(true))`
+- **Members.tsx**: `useCommandListener('open-create-member', () => setCreateDialogOpen(true))`
+- **Leads.tsx**: `useCommandListener('open-create-lead', () => setCreateDialogOpen(true))`
+
+### 4. Add i18n keys for new action labels
+- `commandPalette.checkIn` → `'Quick Check-in'` / `'เช็คอินด่วน'`
+
+## Files to create/modify
+
+| File | Change |
+|------|--------|
+| `src/lib/commandEvents.ts` | **NEW** — `dispatchCommand()` + `useCommandListener()` |
+| `src/components/command-palette/CommandPalette.tsx` | Replace URL-based quick actions with event-based; add Check-in action; small delay for navigation before dispatch |
+| `src/pages/Lobby.tsx` | Add `useCommandListener('open-checkin', ...)` |
+| `src/pages/Members.tsx` | Add `useCommandListener('open-create-member', ...)` |
+| `src/pages/Leads.tsx` | Add `useCommandListener('open-create-lead', ...)` |
+| `src/i18n/locales/en.ts` | Add `commandPalette.checkIn` |
+| `src/i18n/locales/th.ts` | Same in Thai |
 
 ## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+- **Low**: Additive — new event system, existing page state unchanged
+- Navigation + dispatch timing: use `setTimeout(dispatch, 100)` so the target page mounts before the event fires
+- No existing behavior altered (Create Class/Package still use direct route navigation)
 
