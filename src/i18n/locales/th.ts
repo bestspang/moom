@@ -2102,4 +2102,17 @@ export default {
     placeholder: 'พูดคุยเรื่องอะไร...',
     noLogs: 'ยังไม่มีบันทึกการสื่อสาร',
   },
+
+  gamification: {
+    title: 'Gamification Studio',
+    tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ' },
+    overview: { activeRules: 'กฎที่ใช้งาน', activeChallenges: 'ชาเลนจ์ที่ใช้งาน', totalBadges: 'แบดจ์ทั้งหมด', activeRewards: 'รางวัลที่ใช้งาน', xpDistributed: 'XP ที่แจก', flaggedEvents: 'เหตุการณ์ต้องสงสัย', recentActivity: 'กิจกรรมล่าสุด', systemStatus: 'สถานะระบบ' },
+    rules: { description: 'กำหนด XP และคะแนนสำหรับแต่ละ action', addRule: 'เพิ่มกฎ', editRule: 'แก้ไขกฎ', noRules: 'ยังไม่มีกฎ', noRulesDesc: 'เพิ่มกฎแรกของคุณ', action: 'Action Key', label: 'ชื่อ', points: 'คะแนน', cooldown: 'Cooldown', maxDay: 'สูงสุด/วัน', deleteConfirm: 'กฎนี้จะถูกลบถาวร' },
+    levels: { description: 'กำหนดระดับ XP สำหรับสมาชิก', addLevel: 'เพิ่มระดับ', editLevel: 'แก้ไขระดับ', noLevels: 'ยังไม่มีระดับ', noLevelsDesc: 'สร้างระดับสำหรับสมาชิก', color: 'สีแบดจ์', deleteConfirm: 'ระดับนี้จะถูกลบถาวร' },
+    challenges: { description: 'สร้างชาเลนจ์รายวัน รายสัปดาห์ หรือตามฤดูกาล', create: 'สร้างชาเลนจ์', noChallenges: 'ยังไม่มีชาเลนจ์', noChallengesDesc: 'สร้างชาเลนจ์แรกของคุณ', draft: 'แบบร่าง', ended: 'สิ้นสุด', daily: 'รายวัน', weekly: 'รายสัปดาห์', seasonal: 'ตามฤดูกาล' },
+    badges: { description: 'ออกแบบแบดจ์สำหรับเป้าหมายต่างๆ', create: 'สร้างแบดจ์', noBadges: 'ยังไม่มีแบดจ์', noBadgesDesc: 'สร้างแบดจ์เพื่อรางวัลสมาชิก' },
+    rewards: { description: 'จัดการแคตตาล็อกรางวัลที่สมาชิกแลกคะแนนได้', create: 'สร้างรางวัล', noRewards: 'ยังไม่มีรางวัล', noRewardsDesc: 'เพิ่มรางวัลในแคตตาล็อก', stock: 'สต็อก' },
+    trainers: { description: 'กำหนดระดับและการยอมรับเทรนเนอร์', inHouse: 'เทรนเนอร์ประจำ', freelance: 'เทรนเนอร์พาร์ทเนอร์', noTiers: 'ยังไม่มีระดับ', noTiersDesc: 'กำหนดระดับเทรนเนอร์', minScore: 'คะแนนขั้นต่ำ' },
+    risk: { description: 'ตรวจสอบการใช้งานที่ผิดปกติและ audit trail', flaggedActivity: 'กิจกรรมต้องสงสัย', noFlags: 'ไม่มีกิจกรรมต้องสงสัย', noFlagsDesc: 'ไม่พบกิจกรรมผิดปกติ', auditLog: 'บันทึกตรวจสอบ' },
+  },
 };
