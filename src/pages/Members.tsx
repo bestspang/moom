@@ -327,7 +327,7 @@ const Members = () => {
               {t('members.createMember')}
             </Button>
           </div>
-        }
+        ) : undefined}
       />
 
       <div className="mb-6">
