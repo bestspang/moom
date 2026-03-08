@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Tables } from '@/integrations/supabase/types';
 
