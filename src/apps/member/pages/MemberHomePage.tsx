@@ -71,7 +71,7 @@ export default function MemberHomePage() {
       if (!memberId) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('challenge_progress')
-        .insert({ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'active' });
+        .insert([{ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'in_progress' as const }]);
       if (error) throw error;
     },
     onSuccess: () => {
