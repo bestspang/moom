@@ -21,6 +21,13 @@ const GamificationBadges = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GamificationBadge | null>(null);
 
+  const tierLabelMap: Record<string, string> = {
+    bronze: t('gamification.badges.bronze'),
+    silver: t('gamification.badges.silver'),
+    gold: t('gamification.badges.gold'),
+    platinum: t('gamification.badges.platinum'),
+  };
+
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (b: GamificationBadge) => { setEditing(b); setDialogOpen(true); };
 
@@ -39,7 +46,7 @@ const GamificationBadges = () => {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {badges.map((badge) => (
             <Card key={badge.id} className="group hover:shadow-md transition-shadow relative">
-              <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(badge)}>
+              <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={() => openEdit(badge)}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
               <CardContent className="p-4 text-center">
@@ -47,8 +54,10 @@ const GamificationBadges = () => {
                   <Award className="h-7 w-7" />
                 </div>
                 <p className="font-medium text-sm">{language === 'th' && badge.name_th ? badge.name_th : badge.name_en}</p>
-                <p className="text-xs text-muted-foreground mt-1 capitalize">{badge.tier}</p>
-                <p className="text-xs text-muted-foreground mt-1">{language === 'th' && badge.description_th ? badge.description_th : badge.description_en}</p>
+                <p className="text-xs text-muted-foreground mt-1">{tierLabelMap[badge.tier] || badge.tier}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(language === 'th' && badge.description_th ? badge.description_th : badge.description_en) || t('gamification.badges.noDescription')}
+                </p>
                 <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full ${badge.is_active ? 'bg-accent-teal/10 text-accent-teal' : 'bg-muted text-muted-foreground'}`}>
                   {badge.is_active ? t('common.active') : t('common.inactive')}
                 </span>

@@ -40,6 +40,10 @@ const emptyForm: ChallengeForm = {
   start_date: '', end_date: '', status: 'draft',
 };
 
+const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2">{children}</p>
+);
+
 const CreateChallengeDialog = ({ open, onOpenChange, editingChallenge }: Props) => {
   const { t } = useLanguage();
   const create = useCreateGamificationChallenge();
@@ -95,17 +99,20 @@ const CreateChallengeDialog = ({ open, onOpenChange, editingChallenge }: Props) 
           <DialogTitle>{editingChallenge ? t('common.edit') : t('gamification.challenges.create')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <SectionHeader>{t('gamification.challenges.sectionBasic')}</SectionHeader>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Name (EN) *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-            <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameEn')} {t('gamification.form.required')}</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.nameTh')}</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Description (EN)</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
-            <div><Label>Description (TH)</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionEn')}</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
+            <div><Label>{t('gamification.form.descriptionTh')}</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
           </div>
+
+          <SectionHeader>{t('gamification.challenges.sectionGoal')}</SectionHeader>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label>Type</Label>
+              <Label>{t('gamification.form.type')}</Label>
               <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -116,37 +123,41 @@ const CreateChallengeDialog = ({ open, onOpenChange, editingChallenge }: Props) 
               </Select>
             </div>
             <div>
-              <Label>Goal Type</Label>
+              <Label>{t('gamification.challenges.goalType')}</Label>
               <Select value={form.goal_type} onValueChange={v => setForm(f => ({ ...f, goal_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="action_count">Action Count</SelectItem>
-                  <SelectItem value="xp_threshold">XP Threshold</SelectItem>
-                  <SelectItem value="class_count">Class Count</SelectItem>
-                  <SelectItem value="streak">Streak</SelectItem>
+                  <SelectItem value="action_count">{t('gamification.challenges.goalTypeActionCount')}</SelectItem>
+                  <SelectItem value="xp_threshold">{t('gamification.challenges.goalTypeXpThreshold')}</SelectItem>
+                  <SelectItem value="class_count">{t('gamification.challenges.goalTypeClassCount')}</SelectItem>
+                  <SelectItem value="streak">{t('gamification.challenges.goalTypeStreak')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Goal Value</Label><Input type="number" value={form.goal_value} onChange={e => setForm(f => ({ ...f, goal_value: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.challenges.goalValue')}</Label><Input type="number" value={form.goal_value} onChange={e => setForm(f => ({ ...f, goal_value: Number(e.target.value) }))} /></div>
           </div>
-          <div><Label>Goal Action Key</Label><Input value={form.goal_action_key} onChange={e => setForm(f => ({ ...f, goal_action_key: e.target.value }))} placeholder="e.g. check_in" /></div>
+          <div><Label>{t('gamification.challenges.goalActionKey')}</Label><Input value={form.goal_action_key} onChange={e => setForm(f => ({ ...f, goal_action_key: e.target.value }))} placeholder={t('gamification.challenges.goalActionKeyHint')} /></div>
+
+          <SectionHeader>{t('gamification.challenges.sectionReward')}</SectionHeader>
           <div className="grid grid-cols-3 gap-3">
-            <div><Label>Reward XP</Label><Input type="number" value={form.reward_xp} onChange={e => setForm(f => ({ ...f, reward_xp: Number(e.target.value) }))} /></div>
-            <div><Label>Reward Points</Label><Input type="number" value={form.reward_points} onChange={e => setForm(f => ({ ...f, reward_points: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.challenges.rewardXp')}</Label><Input type="number" value={form.reward_xp} onChange={e => setForm(f => ({ ...f, reward_xp: Number(e.target.value) }))} /></div>
+            <div><Label>{t('gamification.challenges.rewardPoints')}</Label><Input type="number" value={form.reward_points} onChange={e => setForm(f => ({ ...f, reward_points: Number(e.target.value) }))} /></div>
             <div>
-              <Label>Reward Badge</Label>
+              <Label>{t('gamification.challenges.rewardBadge')}</Label>
               <Select value={form.reward_badge_id} onValueChange={v => setForm(f => ({ ...f, reward_badge_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('gamification.form.none')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="">{t('gamification.form.none')}</SelectItem>
                   {badges?.map(b => <SelectItem key={b.id} value={b.id}>{b.name_en}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          <SectionHeader>{t('gamification.challenges.sectionSchedule')}</SectionHeader>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Start Date *</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
-            <div><Label>End Date *</Label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} /></div>
+            <div><Label>{t('gamification.challenges.startDate')} {t('gamification.form.required')}</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
+            <div><Label>{t('gamification.challenges.endDate')} {t('gamification.form.required')}</Label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} /></div>
           </div>
           <div>
             <Label>{t('common.status')}</Label>

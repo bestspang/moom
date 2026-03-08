@@ -22,6 +22,14 @@ const GamificationRewards = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GamificationReward | null>(null);
 
+  const categoryLabelMap: Record<string, string> = {
+    perk: t('gamification.rewards.categoryPerk'),
+    merch: t('gamification.rewards.categoryMerch'),
+    access: t('gamification.rewards.categoryAccess'),
+    package_booster: t('gamification.rewards.categoryPackageBooster'),
+    event: t('gamification.rewards.categoryEvent'),
+  };
+
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (r: GamificationReward) => { setEditing(r); setDialogOpen(true); };
 
@@ -50,7 +58,7 @@ const GamificationRewards = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm truncate">{language === 'th' && reward.name_th ? reward.name_th : reward.name_en}</p>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{reward.category.replace('_', ' ')}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{categoryLabelMap[reward.category] || reward.category}</span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{language === 'th' && reward.description_th ? reward.description_th : reward.description_en}</p>
                   </div>
@@ -59,7 +67,7 @@ const GamificationRewards = () => {
                     {reward.level_required > 0 && <p className="text-[10px] text-muted-foreground">Lv.{reward.level_required}+</p>}
                     <p className="text-[10px] text-muted-foreground">{t('gamification.rewards.stock')}: {stockText}</p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => openEdit(reward)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => openEdit(reward)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                 </CardContent>
