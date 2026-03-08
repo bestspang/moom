@@ -22,6 +22,7 @@ const TEMPLATE_HEADERS = ['Name', 'Name (TH)', 'Type', 'Category', 'Level', 'Dur
 
 const Classes = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
