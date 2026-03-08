@@ -1,47 +1,52 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Milestone 5: Complete Permission Guards on Remaining Pages
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Problem Confirmed
 
-## Fix (surgical, 1 file)
+Milestone 4 added `can()` guards to 9 pages but missed 4 pages that still show create/edit/manage buttons to all users regardless of permissions:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+| Page | Resource Key | What needs guarding |
+|------|-------------|---------------------|
+| `src/pages/Staff.tsx` | `staff` | "Create Staff" button, ManageDropdown |
+| `src/pages/Locations.tsx` | `locations` | "Create Location" button, ManageDropdown, edit actions |
+| `src/pages/ClassCategories.tsx` | `class_categories` | "Create Category" button |
+| `src/pages/TransferSlips.tsx` | `transfer_slips` | ManageDropdown (import/export) |
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## Why This First
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+- Completes the security UX layer started in Milestone 4 — leaving gaps undermines the pattern
+- Zero regression risk: only adding conditional renders
+- Small scope (~3 lines per file), fast to implement
+- Must be done before moving to feature work (Dashboard refinement)
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## Plan
+
+For each page:
+1. Add `import { usePermissions } from '@/hooks/usePermissions'`
+2. Call `const { can } = usePermissions()`
+3. Wrap create/edit buttons in `{can('resource', 'write') && ...}`
+
+### Staff.tsx
+- Guard "Create Staff" button with `can('staff', 'write')`
+- Guard ManageDropdown with `can('staff', 'write')`
+- Guard bulk action bar selectable prop with `can('staff', 'delete') || can('staff', 'write')`
+
+### Locations.tsx
+- Guard "Create Location" button with `can('locations', 'write')`
+- Guard ManageDropdown with `can('locations', 'write')`
+- Guard edit action column with `can('locations', 'write')`
+
+### ClassCategories.tsx
+- Guard "Create Category" button with `can('class_categories', 'write')`
+
+### TransferSlips.tsx
+- Guard ManageDropdown with `can('transfer_slips', 'write')`
+
+### Risk
+- Zero regression: Pure conditional rendering additions
+- Identical pattern to Members/Leads/Schedule pages
+
+### Files to modify
+4 page files — each gets ~3 lines added
 
