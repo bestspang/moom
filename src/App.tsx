@@ -72,6 +72,15 @@ import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
+import GamificationStudio from "./pages/gamification/GamificationStudio";
+import GamificationOverview from "./pages/gamification/GamificationOverview";
+import GamificationRules from "./pages/gamification/GamificationRules";
+import GamificationLevels from "./pages/gamification/GamificationLevels";
+import GamificationChallenges from "./pages/gamification/GamificationChallenges";
+import GamificationBadges from "./pages/gamification/GamificationBadges";
+import GamificationRewards from "./pages/gamification/GamificationRewards";
+import GamificationTrainers from "./pages/gamification/GamificationTrainers";
+import GamificationRisk from "./pages/gamification/GamificationRisk";
 
 const queryClient = new QueryClient();
 
