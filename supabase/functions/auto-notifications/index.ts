@@ -146,12 +146,12 @@ Deno.serve(async (req) => {
           pending_slips: (pendingSlips || []).length,
         },
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     return new Response(
       JSON.stringify({ ok: false, error: 'Internal error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }
     );
   }
 });
