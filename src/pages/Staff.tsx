@@ -13,6 +13,7 @@ import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { getInitials } from '@/lib/formatters';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender', 'Birthdate', 'Email', 'Phone', 'Address', 'Branch', 'Status'];
 
@@ -20,6 +21,7 @@ const TEMPLATE_HEADERS = ['Firstname', 'Lastname', 'Nickname', 'Role', 'Gender',
 
 const Staff = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
 
   const staffStatusOptions = [
     { value: 'active', label: t('common.active') },
@@ -218,15 +220,19 @@ const Staff = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('staff.title') }]} 
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown
-              onExport={handleExport}
-              onDownloadTemplate={handleDownloadTemplate}
-              onImport={() => setImportOpen(true)}
-              exportDisabled={!staff?.length}
-            />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
-              {t('staff.createStaff')}
-            </Button>
+            {can('staff', 'write') && (
+              <>
+                <ManageDropdown
+                  onExport={handleExport}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  onImport={() => setImportOpen(true)}
+                  exportDisabled={!staff?.length}
+                />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
+                  {t('staff.createStaff')}
+                </Button>
+              </>
+            )}
           </div>
         } 
       />

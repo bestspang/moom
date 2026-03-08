@@ -10,6 +10,7 @@ import { EditLocationDialog } from '@/components/locations/EditLocationDialog';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type Location = Tables<'locations'>;
 
@@ -24,6 +25,7 @@ const formatOpeningHoursSummary = (hours: Record<string, { open: string; close: 
 
 const Locations = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
   const [createOpen, setCreateOpen] = useState(false);
@@ -92,15 +94,19 @@ const Locations = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('locations.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown
-              onExport={handleExport}
-              onDownloadTemplate={handleDownloadTemplate}
-              exportDisabled={!locations?.length}
-            />
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              {t('locations.createLocation')}
-            </Button>
+            {can('locations', 'write') && (
+              <>
+                <ManageDropdown
+                  onExport={handleExport}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  exportDisabled={!locations?.length}
+                />
+                <Button onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('locations.createLocation')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

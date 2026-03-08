@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClassCategories, type ClassCategoryWithCount } from '@/hooks/useClassCategories';
 import CreateClassCategoryDialog from '@/components/categories/CreateClassCategoryDialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const ClassCategories = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -34,9 +36,11 @@ const ClassCategories = () => {
         title={t('categories.title')}
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('categories.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
-            {t('common.create')}
-          </Button>
+          can('class_categories', 'write') ? (
+            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
+              {t('common.create')}
+            </Button>
+          ) : undefined
         }
       />
 

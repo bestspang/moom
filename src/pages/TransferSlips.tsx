@@ -11,9 +11,11 @@ import { toast } from 'sonner';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import { SlipDetailDialog } from '@/components/transfer-slips/SlipDetailDialog';
 import { Eye } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TransferSlips = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('needs_review');
   const [importOpen, setImportOpen] = useState(false);
@@ -152,12 +154,14 @@ const TransferSlips = () => {
         title={t('transferSlips.title')}
         breadcrumbs={[{ label: t('nav.business') }, { label: t('transferSlips.title') }]}
         actions={
-          <ManageDropdown
-            onExport={handleExport}
-            onDownloadTemplate={handleDownloadTemplate}
-            onImport={() => setImportOpen(true)}
-            exportDisabled={!slips?.length}
-          />
+          can('transfer_slips', 'write') ? (
+            <ManageDropdown
+              onExport={handleExport}
+              onDownloadTemplate={handleDownloadTemplate}
+              onImport={() => setImportOpen(true)}
+              exportDisabled={!slips?.length}
+            />
+          ) : undefined
         }
       />
 
