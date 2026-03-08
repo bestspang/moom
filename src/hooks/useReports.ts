@@ -479,27 +479,51 @@ export function usePackageSales(
   return useQuery({
     queryKey: ['package-sales', dateRange, filters],
     queryFn: async () => {
-      // Mock package sales data
-      const packageNames = [
-        { name: 'Monthly Unlimited', type: 'unlimited', category: 'All Classes' },
-        { name: '10 Session Pack', type: 'session', category: 'Group Classes' },
-        { name: 'PT 5 Sessions', type: 'pt', category: 'Personal Training' },
-        { name: 'Quarterly Pass', type: 'unlimited', category: 'All Classes' },
-        { name: '20 Session Pack', type: 'session', category: 'All Classes' },
-      ];
+      // Query paid transactions with package info
+      let query = supabase
+        .from('transactions')
+        .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
+        .eq('status', 'paid')
+        .not('package_id', 'is', null)
+        .gte('paid_at', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('paid_at', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
 
-      const tableData: PackageSaleRow[] = packageNames.map((pkg) => ({
-        packageName: pkg.name,
-        packageType: pkg.type,
-        category: pkg.category,
-        unitsSold: Math.floor(Math.random() * 50) + 10,
-        revenue: Math.floor(Math.random() * 100000) + 10000,
+      const { data: txData, error } = await query;
+      if (error) throw error;
+
+      // Group by package
+      const packageMap = new Map<string, { name: string; type: string; category: string; units: number; revenue: number }>();
+
+      (txData || []).forEach((tx: any) => {
+        const pkg = tx.packages;
+        if (!pkg) return;
+
+        const pkgType = pkg.type || 'other';
+        const pkgCategory = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+
+        // Apply filters
+        if (filters.packageType !== 'all' && pkgType !== filters.packageType) return;
+        if (filters.category !== 'all' && pkgCategory !== filters.category) return;
+
+        const key = pkg.name_en || tx.package_id;
+        const existing = packageMap.get(key) || { name: key, type: pkgType, category: pkgCategory, units: 0, revenue: 0 };
+        existing.units += 1;
+        existing.revenue += Number(tx.amount) || 0;
+        packageMap.set(key, existing);
+      });
+
+      const tableData: PackageSaleRow[] = Array.from(packageMap.values()).map((d) => ({
+        packageName: d.name,
+        packageType: d.type,
+        category: d.category,
+        unitsSold: d.units,
+        revenue: d.revenue,
       }));
 
       const chartData = tableData.map((d) => ({
         name: d.packageName,
         units: d.unitsSold,
-        revenue: Math.round(d.revenue / 1000), // Scale for chart
+        revenue: Math.round(d.revenue / 1000),
       }));
 
       const sortedByUnits = [...tableData].sort((a, b) => b.unitsSold - a.unitsSold);
