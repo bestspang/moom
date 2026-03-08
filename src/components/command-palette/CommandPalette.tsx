@@ -204,7 +204,7 @@ export function CommandPalette() {
                   onSelect={() => handleSelect(action.path, action.command)}
                 >
                   <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{action.label}</span>
+                  <span>{t(action.labelKey)}</span>
                 </CommandItem>
               );
             })}
