@@ -58,10 +58,12 @@ const Insights = () => {
             <BarChart3 className="h-3.5 w-3.5" />
             {t('insights.overview')}
           </TabsTrigger>
-          <TabsTrigger value="revenue" className="gap-1.5">
-            <TrendingUp className="h-3.5 w-3.5" />
-            {t('insights.revenue')}
-          </TabsTrigger>
+          {canFinance && (
+            <TabsTrigger value="revenue" className="gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {t('insights.revenue')}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="members" className="gap-1.5">
             <Users className="h-3.5 w-3.5" />
             {t('insights.members')}
