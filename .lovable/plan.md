@@ -1,95 +1,38 @@
 
 
-# Gamification Platform: Cross-Project Architecture Assessment
+# Gamification Platform Architecture — Final Assessment
 
-## Critical Finding: Your Platform Already Uses Shared Backend
+## Critical Reality Check
 
-Your `PLATFORM_CONTRACT.md` (line 11) explicitly states:
+Your platform uses **ONE shared Supabase backend** across both projects. This is confirmed by:
 
-> "Both apps use the same Supabase project via `@supabase/supabase-js`"
+- `PLATFORM_CONTRACT.md`: "Both apps use the same Supabase project"
+- Memory note `architecture/project-split`: "เชื่อมต่อกับ Backend เดียวกัน"
+- Memory note `security/shared-backend-platform`: CORS allows 3 origins (admin.moom.fit, member.moom.fit, moom.lovable.app)
+- All gamification tables, Edge Functions, and RLS policies are already deployed in this shared backend
 
-Your `gamification-architecture.md` (line 5-7) confirms:
+**This is NOT a two-database scenario.** Both Lovable projects connect to the same Supabase URL, same tables, same Edge Functions. The "separate databases" premise does not apply to your architecture.
 
-> "Architecture: Option B — Shared Supabase Backend. Both Admin App and Experience App share ONE Supabase project."
+## Architecture: Option B (Already Implemented)
 
-Your memory note `architecture/project-split` confirms:
+| Option | Verdict |
+|--------|---------|
+| A. Central Gamification Service | Overkill — adds a third system for no benefit |
+| B. Shared DB, Admin configures, Experience produces/consumes | **Current architecture. Already working.** |
+| C. Federated dual-DB with event sync | Unnecessary complexity with zero benefit |
 
-> "แพลตฟอร์มถูกออกแบบให้แยกโครงการ Frontend เป็น 2 โปรเจกต์หลัก...โดยเชื่อมต่อกับ Backend เดียวกัน"
+## What Is Already Deployed (Phase 1 Complete)
 
-**You have two separate frontend projects but ONE shared Supabase backend.** The gamification tables, Edge Functions, RLS policies, and auth system are already deployed in this shared backend. Both apps connect to the same database via the same Supabase URL.
+- 9 member-side tables (profiles, XP/points ledgers, streaks, badge_earnings, challenge_progress, reward_redemptions, squads, squad_memberships, trainer_gamification_scores)
+- 8 config tables (rules, levels, badges, challenges, rewards, trainer_tiers, seasons, audit_log)
+- `gamification-process-event` Edge Function (XP + points + streaks + badges + challenges + anti-abuse)
+- `gamification-redeem-reward` Edge Function (eligibility + stock + rollback)
+- RLS policies (staff read all, members read own via line_users join)
+- Admin Studio UI (8 tabs, full CRUD)
+- Idempotency via unique `idempotency_key` constraints
+- Append-only ledgers with rollback support
 
----
+## No Implementation Needed
 
-## Architecture Recommendation
-
-### Option A: Central Gamification Service (Separate DB)
-- Requires building a third system (API gateway + DB) just for gamification
-- Adds network hops, deployment complexity, and a new failure domain
-- **Not recommended** — overkill for your scale
-
-### Option B: Shared DB, Admin Owns Config, Experience Produces Events (CURRENT)
-- Already implemented and working
-- Admin App: CRUD on config tables (rules, levels, badges, challenges, rewards, tiers, seasons)
-- Experience App: calls Edge Functions to produce events, reads own profiles via RLS
-- Edge Functions: enforce all business logic (XP, points, streaks, anti-abuse)
-- RLS: data isolation by role
-- **Recommended — this IS your architecture already**
-
-### Option C: Federated Dual-DB with Event Sync
-- Would require: event bus, dead-letter queue, reconciliation jobs, idempotent projections, conflict resolution
-- All for zero benefit since both apps already share one DB
-- **Not recommended** — unnecessary complexity
-
-### Verdict
-
-**Option B is already implemented.** Two Lovable frontend projects sharing one Supabase backend is the correct architecture. It gives you:
-- Zero sync lag (direct table access)
-- Zero reconciliation burden
-- Atomic multi-step mutations via Edge Functions
-- RLS-based data isolation (admin sees all, members see own)
-- Single source of truth for all gamification state
-
-If the Experience App were ever moved to its own Supabase project (separate Lovable Cloud), **then** you would need cross-database sync. But that is not the current architecture and would add significant complexity with no clear benefit.
-
----
-
-## What Is Already Built (Phase 1 Complete)
-
-| Component | Status |
-|-----------|--------|
-| 8 config tables (rules, levels, badges, challenges, rewards, tiers, seasons, audit) | Deployed |
-| 9 member-side tables (profiles, XP/points ledgers, streaks, badge earnings, challenge progress, redemptions, squads) | Deployed |
-| `gamification-process-event` Edge Function | Deployed |
-| `gamification-redeem-reward` Edge Function | Deployed |
-| Admin Studio UI (8 tabs, full CRUD) | Deployed |
-| RLS policies (manager manage, staff read, member own) | Deployed |
-| Idempotency via `idempotency_key` unique constraints | Deployed |
-| Anti-abuse (cooldowns, daily limits, audit flagging) | Deployed |
-| Append-only ledgers with rollback support | Deployed |
-
----
-
-## What Remains (Phase 2-4)
-
-### Phase 2: Wire Events + Experience App Screens
-- Wire check-in/booking/purchase flows to call `gamification-process-event`
-- Build Experience App member screens (profile, challenges, rewards)
-
-### Phase 3: Advanced Features
-- Squad management UI + Edge Function
-- Trainer scoring computation (in-house vs freelance)
-- Season management UI in Admin
-
-### Phase 4: Optimization
-- Reconciliation job (verify ledger totals match profile snapshots)
-- Analytics charts in Admin Overview
-- Background notifications via `event_outbox`
-
----
-
-## No Action Required
-
-The architecture question is already resolved. Your system uses Option B (shared backend) which is the optimal choice. All gamification tables, Edge Functions, and RLS policies are deployed and working.
-
-The next actionable step is **Phase 2**: wiring the Experience App's real-world events (check-in, booking, purchase) to the `gamification-process-event` Edge Function.
+The architecture question is resolved. No code changes required. The next actionable step is **Phase 2**: wiring check-in/booking/purchase flows to call `gamification-process-event`.
 
