@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, StatCard, DatePicker, DataTable, EmptyState, SearchBar, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -11,6 +12,7 @@ import { BookingManagementDialog } from '@/components/schedule/BookingManagement
 import { ScheduleTimeline } from '@/components/schedule/ScheduleTimeline';
 
 const Schedule = () => {
+  const { can } = usePermissions();
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
@@ -80,11 +82,11 @@ const Schedule = () => {
       <PageHeader
         title={t('schedule.title')}
         breadcrumbs={[{ label: t('schedule.title') }]}
-        actions={
+        actions={can('schedule', 'write') ? (
           <Button className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
             {t('schedule.scheduleClass')}
           </Button>
-        }
+        ) : undefined}
       />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

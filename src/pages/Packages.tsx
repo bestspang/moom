@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +28,7 @@ const PACKAGE_STATUS_OPTIONS = [
 
 const Packages = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
@@ -167,10 +169,14 @@ const Packages = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
-              {t('packages.createPackage')}
-            </Button>
+            {can('packages', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
+                  {t('packages.createPackage')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

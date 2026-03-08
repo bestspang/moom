@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +22,7 @@ const TEMPLATE_HEADERS = ['Name', 'Name (TH)', 'Type', 'Category', 'Level', 'Dur
 
 const Classes = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -124,10 +126,14 @@ const Classes = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('classes.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!classes?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/class/create')}>
-              {t('classes.createClass')}
-            </Button>
+            {can('classes', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!classes?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/class/create')}>
+                  {t('classes.createClass')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, StatusTabs, DataTable, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +13,7 @@ import { CreateRoomDialog } from '@/components/rooms/CreateRoomDialog';
 
 const Rooms = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('open');
@@ -55,14 +57,14 @@ const Rooms = () => {
       <PageHeader 
         title={t('rooms.title')} 
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('rooms.title') }]} 
-        actions={
+        actions={can('rooms', 'write') ? (
           <Button 
             className="bg-primary hover:bg-primary-hover"
             onClick={() => setCreateDialogOpen(true)}
           >
             {t('rooms.createRoom')}
           </Button>
-        } 
+        ) : undefined}
       />
       
       <div className="flex items-center gap-3 mb-6">

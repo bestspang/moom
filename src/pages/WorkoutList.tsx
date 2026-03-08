@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, DataTable, EmptyState, ManageDropdown, BulkActionBar, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -39,6 +40,7 @@ const TRAINING_STATUS_OPTIONS = [
 
 const WorkoutList = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [filterTrainingId, setFilterTrainingId] = useState<string | undefined>(undefined);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -150,11 +152,15 @@ const WorkoutList = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('workouts.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!trainings?.length} />
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              {t('workouts.createTraining')}
-            </Button>
+            {can('schedule', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!trainings?.length} />
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('workouts.createTraining')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

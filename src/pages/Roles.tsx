@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, DataTable, StatusBadge, ManageDropdown, type Column } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ const TEMPLATE_HEADERS = ['name', 'access_level', 'description'];
 
 const Roles = () => {
   const { t } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
@@ -80,9 +82,11 @@ const Roles = () => {
               onDownloadTemplate={handleDownloadTemplate}
               exportDisabled={!roles?.length}
             />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/roles/create')}>
-              {t('roles.createRole')}
-            </Button>
+            {can('roles', 'write') && (
+              <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/roles/create')}>
+                {t('roles.createRole')}
+              </Button>
+            )}
           </div>
         } 
       />

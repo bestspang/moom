@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   useAnnouncements,
@@ -39,6 +40,7 @@ type AnnouncementStatus = Database['public']['Enums']['announcement_status'];
 
 const Announcements = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const locale = getDateLocale(language);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('active');
@@ -118,14 +120,14 @@ const Announcements = () => {
           { label: t('nav.yourGym') },
           { label: t('announcements.title') },
         ]}
-        actions={
+        actions={can('announcements', 'write') ? (
           <Button
             onClick={() => setDialogOpen(true)}
             className="bg-primary hover:bg-primary-hover"
           >
             {t('common.create')}
           </Button>
-        }
+        ) : undefined}
       />
 
       <SearchBar

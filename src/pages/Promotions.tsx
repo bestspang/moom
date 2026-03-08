@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,6 +27,7 @@ const PROMO_STATUS_OPTIONS = [
 
 const Promotions = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const locale = getDateLocale(language);
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -153,10 +155,14 @@ const Promotions = () => {
         breadcrumbs={[{ label: t('nav.package') }, { label: t('promotions.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!promotions?.length} />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
-              {t('promotions.createPromotion')}
-            </Button>
+            {can('promotions', 'write') && (
+              <>
+                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!promotions?.length} />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/promotion/create')}>
+                  {t('promotions.createPromotion')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />
