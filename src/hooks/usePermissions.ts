@@ -19,6 +19,7 @@ export const ALL_RESOURCES: ResourceKey[] = [
   'members', 'leads', 'packages', 'promotions', 'staff', 'roles',
   'locations', 'activity_log', 'announcements', 'workout_list',
   'transfer_slips', 'finance', 'reports', 'settings', 'notifications',
+  'gamification',
 ];
 
 export interface PermissionRow {
