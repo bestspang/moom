@@ -32,9 +32,10 @@ export default function MemberProfilePage() {
   const menuItems = [
     { label: 'Edit Profile', icon: User, path: '/member/profile/edit' },
     { label: 'Attendance History', icon: CalendarCheck, path: '/member/attendance' },
+    { label: 'Reward Wallet', icon: CreditCard, path: '/member/rewards' },
     { label: 'Badge Collection', icon: Award, path: '/member/badges' },
+    { label: 'My Squad', icon: Heart, path: '/member/squad' },
     { label: 'Notifications', icon: Bell, path: '/member/notifications' },
-    { label: 'Medical & Emergency', icon: Heart, path: '/member/medical' },
     { label: 'Support', icon: HelpCircle, path: '/member/support' },
   ];
 

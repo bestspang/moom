@@ -12,6 +12,8 @@ import { Calendar, Package, Bell, Sparkles, ChevronRight, Megaphone } from 'luci
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { MomentumCard } from '../features/momentum/MomentumCard';
+import { SquadCard } from '../features/momentum/SquadCard';
+import { UpcomingMilestones } from '../features/momentum/UpcomingMilestones';
 import { format } from 'date-fns';
 import { useState } from 'react';
 
@@ -158,6 +160,20 @@ export default function MemberHomePage() {
       {memberId && (
         <Section className="mb-4">
           <MomentumCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* Squad */}
+      {memberId && (
+        <Section className="mb-4">
+          <SquadCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* Upcoming milestones nudge */}
+      {memberId && (
+        <Section className="mb-4">
+          <UpcomingMilestones memberId={memberId} nudgeOnly max={1} />
         </Section>
       )}
 

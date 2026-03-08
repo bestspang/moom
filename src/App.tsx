@@ -98,6 +98,10 @@ import MemberProfilePage from "@/apps/member/pages/MemberProfilePage";
 import MemberEditProfilePage from "@/apps/member/pages/MemberEditProfilePage";
 import MemberAttendancePage from "@/apps/member/pages/MemberAttendancePage";
 import MemberUploadSlipPage from "@/apps/member/pages/MemberUploadSlipPage";
+import MemberCheckInPage from "@/apps/member/pages/MemberCheckInPage";
+import MemberRewardsPage from "@/apps/member/pages/MemberRewardsPage";
+import MemberBadgeGalleryPage from "@/apps/member/pages/MemberBadgeGalleryPage";
+import MemberSquadPage from "@/apps/member/pages/MemberSquadPage";
 import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
 import TrainerSchedulePage from "@/apps/trainer/pages/TrainerSchedulePage";
 import TrainerRosterPage from "@/apps/trainer/pages/TrainerRosterPage";
@@ -148,6 +152,10 @@ const App = () => (
                   <Route path="packages" element={<MemberPackagesPage />} />
                   <Route path="packages/:id/purchase" element={<MemberPurchasePage />} />
                   <Route path="upload-slip" element={<MemberUploadSlipPage />} />
+                  <Route path="check-in" element={<MemberCheckInPage />} />
+                  <Route path="rewards" element={<MemberRewardsPage />} />
+                  <Route path="badges" element={<MemberBadgeGalleryPage />} />
+                  <Route path="squad" element={<MemberSquadPage />} />
                   <Route path="profile" element={<MemberProfilePage />} />
                   <Route path="profile/edit" element={<MemberEditProfilePage />} />
                   <Route path="attendance" element={<MemberAttendancePage />} />
