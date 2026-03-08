@@ -32,7 +32,7 @@ export default function MemberUploadSlipPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: UploadSlipForm) => uploadTransferSlip(data),
+    mutationFn: (data: UploadSlipForm) => uploadTransferSlip({ amount: data.amount, bank_name: data.bank_name, transfer_date: data.transfer_date }),
     onSuccess: () => {
       toast.success('Transfer slip uploaded');
       navigate('/member/packages');

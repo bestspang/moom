@@ -142,9 +142,15 @@ const App = () => (
                 <Route path="/member" element={<MemberLayout />}>
                   <Route index element={<MemberHomePage />} />
                   <Route path="schedule" element={<MemberSchedulePage />} />
+                  <Route path="schedule/:id" element={<MemberClassDetailPage />} />
                   <Route path="bookings" element={<MemberBookingsPage />} />
+                  <Route path="bookings/:id" element={<MemberBookingDetailPage />} />
                   <Route path="packages" element={<MemberPackagesPage />} />
+                  <Route path="packages/:id/purchase" element={<MemberPurchasePage />} />
+                  <Route path="upload-slip" element={<MemberUploadSlipPage />} />
                   <Route path="profile" element={<MemberProfilePage />} />
+                  <Route path="profile/edit" element={<MemberEditProfilePage />} />
+                  <Route path="attendance" element={<MemberAttendancePage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}
