@@ -178,7 +178,7 @@ export async function fetchActiveAnnouncements() {
   const { data, error } = await supabase
     .from('announcements')
     .select('*')
-    .eq('status', 'published')
+    .eq('status', 'active')
     .order('publish_date', { ascending: false })
     .limit(5);
 
