@@ -285,6 +285,18 @@ export const useMarkAttendance = () => {
         member_id: data.member_id,
       });
       toast.success(i18n.t('toast.attendanceRecorded'));
+
+      // Fire gamification event for attended bookings (fire-and-forget)
+      if (variables.status === 'attended') {
+        const schedule = (data as any).schedule;
+        fireGamificationEvent({
+          event_type: 'class_attended',
+          member_id: data.member_id,
+          idempotency_key: `class_attended:${variables.bookingId}`,
+          location_id: schedule?.location_id,
+          metadata: { schedule_id: data.schedule_id, booking_id: variables.bookingId },
+        });
+      }
     },
     onError: (error) => {
       toast.error(i18n.t('toast.attendanceFailed'));
