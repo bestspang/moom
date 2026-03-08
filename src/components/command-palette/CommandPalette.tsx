@@ -49,9 +49,17 @@ const PAGE_ITEMS = [
   { label: 'Settings', path: '/setting/general', icon: Settings, group: 'pages' },
 ];
 
-const QUICK_ACTIONS = [
-  { label: 'Create Member', path: '/members?action=create', icon: Plus },
-  { label: 'Create Lead', path: '/leads?action=create', icon: Plus },
+interface QuickAction {
+  label: string;
+  icon: typeof Plus;
+  path: string;
+  command?: string;
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { label: 'Quick Check-in', path: '/lobby', icon: DoorOpen, command: 'open-checkin' },
+  { label: 'Create Member', path: '/members', icon: Plus, command: 'open-create-member' },
+  { label: 'Create Lead', path: '/leads', icon: Plus, command: 'open-create-lead' },
   { label: 'Create Class', path: '/class/create', icon: Plus },
   { label: 'Create Package', path: '/package/create', icon: Plus },
 ];
