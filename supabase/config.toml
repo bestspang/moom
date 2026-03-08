@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.gamification-redeem-reward]
 verify_jwt = false
+
+[functions.sync-gamification-config]
+verify_jwt = false
