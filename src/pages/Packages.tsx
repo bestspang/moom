@@ -28,6 +28,7 @@ const PACKAGE_STATUS_OPTIONS = [
 
 const Packages = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
