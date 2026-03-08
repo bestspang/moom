@@ -36,9 +36,11 @@ const ClassCategories = () => {
         title={t('categories.title')}
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('categories.title') }]}
         actions={
-          <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
-            {t('common.create')}
-          </Button>
+          {can('class_categories', 'write') && (
+            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
+              {t('common.create')}
+            </Button>
+          )}
         }
       />
 

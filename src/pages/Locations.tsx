@@ -94,15 +94,19 @@ const Locations = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('locations.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown
-              onExport={handleExport}
-              onDownloadTemplate={handleDownloadTemplate}
-              exportDisabled={!locations?.length}
-            />
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              {t('locations.createLocation')}
-            </Button>
+            {can('locations', 'write') && (
+              <>
+                <ManageDropdown
+                  onExport={handleExport}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  exportDisabled={!locations?.length}
+                />
+                <Button onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('locations.createLocation')}
+                </Button>
+              </>
+            )}
           </div>
         }
       />

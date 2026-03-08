@@ -220,15 +220,19 @@ const Staff = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('staff.title') }]} 
         actions={
           <div className="flex items-center gap-2">
-            <ManageDropdown
-              onExport={handleExport}
-              onDownloadTemplate={handleDownloadTemplate}
-              onImport={() => setImportOpen(true)}
-              exportDisabled={!staff?.length}
-            />
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
-              {t('staff.createStaff')}
-            </Button>
+            {can('staff', 'write') && (
+              <>
+                <ManageDropdown
+                  onExport={handleExport}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  onImport={() => setImportOpen(true)}
+                  exportDisabled={!staff?.length}
+                />
+                <Button className="bg-primary hover:bg-primary-hover" onClick={() => setCreateOpen(true)}>
+                  {t('staff.createStaff')}
+                </Button>
+              </>
+            )}
           </div>
         } 
       />
