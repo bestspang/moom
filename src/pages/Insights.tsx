@@ -160,8 +160,8 @@ const Insights = () => {
           </Card>
         </TabsContent>
 
-        {/* ========== REVENUE TAB ========== */}
-        <TabsContent value="revenue">
+        {/* ========== REVENUE TAB (finance-gated) ========== */}
+        {canFinance && <TabsContent value="revenue">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
