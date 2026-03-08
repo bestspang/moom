@@ -621,6 +621,14 @@ export const useAssignPackageToMember = () => {
         });
       if (mpErr) throw mpErr;
 
+      // 5. Insert member_billing record (same pattern as approve-slip)
+      await supabase.from('member_billing').insert({
+        member_id: memberId,
+        transaction_id: txn.id,
+        amount: amountGross,
+        description: `Purchase: ${pkg.name_en}`,
+      });
+
       return { transactionNo: txNo, transactionId: txn.id };
     },
     onSuccess: (result, variables) => {
@@ -628,6 +636,8 @@ export const useAssignPackageToMember = () => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
       queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['package-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
       logActivity({
         event_type: 'package_purchased',
         activity: `Package "${variables.pkg.name_en}" purchased for member (${result.transactionNo})`,
