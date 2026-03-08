@@ -210,35 +210,70 @@ export function useActiveMembers(
   return useQuery({
     queryKey: ['active-members', dateRange, filters],
     queryFn: async () => {
-      // For demo purposes, generate mock data
-      const days = dateRange.start && dateRange.end
+      let query = supabase
+        .from('member_attendance')
+        .select('check_in_time, member_id, location_id, members!inner(gender, date_of_birth)')
+        .gte('check_in_time', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('check_in_time', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: attendanceData, error } = await query;
+      if (error) throw error;
+
+      const allDays = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => ({
-        date: format(day, 'd MMM'),
-        activeMembers: Math.floor(Math.random() * 50) + 20,
-      }));
+      // Group unique members by date
+      const dateMap = new Map<string, Set<string>>();
+      allDays.forEach((day) => dateMap.set(format(day, 'd MMM'), new Set()));
+
+      (attendanceData || []).forEach((row: any) => {
+        if (!row.check_in_time) return;
+        const memberGender = row.members?.gender;
+        if (filters.gender !== 'all' && memberGender !== filters.gender) return;
+        if (filters.age !== 'all' && row.members?.date_of_birth) {
+          const age = differenceInDays(new Date(), new Date(row.members.date_of_birth)) / 365;
+          const [minAge, maxAge] = filters.age === '46+' ? [46, 200] : filters.age.split('-').map(Number);
+          if (age < minAge || age > maxAge) return;
+        }
+        const dateKey = format(new Date(row.check_in_time), 'd MMM');
+        dateMap.get(dateKey)?.add(row.member_id);
+      });
+
+      const chartData = allDays.map((day) => {
+        const key = format(day, 'd MMM');
+        return { date: key, activeMembers: dateMap.get(key)?.size || 0 };
+      });
 
       const activeCounts = chartData.map((d) => d.activeMembers);
-      const maxActive = Math.max(...activeCounts);
-      const minActive = Math.min(...activeCounts);
+      const maxActive = activeCounts.length > 0 ? Math.max(...activeCounts) : 0;
+      const minActive = activeCounts.length > 0 ? Math.min(...activeCounts) : 0;
+      const totalActive = activeCounts.reduce((a, b) => a + b, 0);
+
+      const uniqueMembers = new Set<string>();
+      (attendanceData || []).forEach((row: any) => {
+        if (row.member_id) uniqueMembers.add(row.member_id);
+      });
 
       const stats: ActiveMembersStats = {
         mostActiveDay: maxActive,
         mostActiveDayDate: chartData.find((d) => d.activeMembers === maxActive)?.date || '-',
         leastActiveDay: minActive,
         leastActiveDayDate: chartData.find((d) => d.activeMembers === minActive)?.date || '-',
-        avgActivePerDay: Math.round(activeCounts.reduce((a, b) => a + b, 0) / activeCounts.length) || 0,
-        newActivePerDay: Math.floor(Math.random() * 5) + 1,
+        avgActivePerDay: chartData.length > 0 ? Math.round(totalActive / chartData.length) : 0,
+        newActivePerDay: chartData.length > 0 ? Math.round(uniqueMembers.size / chartData.length) : 0,
       };
 
-      const tableData: ActiveMemberRow[] = chartData.slice(0, 10).map((d) => ({
+      const tableData: ActiveMemberRow[] = chartData.map((d) => ({
         date: d.date,
         activeMembers: d.activeMembers,
-        location: 'Main Branch',
-        ageGroup: '26-35',
-        gender: 'Mixed',
+        location: filters.location === 'all' ? 'All Locations' : filters.location,
+        ageGroup: filters.age === 'all' ? 'All' : filters.age,
+        gender: filters.gender === 'all' ? 'All' : filters.gender,
       }));
 
       return { stats, chartData, tableData };
@@ -273,30 +308,75 @@ export function useClassCapacityByHour(
   return useQuery({
     queryKey: ['class-capacity-by-hour', dateRange, filters],
     queryFn: async () => {
-      // Generate mock heatmap data
+      let query = supabase
+        .from('schedule')
+        .select('scheduled_date, start_time, capacity, checked_in, trainer_id, location_id')
+        .gte('scheduled_date', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(dateRange.end!, 'yyyy-MM-dd'))
+        .neq('status', 'cancelled');
+
+      if (filters.trainer !== 'all') {
+        query = query.eq('trainer_id', filters.trainer);
+      }
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: scheduleData, error } = await query;
+      if (error) throw error;
+
+      // Aggregate by day-of-week + hour
+      const cellMap = new Map<string, { totalCapPct: number; count: number }>();
+
+      let totalCapPct = 0;
+      let totalClasses = 0;
+      let classesWithBookingsCount = 0;
+
+      (scheduleData || []).forEach((row: any) => {
+        const dayOfWeek = getDay(new Date(row.scheduled_date)); // 0=Sun
+        const hour = parseInt(row.start_time?.split(':')[0] || '0', 10);
+        const key = `${dayOfWeek}-${hour}`;
+        const capPct = row.capacity > 0 ? Math.round((row.checked_in / row.capacity) * 100) : 0;
+
+        const existing = cellMap.get(key) || { totalCapPct: 0, count: 0 };
+        existing.totalCapPct += capPct;
+        existing.count += 1;
+        cellMap.set(key, existing);
+
+        totalCapPct += capPct;
+        totalClasses++;
+        if (row.checked_in > 0) classesWithBookingsCount++;
+      });
+
+      // Build heatmap
       const heatmapData: HeatmapCell[] = [];
+      let peakCapacity = 0;
+      let peakKey = '';
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
       for (let day = 0; day < 7; day++) {
         for (let hour = 0; hour < 24; hour++) {
-          // Simulate higher capacity during typical gym hours
-          let capacity = 0;
-          if (hour >= 6 && hour <= 21) {
-            if (hour >= 17 && hour <= 20) {
-              capacity = Math.floor(Math.random() * 40) + 60; // Peak hours
-            } else if (hour >= 9 && hour <= 11) {
-              capacity = Math.floor(Math.random() * 30) + 40; // Morning
-            } else {
-              capacity = Math.floor(Math.random() * 30) + 10;
-            }
+          const key = `${day}-${hour}`;
+          const cell = cellMap.get(key);
+          const avgCap = cell ? Math.round(cell.totalCapPct / cell.count) : 0;
+          heatmapData.push({ day, hour, capacity: avgCap });
+
+          if (avgCap > peakCapacity) {
+            peakCapacity = avgCap;
+            peakKey = `${dayNames[day]} ${hour.toString().padStart(2, '0')}:00`;
           }
-          heatmapData.push({ day, hour, capacity });
         }
       }
 
+      const numDays = dateRange.start && dateRange.end
+        ? differenceInDays(dateRange.end, dateRange.start) + 1
+        : 1;
+
       const stats: ClassCapacityByHourStats = {
-        avgCapacity: 67,
-        classesWithBookings: 245,
-        avgClassesPerDay: 12,
-        peakCapacityTime: 'Tue 18:00',
+        avgCapacity: totalClasses > 0 ? Math.round(totalCapPct / totalClasses) : 0,
+        classesWithBookings: classesWithBookingsCount,
+        avgClassesPerDay: Math.round(totalClasses / numDays),
+        peakCapacityTime: peakKey || '-',
       };
 
       return { stats, heatmapData };
@@ -332,29 +412,69 @@ export function useClassCapacityOverTime(
   return useQuery({
     queryKey: ['class-capacity-over-time', dateRange, filters],
     queryFn: async () => {
+      let query = supabase
+        .from('schedule')
+        .select('scheduled_date, capacity, checked_in, trainer_id, location_id')
+        .gte('scheduled_date', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(dateRange.end!, 'yyyy-MM-dd'))
+        .neq('status', 'cancelled');
+
+      if (filters.trainer !== 'all') {
+        query = query.eq('trainer_id', filters.trainer);
+      }
+      if (filters.location !== 'all') {
+        query = query.eq('location_id', filters.location);
+      }
+
+      const { data: scheduleData, error } = await query;
+      if (error) throw error;
+
+      // Group by date
+      const dateMap = new Map<string, { totalCapPct: number; count: number; withBookings: number }>();
+
+      (scheduleData || []).forEach((row: any) => {
+        const dateKey = format(new Date(row.scheduled_date), 'd MMM');
+        const capPct = row.capacity > 0 ? Math.round((row.checked_in / row.capacity) * 100) : 0;
+        const existing = dateMap.get(dateKey) || { totalCapPct: 0, count: 0, withBookings: 0 };
+        existing.totalCapPct += capPct;
+        existing.count += 1;
+        if (row.checked_in > 0) existing.withBookings += 1;
+        dateMap.set(dateKey, existing);
+      });
+
       const days = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => ({
-        date: format(day, 'd MMM'),
-        capacity: Math.floor(Math.random() * 40) + 50,
-        classes: Math.floor(Math.random() * 10) + 5,
-      }));
+      const chartData = days.map((day) => {
+        const key = format(day, 'd MMM');
+        const entry = dateMap.get(key);
+        return {
+          date: key,
+          capacity: entry ? Math.round(entry.totalCapPct / entry.count) : 0,
+          classes: entry?.count || 0,
+        };
+      });
+
+      const totalClasses = chartData.reduce((sum, d) => sum + d.classes, 0);
+      const totalCapacity = chartData.reduce((sum, d) => sum + d.capacity * d.classes, 0);
+      const totalWithBookings = Array.from(dateMap.values()).reduce((sum, d) => sum + d.withBookings, 0);
 
       const stats: ClassCapacityOverTimeStats = {
-        avgCapacity: 72,
-        classesWithBookings: 189,
-        avgClassesPerDay: 8,
+        avgCapacity: totalClasses > 0 ? Math.round(totalCapacity / totalClasses) : 0,
+        classesWithBookings: totalWithBookings,
+        avgClassesPerDay: days.length > 0 ? Math.round(totalClasses / days.length) : 0,
       };
 
-      const tableData: ClassCapacityRow[] = chartData.slice(0, 10).map((d) => ({
-        date: d.date,
-        trainer: 'All Trainers',
-        location: 'Main Branch',
-        classesBooked: d.classes,
-        avgCapacity: d.capacity,
-      }));
+      const tableData: ClassCapacityRow[] = chartData
+        .filter((d) => d.classes > 0)
+        .map((d) => ({
+          date: d.date,
+          trainer: filters.trainer === 'all' ? 'All Trainers' : filters.trainer,
+          location: filters.location === 'all' ? 'All Locations' : filters.location,
+          classesBooked: d.classes,
+          avgCapacity: d.capacity,
+        }));
 
       return { stats, chartData, tableData };
     },
@@ -394,27 +514,51 @@ export function usePackageSales(
   return useQuery({
     queryKey: ['package-sales', dateRange, filters],
     queryFn: async () => {
-      // Mock package sales data
-      const packageNames = [
-        { name: 'Monthly Unlimited', type: 'unlimited', category: 'All Classes' },
-        { name: '10 Session Pack', type: 'session', category: 'Group Classes' },
-        { name: 'PT 5 Sessions', type: 'pt', category: 'Personal Training' },
-        { name: 'Quarterly Pass', type: 'unlimited', category: 'All Classes' },
-        { name: '20 Session Pack', type: 'session', category: 'All Classes' },
-      ];
+      // Query paid transactions with package info
+      let query = supabase
+        .from('transactions')
+        .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
+        .eq('status', 'paid')
+        .not('package_id', 'is', null)
+        .gte('paid_at', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('paid_at', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
 
-      const tableData: PackageSaleRow[] = packageNames.map((pkg) => ({
-        packageName: pkg.name,
-        packageType: pkg.type,
-        category: pkg.category,
-        unitsSold: Math.floor(Math.random() * 50) + 10,
-        revenue: Math.floor(Math.random() * 100000) + 10000,
+      const { data: txData, error } = await query;
+      if (error) throw error;
+
+      // Group by package
+      const packageMap = new Map<string, { name: string; type: string; category: string; units: number; revenue: number }>();
+
+      (txData || []).forEach((tx: any) => {
+        const pkg = tx.packages;
+        if (!pkg) return;
+
+        const pkgType = pkg.type || 'other';
+        const pkgCategory = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+
+        // Apply filters
+        if (filters.packageType !== 'all' && pkgType !== filters.packageType) return;
+        if (filters.category !== 'all' && pkgCategory !== filters.category) return;
+
+        const key = pkg.name_en || tx.package_id;
+        const existing = packageMap.get(key) || { name: key, type: pkgType, category: pkgCategory, units: 0, revenue: 0 };
+        existing.units += 1;
+        existing.revenue += Number(tx.amount) || 0;
+        packageMap.set(key, existing);
+      });
+
+      const tableData: PackageSaleRow[] = Array.from(packageMap.values()).map((d) => ({
+        packageName: d.name,
+        packageType: d.type,
+        category: d.category,
+        unitsSold: d.units,
+        revenue: d.revenue,
       }));
 
       const chartData = tableData.map((d) => ({
         name: d.packageName,
         units: d.unitsSold,
-        revenue: Math.round(d.revenue / 1000), // Scale for chart
+        revenue: Math.round(d.revenue / 1000),
       }));
 
       const sortedByUnits = [...tableData].sort((a, b) => b.unitsSold - a.unitsSold);
@@ -468,37 +612,104 @@ export function usePackageSalesOverTime(
   return useQuery({
     queryKey: ['package-sales-over-time', dateRange, filters, timePeriod],
     queryFn: async () => {
+      let query = supabase
+        .from('transactions')
+        .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
+        .eq('status', 'paid')
+        .not('package_id', 'is', null)
+        .gte('paid_at', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('paid_at', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      const { data: txData, error } = await query;
+      if (error) throw error;
+
+      // Determine grouping key function
+      const getGroupKey = (dateStr: string): string => {
+        const d = new Date(dateStr);
+        switch (timePeriod) {
+          case 'week': return format(startOfWeek(d), 'd MMM');
+          case 'month': return format(startOfMonth(d), 'MMM yyyy');
+          case 'year': return format(startOfYear(d), 'yyyy');
+          default: return format(d, 'd MMM');
+        }
+      };
+
+      // Filter and group
+      const groupMap = new Map<string, { units: number; revenue: number }>();
+
+      (txData || []).forEach((tx: any) => {
+        const pkg = tx.packages;
+        if (!pkg || !tx.paid_at) return;
+
+        const pkgType = pkg.type || 'other';
+        const pkgCategory = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+
+        if (filters.packageType !== 'all' && pkgType !== filters.packageType) return;
+        if (filters.category !== 'all' && pkgCategory !== filters.category) return;
+        if (filters.package !== 'all' && pkg.name_en !== filters.package) return;
+
+        const key = getGroupKey(tx.paid_at);
+        const existing = groupMap.get(key) || { units: 0, revenue: 0 };
+        existing.units += 1;
+        existing.revenue += Number(tx.amount) || 0;
+        groupMap.set(key, existing);
+      });
+
+      // Build chart data from all periods
       const days = dateRange.start && dateRange.end
         ? eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
         : [];
 
-      const chartData = days.map((day) => {
-        const units = Math.floor(Math.random() * 10) + 1;
-        return {
-          date: format(day, 'd MMM'),
-          units,
-          revenue: units * (Math.floor(Math.random() * 3000) + 2000),
-        };
+      // For day view, show each day; for others, show grouped
+      const seenKeys = new Set<string>();
+      const chartData: { date: string; units: number; revenue: number }[] = [];
+
+      days.forEach((day) => {
+        const key = getGroupKey(format(day, 'yyyy-MM-dd'));
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+        const entry = groupMap.get(key) || { units: 0, revenue: 0 };
+        chartData.push({
+          date: key,
+          units: entry.units,
+          revenue: Math.round(entry.revenue / 1000),
+        });
       });
 
       const totalUnits = chartData.reduce((sum, d) => sum + d.units, 0);
-      const totalRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
+      const totalRevenue = (txData || [])
+        .filter((tx: any) => {
+          const pkg = tx.packages;
+          if (!pkg) return false;
+          if (filters.packageType !== 'all' && pkg.type !== filters.packageType) return false;
+          if (filters.category !== 'all') {
+            const cat = (pkg.categories && pkg.categories.length > 0) ? pkg.categories[0] : 'All';
+            if (cat !== filters.category) return false;
+          }
+          if (filters.package !== 'all' && pkg.name_en !== filters.package) return false;
+          return true;
+        })
+        .reduce((sum: number, tx: any) => sum + (Number(tx.amount) || 0), 0);
+
+      const numPeriods = chartData.length || 1;
 
       const stats: PackageSalesOverTimeStats = {
         totalPackagesSold: totalUnits,
-        avgPackagesPerDay: Math.round(totalUnits / (chartData.length || 1)),
+        avgPackagesPerDay: Math.round(totalUnits / numPeriods),
         revenue: totalRevenue,
-        avgRevenuePerDay: Math.round(totalRevenue / (chartData.length || 1)),
+        avgRevenuePerDay: Math.round(totalRevenue / numPeriods),
       };
 
-      const tableData: PackageSaleTimeRow[] = chartData.slice(0, 10).map((d) => ({
-        date: d.date,
-        packageName: 'Various',
-        packageType: 'Mixed',
-        category: 'All',
-        unitsSold: d.units,
-        revenue: d.revenue,
-      }));
+      const tableData: PackageSaleTimeRow[] = chartData
+        .filter((d) => d.units > 0)
+        .map((d) => ({
+          date: d.date,
+          packageName: filters.package === 'all' ? 'Various' : filters.package,
+          packageType: filters.packageType === 'all' ? 'Mixed' : filters.packageType,
+          category: filters.category === 'all' ? 'All' : filters.category,
+          unitsSold: d.units,
+          revenue: d.revenue * 1000, // Convert back from chart scale
+        }));
 
       return { stats, chartData, tableData };
     },
