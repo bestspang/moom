@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGINS = ['https://admin.moom.fit', 'https://member.moom.fit', 'https://moom.lovable.app'];
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://admin.moom.fit",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -18,7 +20,11 @@ interface BriefingResponse {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const reqOrigin = req.headers.get('origin') || '';
+  const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0];
+  const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin };
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: dynamicCors });
 
   try {
     // --- AUTH CHECK ---
@@ -26,7 +32,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
 
@@ -41,7 +47,7 @@ Deno.serve(async (req) => {
     if (claimsErr || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
     const userId = claimsData.claims.sub as string;
@@ -58,7 +64,7 @@ Deno.serve(async (req) => {
     if (!accessCheck) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
 
@@ -68,7 +74,7 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       const result = generateTemplateResponse(stats, language);
       return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
 
@@ -114,20 +120,20 @@ Generate a structured daily briefing.`;
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
           status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...dynamicCors, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       const result = generateTemplateResponse(stats, language);
       return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
 
@@ -144,7 +150,7 @@ Generate a structured daily briefing.`;
         actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 4) : [],
         source: "ai",
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     } catch {
       // Fallback: use raw text as summary
@@ -153,14 +159,14 @@ Generate a structured daily briefing.`;
         actions: [],
         source: "ai",
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
   } catch (e) {
     console.error("daily-briefing error:", e);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...dynamicCors, "Content-Type": "application/json" },
     });
   }
 });
