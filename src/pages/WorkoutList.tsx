@@ -133,12 +133,16 @@ const WorkoutList = () => {
       header: '',
       cell: (row) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditItem(row)}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteItem(row)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {can('workout_list', 'write') && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditItem(row)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {can('workout_list', 'delete') && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteItem(row)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       ),
       className: 'w-20',
