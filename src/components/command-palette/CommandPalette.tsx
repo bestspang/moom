@@ -17,6 +17,7 @@ import {
   FileText, Megaphone, Dumbbell, Receipt, DollarSign,
   BarChart3, Settings, Search, User, Plus,
 } from 'lucide-react';
+import { dispatchCommand } from '@/lib/commandEvents';
 
 interface SearchResult {
   id: string;
