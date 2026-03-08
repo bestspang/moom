@@ -98,8 +98,8 @@ const Insights = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
             <StatCard title={t('insights.activeMembers')} value={overview?.activeMembers || 0} color="blue" />
-            <StatCard title={t('insights.monthlyRevenue')} value={formatCurrency(overview?.totalRevenue || 0)} color="teal" />
-            <StatCard title={t('insights.estLtv')} value={formatCurrency(overview?.ltv || 0)} color="orange" subtitle={t('insights.lifetime')} />
+            {canFinance && <StatCard title={t('insights.monthlyRevenue')} value={formatCurrency(overview?.totalRevenue || 0)} color="teal" />}
+            {canFinance && <StatCard title={t('insights.estLtv')} value={formatCurrency(overview?.ltv || 0)} color="orange" subtitle={t('insights.lifetime')} />}
           </div>
 
           {/* 30-day revenue sparkline */}
