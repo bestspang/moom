@@ -133,12 +133,16 @@ const WorkoutList = () => {
       header: '',
       cell: (row) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditItem(row)}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteItem(row)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {can('workout_list', 'write') && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditItem(row)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {can('workout_list', 'delete') && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteItem(row)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       ),
       className: 'w-20',
@@ -152,7 +156,7 @@ const WorkoutList = () => {
         breadcrumbs={[{ label: t('nav.yourGym') }, { label: t('workouts.title') }]}
         actions={
           <div className="flex items-center gap-2">
-            {can('schedule', 'write') && (
+            {can('workout_list', 'write') && (
               <>
                 <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} exportDisabled={!trainings?.length} />
                 <Button onClick={() => setDialogOpen(true)}>
@@ -205,19 +209,25 @@ const WorkoutList = () => {
                     {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     {training.name}
                   </CollapsibleTrigger>
-                  <Switch
-                    checked={training.is_active}
-                    onCheckedChange={(checked) => updateTraining.mutate({ id: training.id, is_active: checked })}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {training.is_active ? t('workouts.active') : t('workouts.inactive')}
-                  </span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTraining(training)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTraining(training)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {can('workout_list', 'write') && (
+                    <>
+                      <Switch
+                        checked={training.is_active}
+                        onCheckedChange={(checked) => updateTraining.mutate({ id: training.id, is_active: checked })}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {training.is_active ? t('workouts.active') : t('workouts.inactive')}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditTraining(training)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                  {can('workout_list', 'delete') && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTraining(training)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
                 <CollapsibleContent>
                   <DataTable columns={columns} data={training.workout_items} rowKey={(row) => row.id} />

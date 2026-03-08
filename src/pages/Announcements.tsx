@@ -158,7 +158,7 @@ const Announcements = () => {
                 <TableHead>{t('announcements.channels')}</TableHead>
                 <TableHead>{t('announcements.targetLocations')}</TableHead>
                 <TableHead>{t('common.status')}</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                {can('announcements', 'delete') && <TableHead className="w-[50px]"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -186,32 +186,34 @@ const Announcements = () => {
                   <TableCell>
                     {getStatusBadge(announcement)}
                   </TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t('common.confirmDelete')}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t('announcements.deleteConfirm')}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteAnnouncement.mutate(announcement.id)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            {t('common.delete')}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
+                  {can('announcements', 'delete') && (
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('common.confirmDelete')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t('announcements.deleteConfirm')}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteAnnouncement.mutate(announcement.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              {t('common.delete')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
