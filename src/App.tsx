@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
+import SurfaceGuard from "@/apps/shared/SurfaceGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout";
 import "@/i18n";
@@ -114,6 +115,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <SurfaceGuard>
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
@@ -238,6 +240,7 @@ const App = () => (
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </SurfaceGuard>
             </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>

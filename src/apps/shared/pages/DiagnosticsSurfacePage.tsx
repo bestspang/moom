@@ -1,7 +1,8 @@
 import { useSurface } from '@/apps/shared/SurfaceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { detectSurface, isDevEnvironment } from '@/apps/shared/hostname';
+import { isDevEnvironment, getRouteHostAffinity } from '@/apps/shared/hostname';
+import { getRedirectResult } from '@/apps/shared/SurfaceGuard';
 
 /** Dev-only diagnostics page. Shows current surface, host, role, and routing info. */
 export default function DiagnosticsSurfacePage() {
@@ -16,6 +17,8 @@ export default function DiagnosticsSurfacePage() {
     { label: 'Mobile-First', value: String(isMobileFirst) },
     { label: 'Current Path', value: location.pathname },
     { label: 'Route Search', value: location.search || '(none)' },
+    { label: 'Route Host Affinity', value: getRouteHostAffinity(location.pathname) },
+    { label: 'Redirect Logic Result', value: getRedirectResult(location.pathname) },
     { label: 'User ID', value: user?.id ?? '(not logged in)' },
     { label: 'User Email', value: user?.email ?? '(not logged in)' },
     { label: 'Admin Role', value: role ?? '(none)' },
