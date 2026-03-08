@@ -14,8 +14,17 @@ describe('exportToCsv', () => {
     vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
     vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink);
     vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink);
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    // jsdom doesn't have URL.createObjectURL — define it
+    if (!URL.createObjectURL) {
+      URL.createObjectURL = vi.fn().mockReturnValue('blob:test');
+    } else {
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    }
+    if (!URL.revokeObjectURL) {
+      URL.revokeObjectURL = vi.fn();
+    } else {
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    }
 
     // Capture blob content
     const OriginalBlob = globalThis.Blob;
