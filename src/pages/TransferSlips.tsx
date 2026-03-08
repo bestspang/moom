@@ -15,6 +15,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 const TransferSlips = () => {
   const { t, language } = useLanguage();
+  const { can } = usePermissions();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('needs_review');
   const [importOpen, setImportOpen] = useState(false);
