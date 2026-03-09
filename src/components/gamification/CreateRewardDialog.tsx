@@ -21,7 +21,9 @@ interface RewardForm {
   description_en: string;
   description_th: string;
   category: string;
+  reward_type: string;
   points_cost: number;
+  cash_price: string;
   level_required: number;
   stock: string;
   is_unlimited: boolean;
@@ -30,7 +32,8 @@ interface RewardForm {
 
 const emptyForm: RewardForm = {
   name_en: '', name_th: '', description_en: '', description_th: '',
-  category: 'perk', points_cost: 0, level_required: 0, stock: '', is_unlimited: true, is_active: true,
+  category: 'perk', reward_type: 'digital', points_cost: 0, cash_price: '',
+  level_required: 0, stock: '', is_unlimited: true, is_active: true,
 };
 
 const CreateRewardDialog = ({ open, onOpenChange, editingReward }: Props) => {
