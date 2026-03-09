@@ -24,8 +24,8 @@ import { xpForLevel } from '../features/momentum/types';
 import { format } from 'date-fns';
 import { format } from 'date-fns';
 import {
-  Zap, Gift, Target, Trophy, Award, Clock,
-  ChevronRight, Sparkles, Shield, ScanLine,
+  Zap, Gift, Target, Trophy, Award,
+  ChevronRight, Sparkles, Shield,
 } from 'lucide-react';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
