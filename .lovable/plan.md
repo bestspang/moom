@@ -1,43 +1,47 @@
 
 
-# Fix: Member Header Disappears on Member Page
+# Fix: Promotions export missing columns in Settings
 
-## Root Cause
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-In `AuthContext.tsx` line 114, the `onAuthStateChange` callback unconditionally sets `setUser(session?.user ?? null)` for ALL events. If a non-`SIGNED_OUT` event fires with a null/undefined session (e.g., during token refresh or navigation), `user` is set to `null`. This triggers `MemberLayout`'s guard (`if (!user) → Navigate to /login`), making the entire layout (including MemberHeader) disappear.
+## Fix (surgical, 1 file)
 
-The previous fix correctly guarded role-clearing to only happen on `SIGNED_OUT`, but forgot to apply the same guard to `setUser` and `setSession`.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## Fix — `src/contexts/AuthContext.tsx`
-
-In the `onAuthStateChange` callback (~lines 112-129), move the `setSession`/`setUser` calls inside the conditional branches so user is only cleared on explicit `SIGNED_OUT`:
+Replace the promotions export `cols` array to match the Promotions page export format:
 
 ```typescript
-async (event, session) => {
-  if (session?.user) {
-    setSession(session);
-    setUser(session.user);
-    if (fetchingForUserRef.current !== session.user.id) {
-      setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
-    } else {
-      setLoading(false);
-    }
-  } else if (event === 'SIGNED_OUT') {
-    setSession(null);
-    setUser(null);
-    setRole(null);
-    setAllRoles([]);
-    setAccessLevel(null);
-    setStaffStatus(null);
-    setLoading(false);
-  }
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
 }
 ```
 
-## Files to Modify
-1. `src/contexts/AuthContext.tsx` — Guard `setUser(null)` / `setSession(null)` to only fire on `SIGNED_OUT` (~3 line change)
-
-## Risks
-- Zero regression: only prevents accidental null-clearing during non-signout events
-- Explicit signout still correctly clears all state
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
