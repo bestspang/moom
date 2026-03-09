@@ -111,15 +111,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Use setTimeout to avoid Supabase deadlock
+          // setLoading(false) is called inside fetchUserRoleAndStatus
           setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
         } else {
           setRole(null);
           setAllRoles([]);
           setAccessLevel(null);
           setStaffStatus(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -129,10 +129,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // setLoading(false) is called inside fetchUserRoleAndStatus
         fetchUserRoleAndStatus(session.user.id);
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => {
