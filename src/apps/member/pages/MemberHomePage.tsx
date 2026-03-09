@@ -142,30 +142,7 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Active Challenges — max 2 */}
-      {visibleChallenges.length > 0 && (
-        <Section
-          title="Challenges"
-          action={
-            <button onClick={() => toast('More challenges coming soon! 🎯')} className="text-xs font-medium text-primary flex items-center gap-0.5">
-              View all <ChevronRight className="h-3 w-3" />
-            </button>
-          }
-          className="mb-4"
-        >
-          <div className="space-y-3">
-            {visibleChallenges.map(challenge => (
-              <ChallengeCard
-                key={challenge.id}
-                challenge={challenge}
-                progress={progressMap.get(challenge.id) ?? null}
-                onJoin={(id) => joinChallenge.mutate(id)}
-                joining={joinChallenge.isPending}
-              />
-            ))}
-          </div>
-        </Section>
-      )}
+
 
       {/* Next Up bookings — max 2 */}
       <Section
