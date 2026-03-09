@@ -104,6 +104,34 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Badge Type</Label>
+              <Select value={form.badge_type} onValueChange={v => setForm(f => ({ ...f, badge_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">Permanent</SelectItem>
+                  <SelectItem value="boost">Boost</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="seasonal">Seasonal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <Label>Effect Type</Label>
+              <Select value={form.effect_type} onValueChange={v => setForm(f => ({ ...f, effect_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cosmetic">Cosmetic</SelectItem>
+                  <SelectItem value="coin_bonus">Coin Bonus</SelectItem>
+                  <SelectItem value="xp_bonus">XP Bonus</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="discount">Discount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Duration (days)</Label><Input type="number" value={form.duration_days} onChange={e => setForm(f => ({ ...f, duration_days: e.target.value }))} placeholder="∞" /></div>
             <div><Label>{t('gamification.badges.displayPriority')}</Label><Input type="number" value={form.display_priority} onChange={e => setForm(f => ({ ...f, display_priority: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">

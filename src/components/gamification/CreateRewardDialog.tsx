@@ -102,21 +102,38 @@ const CreateRewardDialog = ({ open, onOpenChange, editingReward }: Props) => {
             <div><Label>{t('gamification.form.descriptionEn')}</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
             <div><Label>{t('gamification.form.descriptionTh')}</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
           </div>
-          <div>
-            <Label>{t('gamification.form.category')}</Label>
-            <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="perk">{t('gamification.rewards.categoryPerk')}</SelectItem>
-                <SelectItem value="merch">{t('gamification.rewards.categoryMerch')}</SelectItem>
-                <SelectItem value="access">{t('gamification.rewards.categoryAccess')}</SelectItem>
-                <SelectItem value="package_booster">{t('gamification.rewards.categoryPackageBooster')}</SelectItem>
-                <SelectItem value="event">{t('gamification.rewards.categoryEvent')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>{t('gamification.form.category')}</Label>
+              <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="perk">{t('gamification.rewards.categoryPerk')}</SelectItem>
+                  <SelectItem value="merch">{t('gamification.rewards.categoryMerch')}</SelectItem>
+                  <SelectItem value="access">{t('gamification.rewards.categoryAccess')}</SelectItem>
+                  <SelectItem value="package_booster">{t('gamification.rewards.categoryPackageBooster')}</SelectItem>
+                  <SelectItem value="event">{t('gamification.rewards.categoryEvent')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Reward Type</Label>
+              <Select value={form.reward_type} onValueChange={v => setForm(f => ({ ...f, reward_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="digital">Digital</SelectItem>
+                  <SelectItem value="perk">Perk</SelectItem>
+                  <SelectItem value="coupon">Coupon</SelectItem>
+                  <SelectItem value="merch">Merch</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="hybrid">Hybrid (Coin+Cash)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
             <div><Label>{t('gamification.rewards.pointsCost')} {t('gamification.form.required')}</Label><Input type="number" value={form.points_cost} onChange={e => setForm(f => ({ ...f, points_cost: Number(e.target.value) }))} /></div>
+            <div><Label>Cash Price (฿)</Label><Input type="number" value={form.cash_price} onChange={e => setForm(f => ({ ...f, cash_price: e.target.value }))} placeholder="0" /></div>
             <div><Label>{t('gamification.rewards.levelRequired')}</Label><Input type="number" value={form.level_required} onChange={e => setForm(f => ({ ...f, level_required: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">
