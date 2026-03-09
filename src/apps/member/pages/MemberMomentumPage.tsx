@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
+import { LevelPerksCard } from '../features/momentum/LevelPerksCard';
 
 const EVENT_LABELS: Record<string, string> = {
   checkin: 'Check-in',
