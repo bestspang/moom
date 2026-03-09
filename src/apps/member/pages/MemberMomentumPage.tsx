@@ -264,24 +264,26 @@ export default function MemberMomentumPage() {
           </div>
 
           {/* Badges horizontal scroll */}
-          {badges && badges.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-foreground">Badges</p>
-                <button
-                  onClick={() => navigate('/member/badges')}
-                  className="flex items-center gap-0.5 text-xs font-medium text-primary"
-                >
-                  View all <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
+          {/* Badges with rarity labels */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-foreground">Badges</p>
+              <button
+                onClick={() => navigate('/member/badges')}
+                className="flex items-center gap-0.5 text-xs font-medium text-primary"
+              >
+                View all <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+            {badges && badges.length > 0 ? (
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                 {badges.slice(0, 8).map((mb) => {
                   const tierClass = BADGE_TIER_COLORS[mb.badge?.tier ?? 'bronze'] ?? BADGE_TIER_COLORS.bronze;
+                  const rarityLabel = RARITY_LABELS[mb.badge?.tier ?? 'bronze'] ?? RARITY_LABELS.bronze;
                   return (
                     <div
                       key={mb.id}
-                      className={`flex-shrink-0 flex flex-col items-center gap-1.5 rounded-xl border-2 bg-card p-3 w-20 ${tierClass}`}
+                      className={`flex-shrink-0 flex flex-col items-center gap-1 rounded-xl border-2 bg-card p-3 w-20 ${tierClass}`}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
                         {mb.badge?.iconUrl ? (
@@ -293,12 +295,20 @@ export default function MemberMomentumPage() {
                       <p className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2">
                         {mb.badge?.nameEn ?? 'Badge'}
                       </p>
+                      <span className={`text-[8px] font-bold uppercase tracking-wider ${rarityLabel.className}`}>
+                        {rarityLabel.label}
+                      </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span className="text-xs font-medium">Complete quests to earn badges!</span>
+              </div>
+            )}
+          </div>
 
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">

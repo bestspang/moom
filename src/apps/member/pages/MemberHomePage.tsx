@@ -134,6 +134,11 @@ export default function MemberHomePage() {
         </div>
       </Section>
 
+      {/* Daily Bonus Nudge */}
+      <Section className="mb-4">
+        <DailyBonusCard />
+      </Section>
+
       {/* Momentum */}
       {memberId && (
         <Section className="mb-4">

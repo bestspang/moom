@@ -85,6 +85,11 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
             <span className="text-[10px] font-semibold text-foreground leading-tight">
               {mb.badge?.nameEn ?? 'Badge'}
             </span>
+            {mb.badge?.tier && RARITY_LABELS[mb.badge.tier] && (
+              <span className={`text-[8px] font-bold uppercase tracking-wider ${RARITY_LABELS[mb.badge.tier].className}`}>
+                {RARITY_LABELS[mb.badge.tier].label}
+              </span>
+            )}
           </div>
         );
       })}
