@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { CoachImpactProfile, CoachLevel, PartnerReputationProfile, PartnerTier } from './types';
+import type { CoachImpactProfile, CoachLevel, PartnerReputationProfile, PartnerTier, TrainerQuest } from './types';
 
 /**
  * Resolve the staff_id linked to the current auth user.
@@ -18,9 +18,6 @@ async function getStaffId(): Promise<string | null> {
   return data?.id ?? null;
 }
 
-/**
- * Determine coach level from score thresholds.
- */
 function resolveCoachLevel(score: number): CoachLevel {
   if (score >= 90) return 'elite_coach';
   if (score >= 70) return 'master';
@@ -29,9 +26,6 @@ function resolveCoachLevel(score: number): CoachLevel {
   return 'rising';
 }
 
-/**
- * Determine partner tier from score thresholds.
- */
 function resolvePartnerTier(score: number): PartnerTier {
   if (score >= 80) return 'premium_partner';
   if (score >= 55) return 'preferred';
@@ -39,10 +33,6 @@ function resolvePartnerTier(score: number): PartnerTier {
   return 'new_partner';
 }
 
-/**
- * Fetch the coach impact profile for the current trainer (in-house).
- * Maps from `trainer_gamification_scores.breakdown` JSONB.
- */
 export async function fetchCoachImpactProfile(): Promise<CoachImpactProfile | null> {
   const staffId = await getStaffId();
   if (!staffId) return null;
@@ -65,6 +55,7 @@ export async function fetchCoachImpactProfile(): Promise<CoachImpactProfile | nu
     staff_id: data.staff_id,
     impact_score: data.score,
     coach_level: resolveCoachLevel(data.score),
+    coin_balance: (data as any).coin_balance ?? 0,
     total_classes_taught: bd.total_classes_taught ?? 0,
     avg_attendance_rate: bd.avg_attendance_rate ?? 0,
     member_return_rate: bd.member_return_rate ?? 0,
@@ -73,10 +64,6 @@ export async function fetchCoachImpactProfile(): Promise<CoachImpactProfile | nu
   };
 }
 
-/**
- * Fetch the partner reputation profile for the current trainer (freelance).
- * Maps from `trainer_gamification_scores.breakdown` JSONB.
- */
 export async function fetchPartnerReputationProfile(): Promise<PartnerReputationProfile | null> {
   const staffId = await getStaffId();
   if (!staffId) return null;
@@ -99,6 +86,7 @@ export async function fetchPartnerReputationProfile(): Promise<PartnerReputation
     staff_id: data.staff_id,
     reputation_score: data.score,
     partner_tier: resolvePartnerTier(data.score),
+    coin_balance: (data as any).coin_balance ?? 0,
     total_sessions: bd.total_sessions ?? 0,
     punctuality_rate: bd.punctuality_rate ?? 0,
     repeat_booking_rate: bd.repeat_booking_rate ?? 0,
@@ -108,10 +96,6 @@ export async function fetchPartnerReputationProfile(): Promise<PartnerReputation
   };
 }
 
-/**
- * Detect whether the current trainer is in-house or freelance
- * by checking their role in user_roles.
- */
 export async function fetchTrainerType(): Promise<'in_house' | 'freelance'> {
   const { data: { session } } = await supabase.auth.getSession();
   const uid = session?.user?.id;
@@ -124,8 +108,27 @@ export async function fetchTrainerType(): Promise<'in_house' | 'freelance'> {
     .in('role', ['trainer', 'freelance_trainer']);
 
   if (!data?.length) return 'in_house';
-
-  // If they have freelance_trainer role, they're freelance
   const hasFreelance = data.some(r => r.role === 'freelance_trainer');
   return hasFreelance ? 'freelance' : 'in_house';
+}
+
+export async function fetchTrainerQuests(audienceType: 'trainer_inhouse' | 'trainer_freelance'): Promise<TrainerQuest[]> {
+  const { data, error } = await supabase
+    .from('quest_templates')
+    .select('id, name_en, name_th, quest_period, goal_value, xp_reward, coin_reward')
+    .eq('audience_type', audienceType)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .limit(4);
+
+  if (error) return [];
+  return (data ?? []).map(q => ({
+    id: q.id,
+    name_en: q.name_en,
+    name_th: q.name_th,
+    quest_period: q.quest_period,
+    goal_value: q.goal_value,
+    xp_reward: q.xp_reward,
+    coin_reward: q.coin_reward,
+  }));
 }
