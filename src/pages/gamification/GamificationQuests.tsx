@@ -100,6 +100,7 @@ const GamificationQuests = () => {
       ) : (
         <DataTable
           data={filtered}
+          rowKey={(r: QuestTemplate) => r.id}
           columns={[
             { key: 'name', header: 'Name', cell: (r: QuestTemplate) => r.name_en },
             { key: 'period', header: 'Period', cell: (r: QuestTemplate) => <StatusBadge>{r.quest_period}</StatusBadge> },
