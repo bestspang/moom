@@ -1,47 +1,43 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Status: Everything Is Already Implemented
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+After thorough codebase inspection, **every single item** in this request has already been built in previous messages. Here's the complete verification:
 
-## Fix (surgical, 1 file)
+## 1. Member Leaderboard Page — DONE
+- `src/apps/member/pages/MemberLeaderboardPage.tsx` exists (212 lines) with 3 tabs: XP earners, Squad rankings, Challenge completion stats
+- Route `/member/leaderboard` registered in `App.tsx` (line 166)
+- API functions `fetchXpLeaderboard`, `fetchSquadRankings`, `fetchChallengeCompletionStats` exist in `api.ts`
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## 2. class_booked and class_attended Events — DONE
+- `class_booked` fires in `useClassBookings.ts` line 119 inside `useCreateBooking.onSuccess`
+- `class_attended` fires in `useClassBookings.ts` line 299 inside `useUpdateBookingStatus` (single) and line 416 inside `useBulkCheckIn` (bulk)
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## 3. Trainer Gamification (CoachImpactCard, PartnerReputationCard, API, Types) — DONE
+- `src/apps/trainer/features/impact/api.ts` (131 lines)
+- `src/apps/trainer/features/impact/types.ts` with CoachLevel, PartnerTier, configs
+- `src/apps/trainer/features/impact/CoachImpactCard.tsx`
+- `src/apps/trainer/features/impact/PartnerReputationCard.tsx`
+- CSS variables added to `src/index.css`
+- `TrainerHomePage.tsx` conditionally renders the correct card
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+## 4. XPToast + MemberLayout — DONE
+- `src/apps/member/features/momentum/XPToast.tsx` (48 lines) subscribes to `xp_ledger` INSERTs
+- Mounted in `MemberLayout.tsx`
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## 5. Realtime Subscriptions for Gamification Tables — DONE
+- `useRealtimeSync.ts` includes `member_gamification_profiles`, `badge_earnings`, `challenge_progress`, `reward_redemptions` (lines 44-47, 87-90)
+
+## 6. MemberCheckInPage Gamification Event — DONE
+- `fireGamificationEvent({ event_type: 'check_in', ... })` fires at line 58
+
+## 7. /member/notifications Route — DONE
+- `MemberNotificationsPage` imported and routed at `/member/notifications` (line 171)
+
+## 8. notification_type Enum Expansion — DONE
+- Previously migrated to add `badge_earned`, `level_up`, `challenge_completed`, `reward_fulfilled`, `streak_milestone`, `xp_earned`
+
+---
+
+**No code changes needed.** All features are live and functional. You can verify by navigating to `/member/leaderboard`, `/member/notifications`, and `/trainer` in the preview.
 
