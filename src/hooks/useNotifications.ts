@@ -156,6 +156,12 @@ export const getNotificationTypeConfig = (type: NotificationType) => {
     payment_received: { icon: 'CreditCard', color: 'text-green-500' },
     member_registration: { icon: 'UserPlus', color: 'text-primary' },
     package_expiring: { icon: 'AlertTriangle', color: 'text-amber-500' },
+    badge_earned: { icon: 'Award', color: 'text-yellow-500' },
+    level_up: { icon: 'TrendingUp', color: 'text-primary' },
+    challenge_completed: { icon: 'Target', color: 'text-green-500' },
+    reward_fulfilled: { icon: 'Gift', color: 'text-purple-500' },
+    streak_milestone: { icon: 'Flame', color: 'text-orange-500' },
+    xp_earned: { icon: 'Zap', color: 'text-yellow-500' },
   };
   return configs[type] || { icon: 'Bell', color: 'text-muted-foreground' };
 };
