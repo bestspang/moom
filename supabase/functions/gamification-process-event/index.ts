@@ -594,6 +594,7 @@ Deno.serve(async (req) => {
       leveled_up: leveledUp,
       streak: newStreak,
       challenges: challengeResults,
+      referral_completed: referralCompleted,
       // Cross-project response fields
       new_total_xp: newTotalXp,
       new_level: newLevel,
