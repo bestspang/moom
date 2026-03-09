@@ -52,14 +52,17 @@ const MemberLogin: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
+      console.log('[MemberLogin] Starting Google OAuth...');
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
         extraParams: { prompt: "select_account" },
       });
+      console.log('[MemberLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
       if (result.error) {
         toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
       }
-    } catch {
+    } catch (err) {
+      console.error('[MemberLogin] OAuth exception:', err);
       toast({ variant: 'destructive', title: t('auth.loginFailed'), description: t('auth.googleSignInFailed') });
     } finally {
       setIsGoogleLoading(false);
