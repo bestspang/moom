@@ -21,13 +21,17 @@ interface BadgeForm {
   description_en: string;
   description_th: string;
   tier: string;
+  badge_type: string;
+  effect_type: string;
+  duration_days: string;
   display_priority: number;
   is_active: boolean;
 }
 
 const emptyForm: BadgeForm = {
   name_en: '', name_th: '', description_en: '', description_th: '',
-  tier: 'bronze', display_priority: 0, is_active: true,
+  tier: 'bronze', badge_type: 'permanent', effect_type: 'cosmetic',
+  duration_days: '', display_priority: 0, is_active: true,
 };
 
 const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
