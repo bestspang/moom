@@ -153,12 +153,20 @@ async function updateStreak(db: ReturnType<typeof createClient>, memberId: strin
       newStreak = streak.current_streak;
     } else if (lastDate === yesterday) {
       newStreak = streak.current_streak + 1;
+    } else {
+      // Check if streak was frozen (freeze_until covers the gap)
+      const isFrozen = streak.freeze_until && streak.freeze_until >= today;
+      if (isFrozen) {
+        newStreak = streak.current_streak + 1;
+      }
+      // else newStreak stays 1 (reset)
     }
     newLongest = Math.max(streak.longest_streak, newStreak);
     await db.from("streak_snapshots").update({
       current_streak: newStreak,
       longest_streak: newLongest,
       last_activity_date: today,
+      freeze_until: null, // Clear freeze after activity
     }).eq("id", streak.id);
   } else {
     await db.from("streak_snapshots").insert({
