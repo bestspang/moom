@@ -1979,6 +1979,60 @@ export type Database = {
           },
         ]
       }
+      member_referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          referral_code: string
+          referred_member_id: string | null
+          referred_reward_points: number | null
+          referrer_member_id: string
+          referrer_reward_points: number | null
+          reward_granted: boolean | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code: string
+          referred_member_id?: string | null
+          referred_reward_points?: number | null
+          referrer_member_id: string
+          referrer_reward_points?: number | null
+          reward_granted?: boolean | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code?: string
+          referred_member_id?: string | null
+          referred_reward_points?: number | null
+          referrer_member_id?: string
+          referrer_reward_points?: number | null
+          reward_granted?: boolean | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_referrals_referred_member_id_fkey"
+            columns: ["referred_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_referrals_referrer_member_id_fkey"
+            columns: ["referrer_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_suspensions: {
         Row: {
           created_at: string | null
