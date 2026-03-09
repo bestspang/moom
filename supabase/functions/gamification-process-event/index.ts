@@ -461,6 +461,35 @@ Deno.serve(async (req) => {
       db, member_id, event_type, xpDelta, newStreak, newTotalXp, newAvailablePoints
     );
 
+    // 11.1) QUEST PROGRESS TRACKING
+    try {
+      const { data: activeQuests } = await db
+        .from("quest_instances")
+        .select("*, quest_templates(*)")
+        .eq("member_id", member_id)
+        .eq("status", "active")
+        .lte("start_at", new Date().toISOString())
+        .gte("end_at", new Date().toISOString());
+
+      if (activeQuests) {
+        for (const qi of activeQuests) {
+          const qt = qi.quest_templates;
+          if (!qt || !qt.goal_action_key) continue;
+          if (qt.goal_action_key !== event_type) continue;
+
+          const newProgress = (qi.progress_value || 0) + 1;
+          const completed = newProgress >= qt.goal_value;
+
+          await db.from("quest_instances").update({
+            progress_value: newProgress,
+            status: completed ? "completed" : "active",
+          }).eq("id", qi.id);
+        }
+      }
+    } catch (questErr) {
+      console.warn("Quest progress tracking failed (non-blocking):", questErr);
+    }
+
     // 11.5) REFERRAL REWARD — on first check_in, complete referral if exists
     let referralCompleted = false;
     if (event_type === "check_in") {
