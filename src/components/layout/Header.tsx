@@ -1,5 +1,6 @@
 import React from 'react';
-import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe } from 'lucide-react';
+import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell } from 'lucide-react';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
