@@ -285,18 +285,52 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Active packages */}
+      {/* Referral Program */}
+      {memberId && (
+        <Section className="mb-4">
+          <ReferralCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* AI Suggested Classes */}
+      {memberId && (
+        <Section className="mb-4">
+          <SuggestedClassCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* Active packages with expiry countdown */}
       {activePackages.length > 0 && (
         <Section title="Active Packages" className="mb-6">
           <div className="space-y-2">
-            {activePackages.map(pkg => (
-              <ListCard
-                key={pkg.id}
-                title={pkg.packageName}
-                subtitle={pkg.sessionsRemaining != null ? `${pkg.sessionsRemaining} sessions remaining` : pkg.expiryDate ? `Expires ${format(new Date(pkg.expiryDate), 'd MMM yyyy')}` : undefined}
-                trailing={<MobileStatusBadge status={pkg.status} />}
-              />
-            ))}
+            {activePackages.map(pkg => {
+              const daysLeft = pkg.expiryDate
+                ? Math.ceil((new Date(pkg.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                : null;
+              const urgencyColor = daysLeft != null
+                ? daysLeft <= 7 ? 'text-destructive' : daysLeft <= 30 ? 'text-yellow-600' : 'text-muted-foreground'
+                : '';
+
+              return (
+                <ListCard
+                  key={pkg.id}
+                  title={pkg.packageName}
+                  subtitle={
+                    pkg.sessionsRemaining != null
+                      ? `${pkg.sessionsRemaining} sessions remaining`
+                      : daysLeft != null
+                        ? undefined
+                        : undefined
+                  }
+                  meta={daysLeft != null ? (
+                    <span className={`text-xs font-semibold ${urgencyColor}`}>
+                      {daysLeft <= 0 ? 'Expired' : `${daysLeft}d left`}
+                    </span>
+                  ) as any : undefined}
+                  trailing={<MobileStatusBadge status={pkg.status} />}
+                />
+              );
+            })}
           </div>
         </Section>
       )}

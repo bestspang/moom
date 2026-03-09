@@ -170,6 +170,7 @@ const App = () => (
                   <Route path="security" element={<MemberSecurityPage />} />
                   <Route path="attendance" element={<MemberAttendancePage />} />
                   <Route path="notifications" element={<MemberNotificationsPage />} />
+                  <Route path="referral" element={<MemberReferralPage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}
