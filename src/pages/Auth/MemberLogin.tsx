@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
+import { isCustomDomain } from '@/apps/shared/hostname';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,13 +59,31 @@ const MemberLogin: React.FC = () => {
     setIsGoogleLoading(true);
     try {
       console.log('[MemberLogin] Starting Google OAuth...');
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      console.log('[MemberLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
-      if (result.error) {
-        toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
+
+      // On custom domains, bypass the lovable auth-bridge and use supabase directly
+      if (isCustomDomain()) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/member',
+            skipBrowserRedirect: true,
+          },
+        });
+        if (error) {
+          toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
+        } else if (data?.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        // On lovable.app / localhost, use the managed auth-bridge
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+        console.log('[MemberLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
+        if (result.error) {
+          toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
+        }
       }
     } catch (err) {
       console.error('[MemberLogin] OAuth exception:', err);

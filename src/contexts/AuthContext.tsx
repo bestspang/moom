@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { consumeSessionFromUrl } from '@/apps/shared/sessionTransfer';
 import type { User, Session } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -133,18 +134,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Fallback: only stop loading if onAuthStateChange hasn't already handled it
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!initializedRef.current) {
-        if (session?.user) {
-          initializedRef.current = true;
-          setSession(session);
-          setUser(session.user);
-          fetchUserRoleAndStatus(session.user.id);
-        } else {
-          setLoading(false);
-        }
+    // Try to consume session tokens from URL hash (cross-surface transfer)
+    consumeSessionFromUrl().then((consumed) => {
+      if (consumed) {
+        console.log('[AuthContext] Session consumed from URL hash');
+        // onAuthStateChange will fire with the new session — no further action needed
+        return;
       }
+      // Fallback: only stop loading if onAuthStateChange hasn't already handled it
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!initializedRef.current) {
+          if (session?.user) {
+            initializedRef.current = true;
+            setSession(session);
+            setUser(session.user);
+            fetchUserRoleAndStatus(session.user.id);
+          } else {
+            setLoading(false);
+          }
+        }
+      });
     });
 
     return () => {

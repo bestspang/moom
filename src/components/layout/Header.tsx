@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell } from 'lucide-react';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
@@ -238,17 +239,19 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
             {!!user && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <a href={buildCrossSurfaceUrl('member', '/member')}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Member App
-                  </a>
+                <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                  e.preventDefault();
+                  window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('member', '/member'));
+                }}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Member App
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <a href={buildCrossSurfaceUrl('trainer', '/trainer')}>
-                    <Dumbbell className="h-4 w-4 mr-2" />
-                    Trainer App
-                  </a>
+                <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                  e.preventDefault();
+                  window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
+                }}>
+                  <Dumbbell className="h-4 w-4 mr-2" />
+                  Trainer App
                 </DropdownMenuItem>
               </>
             )}
