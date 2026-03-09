@@ -68,13 +68,23 @@ export default function TrainerProfilePage() {
       <Section title="Switch App" className="mt-4">
         <div className="space-y-1">
           {hasAdminAccess && (
-            <a href={buildCrossSurfaceUrl('admin', '/')}>
-              <ListCard title="Admin Portal" leading={<ShieldCheck className="h-5 w-5 text-muted-foreground" />} showChevron />
-            </a>
+            <ListCard
+              title="Admin Portal"
+              leading={<ShieldCheck className="h-5 w-5 text-muted-foreground" />}
+              showChevron
+              onClick={async () => {
+                window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+              }}
+            />
           )}
-          <a href={buildCrossSurfaceUrl('member', '/member')}>
-            <ListCard title="Member App" leading={<Users className="h-5 w-5 text-muted-foreground" />} showChevron />
-          </a>
+          <ListCard
+            title="Member App"
+            leading={<Users className="h-5 w-5 text-muted-foreground" />}
+            showChevron
+            onClick={async () => {
+              window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('member', '/member'));
+            }}
+          />
         </div>
       </Section>
 

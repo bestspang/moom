@@ -55,13 +55,29 @@ const AdminLogin: React.FC = () => {
     setIsGoogleLoading(true);
     try {
       console.log('[AdminLogin] Starting Google OAuth...');
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      console.log('[AdminLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
-      if (result.error) {
-        toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
+
+      if (isCustomDomain()) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+            skipBrowserRedirect: true,
+          },
+        });
+        if (error) {
+          toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
+        } else if (data?.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+        console.log('[AdminLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
+        if (result.error) {
+          toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
+        }
       }
     } catch (err) {
       console.error('[AdminLogin] OAuth exception:', err);

@@ -133,20 +133,22 @@ export function MemberHeader() {
             {(hasAdminAccess || hasTrainerAccess) && <DropdownMenuSeparator />}
 
             {hasAdminAccess && (
-              <DropdownMenuItem asChild>
-                <a href={buildCrossSurfaceUrl('admin', '/')} className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4" />
-                  Admin Portal
-                </a>
+              <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                e.preventDefault();
+                window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+              }}>
+                <Monitor className="h-4 w-4 mr-2" />
+                Admin Portal
               </DropdownMenuItem>
             )}
 
             {hasTrainerAccess && (
-              <DropdownMenuItem asChild>
-                <a href={buildCrossSurfaceUrl('trainer', '/trainer')} className="flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4" />
-                  Trainer App
-                </a>
+              <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                e.preventDefault();
+                window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
+              }}>
+                <Dumbbell className="h-4 w-4 mr-2" />
+                Trainer App
               </DropdownMenuItem>
             )}
 
