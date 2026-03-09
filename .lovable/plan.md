@@ -1,47 +1,54 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Fix: Admin Header Missing Surface Switcher Links
 
 ## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
 
-## Fix (surgical, 1 file)
+The screenshot confirms: admin dropdown shows "Owner" role label (proving `role` is set), but Member App / Trainer App links are absent. The code at line 238 checks `allRoles.length > 0 && allRoles.some(...)` which should pass.
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## Root Cause
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+Two issues compounding:
+
+1. **Double-fetch race**: `fetchUserRoleAndStatus` is called twice (from `getSession` directly AND from `onAuthStateChange` via `setTimeout`). The setTimeout call can overwrite stable state with a fresh DB query, causing a brief render cycle where `allRoles` might flash.
+
+2. **Fragile condition**: The condition uses `allRoles` which starts as `[]` and is set asynchronously. A safer approach is to also fallback to `role` (which the screenshot proves IS set to 'owner').
+
+## Fix
+
+### 1. `src/components/layout/Header.tsx` — Make surface switcher condition more robust
+
+Change the gate check to use BOTH `role` and `allRoles` as fallback:
 
 ```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
+// Before (line 238):
+{allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r)) && (
+
+// After — show if EITHER role or allRoles indicates staff:
+{(role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role)) || (allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r))) ? (
+```
+
+And same fix for the Trainer App sub-condition at line 247.
+
+### 2. `src/contexts/AuthContext.tsx` — Prevent duplicate role fetching
+
+Add a guard so `fetchUserRoleAndStatus` doesn't run twice for the same user on initial load. Skip the `onAuthStateChange` fetch if roles are already loaded for the same user:
+
+```typescript
+// In onAuthStateChange callback:
+if (session?.user) {
+  // Only fetch if roles aren't already set for this user
+  if (allRoles.length === 0) {
+    setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
+  }
 }
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## Files to Modify
+1. `src/components/layout/Header.tsx` — dual condition for surface switcher visibility (~2 lines)
+2. `src/contexts/AuthContext.tsx` — guard against duplicate role fetch (~1 line)
+
+## Risks
+- Zero regression: purely defensive/additive changes
+- The dual condition ensures links show whenever either `role` or `allRoles` is populated
 
