@@ -750,6 +750,33 @@ export type Database = {
           },
         ]
       }
+      economy_guardrails: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          rule_code: string
+          rule_value: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_code: string
+          rule_value: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_code?: string
+          rule_value?: string
+        }
+        Relationships: []
+      }
       event_outbox: {
         Row: {
           created_at: string | null
@@ -3610,6 +3637,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trainer_action_rewards: {
+        Row: {
+          action_code: string
+          coin_delta: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          score_delta: number | null
+          trainer_type: string
+          xp_delta: number | null
+        }
+        Insert: {
+          action_code: string
+          coin_delta?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          score_delta?: number | null
+          trainer_type?: string
+          xp_delta?: number | null
+        }
+        Update: {
+          action_code?: string
+          coin_delta?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          score_delta?: number | null
+          trainer_type?: string
+          xp_delta?: number | null
+        }
+        Relationships: []
       }
       trainer_gamification_scores: {
         Row: {
