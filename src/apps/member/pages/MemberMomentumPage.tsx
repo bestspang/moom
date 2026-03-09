@@ -444,11 +444,11 @@ export default function MemberMomentumPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                  Reward Points
+                  Momentum Coin
                 </p>
                 <p className="text-3xl font-bold text-foreground">
                   {profile.availablePoints.toLocaleString()}
-                  <span className="text-sm font-medium text-muted-foreground ml-1">RP</span>
+                  <span className="text-sm font-medium text-muted-foreground ml-1">Coin</span>
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

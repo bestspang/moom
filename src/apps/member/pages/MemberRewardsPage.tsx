@@ -143,7 +143,7 @@ export default function MemberRewardsPage() {
                   </div>
                 </div>
                 <span className={`text-sm font-semibold ${entry.delta >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                  {entry.delta >= 0 ? '+' : ''}{entry.delta} RP
+                  {entry.delta >= 0 ? '+' : ''}{entry.delta} Coin
                 </span>
               </div>
             ))}
