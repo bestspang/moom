@@ -10,6 +10,7 @@ import { fetchMomentumProfile, fetchMyChallengeProgress } from '../features/mome
 import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import jsQR from 'jsqr';
 
 export default function MemberCheckInPage() {
