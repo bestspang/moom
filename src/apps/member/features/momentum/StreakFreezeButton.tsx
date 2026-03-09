@@ -19,7 +19,7 @@ export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeBu
 
   const handleFreeze = async () => {
     if (!canAfford) {
-      toast.error(`Need ${FREEZE_COST} RP to freeze streak (you have ${availablePoints})`);
+      toast.error(`Need ${FREEZE_COST} Coin to freeze streak (you have ${availablePoints})`);
       return;
     }
 
