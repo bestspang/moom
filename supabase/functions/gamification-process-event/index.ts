@@ -530,6 +530,34 @@ Deno.serve(async (req) => {
           },
           flagged: false,
         });
+
+        // Send notification to referrer
+        const { data: referredMember } = await db
+          .from("members")
+          .select("first_name")
+          .eq("id", member_id)
+          .maybeSingle();
+
+        const referrerUserId = await (async () => {
+          const { data: im } = await db
+            .from("identity_map")
+            .select("experience_user_id")
+            .eq("admin_entity_id", pendingReferral.referrer_member_id)
+            .eq("entity_type", "member")
+            .eq("is_verified", true)
+            .maybeSingle();
+          return im?.experience_user_id ?? null;
+        })();
+
+        if (referrerUserId) {
+          await db.from("notifications").insert({
+            user_id: referrerUserId,
+            title: `🎉 Your friend ${referredMember?.first_name ?? "someone"} just checked in!`,
+            message: `You both earned ${referrerPoints} Reward Points. Keep inviting friends!`,
+            type: "referral_completed",
+            is_read: false,
+          });
+        }
       }
     }
 
