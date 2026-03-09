@@ -17,6 +17,13 @@ const RARITY_MAP: Record<string, string> = {
   platinum: '--rarity-legendary',
 };
 
+const RARITY_LABELS: Record<string, { label: string; className: string }> = {
+  bronze: { label: 'Common', className: 'text-muted-foreground' },
+  silver: { label: 'Rare', className: 'text-blue-500' },
+  gold: { label: 'Epic', className: 'text-yellow-500' },
+  platinum: { label: 'Legendary', className: 'text-violet-500' },
+};
+
 function getRarityVar(tier?: string): string {
   return RARITY_MAP[tier ?? ''] ?? '--rarity-common';
 }
