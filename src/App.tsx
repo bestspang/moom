@@ -172,6 +172,7 @@ const App = () => (
                   <Route path="attendance" element={<MemberAttendancePage />} />
                   <Route path="notifications" element={<MemberNotificationsPage />} />
                   <Route path="referral" element={<MemberReferralPage />} />
+                  <Route path="momentum" element={<MemberMomentumPage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}

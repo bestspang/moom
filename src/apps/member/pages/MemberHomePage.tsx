@@ -10,11 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
-import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { TodayCard } from '../features/momentum/TodayCard';
-
-import { ChallengeCard } from '../features/momentum/ChallengeCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { format } from 'date-fns';
