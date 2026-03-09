@@ -114,7 +114,7 @@ export default function MemberReferralPage() {
           <div className="grid grid-cols-3 gap-3">
             <SummaryCard label="Invited" value={String(stats?.totalInvited ?? 0)} subtitle="friends" />
             <SummaryCard label="Joined" value={String(stats?.totalCompleted ?? 0)} subtitle="completed" />
-            <SummaryCard label="Earned" value={String(stats?.totalPointsEarned ?? 0)} subtitle="RP" />
+            <SummaryCard label="Earned" value={String(stats?.totalPointsEarned ?? 0)} subtitle="Coin" />
           </div>
         )}
       </Section>
