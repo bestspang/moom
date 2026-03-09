@@ -70,18 +70,6 @@ export default function MemberMomentumPage() {
     enabled: !!memberId,
   });
 
-  const { data: activeChallenges } = useQuery({
-    queryKey: ['active-challenges'],
-    queryFn: fetchActiveChallenges,
-    enabled: !!memberId,
-  });
-
-  const { data: myProgress } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
-
   const { data: badges } = useQuery({
     queryKey: ['my-badges', memberId],
     queryFn: () => fetchMyBadges(memberId!),
@@ -105,33 +93,8 @@ export default function MemberMomentumPage() {
     enabled: !!memberId,
   });
 
-  // ── Join challenge mutation ──
-  const joinChallenge = useMutation({
-    mutationFn: async (challengeId: string) => {
-      if (!memberId) throw new Error('Not authenticated');
-      const { error } = await supabase
-        .from('challenge_progress')
-        .insert([{ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'in_progress' as const }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
-      toast.success('Challenge joined! 🎯');
-    },
-    onError: () => toast.error('Failed to join challenge'),
-  });
-
   // ── Derived data ──
-  const progressMap = new Map(
-    (myProgress ?? []).map(p => [p.challengeId, p])
-  );
-
   const redeemedRewardIds = new Set(redemptions?.map(r => r.rewardId) ?? []);
-
-  // Separate active quests (joined, not completed) and available (not joined)
-  const joinedQuests: ChallengeProgressEntry[] = (myProgress ?? []).filter(p => p.status !== 'completed' && p.challenge);
-  const completedQuests: ChallengeProgressEntry[] = (myProgress ?? []).filter(p => p.status === 'completed' && p.challenge);
-  const availableChallenges = (activeChallenges ?? []).filter(c => !progressMap.has(c.id));
 
   const currentLevelXP = profile ? xpForLevel(profile.level - 1) : 0;
   const nextLevelXP = profile ? xpForLevel(profile.level) : 0;
