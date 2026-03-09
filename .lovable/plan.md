@@ -1,43 +1,36 @@
 
 
-# Status: Everything Is Already Implemented
+# Wire package_purchased + profile_completed Events & Add Leaderboard Navigation
 
-After thorough codebase inspection, **every single item** in this request has already been built in previous messages. Here's the complete verification:
+## 1. Wire `package_purchased` gamification event
 
-## 1. Member Leaderboard Page — DONE
-- `src/apps/member/pages/MemberLeaderboardPage.tsx` exists (212 lines) with 3 tabs: XP earners, Squad rankings, Challenge completion stats
-- Route `/member/leaderboard` registered in `App.tsx` (line 166)
-- API functions `fetchXpLeaderboard`, `fetchSquadRankings`, `fetchChallengeCompletionStats` exist in `api.ts`
+**Where:** `src/hooks/useMemberDetails.ts` — `useAssignPackageToMember.onSuccess` (line ~654)
 
-## 2. class_booked and class_attended Events — DONE
-- `class_booked` fires in `useClassBookings.ts` line 119 inside `useCreateBooking.onSuccess`
-- `class_attended` fires in `useClassBookings.ts` line 299 inside `useUpdateBookingStatus` (single) and line 416 inside `useBulkCheckIn` (bulk)
+The activity log already fires `package_purchased` but no gamification event is triggered. Add `fireGamificationEvent()` call after the `logActivity()` call, using `idempotency_key: 'purchase:{transactionId}'` and `metadata: { package_id, package_name }`.
 
-## 3. Trainer Gamification (CoachImpactCard, PartnerReputationCard, API, Types) — DONE
-- `src/apps/trainer/features/impact/api.ts` (131 lines)
-- `src/apps/trainer/features/impact/types.ts` with CoachLevel, PartnerTier, configs
-- `src/apps/trainer/features/impact/CoachImpactCard.tsx`
-- `src/apps/trainer/features/impact/PartnerReputationCard.tsx`
-- CSS variables added to `src/index.css`
-- `TrainerHomePage.tsx` conditionally renders the correct card
+Also wire in the member-side purchase: `src/apps/member/pages/MemberPurchasePage.tsx` — after `setStep('success')` in `handlePurchase`, fire `fireGamificationEvent({ event_type: 'package_purchased', member_id: memberId, idempotency_key: 'purchase:{id}:{timestamp}' })`.
 
-## 4. XPToast + MemberLayout — DONE
-- `src/apps/member/features/momentum/XPToast.tsx` (48 lines) subscribes to `xp_ledger` INSERTs
-- Mounted in `MemberLayout.tsx`
+## 2. Wire `profile_completed` gamification event
 
-## 5. Realtime Subscriptions for Gamification Tables — DONE
-- `useRealtimeSync.ts` includes `member_gamification_profiles`, `badge_earnings`, `challenge_progress`, `reward_redemptions` (lines 44-47, 87-90)
+**Where:** `src/apps/member/pages/MemberEditProfilePage.tsx` — `mutation.onSuccess` (line 41)
 
-## 6. MemberCheckInPage Gamification Event — DONE
-- `fireGamificationEvent({ event_type: 'check_in', ... })` fires at line 58
+Fire `fireGamificationEvent({ event_type: 'profile_completed', member_id: memberId, idempotency_key: 'profile_completed:{memberId}' })`. The idempotency key uses memberId only (not timestamp) so this event fires at most once per member — the edge function's idempotency check prevents duplicate XP.
 
-## 7. /member/notifications Route — DONE
-- `MemberNotificationsPage` imported and routed at `/member/notifications` (line 171)
+Requires: import `fireGamificationEvent` and `useMemberSession` already provides `memberId`.
 
-## 8. notification_type Enum Expansion — DONE
-- Previously migrated to add `badge_earned`, `level_up`, `challenge_completed`, `reward_fulfilled`, `streak_milestone`, `xp_earned`
+## 3. Add Leaderboard link to Member Home Page
 
----
+**Where:** `src/apps/member/pages/MemberHomePage.tsx` — after the Momentum section (~line 243)
 
-**No code changes needed.** All features are live and functional. You can verify by navigating to `/member/leaderboard`, `/member/notifications`, and `/trainer` in the preview.
+Add a tappable card linking to `/member/leaderboard` with a Trophy icon and "Leaderboard" label, styled as a subtle card with chevron. This keeps the bottom nav clean (5 items is the mobile UX limit) while making leaderboard discoverable from the home feed.
+
+### Files to modify
+1. `src/hooks/useMemberDetails.ts` — add `fireGamificationEvent` import + call in `onSuccess` (~3 lines)
+2. `src/apps/member/pages/MemberPurchasePage.tsx` — add gamification event after checkout success (~4 lines)
+3. `src/apps/member/pages/MemberEditProfilePage.tsx` — add gamification event after profile save (~4 lines)
+4. `src/apps/member/pages/MemberHomePage.tsx` — add leaderboard discovery card (~12 lines)
+
+### Risks
+- All events are fire-and-forget, non-blocking — zero regression risk
+- Leaderboard card is additive UI, no existing elements moved
 
