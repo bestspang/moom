@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { redeemReward } from './api';
 import { TIER_CONFIG, type MomentumTier, type RewardItem } from './types';
 import { Gift, Lock, Check, Sparkles } from 'lucide-react';

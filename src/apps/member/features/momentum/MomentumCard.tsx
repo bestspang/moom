@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { fetchMomentumProfile } from './api';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
 import { StreakFlame } from './StreakFlame';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Gift, Zap } from 'lucide-react';
+import { Gift, Zap, Trophy, ChevronRight } from 'lucide-react';
 
 interface MomentumCardProps {
   memberId: string;
