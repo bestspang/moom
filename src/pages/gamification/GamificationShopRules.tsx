@@ -86,6 +86,7 @@ const GamificationShopRules = () => {
       ) : (
         <DataTable
           data={rules}
+          rowKey={(r: ShopRewardRule) => r.id}
           columns={[
             { key: 'orderType', header: 'Order Type', cell: (r: ShopRewardRule) => r.order_type },
             { key: 'xpOrder', header: 'XP/Order', cell: (r: ShopRewardRule) => r.xp_per_order },

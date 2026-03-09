@@ -86,6 +86,7 @@ const GamificationCoupons = () => {
       ) : (
         <DataTable
           data={coupons}
+          rowKey={(r: CouponTemplate) => r.id}
           columns={[
             { key: 'name', header: 'Name', cell: (r: CouponTemplate) => r.name_en },
             { key: 'type', header: 'Type', cell: (r: CouponTemplate) => r.discount_type === 'fixed' ? `฿${r.discount_value}` : `${r.discount_value}%` },
