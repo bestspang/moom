@@ -50,32 +50,8 @@ export default function MemberHomePage() {
     enabled: isAuthenticated,
   });
 
-  const { data: activeChallenges } = useQuery({
-    queryKey: ['active-challenges'],
-    queryFn: fetchActiveChallenges,
-    enabled: isAuthenticated,
-  });
 
-  const { data: myProgress } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
 
-  const joinChallenge = useMutation({
-    mutationFn: async (challengeId: string) => {
-      if (!memberId) throw new Error('Not authenticated');
-      const { error } = await supabase
-        .from('challenge_progress')
-        .insert([{ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'in_progress' as const }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
-      toast.success('Challenge joined! 🎯');
-    },
-    onError: () => toast.error('Failed to join challenge'),
-  });
 
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
