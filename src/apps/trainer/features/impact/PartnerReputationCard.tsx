@@ -1,9 +1,9 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPartnerReputationProfile } from './api';
+import { fetchPartnerReputationProfile, fetchTrainerQuests } from './api';
 import { PARTNER_TIER_CONFIG } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, Star, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Clock, Star, RotateCcw, ShieldCheck, Coins, Zap } from 'lucide-react';
 
 interface PartnerReputationCardProps {
   className?: string;
@@ -13,6 +13,11 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
   const { data: profile, isLoading } = useQuery({
     queryKey: ['partner-reputation-profile'],
     queryFn: fetchPartnerReputationProfile,
+  });
+
+  const { data: quests } = useQuery({
+    queryKey: ['trainer-quests', 'trainer_freelance'],
+    queryFn: () => fetchTrainerQuests('trainer_freelance'),
   });
 
   if (isLoading) {
@@ -73,10 +78,13 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
                   <ShieldCheck className="h-3 w-3" /> Verified
                 </span>
               )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600">
+                <Coins className="h-3 w-3" />
+                {profile.coin_balance}
+              </span>
             </div>
           </div>
 
-          {/* Score arc with glow */}
           <div className="relative h-20 w-20 flex items-center justify-center">
             <div
               className="absolute inset-0 rounded-full blur-lg opacity-20"
@@ -109,7 +117,7 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
         </div>
 
         {/* Metrics grid */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 mb-4">
           {metrics.map(m => {
             const Icon = m.icon;
             return (
@@ -121,6 +129,26 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
             );
           })}
         </div>
+
+        {/* Quest preview */}
+        {quests && quests.length > 0 && (
+          <div className="border-t border-border/50 pt-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Partner Quests</p>
+            <div className="space-y-1.5">
+              {quests.slice(0, 3).map(q => (
+                <div key={q.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">{q.name_en}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    +{q.xp_reward} XP · +{q.coin_reward} Coin
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
