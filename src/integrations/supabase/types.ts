@@ -3614,6 +3614,7 @@ export type Database = {
       trainer_gamification_scores: {
         Row: {
           breakdown: Json | null
+          coin_balance: number
           created_at: string
           id: string
           period_end: string
@@ -3626,6 +3627,7 @@ export type Database = {
         }
         Insert: {
           breakdown?: Json | null
+          coin_balance?: number
           created_at?: string
           id?: string
           period_end: string
@@ -3638,6 +3640,7 @@ export type Database = {
         }
         Update: {
           breakdown?: Json | null
+          coin_balance?: number
           created_at?: string
           id?: string
           period_end?: string
