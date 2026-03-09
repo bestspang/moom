@@ -18,7 +18,7 @@ const DEFAULT_PROFILE: MomentumProfile = {
   memberId: '',
   totalXp: 0,
   level: 1,
-  tier: 'bronze',
+  tier: 'starter',
   currentStreak: 0,
   longestStreak: 0,
   availablePoints: 0,
