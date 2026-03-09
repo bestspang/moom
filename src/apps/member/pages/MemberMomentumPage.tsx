@@ -11,7 +11,6 @@ import { TierBadge } from '../features/momentum/TierBadge';
 import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { StreakFreezeButton } from '../features/momentum/StreakFreezeButton';
-import { QuestCard } from '../features/momentum/QuestCard';
 import { QuestHub } from '../features/momentum/QuestHub';
 import { RewardDropCard } from '../features/momentum/RewardDropCard';
 import {

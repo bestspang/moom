@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Zap, ScanLine } from 'lucide-react';
+import { Zap, ScanLine, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DailyBonusCardProps {
