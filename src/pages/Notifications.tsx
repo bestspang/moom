@@ -61,6 +61,12 @@ const Notifications = () => {
       payment_received: <CreditCard className="h-5 w-5 text-green-500" />,
       member_registration: <UserPlus className="h-5 w-5 text-primary" />,
       package_expiring: <AlertTriangle className="h-5 w-5 text-amber-500" />,
+      badge_earned: <Award className="h-5 w-5 text-yellow-500" />,
+      level_up: <TrendingUp className="h-5 w-5 text-primary" />,
+      challenge_completed: <Target className="h-5 w-5 text-green-500" />,
+      reward_fulfilled: <Gift className="h-5 w-5 text-purple-500" />,
+      streak_milestone: <Flame className="h-5 w-5 text-orange-500" />,
+      xp_earned: <Zap className="h-5 w-5 text-yellow-500" />,
     };
     return icons[type] || <Bell className="h-5 w-5 text-muted-foreground" />;
   };
