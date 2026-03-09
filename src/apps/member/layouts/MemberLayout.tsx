@@ -19,7 +19,7 @@ export function MemberLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: { pathname: '/member' } }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return (
