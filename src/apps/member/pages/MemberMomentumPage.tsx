@@ -21,8 +21,7 @@ import {
   fetchPointsHistory,
 } from '../features/momentum/api';
 import { xpForLevel } from '../features/momentum/types';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { format } from 'date-fns';
 import {
   Zap, Gift, Target, Trophy, Award, Clock,
