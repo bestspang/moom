@@ -220,7 +220,6 @@ export default function MemberCheckInPage() {
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
         profile={profile ?? null}
-        challenges={challenges ?? []}
       />
     </div>
   );
