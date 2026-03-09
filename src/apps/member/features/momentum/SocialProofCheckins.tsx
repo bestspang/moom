@@ -6,7 +6,17 @@ interface SocialProofCheckinsProps {
   memberId: string;
 }
 
+function formatNameList(names: string[]): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+}
+
 async function fetchTodaySquadCheckins(memberId: string) {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   // Get member's squad
   const { data: membership } = await supabase
     .from('squad_memberships')
@@ -14,39 +24,42 @@ async function fetchTodaySquadCheckins(memberId: string) {
     .eq('member_id', memberId)
     .maybeSingle();
 
-  if (!membership?.squad_id) return { squadMembers: [], totalToday: 0 };
+  if (membership?.squad_id) {
+    // Get squad member IDs
+    const { data: squadMembers } = await supabase
+      .from('squad_memberships')
+      .select('member_id, member:members(first_name)')
+      .eq('squad_id', membership.squad_id)
+      .neq('member_id', memberId);
 
-  // Get squad member IDs
-  const { data: squadMembers } = await supabase
-    .from('squad_memberships')
-    .select('member_id, member:members(first_name)')
-    .eq('squad_id', membership.squad_id)
-    .neq('member_id', memberId);
+    if (squadMembers?.length) {
+      const memberIds = squadMembers.map((m: any) => m.member_id);
 
-  if (!squadMembers?.length) return { squadMembers: [], totalToday: 0 };
+      const { data: checkins } = await supabase
+        .from('member_attendance')
+        .select('member_id')
+        .in('member_id', memberIds)
+        .gte('check_in_time', todayStart.toISOString());
 
-  const memberIds = squadMembers.map((m: any) => m.member_id);
+      const checkedInSet = new Set((checkins ?? []).map((c: any) => c.member_id));
 
-  // Check today's attendance
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+      const checkedInMembers = squadMembers
+        .filter((m: any) => checkedInSet.has(m.member_id))
+        .map((m: any) => m.member?.first_name ?? 'Someone');
 
-  const { data: checkins } = await supabase
+      if (checkedInMembers.length > 0) {
+        return { type: 'squad' as const, names: checkedInMembers, total: checkedInMembers.length };
+      }
+    }
+  }
+
+  // Fallback: show total gym activity today
+  const { count } = await supabase
     .from('member_attendance')
-    .select('member_id')
-    .in('member_id', memberIds)
+    .select('id', { count: 'exact', head: true })
     .gte('check_in_time', todayStart.toISOString());
 
-  const checkedInSet = new Set((checkins ?? []).map((c: any) => c.member_id));
-
-  const checkedInMembers = squadMembers
-    .filter((m: any) => checkedInSet.has(m.member_id))
-    .map((m: any) => m.member?.first_name ?? 'Someone');
-
-  return {
-    squadMembers: checkedInMembers,
-    totalToday: checkedInMembers.length,
-  };
+  return { type: 'gym' as const, names: [], total: count ?? 0 };
 }
 
 export function SocialProofCheckins({ memberId }: SocialProofCheckinsProps) {
@@ -57,13 +70,19 @@ export function SocialProofCheckins({ memberId }: SocialProofCheckinsProps) {
     staleTime: 60_000,
   });
 
-  if (!data || data.totalToday === 0) return null;
+  if (!data || data.total === 0) return null;
 
-  const names = data.squadMembers.slice(0, 3);
-  const remaining = data.totalToday - names.length;
-  const text = remaining > 0
-    ? `${names.join(', ')} +${remaining} more also training today!`
-    : `${names.join(' & ')} also training today!`;
+  let text: string;
+  if (data.type === 'squad') {
+    const displayNames = data.names.slice(0, 3);
+    const remaining = data.total - displayNames.length;
+    const formatted = formatNameList(displayNames);
+    text = remaining > 0
+      ? `${formatted} +${remaining} more also training today!`
+      : `${formatted} also training today!`;
+  } else {
+    text = `${data.total} ${data.total === 1 ? 'person' : 'people'} working out today! 💪`;
+  }
 
   return (
     <div className="flex items-center gap-2 px-6 py-3 border-t border-border">

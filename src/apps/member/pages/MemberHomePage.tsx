@@ -13,7 +13,7 @@ import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../a
 import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { TodayCard } from '../features/momentum/TodayCard';
-import { NotificationBell } from '../features/momentum/NotificationBell';
+
 import { ChallengeCard } from '../features/momentum/ChallengeCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
@@ -112,7 +112,6 @@ export default function MemberHomePage() {
       <MobilePageHeader
         title={title}
         subtitle={subtitle}
-        action={<NotificationBell onClick={() => navigate('/member/notifications')} />}
       />
 
       {/* Onboarding for new users */}
@@ -182,7 +181,7 @@ export default function MemberHomePage() {
         <Section
           title="Challenges"
           action={
-            <button onClick={() => navigate('/member/check-in')} className="text-xs font-medium text-primary flex items-center gap-0.5">
+            <button onClick={() => toast('More challenges coming soon! 🎯')} className="text-xs font-medium text-primary flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </button>
           }

@@ -10,10 +10,7 @@ export function MemberLayout() {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  console.log('[MemberLayout] render:', { user: !!user, userId: user?.id, loading, path: location.pathname });
-
   if (loading) {
-    console.log('[MemberLayout] → showing loader');
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -22,11 +19,9 @@ export function MemberLayout() {
   }
 
   if (!user) {
-    console.log('[MemberLayout] → redirecting to /login (user is null)');
     return <Navigate to="/login" state={{ from: { pathname: '/member' } }} replace />;
   }
 
-  console.log('[MemberLayout] → rendering layout with header');
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <MemberHeaderErrorBoundary>
