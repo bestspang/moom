@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
+import { detectSurface } from "@/apps/shared/hostname";
 import SurfaceGuard from "@/apps/shared/SurfaceGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout";
@@ -131,7 +132,7 @@ const App = () => (
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<MemberSignup />} />
+                <Route path="/signup" element={detectSurface() === 'admin' ? <Navigate to="/login" replace /> : <MemberSignup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />

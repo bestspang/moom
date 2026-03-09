@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { detectSurface } from '@/apps/shared/hostname';
+import { getRedirectResult } from '@/apps/shared/SurfaceGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -31,6 +32,8 @@ const DiagnosticsAuthPage: React.FC = () => {
     </div>
   );
 
+  const identities = user?.identities ?? [];
+
   return (
     <div className="min-h-screen bg-background p-4 max-w-2xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-foreground">Auth Diagnostics</h1>
@@ -41,6 +44,9 @@ const DiagnosticsAuthPage: React.FC = () => {
           <Row label="Detected surface" value={<Badge variant="outline">{surface}</Badge>} />
           <Row label="Hostname" value={window.location.hostname} />
           <Row label="Origin" value={window.location.origin} />
+          <Row label="Redirect result for /" value={getRedirectResult('/')} />
+          <Row label="Redirect result for /member" value={getRedirectResult('/member')} />
+          <Row label="Redirect result for /signup" value={getRedirectResult('/signup')} />
         </CardContent>
       </Card>
 
@@ -54,6 +60,25 @@ const DiagnosticsAuthPage: React.FC = () => {
           <Row label="Provider" value={user?.app_metadata?.provider} />
           <Row label="Email verified" value={user?.email_confirmed_at ? 'Yes' : 'No'} />
           <Row label="Session expires" value={session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : null} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Provider Identities</CardTitle></CardHeader>
+        <CardContent>
+          {identities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No identities</p>
+          ) : (
+            identities.map((id: any) => (
+              <div key={id.id} className="border border-border rounded p-2 mb-2 space-y-1">
+                <Row label="Provider" value={<Badge variant="secondary">{id.provider}</Badge>} />
+                <Row label="Identity ID" value={id.id} />
+                <Row label="Email" value={id.identity_data?.email} />
+                <Row label="Created" value={id.created_at ? new Date(id.created_at).toLocaleString() : null} />
+                <Row label="Last sign in" value={id.last_sign_in_at ? new Date(id.last_sign_in_at).toLocaleString() : null} />
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
