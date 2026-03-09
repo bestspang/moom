@@ -1,0 +1,1 @@
+ALTER TABLE public.trainer_gamification_scores ADD COLUMN IF NOT EXISTS coin_balance integer NOT NULL DEFAULT 0;

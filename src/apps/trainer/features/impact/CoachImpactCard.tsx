@@ -1,9 +1,9 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { fetchCoachImpactProfile } from './api';
+import { fetchCoachImpactProfile, fetchTrainerQuests } from './api';
 import { COACH_LEVEL_CONFIG } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, TrendingUp, ClipboardCheck, Flame } from 'lucide-react';
+import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Zap } from 'lucide-react';
 
 interface CoachImpactCardProps {
   className?: string;
@@ -13,6 +13,11 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
   const { data: profile, isLoading } = useQuery({
     queryKey: ['coach-impact-profile'],
     queryFn: fetchCoachImpactProfile,
+  });
+
+  const { data: quests } = useQuery({
+    queryKey: ['trainer-quests', 'trainer_inhouse'],
+    queryFn: () => fetchTrainerQuests('trainer_inhouse'),
   });
 
   if (isLoading) {
@@ -42,7 +47,6 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
 
   return (
     <div className={cn('rounded-2xl overflow-hidden', className)} style={{ boxShadow: 'var(--shadow-lg)' }}>
-      {/* Solid top bar */}
       <div
         className="h-1.5"
         style={{ backgroundColor: `hsl(var(${levelConfig.colorVar}))` }}
@@ -63,10 +67,13 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
               >
                 {levelConfig.label}
               </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600">
+                <Coins className="h-3 w-3" />
+                {profile.coin_balance}
+              </span>
             </div>
           </div>
 
-          {/* Score arc with glow */}
           <div className="relative h-20 w-20 flex items-center justify-center">
             <div
               className="absolute inset-0 rounded-full blur-lg opacity-20"
@@ -99,7 +106,7 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
         </div>
 
         {/* Metrics grid */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 mb-4">
           {metrics.map(m => {
             const Icon = m.icon;
             return (
@@ -111,6 +118,26 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
             );
           })}
         </div>
+
+        {/* Quest preview */}
+        {quests && quests.length > 0 && (
+          <div className="border-t border-border/50 pt-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Coach Quests</p>
+            <div className="space-y-1.5">
+              {quests.slice(0, 3).map(q => (
+                <div key={q.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">{q.name_en}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    +{q.xp_reward} XP · +{q.coin_reward} Coin
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

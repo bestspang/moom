@@ -6,6 +6,7 @@ export interface CoachImpactProfile {
   staff_id: string;
   impact_score: number;
   coach_level: CoachLevel;
+  coin_balance: number;
   total_classes_taught: number;
   avg_attendance_rate: number;
   member_return_rate: number;
@@ -18,12 +19,23 @@ export interface PartnerReputationProfile {
   staff_id: string;
   reputation_score: number;
   partner_tier: PartnerTier;
+  coin_balance: number;
   total_sessions: number;
   punctuality_rate: number;
   repeat_booking_rate: number;
   avg_rating: number;
   cancellation_rate: number;
   is_verified: boolean;
+}
+
+export interface TrainerQuest {
+  id: string;
+  name_en: string;
+  name_th: string | null;
+  quest_period: string;
+  goal_value: number;
+  xp_reward: number;
+  coin_reward: number;
 }
 
 export const COACH_LEVEL_CONFIG: Record<CoachLevel, { label: string; colorVar: string }> = {
