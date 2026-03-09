@@ -52,6 +52,13 @@ const BADGE_TIER_COLORS: Record<string, string> = {
   platinum: 'border-violet-400/50',
 };
 
+const RARITY_LABELS: Record<string, { label: string; className: string }> = {
+  bronze: { label: 'Common', className: 'text-muted-foreground' },
+  silver: { label: 'Rare', className: 'text-blue-500' },
+  gold: { label: 'Epic', className: 'text-yellow-500' },
+  platinum: { label: 'Legendary', className: 'text-violet-500' },
+};
+
 export default function MemberMomentumPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
