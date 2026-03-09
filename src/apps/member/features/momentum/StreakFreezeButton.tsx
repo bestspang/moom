@@ -35,7 +35,7 @@ export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeBu
       }
 
       toast.success(`Streak frozen until ${result.freeze_until} 🛡️`, {
-        description: `${FREEZE_COST} RP spent`,
+        description: `${FREEZE_COST} Coin spent`,
       });
       queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
     } catch {
