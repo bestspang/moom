@@ -9,8 +9,14 @@ import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
-import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle } from 'lucide-react';
+import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { buildCrossSurfaceUrl, isDevEnvironment } from '@/apps/shared/hostname';
+import type { Database } from '@/integrations/supabase/types';
+
+type AppRole = Database['public']['Enums']['app_role'];
+
+const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'];
 
 export default function MemberProfilePage() {
   const { signOut } = useAuth();
