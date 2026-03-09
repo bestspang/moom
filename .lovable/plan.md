@@ -1,47 +1,111 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Domain-Aware Auth — Recheck & Continue
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Current State (What's Built)
 
-## Fix (surgical, 1 file)
+Phase 1 is structurally complete:
+- Surface-aware Login router (`Login.tsx` → `AdminLogin` or `MemberLogin`)
+- AdminLogin (no signup), MemberLogin (Google-first + signup link), MemberSignup
+- DB: `member` role in `app_role` enum, surface-aware `handle_new_user` trigger
+- AuthContext: `.maybeSingle()`, member role fallback, `signup_surface` metadata
+- Google OAuth calls with `prompt: "select_account"` and correct `redirect_uri`
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## Critical Gap Found
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+**Member self-signup creates no `members` row.**
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+The `handle_new_user` trigger creates only a `user_roles(member)` row. But `useMemberSession` resolves `memberId` via `identity_map` or `line_users` — neither gets created for self-signup members. Result: `memberId = null`, so bookings, packages, attendance, rewards all return empty.
+
+**Fix**: Update `handle_new_user` trigger to also:
+1. Create a `members` row (using email, first_name, last_name from metadata)
+2. Create an `identity_map` row linking auth user → members row
+
+## Missing Enum Value
+
+Requirements list `freelance_trainer` as a role but it doesn't exist in `app_role` enum. Need to add it.
+
+## Google OAuth — Cannot Fix Further
+
+The `lovable.auth.signInWithOAuth` is an auto-generated module (`@lovable.dev/cloud-auth-js`). The popup/redirect flow is managed by the library. Our code correctly:
+- Sets `redirect_uri: window.location.origin`
+- Sets `prompt: "select_account"`
+- Relies on `onAuthStateChange` for session pickup
+
+If "nothing happens" after account selection, the issue is likely in the managed OAuth configuration (redirect URI allowlist). This needs verification on real custom domains, not lovable.app preview.
+
+## Implementation Plan
+
+### Task 1: DB Migration — Create `members` + `identity_map` for member signups
+
+Update `handle_new_user` trigger:
+
+```sql
+IF v_surface = 'member' THEN
+  -- Create user_roles
+  INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'member');
+  
+  -- Create members record
+  INSERT INTO public.members (email, first_name, last_name, status)
+  VALUES (
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
+    'active'
+  ) RETURNING id INTO v_member_id;
+  
+  -- Create identity_map linking auth user → member
+  INSERT INTO public.identity_map (
+    admin_entity_id, experience_user_id, entity_type,
+    shared_identifier, shared_identifier_type, is_verified
+  ) VALUES (
+    v_member_id, NEW.id, 'member',
+    NEW.email, 'email', true
+  );
+END IF;
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Task 2: DB Migration — Add `freelance_trainer` to `app_role` enum
+
+```sql
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'freelance_trainer';
+```
+
+Update `has_min_access_level` and `get_user_access_level` to handle `freelance_trainer` (same as `trainer` = `level_2_operator`).
+
+### Task 3: Update AuthContext — Add `freelance_trainer` to `roleToAccessLevel`
+
+Add `freelance_trainer: 'level_2_operator'` to the map.
+
+### Task 4: Add Google OAuth diagnostics
+
+Add `console.log` statements in `handleGoogleSignIn` callbacks (AdminLogin, MemberLogin) to trace the OAuth flow result, making it easier to debug on production domains.
+
+### Task 5: Surface-aware "Access Denied" redirect
+
+Update `ProtectedRoute` AccessDenied button: if on member surface, redirect to `/member` instead of `/`.
+
+## Files to Change
+
+| File | Change |
+|------|--------|
+| DB migration | Update `handle_new_user` to create `members` + `identity_map` for member signups; add `freelance_trainer` enum; update access level functions |
+| `src/contexts/AuthContext.tsx` | Add `freelance_trainer` to `roleToAccessLevel` |
+| `src/pages/Auth/AdminLogin.tsx` | Add OAuth diagnostic logs |
+| `src/pages/Auth/MemberLogin.tsx` | Add OAuth diagnostic logs |
+| `src/components/auth/ProtectedRoute.tsx` | Surface-aware "Back" button |
+
+## Zero Changes To
+- Member app pages, momentum components, admin pages, Supabase client, shared components
+
+## Risks
+- Adding enum value is irreversible (safe but one-way)
+- Creating `members` row in trigger: need to verify `members` table required columns and defaults
+
+## Deferred (Phase 2+)
+- Email OTP / Magic Link login
+- Legacy account claiming flow
+- Identity linking (add Google/password after first login)
+- Phone OTP (Twilio)
+- Verification states and onboarding flow
 
