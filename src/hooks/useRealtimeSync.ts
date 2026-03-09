@@ -83,6 +83,11 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   user_roles: ['my-permissions', 'user-roles'],
   checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
   transfer_slips: ['transfer-slips', 'transfer-slip-stats', 'transfer-slip-detail'],
+  // ── Gamification tables ──
+  member_gamification_profiles: ['momentum-profile', 'gamification-profiles'],
+  badge_earnings: ['my-badges', 'badge-earnings', 'momentum-profile'],
+  challenge_progress: ['my-challenges', 'challenge-progress'],
+  reward_redemptions: ['my-rewards', 'reward-redemptions', 'momentum-profile'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
