@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
@@ -47,8 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchingForUserRef = useRef<string | null>(null);
 
   const fetchUserRoleAndStatus = async (userId: string) => {
+    if (fetchingForUserRef.current === userId) return;
+    fetchingForUserRef.current = userId;
     try {
       // Fetch role
       const { data: rolesData, error: roleError } = await supabase
@@ -98,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error in fetchUserRoleAndStatus:', error);
     } finally {
+      fetchingForUserRef.current = null;
       setLoading(false);
     }
   };
@@ -110,10 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock
-          // Only fetch if roles aren't already loaded (getSession may have already fetched)
-          // setLoading(false) is called inside fetchUserRoleAndStatus
-          if (role === null) {
+          // Only fetch if not already fetching for this user (ref guard prevents duplicates)
+          if (fetchingForUserRef.current !== session.user.id) {
             setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
           } else {
             setLoading(false);
