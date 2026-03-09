@@ -51,22 +51,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserRoleAndStatus = async (userId: string) => {
     try {
       // Fetch role
-      const { data: roleData, error: roleError } = await supabase
+      const { data: rolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
 
       if (roleError) {
-        console.error('Error fetching user role:', roleError);
+        console.error('Error fetching user roles:', roleError);
         return;
       }
 
-      if (roleData) {
-        setRole(roleData.role);
-        setAccessLevel(roleToAccessLevel[roleData.role]);
+      if (rolesData && rolesData.length > 0) {
+        const roles = rolesData.map(r => r.role);
+        setAllRoles(roles);
+        // Pick highest role by access level
+        const roleOrder: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk', 'member'];
+        const highest = roleOrder.find(r => roles.includes(r)) ?? roles[0];
+        setRole(highest);
+        setAccessLevel(roleToAccessLevel[highest]);
       } else {
-        // No role found yet (e.g. trigger hasn't fired) — default to member
+        setAllRoles(['member']);
         setRole('member');
         setAccessLevel('level_1_minimum');
       }
