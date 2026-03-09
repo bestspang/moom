@@ -463,7 +463,7 @@ export default function MemberMomentumPage() {
                 <Gift className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm font-medium text-foreground">No Rewards Yet</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Exclusive rewards are coming soon — keep earning RP!
+                  Exclusive rewards are coming soon — keep earning Coin!
                 </p>
               </div>
             ) : (
