@@ -396,7 +396,7 @@ export default function MemberMomentumPage() {
                           {(c.reward_points ?? 0) > 0 && (
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
                               <Gift className="h-2.5 w-2.5" />
-                              +{c.reward_points} RP
+                              +{c.reward_points} Coin
                             </span>
                           )}
                         </div>
