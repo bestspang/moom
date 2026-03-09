@@ -95,7 +95,7 @@ import { StaffLayout } from "@/apps/staff";
 // Experience Surface Pages
 import MemberHomePage from "@/apps/member/pages/MemberHomePage";
 import MemberSchedulePage from "@/apps/member/pages/MemberSchedulePage";
-import MemberBookingsPage from "@/apps/member/pages/MemberBookingsPage";
+import MemberShopPage from "@/apps/member/pages/MemberShopPage";
 import MemberBookingDetailPage from "@/apps/member/pages/MemberBookingDetailPage";
 import MemberClassDetailPage from "@/apps/member/pages/MemberClassDetailPage";
 import MemberPackagesPage from "@/apps/member/pages/MemberPackagesPage";
@@ -160,7 +160,8 @@ const App = () => (
                   <Route index element={<MemberHomePage />} />
                   <Route path="schedule" element={<MemberSchedulePage />} />
                   <Route path="schedule/:id" element={<MemberClassDetailPage />} />
-                  <Route path="bookings" element={<MemberBookingsPage />} />
+                  <Route path="bookings" element={<Navigate to="/member/schedule" replace />} />
+                  <Route path="shop" element={<MemberShopPage />} />
                   <Route path="bookings/:id" element={<MemberBookingDetailPage />} />
                   <Route path="packages" element={<MemberPackagesPage />} />
                   <Route path="packages/:id/purchase" element={<MemberPurchasePage />} />
