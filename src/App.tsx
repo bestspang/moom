@@ -95,7 +95,7 @@ import { StaffLayout } from "@/apps/staff";
 // Experience Surface Pages
 import MemberHomePage from "@/apps/member/pages/MemberHomePage";
 import MemberSchedulePage from "@/apps/member/pages/MemberSchedulePage";
-import MemberBookingsPage from "@/apps/member/pages/MemberBookingsPage";
+import MemberShopPage from "@/apps/member/pages/MemberShopPage";
 import MemberBookingDetailPage from "@/apps/member/pages/MemberBookingDetailPage";
 import MemberClassDetailPage from "@/apps/member/pages/MemberClassDetailPage";
 import MemberPackagesPage from "@/apps/member/pages/MemberPackagesPage";
