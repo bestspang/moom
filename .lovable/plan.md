@@ -1,47 +1,36 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Fix: Admin Surface Switcher Always Missing After Navigation
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Problem Verification
 
-## Fix (surgical, 1 file)
+Despite multiple attempts to fix the conditional rendering logic, the "Member App" and "Trainer App" links still don't appear in the admin Header dropdown when navigating from the member surface. The code logic appears correct (`role='owner'` is set, condition should pass), yet the links don't render.
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## Root Cause
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+The fundamental issue is a **race condition between double-invocations of `fetchUserRoleAndStatus`** combined with React's state update batching. The function is called twice on every page load:
+1. Directly from `getSession()` (synchronous after session resolves)
+2. Via `setTimeout` from `onAuthStateChange` (INITIAL_SESSION event)
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+The `role === null` check on line 116 uses a **stale closure** (captured at useEffect mount time, always `null`), so both paths always fire. This creates two concurrent async flows writing to the same state, and depending on timing, can leave `allRoles` temporarily empty during a render cycle.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+## Solution: Two-Part Fix
+
+### 1. `AuthContext.tsx` — Eliminate double-fetch with a ref guard
+
+Use a `useRef` to track the userId currently being fetched. If a fetch is already in progress for the same user, skip the duplicate call. This eliminates the race entirely.
+
+### 2. `Header.tsx` — Simplify the surface switcher to always show for authenticated users
+
+The admin surface is already gated by `ProtectedRoute`. Any authenticated user on the admin surface should be able to navigate to member/trainer surfaces (those surfaces handle their own access control). Remove the fragile role-based conditional entirely and just check `!!user`.
+
+This eliminates all possible timing/state-race issues with the surface switcher visibility.
+
+## Files to Modify
+1. **`src/contexts/AuthContext.tsx`** — Add a `fetchingForUserRef` to prevent duplicate concurrent fetches (~5 lines)
+2. **`src/components/layout/Header.tsx`** — Simplify surface switcher gate from role check to `!!user` (~2 lines)
+
+## Risks
+- Zero regression: surface switcher links become MORE available, not less
+- Trainer App link visibility no longer gated by role — acceptable since the trainer surface has its own access control
 
