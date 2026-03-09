@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { fetchMomentumProfile, fetchMyChallengeProgress, fetchMyBadges } from './api';
+import { fetchMomentumProfile, fetchMyBadges, fetchMyQuests, type QuestInstance } from './api';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
 import { StreakFlame } from './StreakFlame';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users } from 'lucide-react';
+import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users, Coins } from 'lucide-react';
 import type { MomentumProfile } from './types';
 
 interface MomentumCardProps {
@@ -34,9 +34,9 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
     enabled: !!memberId,
   });
 
-  const { data: myProgress } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
+  const { data: myQuests } = useQuery({
+    queryKey: ['my-quests', memberId],
+    queryFn: () => fetchMyQuests(memberId!),
     enabled: !!memberId,
   });
 
@@ -60,7 +60,14 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
   const p: MomentumProfile = profile ?? { ...DEFAULT_PROFILE, memberId: memberId ?? '' };
   const isStarter = !profile;
 
-  const activeQuests = (myProgress ?? []).filter(q => q.status !== 'completed' && q.challenge).slice(0, 2);
+  // Show daily quests from quest_instances (v1 spec: 3 daily quests + active weekly)
+  const dailyQuests = (myQuests ?? [])
+    .filter(q => q.template?.questPeriod === 'daily' && q.status !== 'expired' && q.status !== 'claimed')
+    .slice(0, 3);
+  const weeklyQuest = (myQuests ?? [])
+    .find(q => q.template?.questPeriod === 'weekly' && q.status !== 'expired' && q.status !== 'claimed');
+  const activeQuests: QuestInstance[] = [...dailyQuests, ...(weeklyQuest ? [weeklyQuest] : [])].slice(0, 4);
+
   const displayBadges = (myBadges ?? []).slice(0, 6);
 
   return (
@@ -70,7 +77,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
     >
       {/* Primary-colored header */}
       <div className="relative px-5 pt-5 pb-4" style={{ backgroundColor: 'hsl(var(--primary))' }}>
-        {/* Top row: tier + RP */}
+        {/* Top row: tier + stats */}
         <div className="relative flex items-center justify-between mb-4">
           <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
             <TierBadge tier={p.tier} level={p.level} size="md" />
@@ -87,7 +94,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
               className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black"
               style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
             >
-              <Gift className="h-3 w-3" />
+              <Coins className="h-3 w-3" />
               {p.availablePoints.toLocaleString()}
             </div>
           </div>
@@ -122,6 +129,45 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
           </p>
         )}
       </div>
+
+      {/* Daily quests preview */}
+      {activeQuests.length > 0 && (
+        <div className="px-4 py-3 space-y-2 border-t border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+            <Target className="h-3 w-3" />
+            Today's Quests
+          </p>
+          {activeQuests.map((quest) => {
+            const t = quest.template;
+            if (!t) return null;
+            const pct = Math.min((quest.progressValue / t.goalValue) * 100, 100);
+            const isWeekly = t.questPeriod === 'weekly';
+            return (
+              <div key={quest.id} className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-foreground truncate">{t.nameEn}</p>
+                    {isWeekly && (
+                      <span className="text-[8px] font-bold uppercase text-blue-500 bg-blue-500/10 rounded-full px-1.5 py-0.5 flex-shrink-0">
+                        weekly
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground tabular-nums flex-shrink-0">
+                  {quest.progressValue}/{t.goalValue}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Badge gallery horizontal scroll */}
       <div className="px-4 py-3 border-t border-border">
@@ -175,36 +221,6 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
           My Squad
         </button>
       </div>
-
-      {/* Active quests preview */}
-      {activeQuests.length > 0 && (
-        <div className="px-4 py-3 space-y-2 border-t border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <Target className="h-3 w-3" />
-            Active Quests
-          </p>
-          {activeQuests.map((quest) => {
-            const c = quest.challenge!;
-            const pct = Math.min((quest.currentValue / c.goalValue) * 100, 100);
-            return (
-              <div key={quest.id} className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">{c.nameEn}</p>
-                  <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-muted-foreground tabular-nums flex-shrink-0">
-                  {quest.currentValue}/{c.goalValue}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

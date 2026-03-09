@@ -3,13 +3,60 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/common';
-import { Zap, Gift, Target, TrendingUp, Award, AlertTriangle, Plus } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Zap, Gift, Target, TrendingUp, Award, AlertTriangle, Plus, Users, Coins, Shield, ScrollText } from 'lucide-react';
 import { useGamificationRules } from '@/hooks/useGamificationRules';
 import { useGamificationChallenges } from '@/hooks/useGamificationChallenges';
 import { useGamificationBadges } from '@/hooks/useGamificationBadges';
 import { useGamificationRewards } from '@/hooks/useGamificationRewards';
 import { useGamificationAudit } from '@/hooks/useGamificationAudit';
+import { useGamificationQuests } from '@/hooks/useGamificationQuests';
+import { useGamificationLevels } from '@/hooks/useGamificationLevels';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+// Fetch economy stats for admin overview
+async function fetchEconomyStats() {
+  const [profilesRes, redemptionsRes, questInstancesRes, badgeEarningsRes] = await Promise.all([
+    supabase.from('member_gamification_profiles').select('total_xp, current_level, available_points, total_points', { count: 'exact' }),
+    supabase.from('reward_redemptions').select('points_spent, status', { count: 'exact' }),
+    supabase.from('quest_instances').select('status', { count: 'exact' }),
+    supabase.from('badge_earnings').select('id', { count: 'exact' }),
+  ]);
+
+  const profiles = profilesRes.data ?? [];
+  const totalMembers = profilesRes.count ?? 0;
+  const totalCoinInCirculation = profiles.reduce((s, p) => s + (p.available_points ?? 0), 0);
+  const totalCoinEverEarned = profiles.reduce((s, p) => s + (p.total_points ?? 0), 0);
+  const totalXpEarned = profiles.reduce((s, p) => s + (p.total_xp ?? 0), 0);
+  const avgLevel = totalMembers > 0 ? (profiles.reduce((s, p) => s + (p.current_level ?? 1), 0) / totalMembers) : 0;
+
+  const redemptions = redemptionsRes.data ?? [];
+  const totalRedemptions = redemptionsRes.count ?? 0;
+  const totalCoinSpent = redemptions.reduce((s, r) => s + (r.points_spent ?? 0), 0);
+
+  const quests = questInstancesRes.data ?? [];
+  const totalQuestsAssigned = questInstancesRes.count ?? 0;
+  const questsClaimed = quests.filter(q => q.status === 'claimed').length;
+  const questCompletionRate = totalQuestsAssigned > 0 ? Math.round((questsClaimed / totalQuestsAssigned) * 100) : 0;
+
+  const totalBadgesEarned = badgeEarningsRes.count ?? 0;
+
+  return {
+    totalMembers,
+    totalCoinInCirculation,
+    totalCoinEverEarned,
+    totalCoinSpent,
+    totalXpEarned,
+    avgLevel: Math.round(avgLevel * 10) / 10,
+    totalRedemptions,
+    totalQuestsAssigned,
+    questsClaimed,
+    questCompletionRate,
+    totalBadgesEarned,
+  };
+}
 
 const GamificationOverview = () => {
   const { t } = useLanguage();
@@ -19,6 +66,14 @@ const GamificationOverview = () => {
   const { data: badges } = useGamificationBadges();
   const { data: rewards } = useGamificationRewards();
   const { data: auditLog } = useGamificationAudit({ limit: 50 });
+  const { data: questTemplates } = useGamificationQuests();
+  const { data: levels } = useGamificationLevels();
+
+  const { data: economyStats, isLoading: loadingEconomy } = useQuery({
+    queryKey: ['admin-economy-stats'],
+    queryFn: fetchEconomyStats,
+    staleTime: 60_000,
+  });
 
   const activeRules = rules?.filter(r => r.is_active).length ?? 0;
   const activeChallenges = challenges?.filter(c => c.status === 'active').length ?? 0;
@@ -26,19 +81,87 @@ const GamificationOverview = () => {
   const activeRewards = rewards?.filter(r => r.is_active).length ?? 0;
   const flaggedEvents = auditLog?.filter(e => e.flagged).length ?? 0;
   const totalXpDistributed = auditLog?.reduce((sum, e) => sum + (e.xp_delta > 0 ? e.xp_delta : 0), 0) ?? 0;
+  const activeQuestTemplates = questTemplates?.filter(q => q.is_active).length ?? 0;
+  const activeLevels = levels?.filter(l => l.is_active).length ?? 0;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard icon={<Zap className="h-5 w-5" />} title={t('gamification.overview.activeRules')} value={activeRules} color="blue" />
-        <StatCard icon={<Target className="h-5 w-5" />} title={t('gamification.overview.activeChallenges')} value={activeChallenges} color="teal" />
-        <StatCard icon={<Award className="h-5 w-5" />} title={t('gamification.overview.totalBadges')} value={totalBadges} color="magenta" />
-        <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.activeRewards')} value={activeRewards} color="orange" />
-        <StatCard icon={<TrendingUp className="h-5 w-5" />} title={t('gamification.overview.xpDistributed')} value={totalXpDistributed.toLocaleString()} color="teal" />
-        <StatCard icon={<AlertTriangle className="h-5 w-5" />} title={t('gamification.overview.flaggedEvents')} value={flaggedEvents} color={flaggedEvents > 0 ? 'orange' : 'gray'} />
+      {/* Economy Health Stats */}
+      <div>
+        <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+          <Coins className="h-4 w-4 text-primary" />
+          Economy Health
+        </h3>
+        {loadingEconomy ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard icon={<Users className="h-5 w-5" />} title="Active Profiles" value={economyStats?.totalMembers ?? 0} color="blue" />
+            <StatCard icon={<Coins className="h-5 w-5" />} title="Coin in Circulation" value={(economyStats?.totalCoinInCirculation ?? 0).toLocaleString()} color="orange" />
+            <StatCard icon={<Gift className="h-5 w-5" />} title="Total Redemptions" value={economyStats?.totalRedemptions ?? 0} color="teal" />
+            <StatCard icon={<Target className="h-5 w-5" />} title="Quest Completion" value={`${economyStats?.questCompletionRate ?? 0}%`} color="blue" />
+          </div>
+        )}
       </div>
 
+      {/* System Config Stats */}
+      <div>
+        <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          System Configuration
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <StatCard icon={<Shield className="h-5 w-5" />} title="Levels" value={activeLevels} color="blue" />
+          <StatCard icon={<Zap className="h-5 w-5" />} title={t('gamification.overview.activeRules')} value={activeRules} color="blue" />
+          <StatCard icon={<ScrollText className="h-5 w-5" />} title="Quest Templates" value={activeQuestTemplates} color="teal" />
+          <StatCard icon={<Award className="h-5 w-5" />} title={t('gamification.overview.totalBadges')} value={totalBadges} color="magenta" />
+          <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.activeRewards')} value={activeRewards} color="orange" />
+          <StatCard icon={<AlertTriangle className="h-5 w-5" />} title={t('gamification.overview.flaggedEvents')} value={flaggedEvents} color={flaggedEvents > 0 ? 'orange' : 'gray'} />
+        </div>
+      </div>
+
+      {/* Economy Detail + Recent Activity */}
       <div className="grid md:grid-cols-2 gap-6">
+        {/* Economy breakdown */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm font-medium">Economy Summary</CardTitle></CardHeader>
+          <CardContent>
+            {loadingEconomy ? (
+              <Skeleton className="h-32" />
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Total XP distributed</span>
+                  <span className="text-sm font-bold text-foreground">{(economyStats?.totalXpEarned ?? 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Total Coin earned (lifetime)</span>
+                  <span className="text-sm font-bold text-foreground">{(economyStats?.totalCoinEverEarned ?? 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Total Coin spent</span>
+                  <span className="text-sm font-bold text-foreground">{(economyStats?.totalCoinSpent ?? 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Avg member level</span>
+                  <span className="text-sm font-bold text-foreground">{economyStats?.avgLevel ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Quests assigned</span>
+                  <span className="text-sm font-bold text-foreground">{economyStats?.totalQuestsAssigned ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Badges earned</span>
+                  <span className="text-sm font-bold text-foreground">{economyStats?.totalBadgesEarned ?? 0}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
         <Card>
           <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.recentActivity')}</CardTitle></CardHeader>
           <CardContent>
@@ -55,7 +178,7 @@ const GamificationOverview = () => {
                     </div>
                     <div className="flex gap-3 text-xs text-muted-foreground">
                       {entry.xp_delta !== 0 && <span className={entry.xp_delta > 0 ? 'text-accent-teal' : 'text-destructive'}>{entry.xp_delta > 0 ? '+' : ''}{entry.xp_delta} XP</span>}
-                      {entry.points_delta !== 0 && <span className={entry.points_delta > 0 ? 'text-primary' : 'text-destructive'}>{entry.points_delta > 0 ? '+' : ''}{entry.points_delta} pts</span>}
+                      {entry.points_delta !== 0 && <span className={entry.points_delta > 0 ? 'text-primary' : 'text-destructive'}>{entry.points_delta > 0 ? '+' : ''}{entry.points_delta} Coin</span>}
                     </div>
                   </div>
                 ))}
@@ -63,27 +186,40 @@ const GamificationOverview = () => {
             )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.quickActions')}</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rules')}>
-                <Plus className="h-3.5 w-3.5" />{t('gamification.rules.addRule')}
-              </Button>
-              <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/challenges')}>
-                <Plus className="h-3.5 w-3.5" />{t('gamification.challenges.create')}
-              </Button>
-              <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/badges')}>
-                <Plus className="h-3.5 w-3.5" />{t('gamification.badges.create')}
-              </Button>
-              <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rewards')}>
-                <Plus className="h-3.5 w-3.5" />{t('gamification.rewards.create')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.quickActions')}</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rules')}>
+              <Zap className="h-3.5 w-3.5" /> XP / Coin Rules
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/quests')}>
+              <ScrollText className="h-3.5 w-3.5" /> Quest Templates
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/badges')}>
+              <Award className="h-3.5 w-3.5" /> Badges
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rewards')}>
+              <Gift className="h-3.5 w-3.5" /> Rewards
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/levels')}>
+              <Shield className="h-3.5 w-3.5" /> Levels
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/challenges')}>
+              <Target className="h-3.5 w-3.5" /> Challenges
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/coupons')}>
+              <Plus className="h-3.5 w-3.5" /> Coupons
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/shop-rules')}>
+              <Coins className="h-3.5 w-3.5" /> Shop Rules
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
