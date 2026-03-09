@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Home, Calendar, BookOpen, User, ScanLine,
+  Home, Calendar, BookOpen, User, ScanLine, Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
