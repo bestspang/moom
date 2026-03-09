@@ -310,3 +310,105 @@ export async function leaveSquad(memberId: string) {
 
   if (error) throw error;
 }
+
+// ─── Leaderboard ────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  memberId: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  totalXp: number;
+  level: number;
+  rank: number;
+}
+
+export async function fetchXpLeaderboard(): Promise<LeaderboardEntry[]> {
+  const { data, error } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+    .order('total_xp', { ascending: false })
+    .limit(20);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any, idx: number) => ({
+    memberId: row.member_id,
+    firstName: row.member?.first_name ?? '',
+    lastName: row.member?.last_name ?? '',
+    avatarUrl: row.member?.avatar_url ?? null,
+    totalXp: row.total_xp,
+    level: row.current_level,
+    rank: idx + 1,
+  }));
+}
+
+export async function fetchSquadRankings(): Promise<SquadInfo[]> {
+  const { data, error } = await supabase
+    .from('squads')
+    .select('*, squad_memberships(count)')
+    .eq('is_active', true)
+    .order('total_xp', { ascending: false })
+    .limit(10);
+
+  if (error) throw error;
+
+  return (data ?? []).map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    totalXp: s.total_xp,
+    maxMembers: s.max_members,
+    isActive: s.is_active,
+    members: [],
+    memberCount: s.squad_memberships?.[0]?.count ?? 0,
+  }));
+}
+
+export interface ChallengeCompletionStat {
+  challengeId: string;
+  nameEn: string;
+  completedCount: number;
+  currentUserCompleted: boolean;
+}
+
+export async function fetchChallengeCompletionStats(memberId: string | null): Promise<ChallengeCompletionStat[]> {
+  // Fetch all active/completed challenges
+  const { data: challenges, error: cErr } = await supabase
+    .from('gamification_challenges')
+    .select('id, name_en, status')
+    .in('status', ['active', 'completed'])
+    .order('end_date', { ascending: false })
+    .limit(20);
+
+  if (cErr) throw cErr;
+  if (!challenges?.length) return [];
+
+  const challengeIds = challenges.map(c => c.id);
+
+  // Fetch completed progress counts
+  const { data: progress, error: pErr } = await supabase
+    .from('challenge_progress')
+    .select('challenge_id, member_id, status')
+    .in('challenge_id', challengeIds)
+    .eq('status', 'completed');
+
+  if (pErr) throw pErr;
+
+  // Group by challenge
+  const countMap: Record<string, number> = {};
+  const userCompleted = new Set<string>();
+  for (const p of (progress ?? [])) {
+    countMap[p.challenge_id] = (countMap[p.challenge_id] ?? 0) + 1;
+    if (memberId && p.member_id === memberId) {
+      userCompleted.add(p.challenge_id);
+    }
+  }
+
+  return challenges.map(c => ({
+    challengeId: c.id,
+    nameEn: c.name_en,
+    completedCount: countMap[c.id] ?? 0,
+    currentUserCompleted: userCompleted.has(c.id),
+  }));
+}

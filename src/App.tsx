@@ -105,6 +105,7 @@ import MemberCheckInPage from "@/apps/member/pages/MemberCheckInPage";
 import MemberRewardsPage from "@/apps/member/pages/MemberRewardsPage";
 import MemberBadgeGalleryPage from "@/apps/member/pages/MemberBadgeGalleryPage";
 import MemberSquadPage from "@/apps/member/pages/MemberSquadPage";
+import MemberLeaderboardPage from "@/apps/member/pages/MemberLeaderboardPage";
 import MemberSecurityPage from "@/apps/member/pages/MemberSecurityPage";
 import MemberNotificationsPage from "@/apps/member/pages/MemberNotificationsPage";
 import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
@@ -162,6 +163,7 @@ const App = () => (
                   <Route path="rewards" element={<MemberRewardsPage />} />
                   <Route path="badges" element={<MemberBadgeGalleryPage />} />
                   <Route path="squad" element={<MemberSquadPage />} />
+                  <Route path="leaderboard" element={<MemberLeaderboardPage />} />
                   <Route path="profile" element={<MemberProfilePage />} />
                   <Route path="profile/edit" element={<MemberEditProfilePage />} />
                   <Route path="security" element={<MemberSecurityPage />} />
