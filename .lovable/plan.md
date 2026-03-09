@@ -1,47 +1,44 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 1 Polish: Clean Up Legacy Code + Bottom Nav Update
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Status Check
 
-## Fix (surgical, 1 file)
+All Phase 1 deliverables are functionally complete:
+- Economy spec locked (docs/ECONOMY_V1.md)
+- Event map locked (docs/gamification-event-map.md)
+- Frontend tiers/levels aligned to DB
+- Member: MomentumCard, QuestHub, Rewards, Badge Gallery — all working
+- Admin: GamificationOverview with economy stats — working
+- Trainer: CoachImpactCard + PartnerReputationCard — already existed
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## What Needs Cleanup
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### 1. MemberMomentumPage — Legacy `challenge_progress` code
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+The Momentum page still fetches and renders legacy `gamification_challenges` + `challenge_progress` alongside the new `quest_instances` system. This creates duplicate UI (QuestHub shows real quests, but below that there are "Community Challenges" and "Active Challenges" using the old system).
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+**Fix:** Remove the legacy challenge sections from the Quests tab. Keep only `QuestHub` (which already handles daily/weekly/monthly quests correctly). Remove unused imports (`fetchActiveChallenges`, `fetchMyChallengeProgress`, `joinChallenge` mutation, `QuestCard`, `ChallengeProgressEntry`).
+
+### 2. Bottom Nav — Replace "Coupons" with "Rewards"
+
+Current nav: `Home | Schedule | Check In | Coupons | Profile`
+
+The "Coupons" tab is less discoverable than the Rewards/Momentum system which is now the core engagement loop. Replace with "Rewards" pointing to `/member/rewards`.
+
+Updated nav: `Home | Schedule | Check In | Rewards | Profile`
+
+### 3. DailyBonusCard — Show actual XP from spec
+
+Currently shows generic "+XP". Should show the actual value from the economy spec: "+8 XP, +1 Coin" (matching the `check_in` rule).
+
+## Files to change
+
+| File | Change |
+|------|--------|
+| `src/apps/member/pages/MemberMomentumPage.tsx` | Remove legacy challenge code from Quests tab; keep only QuestHub |
+| `src/apps/member/components/MemberBottomNav.tsx` | Change "Coupons" → "Rewards" with Gift icon, path `/member/rewards` |
+| `src/apps/member/features/momentum/DailyBonusCard.tsx` | Show "+8 XP · +1 Coin" instead of "+XP" |
+
+No database changes. No new files.
 
