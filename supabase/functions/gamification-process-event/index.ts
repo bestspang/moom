@@ -453,6 +453,86 @@ Deno.serve(async (req) => {
       db, member_id, event_type, xpDelta, newStreak, newTotalXp, newAvailablePoints
     );
 
+    // 11.5) REFERRAL REWARD — on first check_in, complete referral if exists
+    let referralCompleted = false;
+    if (event_type === "check_in") {
+      const { data: pendingReferral } = await db
+        .from("member_referrals")
+        .select("id, referrer_member_id, referrer_reward_points, referred_reward_points")
+        .eq("referred_member_id", member_id)
+        .eq("status", "signed_up")
+        .eq("reward_granted", false)
+        .maybeSingle();
+
+      if (pendingReferral) {
+        const referrerPoints = pendingReferral.referrer_reward_points ?? 200;
+        const referredPoints = pendingReferral.referred_reward_points ?? 200;
+        const refIdemKey = `referral_reward:${pendingReferral.id}`;
+
+        // Grant points to referrer
+        const referrerProfile = await getOrCreateProfile(db, pendingReferral.referrer_member_id);
+        const referrerNewAvail = (referrerProfile.available_points || 0) + referrerPoints;
+        const referrerNewTotal = (referrerProfile.total_points || 0) + referrerPoints;
+
+        await db.from("points_ledger").insert({
+          member_id: pendingReferral.referrer_member_id,
+          event_type: "referral_reward",
+          delta: referrerPoints,
+          balance_after: referrerNewAvail,
+          idempotency_key: `pts:${refIdemKey}:referrer`,
+          metadata: { referral_id: pendingReferral.id, role: "referrer" },
+        }).onConflict("idempotency_key").ignoreDuplicates();
+
+        await db.from("member_gamification_profiles").update({
+          total_points: referrerNewTotal,
+          available_points: referrerNewAvail,
+        }).eq("member_id", pendingReferral.referrer_member_id);
+
+        // Grant points to referred (current member)
+        const referredNewAvail = newAvailablePoints + referredPoints;
+        const referredNewTotal = newTotalPoints + referredPoints;
+
+        await db.from("points_ledger").insert({
+          member_id,
+          event_type: "referral_reward",
+          delta: referredPoints,
+          balance_after: referredNewAvail,
+          idempotency_key: `pts:${refIdemKey}:referred`,
+          metadata: { referral_id: pendingReferral.id, role: "referred" },
+        }).onConflict("idempotency_key").ignoreDuplicates();
+
+        await db.from("member_gamification_profiles").update({
+          total_points: referredNewTotal,
+          available_points: referredNewAvail,
+        }).eq("member_id", member_id);
+
+        // Mark referral as completed
+        await db.from("member_referrals").update({
+          status: "completed",
+          reward_granted: true,
+          completed_at: new Date().toISOString(),
+        }).eq("id", pendingReferral.id);
+
+        referralCompleted = true;
+
+        // Audit log for referral
+        await db.from("gamification_audit_log").insert({
+          member_id,
+          event_type: "referral_completed",
+          action_key: "referral_reward",
+          xp_delta: 0,
+          points_delta: referredPoints,
+          metadata: {
+            referral_id: pendingReferral.id,
+            referrer_member_id: pendingReferral.referrer_member_id,
+            referrer_points: referrerPoints,
+            referred_points: referredPoints,
+          },
+          flagged: false,
+        });
+      }
+    }
+
     // 12) AUDIT LOG
     await db.from("gamification_audit_log").insert({
       member_id,
@@ -514,6 +594,7 @@ Deno.serve(async (req) => {
       leveled_up: leveledUp,
       streak: newStreak,
       challenges: challengeResults,
+      referral_completed: referralCompleted,
       // Cross-project response fields
       new_total_xp: newTotalXp,
       new_level: newLevel,
