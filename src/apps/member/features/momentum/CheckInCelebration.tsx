@@ -144,6 +144,11 @@ export function CheckInCelebration({ open, onClose, profile, challenges }: Check
           </div>
         )}
 
+        {/* Social proof - squad members training today */}
+        {profile.memberId && (
+          <SocialProofCheckins memberId={profile.memberId} />
+        )}
+
         {/* Dismiss */}
         <div className="px-6 pb-6 pt-2 space-y-2">
           <Button onClick={onClose} className="w-full font-bold text-base" size="lg">
