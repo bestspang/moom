@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { toast } from 'sonner';
 
 export default function TrainerProfilePage() {
