@@ -1,5 +1,6 @@
 import React from 'react';
-import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe } from 'lucide-react';
+import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell } from 'lucide-react';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
@@ -23,7 +24,7 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, role, signOut } = useAuth();
+  const { user, role, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadCount();
@@ -233,6 +234,26 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
+            {/* Surface switcher */}
+            {role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <a href={buildCrossSurfaceUrl('member', '/member')}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Member App
+                  </a>
+                </DropdownMenuItem>
+                {allRoles.some(r => ['trainer', 'freelance_trainer'].includes(r)) && (
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <a href={buildCrossSurfaceUrl('trainer', '/trainer')}>
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Trainer App
+                    </a>
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
             {/* Language toggle — mobile only */}
             <div className="md:hidden">
               <DropdownMenuSeparator />
