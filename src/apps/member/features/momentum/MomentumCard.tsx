@@ -14,6 +14,7 @@ interface MomentumCardProps {
 }
 
 export function MomentumCard({ memberId, className }: MomentumCardProps) {
+  const navigate = useNavigate();
   const { data: profile, isLoading } = useQuery({
     queryKey: ['momentum-profile', memberId],
     queryFn: () => fetchMomentumProfile(memberId),
