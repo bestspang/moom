@@ -1,47 +1,89 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 2: Email OTP, Legacy Claim, Auth Diagnostics
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Current State Verification
 
-## Fix (surgical, 1 file)
+Phase 1 is structurally complete and correct:
+- Surface-aware login router works (AdminLogin vs MemberLogin)
+- `handle_new_user` trigger is attached to `auth.users` (created in early migration)
+- Trigger creates `members` + `identity_map` + `user_roles(member)` for member signups
+- `freelance_trainer` enum and access level functions updated
+- AuthContext uses `.maybeSingle()` with member fallback
+- Google OAuth has diagnostics logging
+- 231 legacy members exist in DB, 0 linked via `identity_map`
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+**No critical bugs found in Phase 1 code.**
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## What This Phase Builds
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+### 1. Legacy Account Claiming via Trigger (DB Migration)
+
+Update `handle_new_user` to detect existing members by email before creating a new one:
+
+```text
+IF v_surface = 'member' THEN
+  -- Check for existing member with same email (legacy)
+  SELECT id INTO v_member_id FROM members WHERE email = NEW.email LIMIT 1;
+  
+  IF v_member_id IS NOT NULL THEN
+    -- Legacy claim: link auth user to existing member, don't create duplicate
+    INSERT INTO user_roles (user_id, role) VALUES (NEW.id, 'member');
+    INSERT INTO identity_map (...) VALUES (v_member_id, NEW.id, 'member', email, true);
+  ELSE
+    -- New member: create members row + identity_map (existing logic)
+  END IF;
+END IF;
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+This handles legacy claiming automatically -- no separate UI flow needed. When a legacy member signs up (via Google, email/password, or OTP) with the same email, they get linked to their existing record.
+
+### 2. Email OTP (Magic Link) Login on Member Surface
+
+Add email OTP tab/option to `MemberLogin.tsx`:
+- New "Sign in with email link" section
+- User enters email, clicks send
+- Calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + '/login' } })`
+- Shows "Check your email" confirmation state
+- On return, `onAuthStateChange` picks up session, `handle_new_user` trigger fires (for new users) or session is established (for existing)
+
+**Admin surface**: No OTP option (prevents public account creation)
+
+### 3. Auth Diagnostics Page
+
+Create `/diagnostics/auth` page showing:
+- Current user (id, email, provider)
+- Current role, access level, staff status
+- Member ID resolution (identity_map check)
+- Surface detection
+- Session state
+
+### 4. AuthContext: Expose `allRoles` for Multi-Role Users
+
+Currently fetches only the highest role. For Phase 2, fetch ALL roles so the UI can show admin shortcuts to multi-role users on member surface.
+
+Change `fetchUserRoleAndStatus` to fetch all `user_roles` rows, pick highest for `role`/`accessLevel`, but also expose `allRoles: AppRole[]`.
+
+## Files to Change
+
+| File | Change |
+|------|--------|
+| DB migration | Update `handle_new_user` for legacy email matching |
+| `src/pages/Auth/MemberLogin.tsx` | Add email OTP option with "send magic link" flow |
+| `src/pages/Auth/DiagnosticsAuthPage.tsx` | New diagnostics page |
+| `src/App.tsx` | Register diagnostics route |
+| `src/contexts/AuthContext.tsx` | Expose `allRoles` array |
+
+## Zero Changes To
+- AdminLogin, MemberSignup, ProtectedRoute, SurfaceGuard, hostname detection, admin pages, member app pages, shared components
+
+## Risks
+- `signInWithOtp` auto-creates auth users. Combined with updated trigger, legacy members get linked automatically. New emails create new member records. This is the desired behavior for member surface.
+- Magic link emails require email delivery to be working in Lovable Cloud (should be enabled by default).
+
+## Deferred
+- Phone OTP (requires Twilio connector)
+- Identity linking UI (add Google/password to existing account)
+- Provisional → active account lifecycle
+- Admin shortcuts in member surface (needs `allRoles` first, then UI work)
 
