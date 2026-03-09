@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  allRoles: AppRole[];
   accessLevel: AccessLevel | null;
   staffStatus: string | null;
   loading: boolean;
