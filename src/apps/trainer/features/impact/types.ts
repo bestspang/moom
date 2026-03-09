@@ -6,6 +6,7 @@ export interface CoachImpactProfile {
   staff_id: string;
   impact_score: number;
   coach_level: CoachLevel;
+  coin_balance: number;
   total_classes_taught: number;
   avg_attendance_rate: number;
   member_return_rate: number;
