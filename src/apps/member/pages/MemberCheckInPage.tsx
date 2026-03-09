@@ -32,11 +32,6 @@ export default function MemberCheckInPage() {
     enabled: !!memberId,
   });
 
-  const { data: challenges } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
 
   const handleCheckIn = useCallback(async (code: string) => {
     if (!code.trim() || !memberId) return;
