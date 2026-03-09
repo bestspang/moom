@@ -68,6 +68,18 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Leaderboard link */}
+      <button
+        onClick={() => navigate('/member/leaderboard')}
+        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted/50 transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <Trophy className="h-3.5 w-3.5" />
+          View Leaderboard
+        </span>
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
