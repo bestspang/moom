@@ -73,7 +73,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   member_contracts: ['member-contracts', 'members-enrichment'],
   member_billing: ['member-billing', 'member-summary-stats'],
   // ── Added missing tables ──
-  notifications: ['notifications'],
+  notifications: ['notifications', 'notifications-unread-count', 'notifications-recent'],
   roles: ['roles', 'role-permissions', 'my-permissions'],
   user_roles: ['my-permissions', 'user-roles'],
   checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
