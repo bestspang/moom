@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
@@ -11,25 +11,20 @@ import { TierBadge } from '../features/momentum/TierBadge';
 import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { StreakFreezeButton } from '../features/momentum/StreakFreezeButton';
-import { QuestCard } from '../features/momentum/QuestCard';
 import { QuestHub } from '../features/momentum/QuestHub';
 import { RewardDropCard } from '../features/momentum/RewardDropCard';
 import {
   fetchMomentumProfile,
-  fetchActiveChallenges,
-  fetchMyChallengeProgress,
   fetchMyBadges,
   fetchRewards,
   fetchMyRedemptions,
   fetchPointsHistory,
 } from '../features/momentum/api';
-import { xpForLevel, type ChallengeProgressEntry } from '../features/momentum/types';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { xpForLevel } from '../features/momentum/types';
 import { format } from 'date-fns';
 import {
-  Zap, Gift, Target, Trophy, Award, Clock,
-  ChevronRight, Sparkles, Shield, ScanLine,
+  Zap, Gift, Target, Trophy, Award,
+  ChevronRight, Sparkles, Shield,
 } from 'lucide-react';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
@@ -73,18 +68,6 @@ export default function MemberMomentumPage() {
     enabled: !!memberId,
   });
 
-  const { data: activeChallenges } = useQuery({
-    queryKey: ['active-challenges'],
-    queryFn: fetchActiveChallenges,
-    enabled: !!memberId,
-  });
-
-  const { data: myProgress } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
-
   const { data: badges } = useQuery({
     queryKey: ['my-badges', memberId],
     queryFn: () => fetchMyBadges(memberId!),
@@ -108,33 +91,8 @@ export default function MemberMomentumPage() {
     enabled: !!memberId,
   });
 
-  // ── Join challenge mutation ──
-  const joinChallenge = useMutation({
-    mutationFn: async (challengeId: string) => {
-      if (!memberId) throw new Error('Not authenticated');
-      const { error } = await supabase
-        .from('challenge_progress')
-        .insert([{ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'in_progress' as const }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
-      toast.success('Challenge joined! 🎯');
-    },
-    onError: () => toast.error('Failed to join challenge'),
-  });
-
   // ── Derived data ──
-  const progressMap = new Map(
-    (myProgress ?? []).map(p => [p.challengeId, p])
-  );
-
   const redeemedRewardIds = new Set(redemptions?.map(r => r.rewardId) ?? []);
-
-  // Separate active quests (joined, not completed) and available (not joined)
-  const joinedQuests: ChallengeProgressEntry[] = (myProgress ?? []).filter(p => p.status !== 'completed' && p.challenge);
-  const completedQuests: ChallengeProgressEntry[] = (myProgress ?? []).filter(p => p.status === 'completed' && p.challenge);
-  const availableChallenges = (activeChallenges ?? []).filter(c => !progressMap.has(c.id));
 
   const currentLevelXP = profile ? xpForLevel(profile.level - 1) : 0;
   const nextLevelXP = profile ? xpForLevel(profile.level) : 0;
@@ -256,7 +214,7 @@ export default function MemberMomentumPage() {
           {/* Level-up requirements breakdown */}
           <LevelRequirementsCard
             profile={profile}
-            completedQuests={completedQuests}
+            completedQuests={[]}
             totalBadges={badges?.length ?? 0}
           />
 
@@ -351,88 +309,6 @@ export default function MemberMomentumPage() {
         <TabsContent value="quests" className="space-y-4 mt-4">
           {/* Daily/Weekly/Monthly Quest Hub */}
           <QuestHub />
-
-          {/* Community Challenges (legacy gamification_challenges) */}
-          {availableChallenges.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-foreground mb-3">Community Challenges</p>
-              <div className="space-y-3">
-                {availableChallenges.map((c) => {
-                  const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                  return (
-                    <div key={c.id} className="relative rounded-xl border bg-card p-4 space-y-3">
-                      <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
-                          <Clock className="h-2.5 w-2.5" />
-                          {daysLeft}d left
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-3 pr-16">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                          <Target className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{c.name_en}</p>
-                          {c.description_en && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{c.description_en}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {(c.reward_xp ?? 0) > 0 && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                              <Zap className="h-2.5 w-2.5" />
-                              +{c.reward_xp} XP
-                            </span>
-                          )}
-                          {(c.reward_points ?? 0) > 0 && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
-                              <Gift className="h-2.5 w-2.5" />
-                              +{c.reward_points} Coin
-                            </span>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-8 text-xs font-bold px-4"
-                          onClick={() => joinChallenge.mutate(c.id)}
-                          disabled={joinChallenge.isPending}
-                        >
-                          Join
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Active joined challenges */}
-          {joinedQuests.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-foreground mb-3">Active Challenges</p>
-              <div className="space-y-2">
-                {joinedQuests.map((quest) => (
-                  <QuestCard key={quest.id} challenge={quest} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Completed */}
-          {completedQuests.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-foreground mb-3">Completed</p>
-              <div className="space-y-2">
-                {completedQuests.slice(0, 5).map((quest) => (
-                  <QuestCard key={quest.id} challenge={quest} />
-                ))}
-              </div>
-            </div>
-          )}
         </TabsContent>
 
         {/* ═══ Rewards Tab ═══ */}

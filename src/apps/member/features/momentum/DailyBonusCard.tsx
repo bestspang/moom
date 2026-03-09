@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Zap, ScanLine } from 'lucide-react';
+import { Zap, ScanLine, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DailyBonusCardProps {
@@ -31,9 +31,12 @@ export function DailyBonusCard({ className }: DailyBonusCardProps) {
         <p className="text-xs text-muted-foreground">Earn bonus XP & keep your streak 🔥</p>
       </div>
 
-      <div className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary flex-shrink-0">
+      <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary flex-shrink-0">
         <Zap className="h-3 w-3" />
-        +XP
+        +8 XP
+        <span className="opacity-60">·</span>
+        <Coins className="h-3 w-3" />
+        +1
       </div>
     </button>
   );
