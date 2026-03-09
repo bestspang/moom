@@ -32,6 +32,8 @@ export function MemberHeader() {
   const { firstName, lastName } = useMemberSession();
   const { allRoles, signOut, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+
+  console.log('[MemberHeader] render:', { userId: user?.id, allRoles, firstName, lastName });
   const initials = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase() || '?';
 
   const hasAdminAccess = allRoles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
