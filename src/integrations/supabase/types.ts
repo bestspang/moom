@@ -3839,6 +3839,12 @@ export type Database = {
         | "payment_received"
         | "member_registration"
         | "package_expiring"
+        | "badge_earned"
+        | "level_up"
+        | "challenge_completed"
+        | "reward_fulfilled"
+        | "streak_milestone"
+        | "xp_earned"
       package_status: "on_sale" | "scheduled" | "drafts" | "archive"
       package_type: "unlimited" | "session" | "pt"
       payment_method:
@@ -4063,6 +4069,12 @@ export const Constants = {
         "payment_received",
         "member_registration",
         "package_expiring",
+        "badge_earned",
+        "level_up",
+        "challenge_completed",
+        "reward_fulfilled",
+        "streak_milestone",
+        "xp_earned",
       ],
       package_status: ["on_sale", "scheduled", "drafts", "archive"],
       package_type: ["unlimited", "session", "pt"],
