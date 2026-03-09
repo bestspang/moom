@@ -85,6 +85,12 @@ const MemberSignup: React.FC = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Join MOOM</CardTitle>
           <CardDescription>{t('auth.signupDescription')}</CardDescription>
+          {referralCode && (
+            <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
+              <p className="text-xs text-primary font-semibold">🎉 Referral code applied: {referralCode}</p>
+              <p className="text-xs text-muted-foreground">You'll both earn reward points!</p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Button type="button" variant="outline" className="w-full" disabled={isGoogleLoading} onClick={handleGoogleSignIn}>
