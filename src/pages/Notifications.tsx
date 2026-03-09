@@ -10,6 +10,12 @@ import {
   AlertTriangle,
   X,
   Check,
+  Award,
+  TrendingUp,
+  Target,
+  Gift,
+  Flame,
+  Zap,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
