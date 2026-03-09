@@ -1,47 +1,41 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Fix: MomentumCard invisible + add missing gamification elements
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Root Cause
 
-## Fix (surgical, 1 file)
+`MomentumCard` returns `null` on line 40 when `fetchMomentumProfile` returns null (no `member_gamification_profiles` row for this member). Since new/unlinked users won't have a gamification profile row yet, the entire gamification section disappears.
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+Additionally, the card is missing:
+- Badge gallery (horizontal scroll)
+- Quick links to Leaderboard and Squad
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## Plan
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### 1. MomentumCard — show starter fallback when no profile
+Instead of `return null`, render a "starter" card with:
+- Default Level 1 / Starter tier
+- XP bar at 0
+- Streak at 0
+- Invite to "Check in to start earning XP!"
+- Same tap → `/member/momentum` behavior
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### 2. Add badge horizontal scroll strip below streak row
+- Fetch `fetchMyBadges(memberId)` in the card
+- Show up to 6 badges as small circles in a horizontal scroll
+- If none: show "Earn your first badge" with a lock icon
+- Tap → `/member/badges`
+
+### 3. Add Leaderboard + Squad quick links
+- Below badges, add two compact pill-buttons:
+  - "Leaderboard" → `/member/leaderboard`
+  - "My Squad" → `/member/squad`
+- Compact row, icon + text, muted styling
+
+### Files to modify
+- `src/apps/member/features/momentum/MomentumCard.tsx` — all 3 changes above
+
+### Risk: Zero
+- Additive only — no DB/edge function changes
+- Existing behavior preserved for users who DO have a profile
 
