@@ -9,7 +9,7 @@ import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
-import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock } from 'lucide-react';
+import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl, isDevEnvironment } from '@/apps/shared/hostname';
 import type { Database } from '@/integrations/supabase/types';
