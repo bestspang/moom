@@ -36,7 +36,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
 
   const { data: myProgress } = useQuery({
     queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId),
+    queryFn: () => fetchMyChallengeProgress(memberId!),
     enabled: !!memberId,
   });
 
