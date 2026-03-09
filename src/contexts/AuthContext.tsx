@@ -138,10 +138,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, signupSurface: 'admin' | 'member' = 'admin') => {
     try {
       // Note: Staff and user_roles records are now created automatically
       // via database trigger (handle_new_user) for security
+      // signup_surface determines whether a staff or member record is created
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -150,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             first_name: firstName,
             last_name: lastName,
+            signup_surface: signupSurface,
           },
         },
       });
