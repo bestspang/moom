@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { StreakFlame } from './StreakFlame';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
+import { SocialProofCheckins } from './SocialProofCheckins';
 import type { MomentumProfile, ChallengeProgressEntry } from './types';
 import { Sparkles, Zap, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
