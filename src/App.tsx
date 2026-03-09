@@ -129,7 +129,7 @@ const App = () => (
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Navigate to="/login" replace />} />
+                <Route path="/signup" element={<MemberSignup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />
