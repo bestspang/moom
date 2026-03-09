@@ -39,7 +39,17 @@ export default function MemberEditProfilePage() {
 
   const mutation = useMutation({
     mutationFn: (data: EditProfileForm) => updateMyProfile({ first_name: data.first_name, last_name: data.last_name, phone: data.phone, preferred_language: data.preferred_language }),
-    onSuccess: () => { toast.success('Profile updated'); navigate('/member/profile'); },
+    onSuccess: () => {
+      if (memberId) {
+        fireGamificationEvent({
+          event_type: 'profile_completed',
+          member_id: memberId,
+          idempotency_key: `profile_completed:${memberId}`,
+        });
+      }
+      toast.success('Profile updated');
+      navigate('/member/profile');
+    },
     onError: () => toast.error('Failed to update profile'),
   });
 
