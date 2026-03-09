@@ -87,7 +87,7 @@ export default function MemberReferralPage() {
           {[
             { step: 1, text: 'Share your code or link with friends', icon: Share2 },
             { step: 2, text: 'They sign up using your code', icon: Users },
-            { step: 3, text: 'You both earn 200 RP on their first check-in!', icon: Trophy },
+            { step: 3, text: 'You both earn 200 Coin on their first check-in!', icon: Trophy },
           ].map(({ step, text, icon: Icon }) => (
             <div key={step} className="flex items-center gap-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold flex-shrink-0">
