@@ -235,7 +235,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               {t('profile.editProfile')}
             </DropdownMenuItem>
             {/* Surface switcher */}
-            {role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role) && (
+            {allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r)) && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="cursor-pointer">

@@ -1,66 +1,47 @@
 
 
-# Fix: Admin Surface Switcher Links Missing After Navigation from Member
+# Fix: Promotions export missing columns in Settings
 
-## Problem Verification
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The screenshot confirms: admin dropdown shows "Owner" label (so `role` IS set to `'owner'`) but the Member App / Trainer App links are completely absent. The code at line 238 checks `role && ['owner', ...].includes(role)` which should be `true`.
+## Fix (surgical, 1 file)
 
-**Root cause:** The `onAuthStateChange` listener (line 108-123) fires multiple events during page load. If an event fires with session but then another event briefly triggers with a different state, the `else` branch (line 117-121) resets `role` to `null` and `allRoles` to `[]`. The `getSession` path then re-fetches, but there's a brief window where `role` is null while `user` is already set — and if the dropdown is opened during this window or the re-render doesn't propagate correctly, the links disappear.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Additionally, the `setTimeout` on line 115 creates a gap where `user` is set but `role`/`allRoles` are still stale from a previous state.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## Fix (2 files)
-
-### 1. `src/components/layout/Header.tsx` — Use `allRoles` as primary check
-
-Change line 238 from:
-```
-role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role)
-```
-to:
-```
-allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r))
-```
-
-This is more resilient because `allRoles` is set atomically with `role` and doesn't depend on the single `role` value matching.
-
-### 2. `src/contexts/AuthContext.tsx` — Prevent intermediate null-role resets
-
-In the `onAuthStateChange` callback, DON'T reset role/allRoles in the `else` branch if we're still processing. Instead, only clear them on explicit `SIGNED_OUT` event. This prevents brief null-state flashes during INITIAL_SESSION / TOKEN_REFRESHED cycles.
-
-Change:
 ```typescript
-async (event, session) => {
-  setSession(session);
-  setUser(session?.user ?? null);
-  if (session?.user) {
-    setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
-  } else {
-    setRole(null);
-    setAllRoles([]);
-    ...
-  }
-}
-```
-to:
-```typescript
-async (event, session) => {
-  setSession(session);
-  setUser(session?.user ?? null);
-  if (session?.user) {
-    setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
-  } else if (event === 'SIGNED_OUT') {
-    setRole(null);
-    setAllRoles([]);
-    setAccessLevel(null);
-    setStaffStatus(null);
-    setLoading(false);
-  }
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
 }
 ```
 
-## Risks
-- Zero regression: only makes the conditions more defensive
-- `SIGNED_OUT` is the only event where roles should actually clear
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

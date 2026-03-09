@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Use setTimeout to avoid Supabase deadlock
           // setLoading(false) is called inside fetchUserRoleAndStatus
           setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setRole(null);
           setAllRoles([]);
           setAccessLevel(null);
