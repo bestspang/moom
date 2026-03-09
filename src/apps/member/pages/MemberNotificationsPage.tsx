@@ -1,10 +1,28 @@
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications';
-import { Bell, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+const NOTIFICATION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  referral_completed: Gift,
+  challenge_completed: Trophy,
+  streak_milestone: Flame,
+  booking_reminder: CalendarCheck,
+  announcement: Megaphone,
+  level_up: Trophy,
+};
+
+function NotificationIcon({ type }: { type?: string | null }) {
+  const Icon = (type && NOTIFICATION_ICON_MAP[type]) || Bell;
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+      <Icon className="h-4 w-4 text-primary" />
+    </div>
+  );
+}
 
 export default function MemberNotificationsPage() {
   const { data: notifications, isLoading } = useNotifications();
@@ -14,7 +32,7 @@ export default function MemberNotificationsPage() {
   const unreadCount = notifications?.filter((n) => !n.is_read).length ?? 0;
 
   return (
-    <div className="animate-in fade-in-0 duration-200">
+    <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader
         title="Notifications"
         subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
@@ -59,14 +77,9 @@ export default function MemberNotificationsPage() {
                     : 'bg-primary/5 hover:bg-primary/10'
                 )}
               >
-                <div
-                  className={cn(
-                    'mt-1 h-2 w-2 shrink-0 rounded-full',
-                    n.is_read ? 'bg-transparent' : 'bg-primary'
-                  )}
-                />
+                <NotificationIcon type={n.type} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-snug">{n.title}</p>
+                  <p className={cn('text-sm leading-snug', !n.is_read && 'font-semibold')}>{n.title}</p>
                   {n.message && (
                     <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
                       {n.message}
