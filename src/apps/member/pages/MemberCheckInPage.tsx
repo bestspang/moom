@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { fetchMomentumProfile, fetchMyChallengeProgress } from '../features/momentum/api';
+import { fetchMomentumProfile } from '../features/momentum/api';
 import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,11 +32,6 @@ export default function MemberCheckInPage() {
     enabled: !!memberId,
   });
 
-  const { data: challenges } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
 
   const handleCheckIn = useCallback(async (code: string) => {
     if (!code.trim() || !memberId) return;
@@ -63,7 +58,7 @@ export default function MemberCheckInPage() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-quests'] });
       setMemberCode('');
       stopScanning();
       setShowCelebration(true);
@@ -225,7 +220,6 @@ export default function MemberCheckInPage() {
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
         profile={profile ?? null}
-        challenges={challenges ?? []}
       />
     </div>
   );
