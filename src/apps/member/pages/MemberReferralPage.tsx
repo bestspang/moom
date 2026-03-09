@@ -36,7 +36,7 @@ export default function MemberReferralPage() {
       if (navigator.share) {
         await navigator.share({
           title: 'Join MOOM!',
-          text: `Use my code ${code} to sign up and we both get 200 reward points! 🎉`,
+          text: `Use my code ${code} to sign up and we both get 200 Coin! 🎉`,
           url: shareUrl,
         });
       } else {
