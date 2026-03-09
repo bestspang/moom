@@ -81,7 +81,7 @@ export function CheckInCelebration({ open, onClose, profile, challenges }: Check
 
   if (!profile) return null;
 
-  const activeChallenges = challenges.filter(c => c.status === 'active');
+  const activeChallenges = challenges.filter(c => c.status === 'in_progress');
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
