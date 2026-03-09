@@ -98,10 +98,9 @@
     --momentum-flame: 32 100% 50%;
     --momentum-flame-glow: 38 92% 50%;
     --tier-starter: 220 10% 60%;
-    --tier-regular: 32 80% 50%;
-    --tier-dedicated: 210 70% 55%;
+    --tier-mover: 32 80% 50%;
+    --tier-strong: 210 70% 55%;
     --tier-elite: 280 65% 55%;
-    --tier-champion: 38 92% 50%;
     --tier-legend: 45 93% 47%;
     --xp-bar: 32 100% 50%;
     --xp-bar-glow: 38 95% 58%;
@@ -159,10 +158,9 @@
     --momentum-flame: 32 100% 55%;
     --momentum-flame-glow: 38 92% 55%;
     --tier-starter: 220 10% 50%;
-    --tier-regular: 32 80% 55%;
-    --tier-dedicated: 210 70% 60%;
+    --tier-mover: 32 80% 55%;
+    --tier-strong: 210 70% 60%;
     --tier-elite: 280 65% 60%;
-    --tier-champion: 38 92% 55%;
     --tier-legend: 45 93% 52%;
     --xp-bar: 32 100% 55%;
     --xp-bar-glow: 38 95% 62%;

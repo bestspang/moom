@@ -1,45 +1,47 @@
 
 
-# Fix Frontend Tier/Level System to Match v1 Economy Spec
+# Fix: Promotions export missing columns in Settings
 
-## Problem (Critical — All XP/Level UI is wrong)
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The frontend hardcodes XP and tier logic that **contradicts the v1 database spec**:
+## Fix (surgical, 1 file)
 
-| What | Frontend (wrong) | DB v1 (correct) |
-|------|------------------|-----------------|
-| `xpForLevel(5)` | `2500` (n²×100) | `660` |
-| `xpForLevel(10)` | `10000` | `2360` |
-| `xpForLevel(20)` | `40000` | `8760` |
-| Tier names | starter/regular/dedicated/elite/champion/legend | starter/mover/strong/elite/legend |
-| Tier thresholds | 1/10/20/30/40/50 | 1/4/7/11/15 |
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-**Impact**: XP progress bars, level-up requirements, tier badges, and tier colors are all displaying incorrect data.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-The Edge Function (backend) correctly reads from `gamification_levels` table — only the frontend is wrong.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-## Fix — 2 files changed, 1 CSS update
-
-### 1. `src/apps/member/features/momentum/types.ts`
-
-- Change `MomentumTier` type: `'starter' | 'mover' | 'strong' | 'elite' | 'legend'`
-- Update `TIER_CONFIG` with correct names/minLevels: starter(1), mover(4), strong(7), elite(11), legend(15)
-- Replace `xpForLevel()` hardcoded formula with a **lookup table** matching the 20 DB levels (0, 120, 260, 440, 660, 920, 1220, 1560, 1940, 2360, 2820, 3320, 3860, 4440, 5060, 5720, 6420, 7160, 7940, 8760)
-- Update `tierFromLevel()` to use correct thresholds (≥15 legend, ≥11 elite, ≥7 strong, ≥4 mover, else starter)
-
-### 2. `src/index.css`
-
-- Rename CSS variables: `--tier-regular` → `--tier-mover`, `--tier-dedicated` → `--tier-strong`
-- Remove `--tier-champion` (no longer exists)
-- Keep `--tier-starter`, `--tier-elite`, `--tier-legend`
-
-### 3. No other file changes needed
-
-All consumers (`TierBadge`, `XPProgressBar`, `LevelRequirementsCard`, `MomentumCard`, `RewardDropCard`, `api.ts`) import from `types.ts` — they'll automatically use the corrected values.
-
-## Verification
-
-- XP progress bar: at level 1 with 100 XP → shows 100/120 (not 100/100)
-- Tier badge: level 5 → shows "Mover" (not "Starter")
-- Level requirements: next level XP matches DB exactly
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
