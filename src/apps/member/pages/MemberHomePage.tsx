@@ -29,7 +29,6 @@ export default function MemberHomePage() {
   const navigate = useNavigate();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading: loadingBookings } = useQuery({
     queryKey: ['member-bookings', memberId],
