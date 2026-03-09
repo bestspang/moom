@@ -160,33 +160,28 @@ export default function MemberMomentumPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200 pb-4">
-      {/* ── Hero: Profile Summary ── */}
+      {/* ── Hero: Profile Summary with big XP ── */}
       <div className="relative overflow-hidden" style={{ backgroundColor: 'hsl(var(--primary))' }}>
         {/* Decorative circles */}
         <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
         <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
 
         <div className="relative px-5 pt-14 pb-5">
-          {/* Top row: Tier + RP */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Hero XP number */}
+          <div className="text-center mb-4">
+            <p className="text-4xl font-black tracking-tight" style={{ color: 'hsl(var(--primary-foreground))' }}>
+              {profile.totalXp.toLocaleString()}
+              <span className="text-lg font-bold ml-1 opacity-70">XP</span>
+            </p>
+            <p className="text-xs font-medium mt-0.5" style={{ color: 'hsl(var(--primary-foreground) / 0.6)' }}>
+              {profile.availablePoints.toLocaleString()} RP available
+            </p>
+          </div>
+
+          {/* Tier badge centered */}
+          <div className="flex justify-center mb-3">
             <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
-              <TierBadge tier={profile.tier} level={profile.level} size="md" />
-            </div>
-            <div className="flex items-center gap-3">
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black"
-                style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                {profile.totalXp.toLocaleString()} XP
-              </div>
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black"
-                style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
-              >
-                <Gift className="h-3.5 w-3.5" />
-                {profile.availablePoints.toLocaleString()} RP
-              </div>
+              <TierBadge tier={profile.tier} level={profile.level} size="lg" />
             </div>
           </div>
 
@@ -204,6 +199,11 @@ export default function MemberMomentumPage() {
             <StreakFreezeButton memberId={memberId!} availablePoints={profile.availablePoints} />
           </div>
         </div>
+      </div>
+
+      {/* Daily Bonus Nudge */}
+      <div className="px-4 -mt-2 mb-2">
+        <DailyBonusCard />
       </div>
 
       {/* ── Tabbed Content ── */}
