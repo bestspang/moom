@@ -1,5 +1,6 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { MemberBottomNav } from '../components/MemberBottomNav';
+import { MemberHeader } from '../components/MemberHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
