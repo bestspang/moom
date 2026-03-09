@@ -163,6 +163,7 @@ const App = () => (
                   <Route path="rewards" element={<MemberRewardsPage />} />
                   <Route path="badges" element={<MemberBadgeGalleryPage />} />
                   <Route path="squad" element={<MemberSquadPage />} />
+                  <Route path="leaderboard" element={<MemberLeaderboardPage />} />
                   <Route path="profile" element={<MemberProfilePage />} />
                   <Route path="profile/edit" element={<MemberEditProfilePage />} />
                   <Route path="security" element={<MemberSecurityPage />} />

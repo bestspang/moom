@@ -115,6 +115,13 @@ export const useCreateBooking = () => {
         entity_id: data.id,
         member_id: variables.memberId,
       });
+      // Fire gamification event for class booking (fire-and-forget)
+      fireGamificationEvent({
+        event_type: 'class_booked',
+        member_id: variables.memberId,
+        idempotency_key: `class_booked:${data.id}`,
+        metadata: { schedule_id: variables.scheduleId, booking_id: data.id },
+      });
       toast.success(i18n.t('toast.bookingCreated'));
     },
     onError: (error: Error) => {
