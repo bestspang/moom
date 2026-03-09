@@ -124,7 +124,7 @@ export default function MemberRewardsPage() {
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
           </div>
         ) : !history || history.length === 0 ? (
-          <EmptyState title="No points yet" description="Earn RP by checking in and completing challenges" />
+          <EmptyState title="No points yet" description="Earn Coin by checking in and completing challenges" />
         ) : (
           <div className="space-y-1">
             {history.map(entry => (
