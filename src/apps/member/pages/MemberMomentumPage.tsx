@@ -244,6 +244,13 @@ export default function MemberMomentumPage() {
             </div>
           </div>
 
+          {/* Level-up requirements breakdown */}
+          <LevelRequirementsCard
+            profile={profile}
+            completedQuests={completedQuests}
+            totalBadges={badges?.length ?? 0}
+          />
+
           {/* Streak card */}
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Streak</p>
