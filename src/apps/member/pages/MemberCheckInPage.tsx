@@ -127,7 +127,14 @@ export default function MemberCheckInPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Check-in" subtitle="Scan QR or enter code to earn XP" />
+      <MobilePageHeader
+        title="Check-in"
+        subtitle={
+          profile?.currentStreak
+            ? `Day ${profile.currentStreak} streak! Keep it going 🔥`
+            : 'Scan QR or enter code to earn XP'
+        }
+      />
 
       <Section className="mb-6">
         <div className="flex flex-col items-center gap-5 rounded-2xl bg-card p-6 shadow-sm border border-border overflow-hidden relative">

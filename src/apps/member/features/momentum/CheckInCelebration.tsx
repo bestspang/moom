@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { StreakFlame } from './StreakFlame';
 import { TierBadge } from './TierBadge';
@@ -8,6 +9,7 @@ import type { MomentumProfile, ChallengeProgressEntry } from './types';
 import { Sparkles, Zap, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CheckInCelebrationProps {
   open: boolean;
@@ -40,17 +42,38 @@ const CONFETTI_COLORS = [
   'hsl(var(--secondary-foreground))',
 ];
 
+/** Fetch the check_in gamification rule to get real XP/RP values */
+function useCheckInRule() {
+  return useQuery({
+    queryKey: ['gamification-rule', 'check_in'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('gamification_rules')
+        .select('xp_value, points_value')
+        .eq('action_key', 'check_in')
+        .eq('is_active', true)
+        .maybeSingle();
+      return data ?? { xp_value: 100, points_value: 10 };
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function CheckInCelebration({ open, onClose, profile, challenges }: CheckInCelebrationProps) {
   const [autoDismiss, setAutoDismiss] = useState(0);
-  const xpDisplay = useCountUp(100, 800, open);
-  const rpDisplay = useCountUp(10, 600, open);
+  const { data: rule } = useCheckInRule();
+  const xpTarget = rule?.xp_value ?? 100;
+  const rpTarget = rule?.points_value ?? 10;
+  const xpDisplay = useCountUp(xpTarget, 800, open);
+  const rpDisplay = useCountUp(rpTarget, 600, open);
 
+  // Auto-dismiss in ~10s (1% every 100ms)
   useEffect(() => {
     if (!open) { setAutoDismiss(0); return; }
     const interval = setInterval(() => {
       setAutoDismiss(prev => {
         if (prev >= 100) { onClose(); return 100; }
-        return prev + 1.5;
+        return prev + 1;
       });
     }, 100);
     return () => clearInterval(interval);
@@ -77,13 +100,13 @@ export function CheckInCelebration({ open, onClose, profile, challenges }: Check
                   style={{
                     left: `${10 + (i * 20) + (j * 5)}%`,
                     top: '-8px',
-                    width: j % 2 === 0 ? '6px' : '8px',
-                    height: j % 2 === 0 ? '6px' : '8px',
+                    width: j % 2 === 0 ? '8px' : '10px',
+                    height: j % 2 === 0 ? '8px' : '10px',
                     borderRadius: j % 2 === 0 ? '50%' : '2px',
                     backgroundColor: color,
                     animationDelay: `${i * 0.1 + j * 0.2}s`,
                     animationDuration: `${1 + j * 0.3}s`,
-                    opacity: 0.7,
+                    opacity: 0.8,
                   }}
                 />
               ))

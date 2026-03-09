@@ -12,6 +12,8 @@ export default function TrainerProfilePage() {
   const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
+  const lastName = user?.user_metadata?.last_name ?? '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const email = user?.email ?? '';
 
   const hasAdminAccess = allRoles.some(r => ['owner', 'admin'].includes(r));
@@ -31,7 +33,7 @@ export default function TrainerProfilePage() {
             {firstName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-foreground truncate">{firstName}</p>
+            <p className="font-semibold text-foreground truncate">{fullName}</p>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
             <p className="text-xs text-primary mt-0.5">Trainer</p>
           </div>
