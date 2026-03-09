@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (roleError) {
         console.error('Error fetching user role:', roleError);
@@ -62,6 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (roleData) {
         setRole(roleData.role);
         setAccessLevel(roleToAccessLevel[roleData.role]);
+      } else {
+        // No role found yet (e.g. trigger hasn't fired) — default to member
+        setRole('member');
+        setAccessLevel('level_1_minimum');
       }
 
       // Fetch staff status
