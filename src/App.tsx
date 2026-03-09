@@ -143,6 +143,7 @@ const App = () => (
 
                 {/* ===== Diagnostics (dev only) ===== */}
                 <Route path="/diagnostics/surface" element={<DiagnosticsSurfacePage />} />
+                <Route path="/diagnostics/auth" element={<DiagnosticsAuthPage />} />
 
                 {/* ===== Member Surface (mobile-first) ===== */}
                 <Route path="/member" element={<MemberLayout />}>
