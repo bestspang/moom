@@ -1,5 +1,6 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { MemberBottomNav } from '../components/MemberBottomNav';
+import { MemberHeader } from '../components/MemberHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -20,7 +21,8 @@ export function MemberLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="flex-1 pb-20">
+      <MemberHeader />
+      <div className="flex-1 pt-14 pb-20">
         <Outlet />
       </div>
       <MemberBottomNav />
