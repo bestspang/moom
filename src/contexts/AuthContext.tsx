@@ -114,10 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock
-          // Only fetch if roles aren't already loaded (getSession may have already fetched)
-          // setLoading(false) is called inside fetchUserRoleAndStatus
-          if (role === null) {
+          // Only fetch if not already fetching for this user (ref guard prevents duplicates)
+          if (fetchingForUserRef.current !== session.user.id) {
             setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
           } else {
             setLoading(false);
