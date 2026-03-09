@@ -14,7 +14,7 @@ interface AuthContextType {
   staffStatus: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, signupSurface?: 'admin' | 'member') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -30,6 +30,7 @@ export const useAuth = () => {
 
 // Map app_role to access_level
 const roleToAccessLevel: Record<AppRole, AccessLevel> = {
+  member: 'level_1_minimum',
   front_desk: 'level_1_minimum',
   trainer: 'level_2_operator',
   admin: 'level_3_manager',
@@ -137,10 +138,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, signupSurface: 'admin' | 'member' = 'admin') => {
     try {
       // Note: Staff and user_roles records are now created automatically
       // via database trigger (handle_new_user) for security
+      // signup_surface determines whether a staff or member record is created
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -149,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             first_name: firstName,
             last_name: lastName,
+            signup_surface: signupSurface,
           },
         },
       });

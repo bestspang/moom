@@ -60,6 +60,7 @@ import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import SettingsIntegrations from "./pages/settings/SettingsIntegrations";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
+import MemberSignup from "./pages/Auth/MemberSignup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import Profile from "./pages/Profile";
@@ -129,7 +130,7 @@ const App = () => (
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Navigate to="/login" replace />} />
+                <Route path="/signup" element={<MemberSignup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />
