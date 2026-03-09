@@ -45,7 +45,7 @@ export default function MemberProfilePage() {
     { label: 'My Squad', icon: Heart, path: '/member/squad' },
     { label: 'Security & Login', icon: Lock, path: '/member/security' },
     { label: 'Notifications', icon: Bell, path: '/member/notifications' },
-    { label: 'Support', icon: HelpCircle, path: '/member/support' },
+    { label: 'Support', icon: HelpCircle, path: '' },
   ];
 
   return (
