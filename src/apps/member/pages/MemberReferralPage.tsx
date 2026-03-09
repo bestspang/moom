@@ -141,7 +141,7 @@ export default function MemberReferralPage() {
                   </p>
                 </div>
                 {ref.rewardGranted && (
-                  <span className="text-xs font-bold text-primary">+200 RP</span>
+                  <span className="text-xs font-bold text-primary">+200 Coin</span>
                 )}
               </div>
             ))}

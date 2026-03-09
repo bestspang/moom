@@ -127,7 +127,7 @@ export function CheckInCelebration({ open, onClose, profile, challenges }: Check
               +{xpDisplay} XP
             </p>
             <p className="text-base font-bold mt-1.5 text-primary">
-              +{rpDisplay} RP earned 🔥
+              +{rpDisplay} Coin earned 🔥
             </p>
           </div>
         </div>

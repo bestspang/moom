@@ -54,7 +54,7 @@ export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeBu
       className="gap-1.5 text-xs"
     >
       <Shield className="h-3.5 w-3.5" />
-      {freezing ? 'Freezing...' : `Freeze (${FREEZE_COST} RP)`}
+      {freezing ? 'Freezing...' : `Freeze (${FREEZE_COST} Coin)`}
     </Button>
   );
 }
