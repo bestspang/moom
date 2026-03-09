@@ -15,7 +15,7 @@ const MEMBER_NAV: NavItem[] = [
   { label: 'Home', path: '/member', icon: Home },
   { label: 'Schedule', path: '/member/schedule', icon: Calendar },
   { label: 'Check In', path: '/member/check-in', icon: ScanLine, center: true },
-  { label: 'Bookings', path: '/member/bookings', icon: BookOpen },
+  { label: 'Coupons', path: '/member/coupons', icon: Ticket },
   { label: 'Profile', path: '/member/profile', icon: User },
 ];
 
