@@ -345,35 +345,24 @@ export default function MemberMomentumPage() {
 
         {/* ═══ Quests Tab ═══ */}
         <TabsContent value="quests" className="space-y-4 mt-4">
-          {/* Active quests */}
-          {joinedQuests.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-foreground mb-3">Active Quests</p>
-              <div className="space-y-3">
-                {joinedQuests.map((quest) => (
-                  <QuestCard key={quest.id} challenge={quest} />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Daily/Weekly/Monthly Quest Hub */}
+          <QuestHub />
 
-          {/* Available to join */}
+          {/* Community Challenges (legacy gamification_challenges) */}
           {availableChallenges.length > 0 && (
             <div>
-              <p className="text-sm font-bold text-foreground mb-3">Available Quests</p>
+              <p className="text-sm font-bold text-foreground mb-3">Community Challenges</p>
               <div className="space-y-3">
                 {availableChallenges.map((c) => {
                   const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
                   return (
                     <div key={c.id} className="relative rounded-xl border bg-card p-4 space-y-3">
-                      {/* Days left badge */}
                       <div className="absolute top-3 right-3">
                         <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
                           <Clock className="h-2.5 w-2.5" />
                           {daysLeft}d left
                         </span>
                       </div>
-
                       <div className="flex items-start gap-3 pr-16">
                         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
                           <Target className="h-5 w-5 text-primary" />
@@ -385,7 +374,6 @@ export default function MemberMomentumPage() {
                           )}
                         </div>
                       </div>
-
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {(c.reward_xp ?? 0) > 0 && (
@@ -408,7 +396,7 @@ export default function MemberMomentumPage() {
                           onClick={() => joinChallenge.mutate(c.id)}
                           disabled={joinChallenge.isPending}
                         >
-                          Join Quest
+                          Join
                         </Button>
                       </div>
                     </div>
@@ -418,7 +406,19 @@ export default function MemberMomentumPage() {
             </div>
           )}
 
-          {/* Completed quests */}
+          {/* Active joined challenges */}
+          {joinedQuests.length > 0 && (
+            <div>
+              <p className="text-sm font-bold text-foreground mb-3">Active Challenges</p>
+              <div className="space-y-2">
+                {joinedQuests.map((quest) => (
+                  <QuestCard key={quest.id} challenge={quest} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Completed */}
           {completedQuests.length > 0 && (
             <div>
               <p className="text-sm font-bold text-foreground mb-3">Completed</p>
@@ -428,13 +428,6 @@ export default function MemberMomentumPage() {
                 ))}
               </div>
             </div>
-          )}
-
-          {joinedQuests.length === 0 && availableChallenges.length === 0 && (
-            <EmptyState
-              title="No quests available"
-              description="New quests are added regularly — check back soon!"
-            />
           )}
         </TabsContent>
 
