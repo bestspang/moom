@@ -13,7 +13,7 @@ import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../a
 import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { TodayCard } from '../features/momentum/TodayCard';
-import { NotificationBell } from '../features/momentum/NotificationBell';
+
 import { ChallengeCard } from '../features/momentum/ChallengeCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
