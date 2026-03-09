@@ -112,7 +112,6 @@ export default function MemberHomePage() {
       <MobilePageHeader
         title={title}
         subtitle={subtitle}
-        action={<NotificationBell onClick={() => navigate('/member/notifications')} />}
       />
 
       {/* Onboarding for new users */}
