@@ -1,47 +1,41 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Merge Bookings into Schedule + Add Shop (Coming Soon)
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Current State
+- `MemberSchedulePage` shows upcoming classes only
+- `MemberBookingsPage` is a separate page at `/member/bookings`
+- Bottom nav: Home, Schedule, Check In, Coupons, Profile (no Bookings/Shop)
+- Bookings are linked from MemberHomePage ("Next Up" section)
 
-## Fix (surgical, 1 file)
+## Plan
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### 1. Add "My Bookings" tab to MemberSchedulePage
+Add tabs at the top: **Schedule** | **My Bookings**
+- Schedule tab = current schedule view (unchanged)
+- My Bookings tab = current bookings content (filter chips + booking list)
+- This merges both views into one page
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### 2. Create MemberShopPage (Coming Soon)
+New file `src/apps/member/pages/MemberShopPage.tsx` — simple coming soon with a Shop icon and friendly message.
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### 3. Update routes in App.tsx
+- Add `/member/shop` route → `MemberShopPage`
+- Redirect `/member/bookings` → `/member/schedule` (backward compat)
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### 4. Update bottom nav
+Replace **Coupons** with **Shop** (using `ShoppingBag` icon) pointing to `/member/shop`.
+Move Coupons access to profile or momentum page instead.
+
+### 5. Update MemberHomePage links
+Change any "View all bookings" links to point to `/member/schedule` instead of `/member/bookings`.
+
+## Files
+| File | Change |
+|------|--------|
+| `MemberSchedulePage.tsx` | Add tabs with embedded bookings view |
+| `MemberShopPage.tsx` | New — Coming Soon |
+| `MemberBottomNav.tsx` | Coupons → Shop |
+| `App.tsx` | Add shop route, redirect bookings |
+| `MemberHomePage.tsx` | Update booking links to schedule |
 
