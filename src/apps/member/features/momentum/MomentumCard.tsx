@@ -10,7 +10,7 @@ import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users } from 'lucide-rea
 import type { MomentumProfile } from './types';
 
 interface MomentumCardProps {
-  memberId: string;
+  memberId: string | null;
   className?: string;
 }
 
