@@ -39,7 +39,12 @@ type TableName =
   | 'roles'
   | 'user_roles'
   | 'checkin_qr_tokens'
-  | 'transfer_slips';
+  | 'transfer_slips'
+  // ── Gamification tables ──
+  | 'member_gamification_profiles'
+  | 'badge_earnings'
+  | 'challenge_progress'
+  | 'reward_redemptions';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
