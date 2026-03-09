@@ -148,7 +148,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-semibold text-foreground truncate">{t.nameEn}</p>
                     {isWeekly && (
-                      <span className="text-[8px] font-bold uppercase text-blue-500 bg-blue-500/10 rounded-full px-1.5 py-0.5 flex-shrink-0">
+                      <span className="text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 flex-shrink-0" style={{ color: 'hsl(var(--status-info))', backgroundColor: 'hsl(var(--status-info) / 0.1)' }}>
                         weekly
                       </span>
                     )}
