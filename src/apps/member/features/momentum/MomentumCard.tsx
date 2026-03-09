@@ -42,7 +42,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
 
   const { data: myBadges } = useQuery({
     queryKey: ['my-badges', memberId],
-    queryFn: () => fetchMyBadges(memberId),
+    queryFn: () => fetchMyBadges(memberId!),
     enabled: !!memberId,
   });
 
