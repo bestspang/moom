@@ -154,6 +154,37 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 32 100% 50%;
+
+    /* Momentum / Gamification tokens (dark) */
+    --momentum-flame: 32 100% 55%;
+    --momentum-flame-glow: 38 92% 55%;
+    --tier-starter: 220 10% 50%;
+    --tier-regular: 32 80% 55%;
+    --tier-dedicated: 210 70% 60%;
+    --tier-elite: 280 65% 60%;
+    --tier-champion: 38 92% 55%;
+    --tier-legend: 45 93% 52%;
+    --xp-bar: 32 100% 55%;
+    --xp-bar-glow: 38 95% 62%;
+
+    /* Rarity system (dark) */
+    --rarity-common: 220 10% 50%;
+    --rarity-rare: 210 70% 60%;
+    --rarity-epic: 280 65% 60%;
+    --rarity-legendary: 45 93% 52%;
+
+    /* Coach levels (dark) */
+    --coach-rising: 210 60% 60%;
+    --coach-established: 152 55% 48%;
+    --coach-senior: 32 80% 55%;
+    --coach-master: 280 65% 60%;
+    --coach-elite: 45 93% 52%;
+
+    /* Partner tiers (dark) */
+    --partner-new: 220 10% 50%;
+    --partner-verified: 152 55% 48%;
+    --partner-preferred: 210 70% 60%;
+    --partner-premium: 45 93% 52%;
   }
 }
 

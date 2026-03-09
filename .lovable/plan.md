@@ -1,52 +1,47 @@
 
 
-# Gamification System — Full Consistency Audit & Fix Plan
+# Fix: Promotions export missing columns in Settings
 
-## Issues Found (verified against actual code + DB schema)
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### 1. BUG: CheckInCelebration shows zero challenges (CONFIRMED)
-**File**: `src/apps/member/features/momentum/CheckInCelebration.tsx` line 84
-**Root cause**: Filters `c.status === 'active'` but the DB enum `challenge_progress_status` only has values: `'in_progress' | 'completed' | 'failed' | 'expired'`. The value `'active'` never exists.
-**Impact**: After check-in, the celebration dialog never shows challenge progress — even if the member has active challenges.
-**Fix**: Change `'active'` → `'in_progress'`
+## Fix (surgical, 1 file)
 
-### 2. Dark mode missing gamification CSS vars
-**File**: `src/index.css` lines 129-157
-**Root cause**: The `.dark` block does not define `--momentum-flame`, `--tier-*`, `--rarity-*`, `--xp-bar*` variables. Currently falls through to `:root` values, which technically works but may have poor contrast on dark backgrounds.
-**Impact**: Low — most users likely on light mode. But for completeness, should add dark-mode-appropriate gamification tokens.
-**Fix**: Add gamification CSS vars to `.dark` block with adjusted values for dark backgrounds.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 3. No issues found (verified correct)
-- **Routes**: `/member/momentum` is registered in `App.tsx` ✅
-- **MomentumCard** fallback: Shows starter profile when no DB row ✅
-- **Badge gallery**: Horizontal scroll + rarity labels ✅
-- **Leaderboard/Squad quick links**: Present in both MomentumCard and Momentum Hub ✅
-- **DailyBonusCard**: On both home page and momentum page ✅
-- **LevelRequirementsCard**: Present in Level tab ✅
-- **QuestCard**: Days left badge + XP/RP rewards shown ✅
-- **CSS animations**: `animate-flame-flicker`, `animate-pulse-glow`, `animate-bounce-in` defined in `@layer utilities` ✅
-- **CSS vars**: `--xp-bar`, `--momentum-flame`, `--rarity-*`, `--tier-*` all defined in `:root` ✅
-- **Bottom nav**: Check-In centered, 5 tabs correct ✅
-- **MemberMomentumPage**: 3 tabs (Level/Quests/Rewards) with hero XP display ✅
-- **Join challenge mutation**: Correctly inserts with `status: 'in_progress'` ✅
-- **API functions** (`api.ts`): All match DB schema correctly ✅
-- **Types** (`types.ts`): `MomentumTier` uses `'dedicated'` matching CSS var `--tier-dedicated` ✅
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## Implementation Plan
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### Step 1: Fix CheckInCelebration challenge filter (surgical, 1 line)
-- `CheckInCelebration.tsx` line 84: `'active'` → `'in_progress'`
-- Zero risk — fixes a broken filter
-
-### Step 2: Add dark mode gamification CSS vars
-- `index.css`: Add `--momentum-flame`, `--tier-*`, `--rarity-*`, `--xp-bar*`, `--coach-*`, `--partner-*` to `.dark` block
-- Pure additive — only affects dark mode appearance
-
-### Files to modify
-- `src/apps/member/features/momentum/CheckInCelebration.tsx` (1 line fix)
-- `src/index.css` (add ~20 lines to `.dark` block)
-
-### Risk: Near-zero
-- Fix #1: Corrects a filter that was silently broken — no behavior change for anything working today
-- Fix #2: Purely additive CSS vars in `.dark` — does not affect light mode
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
