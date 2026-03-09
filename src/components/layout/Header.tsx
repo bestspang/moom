@@ -24,7 +24,7 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, role, signOut } = useAuth();
+  const { user, role, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadCount();
