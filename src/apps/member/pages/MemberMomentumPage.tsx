@@ -28,8 +28,10 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
   Zap, Gift, Target, Trophy, Award, Clock,
-  ChevronRight, Sparkles, Shield,
+  ChevronRight, Sparkles, Shield, ScanLine,
 } from 'lucide-react';
+import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
+import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
 
 const EVENT_LABELS: Record<string, string> = {
   checkin: 'Check-in',
@@ -48,6 +50,13 @@ const BADGE_TIER_COLORS: Record<string, string> = {
   silver: 'border-slate-400/50',
   gold: 'border-yellow-400/50',
   platinum: 'border-violet-400/50',
+};
+
+const RARITY_LABELS: Record<string, { label: string; className: string }> = {
+  bronze: { label: 'Common', className: 'text-muted-foreground' },
+  silver: { label: 'Rare', className: 'text-blue-500' },
+  gold: { label: 'Epic', className: 'text-yellow-500' },
+  platinum: { label: 'Legendary', className: 'text-violet-500' },
 };
 
 export default function MemberMomentumPage() {
@@ -158,33 +167,28 @@ export default function MemberMomentumPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200 pb-4">
-      {/* ── Hero: Profile Summary ── */}
+      {/* ── Hero: Profile Summary with big XP ── */}
       <div className="relative overflow-hidden" style={{ backgroundColor: 'hsl(var(--primary))' }}>
         {/* Decorative circles */}
         <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
         <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
 
         <div className="relative px-5 pt-14 pb-5">
-          {/* Top row: Tier + RP */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Hero XP number */}
+          <div className="text-center mb-4">
+            <p className="text-4xl font-black tracking-tight" style={{ color: 'hsl(var(--primary-foreground))' }}>
+              {profile.totalXp.toLocaleString()}
+              <span className="text-lg font-bold ml-1 opacity-70">XP</span>
+            </p>
+            <p className="text-xs font-medium mt-0.5" style={{ color: 'hsl(var(--primary-foreground) / 0.6)' }}>
+              {profile.availablePoints.toLocaleString()} RP available
+            </p>
+          </div>
+
+          {/* Tier badge centered */}
+          <div className="flex justify-center mb-3">
             <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
-              <TierBadge tier={profile.tier} level={profile.level} size="md" />
-            </div>
-            <div className="flex items-center gap-3">
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black"
-                style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                {profile.totalXp.toLocaleString()} XP
-              </div>
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black"
-                style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
-              >
-                <Gift className="h-3.5 w-3.5" />
-                {profile.availablePoints.toLocaleString()} RP
-              </div>
+              <TierBadge tier={profile.tier} level={profile.level} size="lg" />
             </div>
           </div>
 
@@ -202,6 +206,11 @@ export default function MemberMomentumPage() {
             <StreakFreezeButton memberId={memberId!} availablePoints={profile.availablePoints} />
           </div>
         </div>
+      </div>
+
+      {/* Daily Bonus Nudge */}
+      <div className="px-4 -mt-2 mb-2">
+        <DailyBonusCard />
       </div>
 
       {/* ── Tabbed Content ── */}
@@ -242,6 +251,13 @@ export default function MemberMomentumPage() {
             </div>
           </div>
 
+          {/* Level-up requirements breakdown */}
+          <LevelRequirementsCard
+            profile={profile}
+            completedQuests={completedQuests}
+            totalBadges={badges?.length ?? 0}
+          />
+
           {/* Streak card */}
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Streak</p>
@@ -255,24 +271,26 @@ export default function MemberMomentumPage() {
           </div>
 
           {/* Badges horizontal scroll */}
-          {badges && badges.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-foreground">Badges</p>
-                <button
-                  onClick={() => navigate('/member/badges')}
-                  className="flex items-center gap-0.5 text-xs font-medium text-primary"
-                >
-                  View all <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
+          {/* Badges with rarity labels */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-foreground">Badges</p>
+              <button
+                onClick={() => navigate('/member/badges')}
+                className="flex items-center gap-0.5 text-xs font-medium text-primary"
+              >
+                View all <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+            {badges && badges.length > 0 ? (
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                 {badges.slice(0, 8).map((mb) => {
                   const tierClass = BADGE_TIER_COLORS[mb.badge?.tier ?? 'bronze'] ?? BADGE_TIER_COLORS.bronze;
+                  const rarityLabel = RARITY_LABELS[mb.badge?.tier ?? 'bronze'] ?? RARITY_LABELS.bronze;
                   return (
                     <div
                       key={mb.id}
-                      className={`flex-shrink-0 flex flex-col items-center gap-1.5 rounded-xl border-2 bg-card p-3 w-20 ${tierClass}`}
+                      className={`flex-shrink-0 flex flex-col items-center gap-1 rounded-xl border-2 bg-card p-3 w-20 ${tierClass}`}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
                         {mb.badge?.iconUrl ? (
@@ -284,12 +302,20 @@ export default function MemberMomentumPage() {
                       <p className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2">
                         {mb.badge?.nameEn ?? 'Badge'}
                       </p>
+                      <span className={`text-[8px] font-bold uppercase tracking-wider ${rarityLabel.className}`}>
+                        {rarityLabel.label}
+                      </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span className="text-xs font-medium">Complete quests to earn badges!</span>
+              </div>
+            )}
+          </div>
 
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">

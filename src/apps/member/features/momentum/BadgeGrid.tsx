@@ -17,6 +17,13 @@ const RARITY_MAP: Record<string, string> = {
   platinum: '--rarity-legendary',
 };
 
+const RARITY_LABELS: Record<string, { label: string; className: string }> = {
+  bronze: { label: 'Common', className: 'text-muted-foreground' },
+  silver: { label: 'Rare', className: 'text-blue-500' },
+  gold: { label: 'Epic', className: 'text-yellow-500' },
+  platinum: { label: 'Legendary', className: 'text-violet-500' },
+};
+
 function getRarityVar(tier?: string): string {
   return RARITY_MAP[tier ?? ''] ?? '--rarity-common';
 }
@@ -78,6 +85,11 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
             <span className="text-[10px] font-semibold text-foreground leading-tight">
               {mb.badge?.nameEn ?? 'Badge'}
             </span>
+            {mb.badge?.tier && RARITY_LABELS[mb.badge.tier] && (
+              <span className={`text-[8px] font-bold uppercase tracking-wider ${RARITY_LABELS[mb.badge.tier].className}`}>
+                {RARITY_LABELS[mb.badge.tier].label}
+              </span>
+            )}
           </div>
         );
       })}

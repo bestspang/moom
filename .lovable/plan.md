@@ -1,53 +1,47 @@
 
 
-# Gamification UI — Diagnosis + Enhancement Plan
+# Fix: Promotions export missing columns in Settings
 
-## Why You Don't See Gamification UI
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The screenshots you uploaded (gear icon in header, "Buy Package" button, "Your Stats" section, old bottom nav without centered Check-In) are from **old cached code**. The current codebase already has:
+## Fix (surgical, 1 file)
 
-- MomentumCard with XP/RP/Streak/Badges/Quests on home page ✅
-- Centered Check-In button in bottom nav ✅
-- No gear icon in header ✅
-- Full Momentum Hub page at `/member/momentum` with Level/Quests/Rewards tabs ✅
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-**Your preview needs a hard refresh** (Cmd+Shift+R) to see the latest code. The session replay confirms you're on a 404 page, not `/member`.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## Additional Gamification Enhancements (Beyond Current)
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-To push the UI closer to the reference screenshots, I'll add:
-
-### 1. Daily Check-in Bonus Card (on Home + Momentum Hub)
-- "Check in today to earn +50 XP!" motivational nudge
-- Shows whether today's check-in reward has been claimed
-- Pulses gently to draw attention
-
-### 2. Level-Up Requirements Section (Momentum Hub → Level tab)
-- Shows what the user needs to reach the next level
-- Progress breakdown: "X of Y check-ins", "X of Y classes attended"
-- Visual progress bars per requirement (like the reference "10 of 10", "7 of 10")
-
-### 3. Active Perks Section with Rarity Labels
-- Horizontal scroll of earned badges with **rarity labels** (Common/Rare/Epic/Legendary)
-- Color-coded borders matching tier
-- Badge name underneath each icon
-
-### 4. XP as Hero Number on Momentum Page
-- Large "1,500 XP" as the main hero stat (like reference screenshot 3)
-- "Hold: 0 XP" subtitle for pending XP
-
-### 5. "Earn More" Quick Action
-- Prominent button linking to available quests
-- Shows count of joinable challenges
-
-## Files to Modify
-- `MemberHomePage.tsx` — Add daily bonus nudge card above MomentumCard
-- `MemberMomentumPage.tsx` — Hero XP display, level requirements section, active perks with rarity, "Earn More" button
-- `MomentumCard.tsx` — Add daily bonus indicator dot
-- `BadgeGrid.tsx` — Add rarity label underneath each badge
-
-## Risk: Zero
-- All additive cosmetic/UX changes
-- No DB or edge function changes needed
-- Existing functionality preserved
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

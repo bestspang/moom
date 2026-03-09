@@ -11,6 +11,7 @@ import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone } from 'lucide-re
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { MomentumCard } from '../features/momentum/MomentumCard';
+import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
@@ -131,6 +132,11 @@ export default function MemberHomePage() {
             Book Class
           </Button>
         </div>
+      </Section>
+
+      {/* Daily Bonus Nudge */}
+      <Section className="mb-4">
+        <DailyBonusCard />
       </Section>
 
       {/* Momentum */}
