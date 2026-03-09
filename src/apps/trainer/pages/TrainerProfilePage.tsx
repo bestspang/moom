@@ -12,6 +12,8 @@ export default function TrainerProfilePage() {
   const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
+  const lastName = user?.user_metadata?.last_name ?? '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const email = user?.email ?? '';
 
   const hasAdminAccess = allRoles.some(r => ['owner', 'admin'].includes(r));
