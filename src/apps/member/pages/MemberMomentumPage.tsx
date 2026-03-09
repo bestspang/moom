@@ -181,7 +181,7 @@ export default function MemberMomentumPage() {
               <span className="text-lg font-bold ml-1 opacity-70">XP</span>
             </p>
             <p className="text-xs font-medium mt-0.5" style={{ color: 'hsl(var(--primary-foreground) / 0.6)' }}>
-              {profile.availablePoints.toLocaleString()} RP available
+              {profile.availablePoints.toLocaleString()} Coin available
             </p>
           </div>
 
