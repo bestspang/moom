@@ -1,47 +1,65 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# `/liff/member` คืออะไร + Gamification UX/UI Upgrade
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## `/liff/member` คือ?
 
-## Fix (surgical, 1 file)
+`/liff/member` คือ **LINE LIFF Shell** — เป็น mini-app ที่รันภายใน LINE app โดยตรง ใช้สำหรับ member ที่เข้าผ่าน LINE (ไม่ต้อง login ด้วย email) ตอนนี้มันเป็นแค่ shell เบาๆ มี:
+- Welcome header + LINE profile picture
+- แสดง member ID
+- Bottom nav 5 tabs แต่ 4 tabs ยังเป็น "Coming Soon"
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+**สรุป**: มันเป็น placeholder สำหรับ LINE users — ยังไม่มี gamification UI เลย
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+---
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+## แผนอัพเกรด Gamification UX/UI
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+จาก reference screenshots ที่ส่งมา จะเห็น pattern หลัก:
+1. **Tabbed hub** — Level / Quests / Redeem ในหน้าเดียว
+2. **XP/RP balance bar** เด่นชัดด้านบน
+3. **Mission cards** ที่มี "days left", reward preview, progress bar
+4. **Badge/Perk gallery** แบบ horizontal scroll พร้อม rarity color
+
+### สิ่งที่จะทำ (Focus: Member App `/member`)
+
+#### 1. สร้าง **Momentum Hub Page** — `/member/momentum`
+หน้ารวม gamification ทั้งหมดในที่เดียว แทนที่จะกระจายหลายหน้า
+
+**3 Tabs:**
+- **Level** — XP progress, tier badge, streak, level requirements
+- **Quests** — Active challenges + joinable challenges with days left & rewards
+- **Rewards** — RP balance + redeemable rewards + history
+
+**Top bar:** แสดง XP balance + RP balance ชัดเจนเหมือน reference
+
+#### 2. อัพเกรด **MomentumCard** บนหน้า Home
+- Tap ที่ card → navigate ไป `/member/momentum` (hub)
+- เพิ่ม "Active Quests" section ใต้ streak row (compact, max 2)
+- ให้ card ดู "gamified" มากขึ้น — subtle gradient, level requirements preview
+
+#### 3. อัพเกรด **Quest/Challenge Cards**
+- เพิ่ม "days left" badge ที่มุมขวาบน
+- แสดง reward (XP + RP) ชัดเจนขึ้น
+- Progress bar มี shimmer effect (มีแล้ว ✅)
+- ใช้ icon ตาม challenge type
+
+#### 4. เพิ่ม **Active Perks/Badges** horizontal scroll
+- แสดงบน Momentum Hub ใต้ level info
+- แต่ละ badge มี rarity border color (Common/Rare/Epic/Legendary) — มีแล้วใน BadgeGallery, จะ reuse
+
+### Files to Create
+- `src/apps/member/pages/MemberMomentumPage.tsx` — Hub page with 3 tabs
+
+### Files to Modify
+- `src/App.tsx` — Add route `/member/momentum`
+- `src/apps/member/features/momentum/MomentumCard.tsx` — Add quest preview + tap to navigate
+- `src/apps/member/features/momentum/QuestCard.tsx` — Enhanced layout with days left
+- `src/apps/member/pages/MemberHomePage.tsx` — Remove standalone Challenges section (moved into MomentumCard)
+- `src/apps/member/components/MemberBottomNav.tsx` — Consider swapping or no change (Check-in stays center)
+
+### Risk
+- Low — all additive, new page + enhanced existing components
+- MemberRewardsPage and MemberBadgeGalleryPage stay as-is (deep links still work)
+- No DB/edge function changes needed
 
