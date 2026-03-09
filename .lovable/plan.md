@@ -1,100 +1,47 @@
 
 
-# MOOM Momentum Club — Recheck & Remaining Gaps
+# Fix: Promotions export missing columns in Settings
 
-## Verification Summary
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-| Area | Status | Notes |
-|------|--------|-------|
-| DB Schema (quest_templates, quest_instances, coupon_templates, coupon_wallet, shop_reward_rules) | ✅ Done | |
-| Badge columns (badge_type, effect_type, effect_value, duration_days) | ✅ Done | |
-| Reward columns (cash_price, reward_type, required_badge_id) | ✅ Done | |
-| Seed data (rules, levels, quests, badges, rewards, coupons, shop rules) | ✅ Done | |
-| Edge Functions (assign-quests, claim-quest, issue-coupon, process-event quest tracking) | ✅ Done | |
-| QuestHub wired into MemberMomentumPage | ✅ Done (line 349) | |
-| MemberCouponsPage + route | ✅ Done | |
-| Admin: GamificationQuests / Coupons / ShopRules tabs | ✅ Done | |
-| Admin: CreateBadgeDialog (badge_type, effect_type, duration_days) | ✅ Done | |
-| Admin: CreateRewardDialog (reward_type, cash_price) | ✅ Done | |
-| "RP" renamed to "Coin" in MomentumPage & RewardsPage | ✅ Done | |
+## Fix (surgical, 1 file)
 
-## Remaining Gaps
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### Gap 1: RewardDropCard does NOT show hybrid coin+cash pricing
-`RewardDropCard.tsx` only shows `pointsCost`. For hybrid rewards (e.g., "Exclusive shaker: 80 coin + ฿199"), it should display both the coin cost AND cash price. The `cashPrice` field exists in the type but is never rendered.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### Gap 2: Badge Gallery does NOT show badge_type or effect info
-`MemberBadgeGalleryPage.tsx` shows badges with tier/rarity but doesn't display:
-- Badge type label (Permanent / Boost / Access)
-- Effect description (e.g., "+2 coin per 3rd visit")
-- Expiry countdown for boost badges
-- The `badgeType`, `effectType`, `effectValue`, `durationDays` fields are mapped in the API but never rendered.
-
-### Gap 3: No Level Perks display
-There is no `LevelPerksCard` component. The spec defines perks per level (e.g., Level 3 = profile frame, Level 5 = merch coupon access, Level 10 = package coupon tier 1). The `LevelRequirementsCard` shows XP/streak/quests/badges progress but NOT what perks the user has unlocked or what's coming next.
-
-### Gap 4: Trainer system not started (Batch D)
-- No trainer-specific quests, coin tracking, or rewards
-- Existing `CoachImpactCard` and `PartnerReputationCard` show score/metrics but no coin balance or quest system
-- No trainer reward catalog
-
-### Gap 5: MemberBottomNav missing Coupon entry
-The coupon page exists at `/member/coupons` but there's no navigation entry to reach it from the member app.
-
----
-
-## Implementation Plan
-
-### Batch 1: Enhance RewardDropCard for hybrid pricing
-**File:** `src/apps/member/features/momentum/RewardDropCard.tsx`
-- Show `cashPrice` alongside coin cost when `cashPrice > 0`
-- Display as "80 Coin + ฿199" format
-- Show `rewardType` badge label (Digital, Perk, Hybrid, etc.)
-
-### Batch 2: Enhance Badge Gallery with types & effects
-**File:** `src/apps/member/pages/MemberBadgeGalleryPage.tsx`
-- Add badge type label (Permanent / Boost / Access / Seasonal)
-- Show effect description for non-cosmetic badges
-- Show expiry timer for boost badges (using `durationDays` + `earnedAt`)
-- Visual distinction between permanent vs time-limited badges
-
-### Batch 3: Create Level Perks Card
-**New file:** `src/apps/member/features/momentum/LevelPerksCard.tsx`
-- Fetch from `gamification_levels` table
-- Show unlocked perks (levels ≤ current) with check marks
-- Show upcoming perks (next 2-3 levels) with lock icons
-- Wire into MemberMomentumPage Level tab
-
-**Update:** `src/apps/member/features/momentum/api.ts` — add `fetchLevelPerks()` function
-**Update:** `src/apps/member/pages/MemberMomentumPage.tsx` — add LevelPerksCard to Level tab
-
-### Batch 4: Add Coupon navigation
-**File:** `src/apps/member/components/MemberBottomNav.tsx`
-- Add coupons link or integrate into existing nav (e.g., Rewards section)
-- Or: add a coupon shortcut button on MemberMomentumPage rewards tab
-
-### Batch 5: Trainer system foundations (deferred per user's rollout plan)
-- Seed trainer quest templates
-- Add coin tracking to trainer scores
-- Trainer reward catalog
-- This is Phase 2 per spec — will note but not implement now unless requested
-
----
-
-## Files to modify/create
-
-| File | Change |
-|------|--------|
-| `src/apps/member/features/momentum/RewardDropCard.tsx` | Show hybrid coin+cash pricing |
-| `src/apps/member/pages/MemberBadgeGalleryPage.tsx` | Badge types, effects, expiry |
-| `src/apps/member/features/momentum/LevelPerksCard.tsx` | **New** — level perks display |
-| `src/apps/member/features/momentum/api.ts` | Add `fetchLevelPerks()` |
-| `src/apps/member/pages/MemberMomentumPage.tsx` | Wire LevelPerksCard |
-| `src/apps/member/components/MemberBottomNav.tsx` | Add coupon nav entry |
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
 ## Risk
-- All changes are additive UI enhancements
-- No DB changes needed — all columns/tables already exist
-- No edge function changes needed
-- Zero regression risk to existing flows
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

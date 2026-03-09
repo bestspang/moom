@@ -83,15 +83,28 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
       </div>
 
       <div className="p-3">
+        {/* Reward type label */}
+        {reward.rewardType && reward.rewardType !== 'digital' && (
+          <span className="inline-block text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 bg-accent text-accent-foreground mb-1.5">
+            {reward.rewardType === 'hybrid' ? 'Coin + Cash' : reward.rewardType}
+          </span>
+        )}
         <h3 className="text-sm font-bold text-foreground line-clamp-1">{reward.nameEn}</h3>
         {reward.descriptionEn && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{reward.descriptionEn}</p>
         )}
 
         <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
-            <Gift className="h-4 w-4" />
-            {reward.pointsCost}
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
+              <Gift className="h-4 w-4" />
+              {reward.pointsCost}
+            </div>
+            {(reward.cashPrice ?? 0) > 0 && (
+              <span className="text-[10px] font-bold text-muted-foreground text-center">
+                + ฿{Number(reward.cashPrice).toLocaleString()}
+              </span>
+            )}
           </div>
 
           {alreadyRedeemed ? (

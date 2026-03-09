@@ -15,6 +15,31 @@ const TIER_COLORS: Record<string, { bg: string; text: string; label: string }> =
   platinum: { bg: 'bg-violet-100 dark:bg-violet-900/20', text: 'text-violet-700 dark:text-violet-400', label: 'Legendary' },
 };
 
+const BADGE_TYPE_LABELS: Record<string, { label: string; className: string }> = {
+  permanent: { label: 'Permanent', className: 'bg-primary/10 text-primary' },
+  boost: { label: 'Boost', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' },
+  access: { label: 'Access', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
+  seasonal: { label: 'Seasonal', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400' },
+};
+
+function getExpiryText(earnedAt: string, durationDays?: number | null): string | null {
+  if (!durationDays) return null;
+  const expiresAt = new Date(earnedAt);
+  expiresAt.setDate(expiresAt.getDate() + durationDays);
+  const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (daysLeft <= 0) return 'Expired';
+  return `${daysLeft}d left`;
+}
+
+function formatEffect(effectType?: string, effectValue?: Record<string, unknown>): string | null {
+  if (!effectType || effectType === 'cosmetic') return null;
+  const val = effectValue as Record<string, number> | undefined;
+  if (effectType === 'coin_bonus') return `+${val?.amount ?? '?'} coin bonus`;
+  if (effectType === 'xp_bonus') return `+${val?.amount ?? '?'} XP bonus`;
+  if (effectType === 'access') return 'Unlocks access';
+  return effectType.replace(/_/g, ' ');
+}
+
 function getTierStyle(tier?: string) {
   return TIER_COLORS[tier ?? 'bronze'] ?? TIER_COLORS.bronze;
 }
@@ -60,36 +85,62 @@ export default function MemberBadgeGalleryPage() {
             {badges.map((mb, i) => {
               const style = getTierStyle(mb.badge?.tier);
               return (
-                <div
-                  key={mb.id}
-                  className="relative rounded-xl border bg-card p-4 shadow-sm flex flex-col items-center text-center gap-2.5 overflow-hidden"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  {/* Tier label */}
-                  <span className={`text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 ${style.bg} ${style.text}`}>
-                    {style.label}
-                  </span>
+                (() => {
+                  const badgeTypeInfo = BADGE_TYPE_LABELS[mb.badge?.badgeType ?? 'permanent'] ?? BADGE_TYPE_LABELS.permanent;
+                  const expiryText = getExpiryText(mb.earnedAt, mb.badge?.durationDays);
+                  const effectText = formatEffect(mb.badge?.effectType, mb.badge?.effectValue as Record<string, unknown> | undefined);
 
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg}`}>
-                    {mb.badge?.iconUrl ? (
-                      <img src={mb.badge.iconUrl} alt={mb.badge.nameEn} className="h-8 w-8 drop-shadow-sm" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
-                  </div>
+                  return (
+                    <div
+                      key={mb.id}
+                      className="relative rounded-xl border bg-card p-4 shadow-sm flex flex-col items-center text-center gap-2.5 overflow-hidden"
+                      style={{ animationDelay: `${i * 60}ms` }}
+                    >
+                      {/* Expiry ribbon for boost badges */}
+                      {expiryText && (
+                        <div className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[8px] font-bold ${expiryText === 'Expired' ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'}`}>
+                          {expiryText}
+                        </div>
+                      )}
 
-                  <p className="text-sm font-bold text-foreground leading-tight">
-                    {mb.badge?.nameEn ?? 'Badge'}
-                  </p>
-                  {mb.badge?.descriptionEn && (
-                    <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
-                      {mb.badge.descriptionEn}
-                    </p>
-                  )}
-                  <p className="text-[10px] text-muted-foreground mt-auto font-medium">
-                    {format(new Date(mb.earnedAt), 'MMM d, yyyy')}
-                  </p>
-                </div>
+                      {/* Badge type + Tier labels */}
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 ${badgeTypeInfo.className}`}>
+                          {badgeTypeInfo.label}
+                        </span>
+                        <span className={`text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 ${style.bg} ${style.text}`}>
+                          {style.label}
+                        </span>
+                      </div>
+
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg}`}>
+                        {mb.badge?.iconUrl ? (
+                          <img src={mb.badge.iconUrl} alt={mb.badge.nameEn} className="h-8 w-8 drop-shadow-sm" />
+                        ) : (
+                          <Trophy className={`h-7 w-7 ${style.text}`} />
+                        )}
+                      </div>
+
+                      <p className="text-sm font-bold text-foreground leading-tight">
+                        {mb.badge?.nameEn ?? 'Badge'}
+                      </p>
+                      {mb.badge?.descriptionEn && (
+                        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                          {mb.badge.descriptionEn}
+                        </p>
+                      )}
+                      {/* Effect info */}
+                      {effectText && (
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                          {effectText}
+                        </span>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-auto font-medium">
+                        {format(new Date(mb.earnedAt), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  );
+                })()
               );
             })}
           </div>
