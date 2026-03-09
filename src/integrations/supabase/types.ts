@@ -3789,7 +3789,7 @@ export type Database = {
       ai_run_status: "pending" | "running" | "completed" | "failed"
       ai_suggestion_status: "pending" | "approved" | "rejected" | "applied"
       announcement_status: "active" | "scheduled" | "completed"
-      app_role: "owner" | "admin" | "trainer" | "front_desk"
+      app_role: "owner" | "admin" | "trainer" | "front_desk" | "member"
       booking_status: "booked" | "cancelled" | "attended" | "no_show"
       challenge_progress_status:
         | "in_progress"
@@ -4003,7 +4003,7 @@ export const Constants = {
       ai_run_status: ["pending", "running", "completed", "failed"],
       ai_suggestion_status: ["pending", "approved", "rejected", "applied"],
       announcement_status: ["active", "scheduled", "completed"],
-      app_role: ["owner", "admin", "trainer", "front_desk"],
+      app_role: ["owner", "admin", "trainer", "front_desk", "member"],
       booking_status: ["booked", "cancelled", "attended", "no_show"],
       challenge_progress_status: [
         "in_progress",
