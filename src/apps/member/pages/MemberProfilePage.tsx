@@ -19,8 +19,10 @@ type AppRole = Database['public']['Enums']['app_role'];
 const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'];
 
 export default function MemberProfilePage() {
-  const { signOut } = useAuth();
+  const { signOut, allRoles } = useAuth();
   const { firstName, lastName, email, memberId } = useMemberSession();
+  const navigate = useNavigate();
+  const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
   const navigate = useNavigate();
 
   const { data: momentum } = useQuery({
