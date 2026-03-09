@@ -1,96 +1,47 @@
 
 
-# MOOM Momentum Club — Gap Analysis & Next Steps
+# Fix: Promotions export missing columns in Settings
 
-## Current State (Verified Against Spec)
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### ✅ Fully Complete
-| Area | Status |
-|------|--------|
-| DB Schema (all 5 new tables + alterations) | ✅ Done |
-| Seed data (15 rules, 20 levels, 25 quests, 20 badges, 21 rewards, 9 coupons, 2 shop rules) | ✅ Done, values match spec |
-| RLS policies on all new tables | ✅ Done |
-| Edge Functions (assign-quests, claim-quest, issue-coupon) | ✅ Done |
-| Quest progress tracking in process-event | ✅ Done |
-| QuestHub component (daily/weekly/monthly with claim) | ✅ Done |
-| MemberCouponsPage + route | ✅ Done |
-| MemberRewardsPage "Coin" terminology | ✅ Done |
-| api.ts quest/coupon fetchers | ✅ Done |
+## Fix (surgical, 1 file)
 
-### ❌ Gaps Found
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-**Gap 1: QuestHub NOT wired into MemberMomentumPage**
-The Quests tab (line 346–438) still uses the OLD `gamification_challenges` + `QuestCard` component. The new `QuestHub` component (which reads from `quest_instances`/`quest_templates`) exists but is never imported or rendered. This is the **biggest functional gap** — users won't see their daily/weekly quests.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**Gap 2: Stale "RP" text in MemberMomentumPage**
-- Line 473: `"keep earning RP!"` → should be "Coin"
-- Line 499: `"Earn RP by checking in"` → should be "Coin"
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-**Gap 3: Admin UI — 3 missing tabs (Phase 5 not started)**
-GamificationStudio has 8 tabs but is missing:
-- **Quests** tab (CRUD on `quest_templates`)
-- **Coupons** tab (CRUD on `coupon_templates`)
-- **Shop Rules** tab (CRUD on `shop_reward_rules`)
-
-**Gap 4: Admin dialogs not enhanced**
-- `CreateBadgeDialog` — missing `badge_type`, `effect_type`, `effect_value`, `duration_days` fields
-- `CreateRewardDialog` — missing `cash_price`, `reward_type`, `required_badge_id` fields
-
-**Gap 5: Trainer system (Phase 6 not started)**
-- No trainer-specific quest templates in DB
-- No trainer coin tracking
-- No trainer rewards
-
----
-
-## Implementation Plan
-
-### Batch A — Fix Member Quests Tab (Critical)
-1. **Replace old Quests tab content** in `MemberMomentumPage.tsx` with the `QuestHub` component
-   - Remove the old `gamification_challenges` based quest rendering (lines 346–438)
-   - Import and render `<QuestHub />` instead
-   - Keep the old `gamification_challenges` "Available Quests" section below QuestHub as "Community Challenges" for backward compatibility
-
-2. **Fix remaining "RP" → "Coin"** text (2 spots in MemberMomentumPage)
-
-### Batch B — Admin UI: Quest/Coupon/Shop Tabs
-3. **Create `GamificationQuests.tsx`** — Quest template CRUD page with period filters (daily/weekly/monthly/seasonal)
-4. **Create `GamificationCoupons.tsx`** — Coupon template CRUD page  
-5. **Create `GamificationShopRules.tsx`** — Shop reward rules CRUD page
-6. **Create hooks**: `useGamificationQuests.ts`, `useGamificationCoupons.ts`, `useGamificationShopRules.ts`
-7. **Add 3 new tabs** to `GamificationStudio.tsx` and routes in `App.tsx`
-
-### Batch C — Enhanced Admin Dialogs
-8. **Enhance `CreateBadgeDialog`** — Add badge_type dropdown, effect_type, effect_value JSON, duration_days
-9. **Enhance `CreateRewardDialog`** — Add cash_price, reward_type dropdown, required_badge_id selector
-
-### Batch D — Trainer System (deferred to Phase 2 per spec)
-- Trainer quest templates seed data
-- Trainer coin ledger integration  
-- Trainer rewards catalog
-
----
-
-## Files to Modify/Create
-
-| File | Change |
-|------|--------|
-| `src/apps/member/pages/MemberMomentumPage.tsx` | Wire QuestHub, fix RP→Coin |
-| `src/pages/gamification/GamificationQuests.tsx` | **New** — Quest template admin |
-| `src/pages/gamification/GamificationCoupons.tsx` | **New** — Coupon template admin |
-| `src/pages/gamification/GamificationShopRules.tsx` | **New** — Shop rules admin |
-| `src/hooks/useGamificationQuests.ts` | **New** — CRUD hook |
-| `src/hooks/useGamificationCoupons.ts` | **New** — CRUD hook |
-| `src/hooks/useGamificationShopRules.ts` | **New** — CRUD hook |
-| `src/pages/gamification/GamificationStudio.tsx` | Add 3 tabs |
-| `src/App.tsx` | Add 3 admin routes |
-| `src/components/gamification/CreateBadgeDialog.tsx` | Add badge_type/effect fields |
-| `src/components/gamification/CreateRewardDialog.tsx` | Add cash_price/reward_type fields |
-| `src/i18n/locales/en.ts` + `th.ts` | Add translation keys for new tabs |
-
-## Risk Assessment
-- **Batch A**: Low risk — QuestHub already works, just needs to be placed in the right spot
-- **Batch B**: Low risk — additive admin pages, no existing flows affected
-- **Batch C**: Medium risk — modifying shared dialogs, but changes are additive (new optional fields)
-- **Batch D**: Deferred per user's rollout plan
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

@@ -25,8 +25,11 @@ const GamificationStudio = () => {
     { value: 'rules', label: t('gamification.tabs.rules'), path: '/gamification/rules' },
     { value: 'levels', label: t('gamification.tabs.levels'), path: '/gamification/levels' },
     { value: 'challenges', label: t('gamification.tabs.challenges'), path: '/gamification/challenges' },
+    { value: 'quests', label: 'Quests', path: '/gamification/quests' },
     { value: 'badges', label: t('gamification.tabs.badges'), path: '/gamification/badges' },
     { value: 'rewards', label: t('gamification.tabs.rewards'), path: '/gamification/rewards' },
+    { value: 'coupons', label: 'Coupons', path: '/gamification/coupons' },
+    { value: 'shop-rules', label: 'Shop Rules', path: '/gamification/shop-rules' },
     { value: 'trainers', label: t('gamification.tabs.trainers'), path: '/gamification/trainers' },
     { value: 'risk', label: t('gamification.tabs.risk'), path: '/gamification/risk' },
   ];

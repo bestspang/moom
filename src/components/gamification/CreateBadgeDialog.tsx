@@ -21,13 +21,17 @@ interface BadgeForm {
   description_en: string;
   description_th: string;
   tier: string;
+  badge_type: string;
+  effect_type: string;
+  duration_days: string;
   display_priority: number;
   is_active: boolean;
 }
 
 const emptyForm: BadgeForm = {
   name_en: '', name_th: '', description_en: '', description_th: '',
-  tier: 'bronze', display_priority: 0, is_active: true,
+  tier: 'bronze', badge_type: 'permanent', effect_type: 'cosmetic',
+  duration_days: '', display_priority: 0, is_active: true,
 };
 
 const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
@@ -44,6 +48,9 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
         description_en: editingBadge.description_en || '',
         description_th: editingBadge.description_th || '',
         tier: editingBadge.tier,
+        badge_type: (editingBadge as any).badge_type || 'permanent',
+        effect_type: (editingBadge as any).effect_type || 'cosmetic',
+        duration_days: (editingBadge as any).duration_days?.toString() || '',
         display_priority: editingBadge.display_priority,
         is_active: editingBadge.is_active,
       });
@@ -58,6 +65,7 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
       name_th: form.name_th || null,
       description_en: form.description_en || null,
       description_th: form.description_th || null,
+      duration_days: form.duration_days ? Number(form.duration_days) : null,
     };
     if (editingBadge) {
       update.mutate({ id: editingBadge.id, ...payload }, { onSuccess: () => onOpenChange(false) });
@@ -96,6 +104,34 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Badge Type</Label>
+              <Select value={form.badge_type} onValueChange={v => setForm(f => ({ ...f, badge_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">Permanent</SelectItem>
+                  <SelectItem value="boost">Boost</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="seasonal">Seasonal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <Label>Effect Type</Label>
+              <Select value={form.effect_type} onValueChange={v => setForm(f => ({ ...f, effect_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cosmetic">Cosmetic</SelectItem>
+                  <SelectItem value="coin_bonus">Coin Bonus</SelectItem>
+                  <SelectItem value="xp_bonus">XP Bonus</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="discount">Discount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Duration (days)</Label><Input type="number" value={form.duration_days} onChange={e => setForm(f => ({ ...f, duration_days: e.target.value }))} placeholder="∞" /></div>
             <div><Label>{t('gamification.badges.displayPriority')}</Label><Input type="number" value={form.display_priority} onChange={e => setForm(f => ({ ...f, display_priority: Number(e.target.value) }))} /></div>
           </div>
           <div className="flex items-center gap-2">

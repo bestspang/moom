@@ -83,6 +83,9 @@ import GamificationBadges from "./pages/gamification/GamificationBadges";
 import GamificationRewards from "./pages/gamification/GamificationRewards";
 import GamificationTrainers from "./pages/gamification/GamificationTrainers";
 import GamificationRisk from "./pages/gamification/GamificationRisk";
+import GamificationQuests from "./pages/gamification/GamificationQuests";
+import GamificationCoupons from "./pages/gamification/GamificationCoupons";
+import GamificationShopRules from "./pages/gamification/GamificationShopRules";
 
 // Experience Surface Layouts
 import { MemberLayout } from "@/apps/member";
@@ -266,8 +269,11 @@ const App = () => (
                     <Route path="rules" element={<GamificationRules />} />
                     <Route path="levels" element={<GamificationLevels />} />
                     <Route path="challenges" element={<GamificationChallenges />} />
+                    <Route path="quests" element={<GamificationQuests />} />
                     <Route path="badges" element={<GamificationBadges />} />
                     <Route path="rewards" element={<GamificationRewards />} />
+                    <Route path="coupons" element={<GamificationCoupons />} />
+                    <Route path="shop-rules" element={<GamificationShopRules />} />
                     <Route path="trainers" element={<GamificationTrainers />} />
                     <Route path="risk" element={<GamificationRisk />} />
                   </Route>
