@@ -133,16 +133,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
+    // Fallback: only stop loading if onAuthStateChange hasn't already handled it
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // setLoading(false) is called inside fetchUserRoleAndStatus
-        fetchUserRoleAndStatus(session.user.id);
-      } else {
-        setLoading(false);
+      if (!initializedRef.current) {
+        if (session?.user) {
+          initializedRef.current = true;
+          setSession(session);
+          setUser(session.user);
+          fetchUserRoleAndStatus(session.user.id);
+        } else {
+          setLoading(false);
+        }
       }
     });
 
