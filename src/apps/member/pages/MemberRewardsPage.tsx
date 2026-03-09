@@ -98,7 +98,7 @@ export default function MemberRewardsPage() {
             <Gift className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm font-medium text-foreground">No Rewards Available</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Check back soon for exclusive merchandise and perks you can unlock with RP.
+              Check back soon for exclusive merchandise and perks you can unlock with Coin.
             </p>
           </div>
         ) : (
