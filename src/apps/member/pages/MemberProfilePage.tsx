@@ -23,7 +23,6 @@ export default function MemberProfilePage() {
   const { firstName, lastName, email, memberId } = useMemberSession();
   const navigate = useNavigate();
   const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
-  const navigate = useNavigate();
 
   const { data: momentum } = useQuery({
     queryKey: ['momentum-profile', memberId],
