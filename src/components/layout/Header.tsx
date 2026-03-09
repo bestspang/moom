@@ -234,6 +234,26 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
+            {/* Surface switcher */}
+            {role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <a href={buildCrossSurfaceUrl('member', '/member')}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Member App
+                  </a>
+                </DropdownMenuItem>
+                {allRoles.some(r => ['trainer', 'freelance_trainer'].includes(r)) && (
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <a href={buildCrossSurfaceUrl('trainer', '/trainer')}>
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Trainer App
+                    </a>
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
             {/* Language toggle — mobile only */}
             <div className="md:hidden">
               <DropdownMenuSeparator />
