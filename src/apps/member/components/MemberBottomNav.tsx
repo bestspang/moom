@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Home, Calendar, User, ScanLine, ShoppingBag,
+  Home, Calendar, BookOpen, User, ScanLine, Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,7 @@ const MEMBER_NAV: NavItem[] = [
   { label: 'Home', path: '/member', icon: Home },
   { label: 'Schedule', path: '/member/schedule', icon: Calendar },
   { label: 'Check In', path: '/member/check-in', icon: ScanLine, center: true },
-  { label: 'Shop', path: '/member/shop', icon: ShoppingBag },
+  { label: 'Coupons', path: '/member/coupons', icon: Ticket },
   { label: 'Profile', path: '/member/profile', icon: User },
 ];
 

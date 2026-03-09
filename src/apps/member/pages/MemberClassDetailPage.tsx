@@ -37,7 +37,7 @@ export default function MemberClassDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-schedule'] });
       toast.success('Class booked successfully!');
-      navigate('/member/schedule');
+      navigate('/member/bookings');
     },
     onError: () => toast.error('Failed to book class'),
   });

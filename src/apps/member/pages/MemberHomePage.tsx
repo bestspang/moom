@@ -151,7 +151,7 @@ export default function MemberHomePage() {
         title="Next Up"
         action={
           upcomingBookings.length > 0 ? (
-            <button onClick={() => navigate('/member/schedule')} className="text-xs font-medium text-primary flex items-center gap-0.5">
+            <button onClick={() => navigate('/member/bookings')} className="text-xs font-medium text-primary flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </button>
           ) : undefined
