@@ -14,7 +14,7 @@ interface AuthContextType {
   staffStatus: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, signupSurface?: 'admin' | 'member') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 

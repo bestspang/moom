@@ -60,6 +60,7 @@ import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import SettingsIntegrations from "./pages/settings/SettingsIntegrations";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
+import MemberSignup from "./pages/Auth/MemberSignup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import Profile from "./pages/Profile";
