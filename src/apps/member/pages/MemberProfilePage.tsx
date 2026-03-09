@@ -122,6 +122,20 @@ export default function MemberProfilePage() {
         </div>
       </Section>
 
+      {/* Admin switch */}
+      {hasAdminAccess && (
+        <Section className="mb-6">
+          <a
+            href={isDevEnvironment() ? '/?surface=admin' : 'https://admin.moom.fit'}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted border border-border bg-card"
+          >
+            <Shield className="h-5 w-5 text-primary" />
+            <span className="flex-1 text-sm font-medium text-foreground">Admin Portal</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </a>
+        </Section>
+      )}
+
       {/* Sign out */}
       <Section className="mb-8">
         <Button
