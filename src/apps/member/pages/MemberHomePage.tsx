@@ -8,7 +8,7 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { SummaryCard } from '@/apps/shared/components/SummaryCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Package, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
+import { Calendar, Package, Sparkles, ChevronRight, Megaphone, Trophy } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
