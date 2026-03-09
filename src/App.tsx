@@ -72,6 +72,7 @@ import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
+import DiagnosticsAuthPage from "./pages/Auth/DiagnosticsAuthPage";
 import GamificationStudio from "./pages/gamification/GamificationStudio";
 import GamificationOverview from "./pages/gamification/GamificationOverview";
 import GamificationRules from "./pages/gamification/GamificationRules";
@@ -142,6 +143,7 @@ const App = () => (
 
                 {/* ===== Diagnostics (dev only) ===== */}
                 <Route path="/diagnostics/surface" element={<DiagnosticsSurfacePage />} />
+                <Route path="/diagnostics/auth" element={<DiagnosticsAuthPage />} />
 
                 {/* ===== Member Surface (mobile-first) ===== */}
                 <Route path="/member" element={<MemberLayout />}>
