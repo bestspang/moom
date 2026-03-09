@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logActivity } from '@/lib/activityLogger';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Database } from '@/integrations/supabase/types';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
@@ -650,6 +651,12 @@ export const useAssignPackageToMember = () => {
           payment_method: variables.paymentMethod,
           amount: variables.pkg.price,
         },
+      });
+      fireGamificationEvent({
+        event_type: 'package_purchased',
+        member_id: variables.memberId,
+        idempotency_key: `purchase:${result.transactionNo}`,
+        metadata: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
       });
       toast.success(t('toast.packageAssigned'));
     },

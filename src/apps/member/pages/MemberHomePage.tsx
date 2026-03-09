@@ -8,7 +8,7 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { SummaryCard } from '@/apps/shared/components/SummaryCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Package, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
+import { Calendar, Package, Sparkles, ChevronRight, Megaphone, Trophy } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
@@ -239,6 +239,23 @@ export default function MemberHomePage() {
           <MomentumCard memberId={memberId} />
         </Section>
       )}
+
+      {/* Leaderboard link */}
+      <Section className="mb-4">
+        <button
+          onClick={() => navigate('/member/leaderboard')}
+          className="flex w-full items-center gap-3 rounded-xl bg-card p-3 shadow-sm border border-border hover:bg-accent/50 transition-colors"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+            <Trophy className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-foreground">Leaderboard</p>
+            <p className="text-xs text-muted-foreground">See who's on top 🏆</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </Section>
 
       {/* Squad */}
       {memberId && (

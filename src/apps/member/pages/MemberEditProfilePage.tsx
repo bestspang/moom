@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { updateMyProfile } from '../api/services';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
 const editProfileSchema = z.object({
   first_name: z.string().min(1, 'Required'),
@@ -24,7 +25,7 @@ type EditProfileForm = z.infer<typeof editProfileSchema>;
 
 export default function MemberEditProfilePage() {
   const navigate = useNavigate();
-  const { firstName, lastName, email, user } = useMemberSession();
+  const { firstName, lastName, email, user, memberId } = useMemberSession();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<EditProfileForm>({
     resolver: zodResolver(editProfileSchema),
@@ -38,7 +39,17 @@ export default function MemberEditProfilePage() {
 
   const mutation = useMutation({
     mutationFn: (data: EditProfileForm) => updateMyProfile({ first_name: data.first_name, last_name: data.last_name, phone: data.phone, preferred_language: data.preferred_language }),
-    onSuccess: () => { toast.success('Profile updated'); navigate('/member/profile'); },
+    onSuccess: () => {
+      if (memberId) {
+        fireGamificationEvent({
+          event_type: 'profile_completed',
+          member_id: memberId,
+          idempotency_key: `profile_completed:${memberId}`,
+        });
+      }
+      toast.success('Profile updated');
+      navigate('/member/profile');
+    },
     onError: () => toast.error('Failed to update profile'),
   });
 

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
 const PAYMENT_METHODS = [
   { id: 'card', label: 'Credit/Debit Card', icon: CreditCard },
@@ -39,6 +40,12 @@ export default function MemberPurchasePage() {
     if (!memberId || !id) return;
     try {
       await createCheckout({ member_id: memberId, package_id: id });
+      fireGamificationEvent({
+        event_type: 'package_purchased',
+        member_id: memberId,
+        idempotency_key: `purchase:${id}:${Date.now()}`,
+        metadata: { package_id: id },
+      });
       setStep('success');
     } catch {
       // error already toasted by hook

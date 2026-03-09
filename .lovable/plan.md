@@ -1,36 +1,47 @@
 
 
-# Wire package_purchased + profile_completed Events & Add Leaderboard Navigation
+# Fix: Promotions export missing columns in Settings
 
-## 1. Wire `package_purchased` gamification event
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-**Where:** `src/hooks/useMemberDetails.ts` — `useAssignPackageToMember.onSuccess` (line ~654)
+## Fix (surgical, 1 file)
 
-The activity log already fires `package_purchased` but no gamification event is triggered. Add `fireGamificationEvent()` call after the `logActivity()` call, using `idempotency_key: 'purchase:{transactionId}'` and `metadata: { package_id, package_name }`.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Also wire in the member-side purchase: `src/apps/member/pages/MemberPurchasePage.tsx` — after `setStep('success')` in `handlePurchase`, fire `fireGamificationEvent({ event_type: 'package_purchased', member_id: memberId, idempotency_key: 'purchase:{id}:{timestamp}' })`.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## 2. Wire `profile_completed` gamification event
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-**Where:** `src/apps/member/pages/MemberEditProfilePage.tsx` — `mutation.onSuccess` (line 41)
-
-Fire `fireGamificationEvent({ event_type: 'profile_completed', member_id: memberId, idempotency_key: 'profile_completed:{memberId}' })`. The idempotency key uses memberId only (not timestamp) so this event fires at most once per member — the edge function's idempotency check prevents duplicate XP.
-
-Requires: import `fireGamificationEvent` and `useMemberSession` already provides `memberId`.
-
-## 3. Add Leaderboard link to Member Home Page
-
-**Where:** `src/apps/member/pages/MemberHomePage.tsx` — after the Momentum section (~line 243)
-
-Add a tappable card linking to `/member/leaderboard` with a Trophy icon and "Leaderboard" label, styled as a subtle card with chevron. This keeps the bottom nav clean (5 items is the mobile UX limit) while making leaderboard discoverable from the home feed.
-
-### Files to modify
-1. `src/hooks/useMemberDetails.ts` — add `fireGamificationEvent` import + call in `onSuccess` (~3 lines)
-2. `src/apps/member/pages/MemberPurchasePage.tsx` — add gamification event after checkout success (~4 lines)
-3. `src/apps/member/pages/MemberEditProfilePage.tsx` — add gamification event after profile save (~4 lines)
-4. `src/apps/member/pages/MemberHomePage.tsx` — add leaderboard discovery card (~12 lines)
-
-### Risks
-- All events are fire-and-forget, non-blocking — zero regression risk
-- Leaderboard card is additive UI, no existing elements moved
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
