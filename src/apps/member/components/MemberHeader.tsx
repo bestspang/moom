@@ -42,7 +42,7 @@ export function MemberHeader() {
   const markAsRead = useMarkAsRead();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-card px-4">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-background shadow-sm px-4">
       {/* Brand */}
       <Link to="/member" className="text-lg font-bold tracking-tight text-primary">
         MOOM

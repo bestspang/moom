@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { redeemReward } from './api';
 import { TIER_CONFIG, type MomentumTier, type RewardItem } from './types';
 import { Gift, Lock, Check, Sparkles } from 'lucide-react';
@@ -31,6 +31,12 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
       queryClient.invalidateQueries({ queryKey: ['my-redemptions'] });
       queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
       toast.success('Reward claimed! 🎉');
+      fireGamificationEvent({
+        event_type: 'reward_redeemed',
+        member_id: memberId,
+        idempotency_key: `reward_redeemed:${memberId}:${reward.id}:${Date.now()}`,
+        metadata: { reward_id: reward.id, points_spent: reward.pointsCost },
+      });
     },
     onError: () => toast.error('Failed to claim reward'),
   });
