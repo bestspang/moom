@@ -160,7 +160,8 @@ const App = () => (
                   <Route index element={<MemberHomePage />} />
                   <Route path="schedule" element={<MemberSchedulePage />} />
                   <Route path="schedule/:id" element={<MemberClassDetailPage />} />
-                  <Route path="bookings" element={<MemberBookingsPage />} />
+                  <Route path="bookings" element={<Navigate to="/member/schedule" replace />} />
+                  <Route path="shop" element={<MemberShopPage />} />
                   <Route path="bookings/:id" element={<MemberBookingDetailPage />} />
                   <Route path="packages" element={<MemberPackagesPage />} />
                   <Route path="packages/:id/purchase" element={<MemberPurchasePage />} />
