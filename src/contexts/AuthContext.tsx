@@ -47,8 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchingForUserRef = useRef<string | null>(null);
 
   const fetchUserRoleAndStatus = async (userId: string) => {
+    if (fetchingForUserRef.current === userId) return;
+    fetchingForUserRef.current = userId;
     try {
       // Fetch role
       const { data: rolesData, error: roleError } = await supabase
