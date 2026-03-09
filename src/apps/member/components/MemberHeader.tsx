@@ -5,6 +5,7 @@ import { useMemberSession } from '../hooks/useMemberSession';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
