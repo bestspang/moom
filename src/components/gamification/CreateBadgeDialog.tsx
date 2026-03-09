@@ -65,6 +65,7 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
       name_th: form.name_th || null,
       description_en: form.description_en || null,
       description_th: form.description_th || null,
+      duration_days: form.duration_days ? Number(form.duration_days) : null,
     };
     if (editingBadge) {
       update.mutate({ id: editingBadge.id, ...payload }, { onSuccess: () => onOpenChange(false) });
