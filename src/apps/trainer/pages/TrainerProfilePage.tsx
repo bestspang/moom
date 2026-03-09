@@ -3,14 +3,17 @@ import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, Bell, HelpCircle } from 'lucide-react';
+import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 
 export default function TrainerProfilePage() {
-  const { user, signOut } = useAuth();
+  const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const email = user?.email ?? '';
+
+  const hasAdminAccess = allRoles.some(r => ['owner', 'admin'].includes(r));
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,6 +42,20 @@ export default function TrainerProfilePage() {
           <ListCard title="Notifications" leading={<Bell className="h-5 w-5 text-muted-foreground" />} showChevron />
           <ListCard title="Preferences" leading={<Settings className="h-5 w-5 text-muted-foreground" />} showChevron />
           <ListCard title="Help & Support" leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />} showChevron />
+        </div>
+      </Section>
+
+      {/* Surface switcher */}
+      <Section title="Switch App" className="mt-4">
+        <div className="space-y-1">
+          {hasAdminAccess && (
+            <a href={buildCrossSurfaceUrl('admin', '/')}>
+              <ListCard title="Admin Portal" leading={<ShieldCheck className="h-5 w-5 text-muted-foreground" />} showChevron />
+            </a>
+          )}
+          <a href={buildCrossSurfaceUrl('member', '/member')}>
+            <ListCard title="Member App" leading={<Users className="h-5 w-5 text-muted-foreground" />} showChevron />
+          </a>
         </div>
       </Section>
 

@@ -244,7 +244,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                     Member App
                   </a>
                 </DropdownMenuItem>
-                {allRoles.some(r => ['trainer', 'freelance_trainer'].includes(r)) && (
+                {allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer'].includes(r)) && (
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <a href={buildCrossSurfaceUrl('trainer', '/trainer')}>
                       <Dumbbell className="h-4 w-4 mr-2" />
