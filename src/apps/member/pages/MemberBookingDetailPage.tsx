@@ -37,7 +37,7 @@ export default function MemberBookingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       toast.success('Booking cancelled');
-      navigate('/member/bookings');
+      navigate('/member/schedule');
     },
     onError: () => toast.error('Failed to cancel booking'),
   });
