@@ -166,6 +166,7 @@ const App = () => (
                   <Route path="profile/edit" element={<MemberEditProfilePage />} />
                   <Route path="security" element={<MemberSecurityPage />} />
                   <Route path="attendance" element={<MemberAttendancePage />} />
+                  <Route path="notifications" element={<MemberNotificationsPage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}
