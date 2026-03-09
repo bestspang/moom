@@ -33,6 +33,7 @@ const roleToAccessLevel: Record<AppRole, AccessLevel> = {
   member: 'level_1_minimum',
   front_desk: 'level_1_minimum',
   trainer: 'level_2_operator',
+  freelance_trainer: 'level_2_operator',
   admin: 'level_3_manager',
   owner: 'level_4_master',
 };
