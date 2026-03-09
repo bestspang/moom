@@ -22,7 +22,6 @@ import {
 } from '../features/momentum/api';
 import { xpForLevel } from '../features/momentum/types';
 import { format } from 'date-fns';
-import { format } from 'date-fns';
 import {
   Zap, Gift, Target, Trophy, Award,
   ChevronRight, Sparkles, Shield,
