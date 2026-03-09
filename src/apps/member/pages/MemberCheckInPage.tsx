@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { fetchMomentumProfile, fetchMyChallengeProgress } from '../features/momentum/api';
+import { fetchMomentumProfile } from '../features/momentum/api';
 import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
