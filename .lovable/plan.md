@@ -1,26 +1,40 @@
 
 
-# Recheck: All 8 Sections — Complete
+# Add Surface Switcher for Admin Users
 
-This is the 5th consecutive recheck confirming all sections are fully implemented. No issues found, no code changes required.
+## Problem
+Admin users (owner, admin, trainer, freelance_trainer, front_desk) on the admin surface have no way to switch to the member or trainer experience. The member profile page has an "Admin Portal" link back to admin, but the admin Header has no equivalent links to member/trainer surfaces.
 
-| Section | Status | Key Implementation |
-|---------|--------|--------------------|
-| 1 — Domain-aware auth | Done | `hostname.ts`, `SurfaceGuard.tsx`, `Login.tsx` |
-| 2 — Role-aware access | Done | `AuthContext` (allRoles/accessLevel), `ProtectedRoute`, admin switch |
-| 3 — Login/signup UX | Done | `AdminLogin` (login-only), `MemberLogin` (Google+password+OTP), signup guard |
-| 4 — Legacy account claim | Done | `handle_new_user` trigger auto-links by email |
-| 5 — Identity/verification | Done | `IdentityLinkingCard`, `MemberSecurityPage` |
-| 6 — Supabase auth impl | Done | Google via `lovable.auth`, email OTP, `get_my_member_id`, RLS |
-| 7 — UX/UI deliverables | Done | Route map, diagnostics, signup guard, admin switch |
-| 8 — Implementation plan | Done | All phases delivered |
+## Design
 
-## Deferred (External Dependencies, Not Code Gaps)
+Add a **surface switcher** dropdown in the admin Header (user menu area) that lets admin-capable users navigate to:
+- **Member App** → `/member` (or `member.moom.fit` in production)
+- **Trainer App** → `/trainer` (or `member.moom.fit/trainer` in production)
 
-- **Phone OTP** — requires Twilio configuration
-- **Member onboarding wizard** — UX polish, separate from auth model
+This uses the existing `buildCrossSurfaceUrl()` helper which already handles dev vs production URL building.
 
-## Recommendation
+## Implementation Plan
 
-Instead of re-verifying, consider moving forward with one of the deferred items or testing the flows end-to-end in the preview.
+### 1. Update `Header.tsx` — Add surface switch links in user dropdown
+
+In the user avatar dropdown menu (after "Edit Profile", before "Logout"):
+- Add a separator
+- Add "Switch to Member" link → `buildCrossSurfaceUrl('member', '/member')`
+- Add "Switch to Trainer" link → `buildCrossSurfaceUrl('trainer', '/trainer')` (only if user has trainer/freelance_trainer role)
+- Use `<a href>` (not `navigate()`) since these may be cross-domain links in production
+
+### 2. Roles that see each option
+
+| Link | Visible when user has role |
+|------|---------------------------|
+| Member App | Any admin-capable role (owner, admin, trainer, freelance_trainer, front_desk) |
+| Trainer App | trainer or freelance_trainer only |
+
+### Files to touch
+- `src/components/layout/Header.tsx` — add surface switch menu items
+
+### No changes needed to
+- `hostname.ts` — `buildCrossSurfaceUrl` already works
+- `AuthContext` — `allRoles` already available
+- Routing — member/trainer routes already exist
 
