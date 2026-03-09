@@ -1,4 +1,4 @@
-export type MomentumTier = 'starter' | 'regular' | 'dedicated' | 'elite' | 'champion' | 'legend';
+export type MomentumTier = 'starter' | 'mover' | 'strong' | 'elite' | 'legend';
 
 export interface MomentumProfile {
   memberId: string;
@@ -122,24 +122,52 @@ export interface ChallengeProgressEntry {
 
 export const TIER_CONFIG: Record<MomentumTier, { label: string; colorVar: string; minLevel: number }> = {
   starter: { label: 'Starter', colorVar: '--tier-starter', minLevel: 1 },
-  regular: { label: 'Regular', colorVar: '--tier-regular', minLevel: 10 },
-  dedicated: { label: 'Dedicated', colorVar: '--tier-dedicated', minLevel: 20 },
-  elite: { label: 'Elite', colorVar: '--tier-elite', minLevel: 30 },
-  champion: { label: 'Champion', colorVar: '--tier-champion', minLevel: 40 },
-  legend: { label: 'Legend', colorVar: '--tier-legend', minLevel: 50 },
+  mover: { label: 'Mover', colorVar: '--tier-mover', minLevel: 4 },
+  strong: { label: 'Strong', colorVar: '--tier-strong', minLevel: 7 },
+  elite: { label: 'Elite', colorVar: '--tier-elite', minLevel: 11 },
+  legend: { label: 'Legend', colorVar: '--tier-legend', minLevel: 15 },
 };
 
-/** XP needed to reach a given level */
+/**
+ * XP thresholds from gamification_levels table (v1 economy spec).
+ * Index = level number (0 = not yet level 1, 1..20 = actual levels).
+ */
+const XP_THRESHOLDS: number[] = [
+  0,     // level 0 (placeholder)
+  0,     // level 1: 0 XP
+  120,   // level 2
+  260,   // level 3
+  440,   // level 4
+  660,   // level 5
+  920,   // level 6
+  1220,  // level 7
+  1560,  // level 8
+  1940,  // level 9
+  2360,  // level 10
+  2820,  // level 11
+  3320,  // level 12
+  3860,  // level 13
+  4440,  // level 14
+  5060,  // level 15
+  5720,  // level 16
+  6420,  // level 17
+  7160,  // level 18
+  7940,  // level 19
+  8760,  // level 20
+];
+
+/** XP needed to reach a given level (from DB lookup table) */
 export function xpForLevel(level: number): number {
-  return level * level * 100;
+  if (level <= 0) return 0;
+  if (level >= XP_THRESHOLDS.length) return XP_THRESHOLDS[XP_THRESHOLDS.length - 1];
+  return XP_THRESHOLDS[level];
 }
 
-/** Derive tier from level */
+/** Derive tier from level (v1 economy spec) */
 export function tierFromLevel(level: number): MomentumTier {
-  if (level >= 50) return 'legend';
-  if (level >= 40) return 'champion';
-  if (level >= 30) return 'elite';
-  if (level >= 20) return 'dedicated';
-  if (level >= 10) return 'regular';
+  if (level >= 15) return 'legend';
+  if (level >= 11) return 'elite';
+  if (level >= 7) return 'strong';
+  if (level >= 4) return 'mover';
   return 'starter';
 }
