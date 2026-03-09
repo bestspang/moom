@@ -1,47 +1,37 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Add Header to Member App
 
 ## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+The member app (`MemberLayout`) currently has no top header — only a bottom nav. This means there's no persistent place for branding, notifications, or user actions at the top of the screen.
 
-## Fix (surgical, 1 file)
+## Design
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+Create a **`MemberHeader`** component — a mobile-first sticky top bar with:
+- **Left**: MOOM logo/brand mark
+- **Right**: Notification bell (already exists as `NotificationBell`) + user avatar (tapping opens profile page)
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+This keeps the member app feeling like a native mobile app (minimal top bar, bottom nav for navigation).
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+## Implementation
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### 1. Create `src/apps/member/components/MemberHeader.tsx`
+- Fixed top bar (`h-14`, `fixed top-0`, `z-50`, `bg-card border-b`)
+- Left: MOOM logo (small "M" badge, same as admin header)
+- Right: `NotificationBell` + avatar button linking to `/member/profile`
+- Use `useMemberSession()` for user initials
+- Use `Avatar` component from shared UI
+
+### 2. Update `MemberLayout.tsx`
+- Import and render `<MemberHeader />` above `<Outlet />`
+- Add `pt-14` to the content area to account for fixed header height
+
+### Files to touch
+- `src/apps/member/components/MemberHeader.tsx` — **new file**
+- `src/apps/member/layouts/MemberLayout.tsx` — add header + padding
+
+### No changes to
+- `MemberHomePage.tsx` — keeps its `MobilePageHeader` for page-level title
+- `MemberBottomNav.tsx` — unchanged
+- `hostname.ts`, `AuthContext` — unchanged
 
