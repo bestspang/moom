@@ -85,6 +85,7 @@ const Notifications = () => {
       reward_fulfilled: 'Reward Fulfilled',
       streak_milestone: 'Streak Milestone',
       xp_earned: 'XP Earned',
+      referral_completed: 'Referral Completed',
     };
     return labels[type] || type;
   };

@@ -162,6 +162,7 @@ export const getNotificationTypeConfig = (type: NotificationType) => {
     reward_fulfilled: { icon: 'Gift', color: 'text-purple-500' },
     streak_milestone: { icon: 'Flame', color: 'text-orange-500' },
     xp_earned: { icon: 'Zap', color: 'text-yellow-500' },
+    referral_completed: { icon: 'Users', color: 'text-primary' },
   };
   return configs[type] || { icon: 'Bell', color: 'text-muted-foreground' };
 };
