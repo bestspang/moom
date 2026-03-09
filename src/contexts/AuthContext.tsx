@@ -15,7 +15,7 @@ interface AuthContextType {
   staffStatus: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, firstName: string, lastName: string, signupSurface?: 'admin' | 'member') => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, signupSurface?: 'admin' | 'member', extraMeta?: Record<string, string>) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string, signupSurface: 'admin' | 'member' = 'admin') => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, signupSurface: 'admin' | 'member' = 'admin', extraMeta?: Record<string, string>) => {
     try {
       // Note: Staff and user_roles records are now created automatically
       // via database trigger (handle_new_user) for security
@@ -178,6 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             first_name: firstName,
             last_name: lastName,
             signup_surface: signupSurface,
+            ...extraMeta,
           },
         },
       });

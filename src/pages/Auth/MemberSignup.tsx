@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +21,8 @@ const MemberSignup: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref') ?? '';
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -43,7 +45,7 @@ const MemberSignup: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName, 'member');
+      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName, 'member', referralCode ? { referral_code: referralCode } : undefined);
       if (error) {
         toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
       } else {
@@ -83,6 +85,12 @@ const MemberSignup: React.FC = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Join MOOM</CardTitle>
           <CardDescription>{t('auth.signupDescription')}</CardDescription>
+          {referralCode && (
+            <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
+              <p className="text-xs text-primary font-semibold">🎉 Referral code applied: {referralCode}</p>
+              <p className="text-xs text-muted-foreground">You'll both earn reward points!</p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Button type="button" variant="outline" className="w-full" disabled={isGoogleLoading} onClick={handleGoogleSignIn}>
