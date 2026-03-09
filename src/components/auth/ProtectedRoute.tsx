@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { detectSurface } from '@/apps/shared/hostname';
 import type { Database } from '@/integrations/supabase/types';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
@@ -21,6 +22,9 @@ const accessLevelOrder: Record<AccessLevel, number> = {
 
 const AccessDenied: React.FC = () => {
   const navigate = useNavigate();
+  const surface = detectSurface();
+  const backPath = surface === 'member' ? '/member' : '/';
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4 text-center max-w-sm px-4">
@@ -31,8 +35,8 @@ const AccessDenied: React.FC = () => {
         <p className="text-sm text-muted-foreground">
           You don't have permission to view this page. Contact your administrator if you believe this is an error.
         </p>
-        <Button variant="outline" onClick={() => navigate('/')}>
-          Back to Dashboard
+        <Button variant="outline" onClick={() => navigate(backPath)}>
+          Back to {surface === 'member' ? 'Home' : 'Dashboard'}
         </Button>
       </div>
     </div>
