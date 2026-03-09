@@ -8,11 +8,21 @@ import { Calendar, Users, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { CoachImpactCard } from '@/apps/trainer/features/impact/CoachImpactCard';
+import { PartnerReputationCard } from '@/apps/trainer/features/impact/PartnerReputationCard';
+import { fetchTrainerType } from '@/apps/trainer/features/impact/api';
 
 export default function TrainerHomePage() {
   const { user } = useAuth();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  const { data: trainerType } = useQuery({
+    queryKey: ['trainer-type'],
+    queryFn: fetchTrainerType,
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+  });
 
   const { data: todayClasses, isLoading } = useQuery({
     queryKey: ['trainer-today-classes', today],
@@ -55,6 +65,11 @@ export default function TrainerHomePage() {
           <SummaryCard label="Today's Classes" value={String(todayClasses?.length ?? 0)} icon={<Calendar className="h-5 w-5" />} />
           <SummaryCard label="Total Bookings" value={String(totalBookings)} subtitle="across today" icon={<Users className="h-5 w-5" />} />
         </div>
+      </Section>
+
+      {/* Trainer Gamification — Coach Impact or Partner Reputation */}
+      <Section className="mb-4">
+        {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
       </Section>
 
       <Section title="Today's Schedule" className="mb-4">

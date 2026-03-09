@@ -1,0 +1,127 @@
+import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPartnerReputationProfile } from './api';
+import { PARTNER_TIER_CONFIG } from './types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Clock, Star, RotateCcw, ShieldCheck } from 'lucide-react';
+
+interface PartnerReputationCardProps {
+  className?: string;
+}
+
+export function PartnerReputationCard({ className }: PartnerReputationCardProps) {
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['partner-reputation-profile'],
+    queryFn: fetchPartnerReputationProfile,
+  });
+
+  if (isLoading) {
+    return (
+      <div className={cn('rounded-2xl border bg-card p-5', className)}>
+        <Skeleton className="h-6 w-40 mb-4" />
+        <Skeleton className="h-20 w-20 rounded-full mx-auto mb-3" />
+        <Skeleton className="h-4 w-32 mx-auto" />
+      </div>
+    );
+  }
+
+  if (!profile) return null;
+
+  const tierConfig = PARTNER_TIER_CONFIG[profile.partner_tier];
+  const scoreAngle = (profile.reputation_score / 100) * 270;
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const arcLength = (scoreAngle / 360) * circumference;
+
+  const metrics = [
+    { label: 'Punctuality', value: `${Math.round(profile.punctuality_rate)}%`, icon: Clock },
+    { label: 'Rating', value: profile.avg_rating > 0 ? profile.avg_rating.toFixed(1) : '—', icon: Star },
+    { label: 'Repeat', value: `${Math.round(profile.repeat_booking_rate)}%`, icon: RotateCcw },
+    { label: 'Sessions', value: profile.total_sessions, icon: ShieldCheck },
+  ];
+
+  return (
+    <div className={cn('rounded-2xl overflow-hidden', className)} style={{ boxShadow: 'var(--shadow-lg)' }}>
+      <div
+        className="h-1.5"
+        style={{ backgroundColor: `hsl(var(${tierConfig.colorVar}))` }}
+      />
+
+      <div className="bg-card p-5">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Partner Reputation</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
+                style={{
+                  backgroundColor: `hsl(var(${tierConfig.colorVar}) / 0.15)`,
+                  color: `hsl(var(${tierConfig.colorVar}))`,
+                  boxShadow: `0 0 8px hsl(var(${tierConfig.colorVar}) / 0.15)`,
+                }}
+              >
+                {tierConfig.label}
+              </span>
+              {profile.is_verified && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                  style={{
+                    backgroundColor: 'hsl(var(--status-success) / 0.1)',
+                    color: 'hsl(var(--status-success))',
+                  }}
+                >
+                  <ShieldCheck className="h-3 w-3" /> Verified
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Score arc with glow */}
+          <div className="relative h-20 w-20 flex items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-full blur-lg opacity-20"
+              style={{ backgroundColor: `hsl(var(${tierConfig.colorVar}))` }}
+            />
+            <svg className="absolute inset-0 -rotate-[135deg]" viewBox="0 0 80 80">
+              <circle
+                cx="40" cy="40" r={radius}
+                fill="none"
+                stroke="hsl(var(--muted))"
+                strokeWidth="5"
+                strokeDasharray={`${(270 / 360) * circumference} ${circumference}`}
+                strokeLinecap="round"
+              />
+              <circle
+                cx="40" cy="40" r={radius}
+                fill="none"
+                stroke={`hsl(var(${tierConfig.colorVar}))`}
+                strokeWidth="6"
+                strokeDasharray={`${arcLength} ${circumference}`}
+                strokeLinecap="round"
+                className="transition-all duration-1000"
+                style={{
+                  filter: `drop-shadow(0 0 4px hsl(var(${tierConfig.colorVar}) / 0.5))`,
+                }}
+              />
+            </svg>
+            <span className="text-xl font-black text-foreground tabular-nums">{profile.reputation_score}</span>
+          </div>
+        </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-4 gap-2">
+          {metrics.map(m => {
+            const Icon = m.icon;
+            return (
+              <div key={m.label} className="text-center rounded-xl bg-card/60 py-2.5 px-1 border border-border/50">
+                <Icon className="h-4 w-4 mx-auto mb-1.5" style={{ color: `hsl(var(${tierConfig.colorVar}))` }} />
+                <p className="text-sm font-bold text-foreground tabular-nums">{m.value}</p>
+                <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">{m.label}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

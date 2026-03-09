@@ -111,6 +111,19 @@
     --rarity-rare: 210 70% 55%;
     --rarity-epic: 280 65% 55%;
     --rarity-legendary: 45 93% 47%;
+
+    /* Coach levels (in-house trainer) */
+    --coach-rising: 210 60% 55%;
+    --coach-established: 152 55% 42%;
+    --coach-senior: 32 80% 50%;
+    --coach-master: 280 65% 55%;
+    --coach-elite: 45 93% 47%;
+
+    /* Partner tiers (freelance trainer) */
+    --partner-new: 220 10% 60%;
+    --partner-verified: 152 55% 42%;
+    --partner-preferred: 210 70% 55%;
+    --partner-premium: 45 93% 47%;
   }
 
   .dark {

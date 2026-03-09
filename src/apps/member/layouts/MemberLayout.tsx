@@ -3,6 +3,7 @@ import { MemberBottomNav } from '../components/MemberBottomNav';
 import { MemberHeader } from '../components/MemberHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { XPToast } from '../features/momentum/XPToast';
 
 export function MemberLayout() {
   const { user, loading } = useAuth();
@@ -26,6 +27,7 @@ export function MemberLayout() {
         <Outlet />
       </div>
       <MemberBottomNav />
+      <XPToast />
     </div>
   );
 }
