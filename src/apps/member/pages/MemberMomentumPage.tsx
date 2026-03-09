@@ -28,8 +28,10 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
   Zap, Gift, Target, Trophy, Award, Clock,
-  ChevronRight, Sparkles, Shield,
+  ChevronRight, Sparkles, Shield, ScanLine,
 } from 'lucide-react';
+import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
+import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
 
 const EVENT_LABELS: Record<string, string> = {
   checkin: 'Check-in',
