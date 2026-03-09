@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { updateMyProfile } from '../api/services';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
 const editProfileSchema = z.object({
   first_name: z.string().min(1, 'Required'),
