@@ -1,0 +1,91 @@
+import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
+import { Section } from '@/apps/shared/components/Section';
+import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications';
+import { Bell, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+export default function MemberNotificationsPage() {
+  const { data: notifications, isLoading } = useNotifications();
+  const markAsRead = useMarkAsRead();
+  const markAllAsRead = useMarkAllAsRead();
+
+  const unreadCount = notifications?.filter((n) => !n.is_read).length ?? 0;
+
+  return (
+    <div className="animate-in fade-in-0 duration-200">
+      <MobilePageHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+        action={
+          unreadCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => markAllAsRead.mutate()}
+              disabled={markAllAsRead.isPending}
+            >
+              <CheckCheck className="h-4 w-4" />
+              Mark all read
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <Section>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : !notifications?.length ? (
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <Bell className="h-10 w-10 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No notifications yet</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {notifications.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => {
+                  if (!n.is_read) markAsRead.mutate(n.id);
+                }}
+                className={cn(
+                  'flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors',
+                  n.is_read
+                    ? 'bg-card/50'
+                    : 'bg-primary/5 hover:bg-primary/10'
+                )}
+              >
+                <div
+                  className={cn(
+                    'mt-1 h-2 w-2 shrink-0 rounded-full',
+                    n.is_read ? 'bg-transparent' : 'bg-primary'
+                  )}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-snug">{n.title}</p>
+                  {n.message && (
+                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                      {n.message}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[10px] text-muted-foreground/60">
+                    {n.created_at
+                      ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
+                      : ''}
+                  </p>
+                </div>
+                {!n.is_read && (
+                  <Check className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/40" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}

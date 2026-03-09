@@ -10,6 +10,7 @@ import { fetchMomentumProfile, fetchMyChallengeProgress } from '../features/mome
 import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import jsQR from 'jsqr';
 
 export default function MemberCheckInPage() {
@@ -52,6 +53,14 @@ export default function MemberCheckInPage() {
         });
 
       if (error) throw error;
+
+      // Fire gamification event (non-blocking, idempotent)
+      fireGamificationEvent({
+        event_type: 'check_in',
+        member_id: memberId,
+        idempotency_key: `checkin:${memberId}:${new Date().toISOString().split('T')[0]}:${Date.now()}`,
+        metadata: { method: 'self_service_qr' },
+      });
 
       await queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
       await queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
