@@ -3759,6 +3759,7 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: undefined
       }
+      get_my_member_id: { Args: { _user_id: string }; Returns: string }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
