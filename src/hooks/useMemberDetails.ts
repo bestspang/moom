@@ -652,6 +652,12 @@ export const useAssignPackageToMember = () => {
           amount: variables.pkg.price,
         },
       });
+      fireGamificationEvent({
+        event_type: 'package_purchased',
+        member_id: variables.memberId,
+        idempotency_key: `purchase:${result.transactionNo}`,
+        metadata: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
+      });
       toast.success(t('toast.packageAssigned'));
     },
     onError: (error) => toast.error(error.message),

@@ -25,7 +25,7 @@ type EditProfileForm = z.infer<typeof editProfileSchema>;
 
 export default function MemberEditProfilePage() {
   const navigate = useNavigate();
-  const { firstName, lastName, email, user } = useMemberSession();
+  const { firstName, lastName, email, user, memberId } = useMemberSession();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<EditProfileForm>({
     resolver: zodResolver(editProfileSchema),
