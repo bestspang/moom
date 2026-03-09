@@ -67,6 +67,10 @@ export async function fetchMyBadges(memberId: string): Promise<MemberBadgeEarnin
         descriptionEn: b.description_en,
         tier: b.tier,
         iconUrl: b.icon_url,
+        badgeType: b.badge_type,
+        effectType: b.effect_type,
+        effectValue: b.effect_value,
+        durationDays: b.duration_days,
       } : undefined,
     };
   });
@@ -90,6 +94,10 @@ export async function fetchAllBadges(): Promise<BadgeDefinition[]> {
     iconUrl: b.icon_url,
     unlockCondition: b.unlock_condition ?? {},
     displayPriority: b.display_priority ?? 0,
+    badgeType: b.badge_type,
+    effectType: b.effect_type,
+    effectValue: b.effect_value,
+    durationDays: b.duration_days,
   }));
 }
 
@@ -162,6 +170,9 @@ export async function fetchRewards(): Promise<RewardItem[]> {
     redeemedCount: r.redeemed_count ?? 0,
     isUnlimited: r.is_unlimited,
     isActive: r.is_active,
+    cashPrice: r.cash_price ?? 0,
+    rewardType: r.reward_type ?? 'digital',
+    requiredBadgeId: r.required_badge_id,
   }));
 }
 
@@ -225,6 +236,145 @@ export async function fetchPointsHistory(memberId: string): Promise<PointsLedger
     createdAt: row.created_at,
     metadata: row.metadata,
   }));
+}
+
+// ─── Quest Instances ────────────────────────────────────────
+
+export interface QuestInstance {
+  id: string;
+  memberId: string;
+  questTemplateId: string;
+  startAt: string;
+  endAt: string;
+  progressValue: number;
+  status: string;
+  claimedAt: string | null;
+  template: {
+    id: string;
+    nameEn: string;
+    nameTh: string | null;
+    descriptionEn: string | null;
+    questPeriod: string;
+    goalValue: number;
+    goalType: string;
+    xpReward: number;
+    coinReward: number;
+  } | null;
+}
+
+export async function fetchMyQuests(memberId: string): Promise<QuestInstance[]> {
+  if (!memberId) return [];
+
+  const { data, error } = await supabase
+    .from('quest_instances')
+    .select('*, quest_templates(*)')
+    .eq('member_id', memberId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => {
+    const t = row.quest_templates;
+    return {
+      id: row.id,
+      memberId: row.member_id,
+      questTemplateId: row.quest_template_id,
+      startAt: row.start_at,
+      endAt: row.end_at,
+      progressValue: row.progress_value,
+      status: row.status,
+      claimedAt: row.claimed_at,
+      template: t ? {
+        id: t.id,
+        nameEn: t.name_en,
+        nameTh: t.name_th,
+        descriptionEn: t.description_en,
+        questPeriod: t.quest_period,
+        goalValue: t.goal_value,
+        goalType: t.goal_type,
+        xpReward: t.xp_reward,
+        coinReward: t.coin_reward,
+      } : null,
+    };
+  });
+}
+
+export async function assignQuests(memberId: string, period: 'daily' | 'weekly'): Promise<QuestInstance[]> {
+  const { data, error } = await supabase.functions.invoke('gamification-assign-quests', {
+    body: { member_id: memberId, period },
+  });
+
+  if (error) throw error;
+  return data?.quests ?? [];
+}
+
+export async function claimQuest(memberId: string, questInstanceId: string) {
+  const { data, error } = await supabase.functions.invoke('gamification-claim-quest', {
+    body: { member_id: memberId, quest_instance_id: questInstanceId },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+// ─── Coupon Wallet ──────────────────────────────────────────
+
+export interface CouponWalletItem {
+  id: string;
+  memberId: string;
+  couponTemplateId: string;
+  issuedAt: string;
+  expiresAt: string;
+  usedAt: string | null;
+  status: string;
+  sourceType: string | null;
+  template: {
+    id: string;
+    nameEn: string;
+    nameTh: string | null;
+    discountType: string;
+    discountValue: number;
+    maxDiscount: number | null;
+    minSpend: number;
+    appliesTo: string;
+  } | null;
+}
+
+export async function fetchMyCoupons(memberId: string): Promise<CouponWalletItem[]> {
+  if (!memberId) return [];
+
+  const { data, error } = await supabase
+    .from('coupon_wallet')
+    .select('*, coupon_templates(*)')
+    .eq('member_id', memberId)
+    .order('issued_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => {
+    const t = row.coupon_templates;
+    return {
+      id: row.id,
+      memberId: row.member_id,
+      couponTemplateId: row.coupon_template_id,
+      issuedAt: row.issued_at,
+      expiresAt: row.expires_at,
+      usedAt: row.used_at,
+      status: row.status,
+      sourceType: row.source_type,
+      template: t ? {
+        id: t.id,
+        nameEn: t.name_en,
+        nameTh: t.name_th,
+        discountType: t.discount_type,
+        discountValue: t.discount_value,
+        maxDiscount: t.max_discount,
+        minSpend: t.min_spend,
+        appliesTo: t.applies_to,
+      } : null,
+    };
+  });
 }
 
 // ─── Squad ──────────────────────────────────────────────────
@@ -373,7 +523,6 @@ export interface ChallengeCompletionStat {
 }
 
 export async function fetchChallengeCompletionStats(memberId: string | null): Promise<ChallengeCompletionStat[]> {
-  // Fetch all active/completed challenges
   const { data: challenges, error: cErr } = await supabase
     .from('gamification_challenges')
     .select('id, name_en, status')
@@ -386,7 +535,6 @@ export async function fetchChallengeCompletionStats(memberId: string | null): Pr
 
   const challengeIds = challenges.map(c => c.id);
 
-  // Fetch completed progress counts
   const { data: progress, error: pErr } = await supabase
     .from('challenge_progress')
     .select('challenge_id, member_id, status')
@@ -395,7 +543,6 @@ export async function fetchChallengeCompletionStats(memberId: string | null): Pr
 
   if (pErr) throw pErr;
 
-  // Group by challenge
   const countMap: Record<string, number> = {};
   const userCompleted = new Set<string>();
   for (const p of (progress ?? [])) {
