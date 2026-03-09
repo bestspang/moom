@@ -1,47 +1,62 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Recheck: Referral Program + Smart Check-in + Dashboard — Gap Analysis
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## What's Already Implemented (Working)
 
-## Fix (surgical, 1 file)
+1. **Referral Program UI**: `ReferralCard`, `MemberReferralPage`, referral API, route `/member/referral`, signup `?ref=CODE` detection, `member_referrals` table + RLS
+2. **Smart Check-in**: `MemberCheckInPage` with QR scanning, `fireGamificationEvent`, `CheckInCelebration` animation
+3. **Personalized Dashboard**: `MemberHomePage` with momentum, challenges, squad, leaderboard, packages with expiry countdown, referral card, AI suggestions
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+## Critical Gap Found
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+**The referral_code from signup is NEVER processed server-side.** The `handle_new_user` trigger stores `referral_code` in `raw_user_meta_data` but nothing reads it to:
+- Link the new member as `referred_member_id` in `member_referrals`
+- Grant reward points to both referrer and referred on first check-in
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+This is a **stub** — the UI pretends referral works but the backend loop is incomplete.
+
+## Plan: Complete the Referral Backend Loop
+
+### Step 1: Update `handle_new_user` trigger to process referral codes
+Add logic at the end of the member signup branch:
+- Read `referral_code` from `raw_user_meta_data`
+- If found, look up the referrer in `member_referrals` by code
+- Insert a new row with `referred_member_id = v_member_id` (or update existing pending row)
+
+**File**: New migration SQL
+
+```sql
+-- In handle_new_user, after creating the member + identity_map:
+v_referral_code := NEW.raw_user_meta_data->>'referral_code';
+IF v_referral_code IS NOT NULL AND v_referral_code != '' THEN
+  UPDATE public.member_referrals
+  SET referred_member_id = v_member_id, status = 'signed_up'
+  WHERE referral_code = upper(trim(v_referral_code))
+    AND referred_member_id IS NULL
+    AND status = 'pending';
+END IF;
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Step 2: Add referral reward granting in gamification-process-event
+When `event_type = 'check_in'`, check if this member has a referral row with `status = 'signed_up'` and `reward_granted = false`. If so:
+- Grant points to both referrer and referred
+- Update status to `completed`, set `reward_granted = true`
+
+**File**: `supabase/functions/gamification-process-event/index.ts` — add post-check-in referral completion logic
+
+### Step 3: Minor UX polish
+- The share URL currently uses `/signup?ref=CODE` but the actual route is `/member/signup` — fix to use correct route
+- Add referral link to MemberProfilePage menu items
+
+**Files touched**:
+- New migration (alter `handle_new_user` trigger)
+- `supabase/functions/gamification-process-event/index.ts`
+- `src/apps/member/features/referral/ReferralCard.tsx` (fix share URL)
+- `src/apps/member/pages/MemberReferralPage.tsx` (fix share URL)
+
+### Risk Assessment
+- Modifying `handle_new_user` trigger: medium risk — must preserve existing member/staff creation logic
+- Gamification edge function: low risk — additive logic after existing check-in processing
+- Share URL fix: zero risk — cosmetic
 
