@@ -111,16 +111,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
+      if (session?.user) {
+          initializedRef.current = true;
           setSession(session);
           setUser(session.user);
-          // Only fetch if not already fetching for this user (ref guard prevents duplicates)
           if (fetchingForUserRef.current !== session.user.id) {
             setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
           } else {
             setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
+          initializedRef.current = true;
           setSession(null);
           setUser(null);
           setRole(null);
