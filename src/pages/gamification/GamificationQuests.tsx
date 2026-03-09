@@ -93,27 +93,25 @@ const GamificationQuests = () => {
         <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Quest</Button>
       </div>
 
-      <FilterChips options={PERIOD_FILTERS} value={periodFilter} onChange={setPeriodFilter} />
+      <FilterChips options={PERIOD_FILTERS} selected={periodFilter} onChange={setPeriodFilter} />
 
       {filtered.length === 0 ? (
-        <EmptyState title="No quest templates" description="Create your first quest template to start assigning quests to members." />
+        <EmptyState message="No quest templates" description="Create your first quest template to start assigning quests to members." />
       ) : (
         <DataTable
           data={filtered}
           columns={[
-            { header: 'Name', accessorFn: (r: QuestTemplate) => r.name_en },
-            { header: 'Period', accessorFn: (r: QuestTemplate) => r.quest_period, cell: ({ row }: any) => (
-              <StatusBadge status={row.original.quest_period} />
-            )},
-            { header: 'Audience', accessorFn: (r: QuestTemplate) => r.audience_type },
-            { header: 'Goal', accessorFn: (r: QuestTemplate) => `${r.goal_action_key || r.goal_type} × ${r.goal_value}` },
-            { header: 'XP', accessorFn: (r: QuestTemplate) => r.xp_reward },
-            { header: 'Coin', accessorFn: (r: QuestTemplate) => r.coin_reward },
-            { header: 'Active', cell: ({ row }: any) => row.original.is_active ? '✅' : '—' },
-            { header: '', cell: ({ row }: any) => (
+            { key: 'name', header: 'Name', cell: (r: QuestTemplate) => r.name_en },
+            { key: 'period', header: 'Period', cell: (r: QuestTemplate) => <StatusBadge>{r.quest_period}</StatusBadge> },
+            { key: 'audience', header: 'Audience', cell: (r: QuestTemplate) => r.audience_type },
+            { key: 'goal', header: 'Goal', cell: (r: QuestTemplate) => `${r.goal_action_key || r.goal_type} × ${r.goal_value}` },
+            { key: 'xp', header: 'XP', cell: (r: QuestTemplate) => r.xp_reward },
+            { key: 'coin', header: 'Coin', cell: (r: QuestTemplate) => r.coin_reward },
+            { key: 'active', header: 'Active', cell: (r: QuestTemplate) => r.is_active ? '✅' : '—' },
+            { key: 'actions', header: '', cell: (r: QuestTemplate) => (
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(row.original)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(row.original.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             )},
           ]}

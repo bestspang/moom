@@ -82,22 +82,22 @@ const GamificationShopRules = () => {
       </div>
 
       {!rules || rules.length === 0 ? (
-        <EmptyState title="No shop rules" description="Configure how purchases earn XP and Coin." />
+        <EmptyState message="No shop rules" description="Configure how purchases earn XP and Coin." />
       ) : (
         <DataTable
           data={rules}
           columns={[
-            { header: 'Order Type', accessorFn: (r: ShopRewardRule) => r.order_type },
-            { header: 'XP/Order', accessorFn: (r: ShopRewardRule) => r.xp_per_order },
-            { header: 'XP/Unit', accessorFn: (r: ShopRewardRule) => `${r.xp_per_spend_unit} per ฿${r.spend_unit}` },
-            { header: 'XP Cap', accessorFn: (r: ShopRewardRule) => r.xp_cap ?? '∞' },
-            { header: 'Coin/Unit', accessorFn: (r: ShopRewardRule) => `${r.coin_per_spend_unit} per ฿${r.coin_spend_unit}` },
-            { header: 'Coin Cap', accessorFn: (r: ShopRewardRule) => r.coin_cap ?? '∞' },
-            { header: 'Active', cell: ({ row }: any) => row.original.is_active ? '✅' : '—' },
-            { header: '', cell: ({ row }: any) => (
+            { key: 'orderType', header: 'Order Type', cell: (r: ShopRewardRule) => r.order_type },
+            { key: 'xpOrder', header: 'XP/Order', cell: (r: ShopRewardRule) => r.xp_per_order },
+            { key: 'xpUnit', header: 'XP/Unit', cell: (r: ShopRewardRule) => `${r.xp_per_spend_unit} per ฿${r.spend_unit}` },
+            { key: 'xpCap', header: 'XP Cap', cell: (r: ShopRewardRule) => r.xp_cap ?? '∞' },
+            { key: 'coinUnit', header: 'Coin/Unit', cell: (r: ShopRewardRule) => `${r.coin_per_spend_unit} per ฿${r.coin_spend_unit}` },
+            { key: 'coinCap', header: 'Coin Cap', cell: (r: ShopRewardRule) => r.coin_cap ?? '∞' },
+            { key: 'active', header: 'Active', cell: (r: ShopRewardRule) => r.is_active ? '✅' : '—' },
+            { key: 'actions', header: '', cell: (r: ShopRewardRule) => (
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(row.original)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(row.original.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             )},
           ]}

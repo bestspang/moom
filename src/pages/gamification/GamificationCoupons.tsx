@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DataTable } from '@/components/common/DataTable';
 import { EmptyState } from '@/components/common/EmptyState';
-import { StatusBadge } from '@/components/common/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
@@ -83,21 +82,21 @@ const GamificationCoupons = () => {
       </div>
 
       {!coupons || coupons.length === 0 ? (
-        <EmptyState title="No coupon templates" description="Create coupon templates to offer discounts through the reward system." />
+        <EmptyState message="No coupon templates" description="Create coupon templates to offer discounts through the reward system." />
       ) : (
         <DataTable
           data={coupons}
           columns={[
-            { header: 'Name', accessorFn: (r: CouponTemplate) => r.name_en },
-            { header: 'Type', accessorFn: (r: CouponTemplate) => r.discount_type === 'fixed' ? `฿${r.discount_value}` : `${r.discount_value}%` },
-            { header: 'Min Spend', accessorFn: (r: CouponTemplate) => r.min_spend ? `฿${r.min_spend}` : '—' },
-            { header: 'Applies To', cell: ({ row }: any) => <StatusBadge status={row.original.applies_to} /> },
-            { header: 'Valid Days', accessorFn: (r: CouponTemplate) => r.valid_days },
-            { header: 'Active', cell: ({ row }: any) => row.original.is_active ? '✅' : '—' },
-            { header: '', cell: ({ row }: any) => (
+            { key: 'name', header: 'Name', cell: (r: CouponTemplate) => r.name_en },
+            { key: 'type', header: 'Type', cell: (r: CouponTemplate) => r.discount_type === 'fixed' ? `฿${r.discount_value}` : `${r.discount_value}%` },
+            { key: 'minSpend', header: 'Min Spend', cell: (r: CouponTemplate) => r.min_spend ? `฿${r.min_spend}` : '—' },
+            { key: 'appliesTo', header: 'Applies To', cell: (r: CouponTemplate) => r.applies_to },
+            { key: 'validDays', header: 'Valid Days', cell: (r: CouponTemplate) => r.valid_days },
+            { key: 'active', header: 'Active', cell: (r: CouponTemplate) => r.is_active ? '✅' : '—' },
+            { key: 'actions', header: '', cell: (r: CouponTemplate) => (
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(row.original)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(row.original.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             )},
           ]}
