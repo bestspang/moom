@@ -235,7 +235,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               {t('profile.editProfile')}
             </DropdownMenuItem>
             {/* Surface switcher */}
-            {allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r)) && (
+            {((role && ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(role)) || (allRoles.length > 0 && allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r)))) && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="cursor-pointer">
@@ -244,7 +244,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                     Member App
                   </a>
                 </DropdownMenuItem>
-                {allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer'].includes(r)) && (
+                {((role && ['owner', 'admin', 'trainer', 'freelance_trainer'].includes(role)) || allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer'].includes(r))) && (
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <a href={buildCrossSurfaceUrl('trainer', '/trainer')}>
                       <Dumbbell className="h-4 w-4 mr-2" />
