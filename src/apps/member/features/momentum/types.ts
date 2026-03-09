@@ -24,6 +24,10 @@ export interface MemberBadgeEarning {
     descriptionEn: string | null;
     tier: string;
     iconUrl: string | null;
+    badgeType?: string;
+    effectType?: string;
+    effectValue?: Record<string, unknown>;
+    durationDays?: number | null;
   };
 }
 
@@ -40,6 +44,9 @@ export interface RewardItem {
   redeemedCount: number;
   isUnlimited: boolean;
   isActive: boolean;
+  cashPrice?: number;
+  rewardType?: string;
+  requiredBadgeId?: string | null;
 }
 
 export interface RewardRedemption {
@@ -89,6 +96,10 @@ export interface BadgeDefinition {
   iconUrl: string | null;
   unlockCondition: Record<string, unknown>;
   displayPriority: number;
+  badgeType?: string;
+  effectType?: string;
+  effectValue?: Record<string, unknown>;
+  durationDays?: number | null;
 }
 
 export interface ChallengeProgressEntry {

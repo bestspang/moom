@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.sync-gamification-config]
 verify_jwt = false
+
+[functions.gamification-assign-quests]
+verify_jwt = false
+
+[functions.gamification-claim-quest]
+verify_jwt = false
+
+[functions.gamification-issue-coupon]
+verify_jwt = false

@@ -65,11 +65,11 @@ export default function MemberRewardsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                    Reward Points
+                    Momentum Coin
                   </p>
                   <p className="text-3xl font-bold text-foreground">
                     {profile.availablePoints.toLocaleString()}
-                    <span className="text-sm font-medium text-muted-foreground ml-1">RP</span>
+                    <span className="text-sm font-medium text-muted-foreground ml-1">Coin</span>
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -98,7 +98,7 @@ export default function MemberRewardsPage() {
             <Gift className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm font-medium text-foreground">No Rewards Available</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Check back soon for exclusive merchandise and perks you can unlock with RP.
+              Check back soon for exclusive merchandise and perks you can unlock with Coin.
             </p>
           </div>
         ) : (
@@ -124,7 +124,7 @@ export default function MemberRewardsPage() {
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
           </div>
         ) : !history || history.length === 0 ? (
-          <EmptyState title="No points yet" description="Earn RP by checking in and completing challenges" />
+          <EmptyState title="No points yet" description="Earn Coin by checking in and completing challenges" />
         ) : (
           <div className="space-y-1">
             {history.map(entry => (
@@ -143,7 +143,7 @@ export default function MemberRewardsPage() {
                   </div>
                 </div>
                 <span className={`text-sm font-semibold ${entry.delta >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                  {entry.delta >= 0 ? '+' : ''}{entry.delta} RP
+                  {entry.delta >= 0 ? '+' : ''}{entry.delta} Coin
                 </span>
               </div>
             ))}

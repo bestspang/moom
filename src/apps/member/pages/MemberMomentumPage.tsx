@@ -181,7 +181,7 @@ export default function MemberMomentumPage() {
               <span className="text-lg font-bold ml-1 opacity-70">XP</span>
             </p>
             <p className="text-xs font-medium mt-0.5" style={{ color: 'hsl(var(--primary-foreground) / 0.6)' }}>
-              {profile.availablePoints.toLocaleString()} RP available
+              {profile.availablePoints.toLocaleString()} Coin available
             </p>
           </div>
 
@@ -396,7 +396,7 @@ export default function MemberMomentumPage() {
                           {(c.reward_points ?? 0) > 0 && (
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">
                               <Gift className="h-2.5 w-2.5" />
-                              +{c.reward_points} RP
+                              +{c.reward_points} Coin
                             </span>
                           )}
                         </div>
@@ -444,11 +444,11 @@ export default function MemberMomentumPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                  Reward Points
+                  Momentum Coin
                 </p>
                 <p className="text-3xl font-bold text-foreground">
                   {profile.availablePoints.toLocaleString()}
-                  <span className="text-sm font-medium text-muted-foreground ml-1">RP</span>
+                  <span className="text-sm font-medium text-muted-foreground ml-1">Coin</span>
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

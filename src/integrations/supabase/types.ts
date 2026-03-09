@@ -658,6 +658,98 @@ export type Database = {
           },
         ]
       }
+      coupon_templates: {
+        Row: {
+          applies_to: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_discount: number | null
+          min_spend: number | null
+          name_en: string
+          name_th: string | null
+          stackable: boolean | null
+          updated_at: string | null
+          valid_days: number
+        }
+        Insert: {
+          applies_to?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_discount?: number | null
+          min_spend?: number | null
+          name_en: string
+          name_th?: string | null
+          stackable?: boolean | null
+          updated_at?: string | null
+          valid_days?: number
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_discount?: number | null
+          min_spend?: number | null
+          name_en?: string
+          name_th?: string | null
+          stackable?: boolean | null
+          updated_at?: string | null
+          valid_days?: number
+        }
+        Relationships: []
+      }
+      coupon_wallet: {
+        Row: {
+          coupon_template_id: string
+          expires_at: string
+          id: string
+          issued_at: string | null
+          member_id: string
+          source_id: string | null
+          source_type: string | null
+          status: string
+          used_at: string | null
+        }
+        Insert: {
+          coupon_template_id: string
+          expires_at: string
+          id?: string
+          issued_at?: string | null
+          member_id: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          used_at?: string | null
+        }
+        Update: {
+          coupon_template_id?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string | null
+          member_id?: string
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_wallet_coupon_template_id_fkey"
+            columns: ["coupon_template_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_outbox: {
         Row: {
           created_at: string | null
@@ -852,10 +944,14 @@ export type Database = {
       }
       gamification_badges: {
         Row: {
+          badge_type: string | null
           created_at: string | null
           description_en: string | null
           description_th: string | null
           display_priority: number | null
+          duration_days: number | null
+          effect_type: string | null
+          effect_value: Json | null
           icon_url: string | null
           id: string
           is_active: boolean
@@ -866,10 +962,14 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          badge_type?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null
           display_priority?: number | null
+          duration_days?: number | null
+          effect_type?: string | null
+          effect_value?: Json | null
           icon_url?: string | null
           id?: string
           is_active?: boolean
@@ -880,10 +980,14 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          badge_type?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null
           display_priority?: number | null
+          duration_days?: number | null
+          effect_type?: string | null
+          effect_value?: Json | null
           icon_url?: string | null
           id?: string
           is_active?: boolean
@@ -1015,8 +1119,10 @@ export type Database = {
         Row: {
           available_from: string | null
           available_until: string | null
+          cash_price: number | null
           category: string
           created_at: string | null
+          daily_limit: number | null
           description_en: string | null
           description_th: string | null
           id: string
@@ -1024,18 +1130,23 @@ export type Database = {
           is_unlimited: boolean
           level_required: number | null
           linked_package_id: string | null
+          monthly_limit: number | null
           name_en: string
           name_th: string | null
           points_cost: number
           redeemed_count: number | null
+          required_badge_id: string | null
+          reward_type: string | null
           stock: number | null
           updated_at: string | null
         }
         Insert: {
           available_from?: string | null
           available_until?: string | null
+          cash_price?: number | null
           category?: string
           created_at?: string | null
+          daily_limit?: number | null
           description_en?: string | null
           description_th?: string | null
           id?: string
@@ -1043,18 +1154,23 @@ export type Database = {
           is_unlimited?: boolean
           level_required?: number | null
           linked_package_id?: string | null
+          monthly_limit?: number | null
           name_en: string
           name_th?: string | null
           points_cost?: number
           redeemed_count?: number | null
+          required_badge_id?: string | null
+          reward_type?: string | null
           stock?: number | null
           updated_at?: string | null
         }
         Update: {
           available_from?: string | null
           available_until?: string | null
+          cash_price?: number | null
           category?: string
           created_at?: string | null
+          daily_limit?: number | null
           description_en?: string | null
           description_th?: string | null
           id?: string
@@ -1062,10 +1178,13 @@ export type Database = {
           is_unlimited?: boolean
           level_required?: number | null
           linked_package_id?: string | null
+          monthly_limit?: number | null
           name_en?: string
           name_th?: string | null
           points_cost?: number
           redeemed_count?: number | null
+          required_badge_id?: string | null
+          reward_type?: string | null
           stock?: number | null
           updated_at?: string | null
         }
@@ -1075,6 +1194,13 @@ export type Database = {
             columns: ["linked_package_id"]
             isOneToOne: false
             referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gamification_rewards_required_badge_id_fkey"
+            columns: ["required_badge_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_badges"
             referencedColumns: ["id"]
           },
         ]
@@ -2721,6 +2847,128 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_instances: {
+        Row: {
+          claimed_at: string | null
+          created_at: string | null
+          end_at: string
+          id: string
+          member_id: string
+          progress_value: number
+          quest_template_id: string
+          start_at: string
+          status: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string | null
+          end_at: string
+          id?: string
+          member_id: string
+          progress_value?: number
+          quest_template_id: string
+          start_at: string
+          status?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string | null
+          end_at?: string
+          id?: string
+          member_id?: string
+          progress_value?: number
+          quest_template_id?: string
+          start_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_instances_quest_template_id_fkey"
+            columns: ["quest_template_id"]
+            isOneToOne: false
+            referencedRelation: "quest_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_templates: {
+        Row: {
+          audience_type: string
+          badge_reward_id: string | null
+          coin_reward: number
+          coupon_reward_template_id: string | null
+          created_at: string | null
+          description_en: string | null
+          description_th: string | null
+          goal_action_key: string | null
+          goal_type: string
+          goal_value: number
+          id: string
+          is_active: boolean
+          name_en: string
+          name_th: string | null
+          quest_period: string
+          sort_order: number | null
+          updated_at: string | null
+          xp_reward: number
+        }
+        Insert: {
+          audience_type?: string
+          badge_reward_id?: string | null
+          coin_reward?: number
+          coupon_reward_template_id?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          goal_action_key?: string | null
+          goal_type?: string
+          goal_value?: number
+          id?: string
+          is_active?: boolean
+          name_en: string
+          name_th?: string | null
+          quest_period?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          xp_reward?: number
+        }
+        Update: {
+          audience_type?: string
+          badge_reward_id?: string | null
+          coin_reward?: number
+          coupon_reward_template_id?: string | null
+          created_at?: string | null
+          description_en?: string | null
+          description_th?: string | null
+          goal_action_key?: string | null
+          goal_type?: string
+          goal_value?: number
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_th?: string | null
+          quest_period?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          xp_reward?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_templates_badge_reward_id_fkey"
+            columns: ["badge_reward_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_templates_coupon_reward_fk"
+            columns: ["coupon_reward_template_id"]
+            isOneToOne: false
+            referencedRelation: "coupon_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reward_redemptions: {
         Row: {
           cancelled_at: string | null
@@ -3012,6 +3260,65 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      shop_reward_rules: {
+        Row: {
+          coin_cap: number | null
+          coin_per_spend_unit: number | null
+          coin_spend_unit: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          min_spend: number | null
+          order_type: string
+          required_badge_id: string | null
+          required_level: number | null
+          spend_unit: number | null
+          xp_cap: number | null
+          xp_per_order: number | null
+          xp_per_spend_unit: number | null
+        }
+        Insert: {
+          coin_cap?: number | null
+          coin_per_spend_unit?: number | null
+          coin_spend_unit?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_spend?: number | null
+          order_type?: string
+          required_badge_id?: string | null
+          required_level?: number | null
+          spend_unit?: number | null
+          xp_cap?: number | null
+          xp_per_order?: number | null
+          xp_per_spend_unit?: number | null
+        }
+        Update: {
+          coin_cap?: number | null
+          coin_per_spend_unit?: number | null
+          coin_spend_unit?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_spend?: number | null
+          order_type?: string
+          required_badge_id?: string | null
+          required_level?: number | null
+          spend_unit?: number | null
+          xp_cap?: number | null
+          xp_per_order?: number | null
+          xp_per_spend_unit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_reward_rules_required_badge_id_fkey"
+            columns: ["required_badge_id"]
+            isOneToOne: false
+            referencedRelation: "gamification_badges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       squad_memberships: {
         Row: {

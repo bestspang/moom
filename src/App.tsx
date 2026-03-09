@@ -103,6 +103,7 @@ import MemberAttendancePage from "@/apps/member/pages/MemberAttendancePage";
 import MemberUploadSlipPage from "@/apps/member/pages/MemberUploadSlipPage";
 import MemberCheckInPage from "@/apps/member/pages/MemberCheckInPage";
 import MemberRewardsPage from "@/apps/member/pages/MemberRewardsPage";
+import MemberCouponsPage from "@/apps/member/pages/MemberCouponsPage";
 import MemberBadgeGalleryPage from "@/apps/member/pages/MemberBadgeGalleryPage";
 import MemberSquadPage from "@/apps/member/pages/MemberSquadPage";
 import MemberLeaderboardPage from "@/apps/member/pages/MemberLeaderboardPage";
@@ -173,6 +174,7 @@ const App = () => (
                   <Route path="notifications" element={<MemberNotificationsPage />} />
                   <Route path="referral" element={<MemberReferralPage />} />
                   <Route path="momentum" element={<MemberMomentumPage />} />
+                  <Route path="coupons" element={<MemberCouponsPage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}
