@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,10 @@ const MemberLogin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
 
   const schema = z.object({
     email: z.string().email(t('validation.invalidEmail')),
@@ -69,6 +74,36 @@ const MemberLogin: React.FC = () => {
     }
   };
 
+  const handleSendOtp = async () => {
+    if (!otpEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpEmail)) {
+      toast({ variant: 'destructive', title: 'Invalid email', description: 'Please enter a valid email address.' });
+      return;
+    }
+    setIsOtpLoading(true);
+    try {
+      console.log('[MemberLogin] Sending magic link to:', otpEmail);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: otpEmail,
+        options: {
+          emailRedirectTo: window.location.origin + '/member',
+          data: { signup_surface: 'member' },
+        },
+      });
+      if (error) {
+        console.error('[MemberLogin] OTP error:', error);
+        toast({ variant: 'destructive', title: 'Send failed', description: error.message });
+      } else {
+        setOtpSent(true);
+        toast({ title: 'Check your email ✉️', description: 'We sent a sign-in link to your email.' });
+      }
+    } catch (err) {
+      console.error('[MemberLogin] OTP exception:', err);
+      toast({ variant: 'destructive', title: 'Send failed', description: 'Something went wrong.' });
+    } finally {
+      setIsOtpLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
@@ -100,30 +135,93 @@ const MemberLogin: React.FC = () => {
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('common.or')}</span>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
-              <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...register('password')} className={errors.password ? 'border-destructive pr-10' : 'pr-10'} />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                </Button>
-              </div>
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-            </div>
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">{t('auth.forgotPassword')}</Link>
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.login')}
+          {/* Toggle between password and email OTP */}
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant={loginMode === 'password' ? 'default' : 'outline'}
+              size="sm"
+              className="flex-1"
+              onClick={() => { setLoginMode('password'); setOtpSent(false); }}
+            >
+              Password
             </Button>
-          </form>
+            <Button
+              type="button"
+              variant={loginMode === 'otp' ? 'default' : 'outline'}
+              size="sm"
+              className="flex-1"
+              onClick={() => { setLoginMode('otp'); setOtpSent(false); }}
+            >
+              <Mail className="mr-1.5 h-3.5 w-3.5" />
+              Email Link
+            </Button>
+          </div>
+
+          {loginMode === 'password' ? (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('auth.email')}</Label>
+                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('auth.password')}</Label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...register('password')} className={errors.password ? 'border-destructive pr-10' : 'pr-10'} />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              </div>
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">{t('auth.forgotPassword')}</Link>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('auth.login')}
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {otpSent ? (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Mail className="h-8 w-8 text-primary" />
+                  </div>
+                  <p className="font-medium">Check your email ✉️</p>
+                  <p className="text-sm text-muted-foreground">
+                    We sent a sign-in link to <span className="font-medium text-foreground">{otpEmail}</span>
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={() => setOtpSent(false)}>
+                    Use a different email
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="otp-email">{t('auth.email')}</Label>
+                    <Input
+                      id="otp-email"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={otpEmail}
+                      onChange={(e) => setOtpEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                    />
+                  </div>
+                  <Button type="button" className="w-full" disabled={isOtpLoading} onClick={handleSendOtp}>
+                    {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send sign-in link
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    No password needed — we'll email you a magic link
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           <p className="text-center text-sm text-muted-foreground mt-4">
             {t('auth.noAccount')}{' '}
