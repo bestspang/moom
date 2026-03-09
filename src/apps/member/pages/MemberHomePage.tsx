@@ -70,15 +70,8 @@ export default function MemberHomePage() {
 
   const nextTodayBooking = todayBookings[0];
 
-  // Build progress lookup for challenges
-  const progressMap = new Map(
-    (myProgress ?? []).map(p => [p.challengeId, { current_value: p.currentValue, status: p.status }])
-  );
 
-  const visibleChallenges = (activeChallenges ?? []).filter(c => {
-    const prog = progressMap.get(c.id);
-    return !prog || prog.status !== 'completed';
-  }).slice(0, 2);
+
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
