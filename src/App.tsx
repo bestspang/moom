@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
+import { detectSurface } from "@/apps/shared/hostname";
 import SurfaceGuard from "@/apps/shared/SurfaceGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout";
