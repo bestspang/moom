@@ -9,7 +9,7 @@ import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
-import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield } from 'lucide-react';
+import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl, isDevEnvironment } from '@/apps/shared/hostname';
 import type { Database } from '@/integrations/supabase/types';
@@ -42,6 +42,7 @@ export default function MemberProfilePage() {
     { label: 'Reward Wallet', icon: CreditCard, path: '/member/rewards' },
     { label: 'Badge Collection', icon: Award, path: '/member/badges' },
     { label: 'My Squad', icon: Heart, path: '/member/squad' },
+    { label: 'Security & Login', icon: Lock, path: '/member/security' },
     { label: 'Notifications', icon: Bell, path: '/member/notifications' },
     { label: 'Support', icon: HelpCircle, path: '/member/support' },
   ];
