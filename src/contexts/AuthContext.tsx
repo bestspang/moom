@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchingForUserRef = useRef<string | null>(null);
+  const initializedRef = useRef(false);
 
   const fetchUserRoleAndStatus = async (userId: string) => {
     if (fetchingForUserRef.current === userId) return;
@@ -110,16 +111,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
+      if (session?.user) {
+          initializedRef.current = true;
           setSession(session);
           setUser(session.user);
-          // Only fetch if not already fetching for this user (ref guard prevents duplicates)
           if (fetchingForUserRef.current !== session.user.id) {
             setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
           } else {
             setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
+          initializedRef.current = true;
           setSession(null);
           setUser(null);
           setRole(null);
@@ -131,16 +133,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
+    // Fallback: only stop loading if onAuthStateChange hasn't already handled it
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // setLoading(false) is called inside fetchUserRoleAndStatus
-        fetchUserRoleAndStatus(session.user.id);
-      } else {
-        setLoading(false);
+      if (!initializedRef.current) {
+        if (session?.user) {
+          initializedRef.current = true;
+          setSession(session);
+          setUser(session.user);
+          fetchUserRoleAndStatus(session.user.id);
+        } else {
+          setLoading(false);
+        }
       }
     });
 
