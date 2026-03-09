@@ -59,8 +59,13 @@ export default function MemberNotificationsPage() {
           </div>
         ) : !notifications?.length ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <Bell className="h-10 w-10 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No notifications yet</p>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto">
+              <Bell className="h-8 w-8 text-primary/40" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">You're all caught up! 🎉</p>
+              <p className="text-xs text-muted-foreground mt-0.5">We'll let you know when something happens</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-1">

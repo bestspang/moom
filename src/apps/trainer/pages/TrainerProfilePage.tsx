@@ -33,7 +33,7 @@ export default function TrainerProfilePage() {
             {firstName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-foreground truncate">{firstName}</p>
+            <p className="font-semibold text-foreground truncate">{fullName}</p>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
             <p className="text-xs text-primary mt-0.5">Trainer</p>
           </div>

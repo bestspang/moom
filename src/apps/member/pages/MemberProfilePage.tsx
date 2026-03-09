@@ -110,8 +110,14 @@ export default function MemberProfilePage() {
             const Icon = item.icon;
             return (
               <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
+                key={item.label}
+                onClick={() => {
+                  if (item.path) {
+                    navigate(item.path);
+                  } else {
+                    import('sonner').then(({ toast }) => toast.info('Coming soon'));
+                  }
+                }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted"
               >
                 <Icon className="h-5 w-5 text-muted-foreground" />
