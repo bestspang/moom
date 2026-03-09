@@ -67,6 +67,7 @@ const Notifications = () => {
       reward_fulfilled: <Gift className="h-5 w-5 text-purple-500" />,
       streak_milestone: <Flame className="h-5 w-5 text-orange-500" />,
       xp_earned: <Zap className="h-5 w-5 text-yellow-500" />,
+      referral_completed: <UserPlus className="h-5 w-5 text-primary" />,
     };
     return icons[type] || <Bell className="h-5 w-5 text-muted-foreground" />;
   };
