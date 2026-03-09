@@ -38,6 +38,7 @@ export default function MemberProfilePage() {
 
   const menuItems = [
     { label: 'Edit Profile', icon: User, path: '/member/profile/edit' },
+    { label: 'Invite Friends', icon: Gift, path: '/member/referral' },
     { label: 'Attendance History', icon: CalendarCheck, path: '/member/attendance' },
     { label: 'Reward Wallet', icon: CreditCard, path: '/member/rewards' },
     { label: 'Badge Collection', icon: Award, path: '/member/badges' },
