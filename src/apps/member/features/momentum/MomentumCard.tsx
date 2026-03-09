@@ -57,7 +57,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
   }
 
   // Use real profile or fallback starter profile
-  const p: MomentumProfile = profile ?? { ...DEFAULT_PROFILE, memberId };
+  const p: MomentumProfile = profile ?? { ...DEFAULT_PROFILE, memberId: memberId ?? '' };
   const isStarter = !profile;
 
   const activeQuests = (myProgress ?? []).filter(q => q.status !== 'completed' && q.challenge).slice(0, 2);
