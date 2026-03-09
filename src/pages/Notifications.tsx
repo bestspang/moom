@@ -78,6 +78,12 @@ const Notifications = () => {
       payment_received: t('notifications.types.payment'),
       member_registration: t('notifications.types.registration'),
       package_expiring: t('notifications.types.expiring'),
+      badge_earned: 'Badge Earned',
+      level_up: 'Level Up',
+      challenge_completed: 'Challenge Completed',
+      reward_fulfilled: 'Reward Fulfilled',
+      streak_milestone: 'Streak Milestone',
+      xp_earned: 'XP Earned',
     };
     return labels[type] || type;
   };
