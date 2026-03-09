@@ -24,15 +24,32 @@ export default function TrainerHomePage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: todayClasses, isLoading } = useQuery({
-    queryKey: ['trainer-today-classes', today],
+  // Resolve trainer's staff_id from identity_map
+  const { data: staffId } = useQuery({
+    queryKey: ['trainer-staff-id', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
+        .from('identity_map')
+        .select('admin_entity_id')
+        .eq('experience_user_id', user!.id)
+        .eq('entity_type', 'staff')
+        .maybeSingle();
+      return data?.admin_entity_id ?? null;
+    },
+    enabled: !!user,
+    staleTime: Infinity,
+  });
+
+  const { data: todayClasses, isLoading } = useQuery({
+    queryKey: ['trainer-today-classes', today, staffId],
+    queryFn: async () => {
+      let query = supabase
         .from('schedule')
         .select('id, start_time, end_time, capacity, checked_in, classes(name), rooms(name)')
         .eq('scheduled_date', today)
-        .neq('status', 'cancelled')
-        .order('start_time');
+        .neq('status', 'cancelled');
+      if (staffId) query = query.eq('trainer_id', staffId);
+      const { data, error } = await query.order('start_time');
       if (error) throw error;
       return data ?? [];
     },

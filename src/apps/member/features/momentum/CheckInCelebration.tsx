@@ -50,9 +50,9 @@ export function CheckInCelebration({ open, onClose, profile, challenges }: Check
     const interval = setInterval(() => {
       setAutoDismiss(prev => {
         if (prev >= 100) { onClose(); return 100; }
-        return prev + 2;
+        return prev + 1.5;
       });
-    }, 80);
+    }, 100);
     return () => clearInterval(interval);
   }, [open, onClose]);
 

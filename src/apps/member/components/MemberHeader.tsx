@@ -1,12 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Settings, User, LogOut, Monitor, Dumbbell, Globe, Bell } from 'lucide-react';
+import { User, LogOut, Monitor, Dumbbell, Globe, Bell } from 'lucide-react';
 import { useRecentNotifications, useUnreadCount, useMarkAsRead } from '@/hooks/useNotifications';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -16,13 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 
 const ADMIN_ROLES = ['owner', 'admin', 'front_desk'] as const;
 const TRAINER_ROLES = ['trainer', 'freelance_trainer'] as const;
@@ -31,9 +23,8 @@ export function MemberHeader() {
   const navigate = useNavigate();
   const { firstName, lastName } = useMemberSession();
   const { allRoles, signOut, user } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
-  console.log('[MemberHeader] render:', { userId: user?.id, allRoles, firstName, lastName });
   const initials = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase() || '?';
 
   const hasAdminAccess = allRoles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
@@ -50,7 +41,7 @@ export function MemberHeader() {
         MOOM
       </Link>
 
-      {/* Actions */}
+      {/* Actions — Bell + Avatar only */}
       <div className="flex items-center gap-1">
         {/* Notification dropdown */}
         <DropdownMenu>
@@ -76,7 +67,7 @@ export function MemberHeader() {
             <DropdownMenuSeparator />
             {(!recentNotifications || recentNotifications.length === 0) ? (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                No notifications yet
+                All caught up! 🎉
               </div>
             ) : (
               recentNotifications.map((n) => (
@@ -118,48 +109,6 @@ export function MemberHeader() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Settings drawer */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-muted-foreground">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-2xl">
-            <SheetHeader>
-              <SheetTitle>Settings</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 space-y-6 pb-4">
-              {/* Language */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Language</p>
-                <div className="flex gap-2">
-                  <Button
-                    variant={language === 'en' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setLanguage('en')}
-                  >
-                    English
-                  </Button>
-                  <Button
-                    variant={language === 'th' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setLanguage('th')}
-                  >
-                    ไทย
-                  </Button>
-                </div>
-              </div>
-
-              {/* Theme placeholder */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Theme</p>
-                <p className="text-sm text-muted-foreground/70">Light mode (coming soon)</p>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
 
         {/* Avatar dropdown */}
         <DropdownMenu>

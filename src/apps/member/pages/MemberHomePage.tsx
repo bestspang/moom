@@ -181,7 +181,7 @@ export default function MemberHomePage() {
         <Section
           title="Challenges"
           action={
-            <button onClick={() => navigate('/member/check-in')} className="text-xs font-medium text-primary flex items-center gap-0.5">
+            <button onClick={() => toast('More challenges coming soon! 🎯')} className="text-xs font-medium text-primary flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </button>
           }
