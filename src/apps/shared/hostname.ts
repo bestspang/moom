@@ -71,6 +71,17 @@ export function isDevEnvironment(): boolean {
   );
 }
 
+/** Check if we're on a custom domain (not lovable.app or localhost) */
+export function isCustomDomain(): boolean {
+  const hostname = window.location.hostname;
+  return (
+    hostname !== 'localhost' &&
+    hostname !== '127.0.0.1' &&
+    !hostname.endsWith('.lovable.app') &&
+    (CONFIG.adminHosts.includes(hostname) || CONFIG.memberHosts.includes(hostname))
+  );
+}
+
 /** Get the correct base URL for a given surface */
 export function getSurfaceBaseUrl(surface: AppSurface): string {
   const protocol = window.location.protocol;
