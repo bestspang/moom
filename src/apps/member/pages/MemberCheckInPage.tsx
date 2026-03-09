@@ -58,7 +58,7 @@ export default function MemberCheckInPage() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-quests'] });
       setMemberCode('');
       stopScanning();
       setShowCelebration(true);
