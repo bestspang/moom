@@ -3266,6 +3266,7 @@ export type Database = {
       streak_snapshots: {
         Row: {
           current_streak: number
+          freeze_until: string | null
           id: string
           last_activity_date: string
           longest_streak: number
@@ -3275,6 +3276,7 @@ export type Database = {
         }
         Insert: {
           current_streak?: number
+          freeze_until?: string | null
           id?: string
           last_activity_date: string
           longest_streak?: number
@@ -3284,6 +3286,7 @@ export type Database = {
         }
         Update: {
           current_streak?: number
+          freeze_until?: string | null
           id?: string
           last_activity_date?: string
           longest_streak?: number
@@ -3899,6 +3902,7 @@ export type Database = {
         | "reward_fulfilled"
         | "streak_milestone"
         | "xp_earned"
+        | "referral_completed"
       package_status: "on_sale" | "scheduled" | "drafts" | "archive"
       package_type: "unlimited" | "session" | "pt"
       payment_method:
@@ -4129,6 +4133,7 @@ export const Constants = {
         "reward_fulfilled",
         "streak_milestone",
         "xp_earned",
+        "referral_completed",
       ],
       package_status: ["on_sale", "scheduled", "drafts", "archive"],
       package_type: ["unlimited", "session", "pt"],

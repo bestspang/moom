@@ -1,49 +1,47 @@
 
 
-# Recheck: Referral + Smart Check-in + Dashboard — Status Report
+# Fix: Promotions export missing columns in Settings
 
-## Verification Results
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### 1. Referral Program — COMPLETE ✅
-All components verified and working end-to-end:
+## Fix (surgical, 1 file)
 
-| Layer | Status | Details |
-|-------|--------|---------|
-| DB Table | ✅ | `member_referrals` with RLS, unique code constraint |
-| Signup Integration | ✅ | `MemberSignup.tsx` reads `?ref=CODE`, passes to `signUp()` as `extraMeta` |
-| Auth Trigger | ✅ | `handle_new_user()` reads `referral_code` from metadata, updates `member_referrals.referred_member_id` + status `signed_up` |
-| Reward Engine | ✅ | `gamification-process-event` Step 11.5 — on first `check_in`, grants 200 RP to both referrer and referred, marks `completed` |
-| UI: ReferralCard | ✅ | Dashboard widget with share/copy, stats display |
-| UI: ReferralPage | ✅ | Full page at `/member/referral` with code, how-it-works, stats, history |
-| Route | ✅ | `/member/referral` registered in `App.tsx` |
-| Profile Link | ✅ | "Invite Friends" added to `MemberProfilePage.tsx` |
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 2. Smart Check-in — COMPLETE ✅ (Pre-existing)
-- QR scanning via camera + manual code entry
-- `fireGamificationEvent` on successful check-in
-- `CheckInCelebration` dialog with XP/RP/streak animation
-- Full gamification pipeline (XP, points, streaks, challenges, level-up)
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 3. Personalized Dashboard — COMPLETE ✅
-- `TodayCard` + upcoming bookings
-- Active challenges with join/progress
-- `MomentumCard` (XP, level, streak)
-- `SquadCard` + `UpcomingMilestones`
-- `ReferralCard` widget
-- `SuggestedClassCard` (AI-like class recommendations based on attendance patterns)
-- Active packages with color-coded expiry countdown (red <7d, yellow <30d)
-- Leaderboard link + stats summary
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-## No Gaps Found
-The full loop is implemented: signup with referral code → trigger links referrer → first check-in → edge function grants rewards → UI shows stats. All three features (Referral, Smart Check-in, Dashboard) are production-ready.
-
-## Recommended Next Features (Business Impact)
-
-From a startup/growth perspective, these would deliver the highest ROI:
-
-1. **Push Notification on Referral Completion** — When a referred friend checks in, send a toast/in-app notification to the referrer ("Your friend just joined! +200 RP 🎉"). Currently the referrer only sees it when they visit the referral page.
-
-2. **Streak Protection / Freeze** — Let members spend RP to "freeze" their streak for 1 day (e.g., 50 RP). This drives both engagement (protect streak) and point economy (spend RP).
-
-3. **Social Proof on Check-in** — After check-in celebration, show "X friends also working out today" or recent squad check-ins. Drives community feeling + retention.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

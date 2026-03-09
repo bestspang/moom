@@ -153,12 +153,20 @@ async function updateStreak(db: ReturnType<typeof createClient>, memberId: strin
       newStreak = streak.current_streak;
     } else if (lastDate === yesterday) {
       newStreak = streak.current_streak + 1;
+    } else {
+      // Check if streak was frozen (freeze_until covers the gap)
+      const isFrozen = streak.freeze_until && streak.freeze_until >= today;
+      if (isFrozen) {
+        newStreak = streak.current_streak + 1;
+      }
+      // else newStreak stays 1 (reset)
     }
     newLongest = Math.max(streak.longest_streak, newStreak);
     await db.from("streak_snapshots").update({
       current_streak: newStreak,
       longest_streak: newLongest,
       last_activity_date: today,
+      freeze_until: null, // Clear freeze after activity
     }).eq("id", streak.id);
   } else {
     await db.from("streak_snapshots").insert({
@@ -530,6 +538,34 @@ Deno.serve(async (req) => {
           },
           flagged: false,
         });
+
+        // Send notification to referrer
+        const { data: referredMember } = await db
+          .from("members")
+          .select("first_name")
+          .eq("id", member_id)
+          .maybeSingle();
+
+        const referrerUserId = await (async () => {
+          const { data: im } = await db
+            .from("identity_map")
+            .select("experience_user_id")
+            .eq("admin_entity_id", pendingReferral.referrer_member_id)
+            .eq("entity_type", "member")
+            .eq("is_verified", true)
+            .maybeSingle();
+          return im?.experience_user_id ?? null;
+        })();
+
+        if (referrerUserId) {
+          await db.from("notifications").insert({
+            user_id: referrerUserId,
+            title: `🎉 Your friend ${referredMember?.first_name ?? "someone"} just checked in!`,
+            message: `You both earned ${referrerPoints} Reward Points. Keep inviting friends!`,
+            type: "referral_completed",
+            is_read: false,
+          });
+        }
       }
     }
 
