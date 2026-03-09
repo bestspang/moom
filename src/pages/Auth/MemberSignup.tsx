@@ -45,7 +45,7 @@ const MemberSignup: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName, 'member');
+      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName, 'member', referralCode ? { referral_code: referralCode } : undefined);
       if (error) {
         toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
       } else {
