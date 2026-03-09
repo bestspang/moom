@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Target, Zap, Gift, CheckCircle2 } from 'lucide-react';
+import { Target, Zap, Gift, CheckCircle2, Clock } from 'lucide-react';
 import type { ChallengeProgressEntry } from './types';
 
 interface QuestCardProps {

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -10,16 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
-import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { TodayCard } from '../features/momentum/TodayCard';
-
-import { ChallengeCard } from '../features/momentum/ChallengeCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { format } from 'date-fns';
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 function getTimeGreeting(): string {
@@ -33,7 +29,6 @@ export default function MemberHomePage() {
   const navigate = useNavigate();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading: loadingBookings } = useQuery({
     queryKey: ['member-bookings', memberId],
@@ -53,32 +48,8 @@ export default function MemberHomePage() {
     enabled: isAuthenticated,
   });
 
-  const { data: activeChallenges } = useQuery({
-    queryKey: ['active-challenges'],
-    queryFn: fetchActiveChallenges,
-    enabled: isAuthenticated,
-  });
 
-  const { data: myProgress } = useQuery({
-    queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId!),
-    enabled: !!memberId,
-  });
 
-  const joinChallenge = useMutation({
-    mutationFn: async (challengeId: string) => {
-      if (!memberId) throw new Error('Not authenticated');
-      const { error } = await supabase
-        .from('challenge_progress')
-        .insert([{ challenge_id: challengeId, member_id: memberId, current_value: 0, status: 'in_progress' as const }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-challenges'] });
-      toast.success('Challenge joined! 🎯');
-    },
-    onError: () => toast.error('Failed to join challenge'),
-  });
 
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
@@ -97,15 +68,8 @@ export default function MemberHomePage() {
 
   const nextTodayBooking = todayBookings[0];
 
-  // Build progress lookup for challenges
-  const progressMap = new Map(
-    (myProgress ?? []).map(p => [p.challengeId, { current_value: p.currentValue, status: p.status }])
-  );
 
-  const visibleChallenges = (activeChallenges ?? []).filter(c => {
-    const prog = progressMap.get(c.id);
-    return !prog || prog.status !== 'completed';
-  }).slice(0, 2);
+
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
@@ -176,30 +140,7 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Active Challenges — max 2 */}
-      {visibleChallenges.length > 0 && (
-        <Section
-          title="Challenges"
-          action={
-            <button onClick={() => toast('More challenges coming soon! 🎯')} className="text-xs font-medium text-primary flex items-center gap-0.5">
-              View all <ChevronRight className="h-3 w-3" />
-            </button>
-          }
-          className="mb-4"
-        >
-          <div className="space-y-3">
-            {visibleChallenges.map(challenge => (
-              <ChallengeCard
-                key={challenge.id}
-                challenge={challenge}
-                progress={progressMap.get(challenge.id) ?? null}
-                onJoin={(id) => joinChallenge.mutate(id)}
-                joining={joinChallenge.isPending}
-              />
-            ))}
-          </div>
-        </Section>
-      )}
+
 
       {/* Next Up bookings — max 2 */}
       <Section
