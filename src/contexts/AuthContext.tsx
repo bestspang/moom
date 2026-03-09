@@ -112,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
         } else {
           setRole(null);
+          setAllRoles([]);
           setAccessLevel(null);
           setStaffStatus(null);
         }
