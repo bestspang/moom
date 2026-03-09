@@ -5,6 +5,7 @@ import { fetchMomentumProfile } from './api';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
 import { StreakFlame } from './StreakFlame';
+import { StreakFreezeButton } from './StreakFreezeButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gift, Zap, Trophy, ChevronRight } from 'lucide-react';
 
