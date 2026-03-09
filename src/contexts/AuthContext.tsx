@@ -58,13 +58,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (roleError) {
         console.error('Error fetching user roles:', roleError);
+        setLoading(false);
         return;
       }
 
       if (rolesData && rolesData.length > 0) {
         const roles = rolesData.map(r => r.role);
         setAllRoles(roles);
-        // Pick highest role by access level
         const roleOrder: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk', 'member'];
         const highest = roleOrder.find(r => roles.includes(r)) ?? roles[0];
         setRole(highest);
@@ -84,12 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (staffError) {
         console.error('Error fetching staff status:', staffError);
+        setLoading(false);
         return;
       }
 
       if (staffData?.status === 'inactive') {
         setStaffStatus('inactive');
-        // Auto sign-out inactive users
         await supabase.auth.signOut();
         return;
       }
@@ -97,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStaffStatus(staffData?.status ?? null);
     } catch (error) {
       console.error('Error in fetchUserRoleAndStatus:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,15 +111,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Use setTimeout to avoid Supabase deadlock
+          // setLoading(false) is called inside fetchUserRoleAndStatus
           setTimeout(() => fetchUserRoleAndStatus(session.user.id), 0);
         } else {
           setRole(null);
           setAllRoles([]);
           setAccessLevel(null);
           setStaffStatus(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -127,10 +129,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // setLoading(false) is called inside fetchUserRoleAndStatus
         fetchUserRoleAndStatus(session.user.id);
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => {

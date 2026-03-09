@@ -1,45 +1,47 @@
 
 
-# Fix: Consistent Surface Switching & Missing Header
+# Fix: Promotions export missing columns in Settings
 
-## Problems Identified
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### Problem 1: Admin dropdown missing "Member App" / "Trainer App" links (Screenshot 3)
-**Root cause:** In `AuthContext.tsx` line 112, `fetchUserRoleAndStatus` is called via `setTimeout` but `setLoading(false)` fires at line 120 immediately. The admin `Header.tsx` line 238 checks `role && ['owner', 'admin', ...].includes(role)` — when role is still `null` (not yet fetched), the surface switcher links are hidden. By the time role loads, the dropdown has already been dismissed.
+## Fix (surgical, 1 file)
 
-**Fix:** The `Header.tsx` surface switcher should use `allRoles` instead of `role` for the gate check, AND handle the async gap gracefully. However the real fix is ensuring role is loaded before `loading` becomes `false`. We should not set `loading = false` until role fetch completes.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### Problem 2: Member home sometimes has no header (Screenshot 2)  
-**Root cause:** When scrolling, the header might appear to disappear if there's a rendering race. But more likely: if the user navigates to `/member` before `user` is set (brief flash), or if `MemberLayout` redirects to `/login` and back. Looking at the screenshots more carefully — screenshot 2 shows content starting from the very top with no padding gap, meaning `pt-14` IS there but the header is not rendering or is scrolled away.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Actually, comparing screenshots 1 and 2: screenshot 1 has the header, screenshot 2 does not. Both show the member home. The difference is likely a timing issue where `MemberHeader` renders but `bg-background` is transparent during initial paint, or the header hasn't mounted yet when the content renders.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-The fix for the header is to ensure `bg-background` is always opaque (already fixed in prior change to `shadow-sm`). But the real issue might be that the header disappears on scroll — let me verify the CSS is correct. The header has `fixed top-0` so it shouldn't scroll away. This might be a `z-index` issue or the screenshot was taken during a brief render gap.
-
-## Implementation Plan
-
-### 1. Fix role loading race in AuthContext
-**File:** `src/contexts/AuthContext.tsx`
-
-Don't set `loading = false` until role fetch completes. Change the flow so:
-- `onAuthStateChange`: set user/session, call `fetchUserRoleAndStatus`, set `loading = false` only after role is fetched (move `setLoading(false)` inside `fetchUserRoleAndStatus` or await it)
-- `getSession` initial: same pattern
-
-This ensures `role` and `allRoles` are available when the UI renders, so the surface switcher links always appear.
-
-### 2. Ensure admin Header always shows surface links when roles are loaded
-**File:** `src/components/layout/Header.tsx`
-
-The current check `role && [...]` is actually fine once the race is fixed. But as a safety net, also show the links if `allRoles.length > 0` and any role is admin-capable.
-
-### 3. Verify MemberHeader renders correctly
-The `bg-background shadow-sm` fix from the prior change should handle this. No additional changes needed — the header IS rendering with proper `fixed top-0 z-50 bg-background`.
-
-## Files to Modify
-1. `src/contexts/AuthContext.tsx` — defer `setLoading(false)` until `fetchUserRoleAndStatus` completes (~6 lines changed)
-2. `src/components/layout/Header.tsx` — no change needed if AuthContext fix resolves the race
-
-## Risks
-- Changing when `loading` becomes `false` could slightly increase initial load spinner time (by ~50-100ms for the role query). This is acceptable — better to show a brief spinner than render an incomplete UI.
-- No regression risk: the same data is fetched, just the timing of `loading` state changes.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
