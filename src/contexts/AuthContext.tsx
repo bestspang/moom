@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [staffStatus, setStaffStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchingForUserRef = useRef<string | null>(null);
+  const initializedRef = useRef(false);
 
   const fetchUserRoleAndStatus = async (userId: string) => {
     if (fetchingForUserRef.current === userId) return;
