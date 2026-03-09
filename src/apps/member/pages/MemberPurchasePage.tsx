@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
+import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
 const PAYMENT_METHODS = [
   { id: 'card', label: 'Credit/Debit Card', icon: CreditCard },
