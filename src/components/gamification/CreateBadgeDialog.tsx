@@ -48,6 +48,9 @@ const CreateBadgeDialog = ({ open, onOpenChange, editingBadge }: Props) => {
         description_en: editingBadge.description_en || '',
         description_th: editingBadge.description_th || '',
         tier: editingBadge.tier,
+        badge_type: (editingBadge as any).badge_type || 'permanent',
+        effect_type: (editingBadge as any).effect_type || 'cosmetic',
+        duration_days: (editingBadge as any).duration_days?.toString() || '',
         display_priority: editingBadge.display_priority,
         is_active: editingBadge.is_active,
       });
