@@ -66,8 +66,8 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
         <p className="text-sm font-semibold text-foreground">Invite Friends, Earn Points!</p>
         <p className="text-xs text-muted-foreground">
           {stats?.totalCompleted
-            ? `${stats.totalCompleted} friend${stats.totalCompleted > 1 ? 's' : ''} joined · ${stats.totalPointsEarned} RP earned`
-            : 'Share your code & both get 200 RP'}
+            ? `${stats.totalCompleted} friend${stats.totalCompleted > 1 ? 's' : ''} joined · ${stats.totalPointsEarned} Coin earned`
+            : 'Share your code & both get 200 Coin'}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">

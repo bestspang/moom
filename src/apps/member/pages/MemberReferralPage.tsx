@@ -36,7 +36,7 @@ export default function MemberReferralPage() {
       if (navigator.share) {
         await navigator.share({
           title: 'Join MOOM!',
-          text: `Use my code ${code} to sign up and we both get 200 reward points! 🎉`,
+          text: `Use my code ${code} to sign up and we both get 200 Coin! 🎉`,
           url: shareUrl,
         });
       } else {
@@ -72,7 +72,7 @@ export default function MemberReferralPage() {
             <p className="text-2xl font-black tracking-widest text-foreground mb-3">{code}</p>
           )}
           <p className="text-xs text-muted-foreground mb-4">
-            Both you and your friend get <span className="font-bold text-primary">200 RP</span> when they check in! 🎉
+            Both you and your friend get <span className="font-bold text-primary">200 Coin</span> when they check in! 🎉
           </p>
           <Button onClick={handleCopy} className="w-full" size="sm">
             {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Share2 className="h-4 w-4 mr-1.5" />}
@@ -87,7 +87,7 @@ export default function MemberReferralPage() {
           {[
             { step: 1, text: 'Share your code or link with friends', icon: Share2 },
             { step: 2, text: 'They sign up using your code', icon: Users },
-            { step: 3, text: 'You both earn 200 RP on their first check-in!', icon: Trophy },
+            { step: 3, text: 'You both earn 200 Coin on their first check-in!', icon: Trophy },
           ].map(({ step, text, icon: Icon }) => (
             <div key={step} className="flex items-center gap-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold flex-shrink-0">
@@ -114,7 +114,7 @@ export default function MemberReferralPage() {
           <div className="grid grid-cols-3 gap-3">
             <SummaryCard label="Invited" value={String(stats?.totalInvited ?? 0)} subtitle="friends" />
             <SummaryCard label="Joined" value={String(stats?.totalCompleted ?? 0)} subtitle="completed" />
-            <SummaryCard label="Earned" value={String(stats?.totalPointsEarned ?? 0)} subtitle="RP" />
+            <SummaryCard label="Earned" value={String(stats?.totalPointsEarned ?? 0)} subtitle="Coin" />
           </div>
         )}
       </Section>
@@ -141,7 +141,7 @@ export default function MemberReferralPage() {
                   </p>
                 </div>
                 {ref.rewardGranted && (
-                  <span className="text-xs font-bold text-primary">+200 RP</span>
+                  <span className="text-xs font-bold text-primary">+200 Coin</span>
                 )}
               </div>
             ))}

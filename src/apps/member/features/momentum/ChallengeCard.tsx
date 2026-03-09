@@ -94,7 +94,7 @@ export function ChallengeCard({ challenge, progress, onJoin, joining, className 
               style={{ backgroundColor: 'hsl(var(--momentum-flame) / 0.1)', color: 'hsl(var(--momentum-flame))' }}
             >
               <Gift className="h-3 w-3" />
-              {challenge.reward_points} RP
+              {challenge.reward_points} Coin
             </span>
           )}
         </div>

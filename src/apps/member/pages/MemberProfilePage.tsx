@@ -77,9 +77,9 @@ export default function MemberProfilePage() {
             <div className="flex items-center justify-between">
               <StreakFlame weeklyCheckinDays={momentum.weeklyCheckinDays} currentStreakWeeks={momentum.currentStreak} />
               <div className="text-right">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Reward Points</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Coin Balance</p>
                 <p className="text-lg font-bold text-foreground">
-                  {momentum.availablePoints.toLocaleString()} <span className="text-xs text-muted-foreground font-medium">RP</span>
+                  {momentum.availablePoints.toLocaleString()} <span className="text-xs text-muted-foreground font-medium">Coin</span>
                 </p>
               </div>
             </div>
