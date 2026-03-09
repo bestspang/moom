@@ -72,7 +72,7 @@ export default function MemberReferralPage() {
             <p className="text-2xl font-black tracking-widest text-foreground mb-3">{code}</p>
           )}
           <p className="text-xs text-muted-foreground mb-4">
-            Both you and your friend get <span className="font-bold text-primary">200 RP</span> when they check in! 🎉
+            Both you and your friend get <span className="font-bold text-primary">200 Coin</span> when they check in! 🎉
           </p>
           <Button onClick={handleCopy} className="w-full" size="sm">
             {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Share2 className="h-4 w-4 mr-1.5" />}
