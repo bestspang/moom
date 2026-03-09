@@ -1,61 +1,47 @@
 
 
-# Root Cause: Missing Member Record — Trigger Timing Issue
+# Fix: Promotions export missing columns in Settings
 
-## Diagnosis (Verified with Real Data)
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-Your auth user (`41ff3f12-55c8-4061-bd58-57ffebbd683a`, bestspang@gmail.com) was created **before** the `handle_new_user` trigger was updated to auto-provision member records (migration `20260309131928`). As a result:
+## Fix (surgical, 1 file)
 
-- `identity_map` query returns `[]` — no link exists
-- `line_users` query returns `[]` — no link exists  
-- `members` table has no row for `bestspang@gmail.com`
-- `useMemberSession()` returns `memberId: null`
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-In `MemberHomePage.tsx` line 143: `{memberId && (<MomentumCard .../>)}` — this guard prevents ALL gamification UI from rendering when `memberId` is null. Same for ReferralCard (line 199) and SuggestedClassCard (line 206).
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## Fix Plan (2 Parts)
-
-### Part 1: Backfill Missing Member Record (DB Migration)
-Create the missing `members` row + `identity_map` entry for your existing auth user. This is the proper fix — the trigger should have done this at signup.
-
-```sql
--- Backfill member record for pre-trigger auth users
-DO $$
-DECLARE
-  v_member_id uuid;
-  v_member_code text;
-BEGIN
-  v_member_code := 'M-' || lpad(floor(random() * 100000000)::text, 8, '0');
-  
-  INSERT INTO public.members (first_name, last_name, member_id, email, status, source)
-  VALUES ('Kongphop', 'Suriyawanakul', v_member_code, 'bestspang@gmail.com', 'active', 'self_signup')
-  RETURNING id INTO v_member_id;
-
-  INSERT INTO public.identity_map (admin_entity_id, experience_user_id, entity_type, shared_identifier, shared_identifier_type, is_verified)
-  VALUES (v_member_id, '41ff3f12-55c8-4061-bd58-57ffebbd683a', 'member', 'bestspang@gmail.com', 'email', true);
-END $$;
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-### Part 2: Make UI Resilient (Prevent Future Issues)
-Even after backfill, other users might have the same problem. Make the home page show gamification in "starter mode" when `memberId` is null instead of hiding it completely.
-
-**File**: `src/apps/member/pages/MemberHomePage.tsx`
-- Remove the `{memberId && ...}` guard around MomentumCard
-- Pass `memberId` or fallback `user?.id` to MomentumCard
-- MomentumCard already handles null profile → shows starter defaults
-
-**File**: `src/apps/member/features/momentum/MomentumCard.tsx`
-- Make `memberId` prop accept `string | null`
-- When null: show starter card with CTA to complete profile/check-in
-- All DB queries already return empty → DEFAULT_PROFILE kicks in
-
-### Files to Modify
-- DB migration (backfill member record)
-- `src/apps/member/pages/MemberHomePage.tsx` (remove memberId guards)
-- `src/apps/member/features/momentum/MomentumCard.tsx` (handle null memberId gracefully)
-
-### Risk: Near-zero
-- DB migration is additive (INSERT only)
-- UI changes are display-only — no business logic affected
-- MomentumCard fallback already exists, just needs to be reachable
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

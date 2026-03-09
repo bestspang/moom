@@ -10,7 +10,7 @@ import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users } from 'lucide-rea
 import type { MomentumProfile } from './types';
 
 interface MomentumCardProps {
-  memberId: string;
+  memberId: string | null;
   className?: string;
 }
 
@@ -30,19 +30,19 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
   const navigate = useNavigate();
   const { data: profile, isLoading } = useQuery({
     queryKey: ['momentum-profile', memberId],
-    queryFn: () => fetchMomentumProfile(memberId),
+    queryFn: () => fetchMomentumProfile(memberId!),
     enabled: !!memberId,
   });
 
   const { data: myProgress } = useQuery({
     queryKey: ['my-challenges', memberId],
-    queryFn: () => fetchMyChallengeProgress(memberId),
+    queryFn: () => fetchMyChallengeProgress(memberId!),
     enabled: !!memberId,
   });
 
   const { data: myBadges } = useQuery({
     queryKey: ['my-badges', memberId],
-    queryFn: () => fetchMyBadges(memberId),
+    queryFn: () => fetchMyBadges(memberId!),
     enabled: !!memberId,
   });
 
@@ -57,7 +57,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
   }
 
   // Use real profile or fallback starter profile
-  const p: MomentumProfile = profile ?? { ...DEFAULT_PROFILE, memberId };
+  const p: MomentumProfile = profile ?? { ...DEFAULT_PROFILE, memberId: memberId ?? '' };
   const isStarter = !profile;
 
   const activeQuests = (myProgress ?? []).filter(q => q.status !== 'completed' && q.challenge).slice(0, 2);
