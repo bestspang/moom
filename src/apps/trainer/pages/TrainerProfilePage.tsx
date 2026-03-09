@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { toast } from 'sonner';
 
 export default function TrainerProfilePage() {
   const { user, allRoles, signOut } = useAuth();
@@ -39,9 +40,24 @@ export default function TrainerProfilePage() {
 
       <Section title="Settings">
         <div className="space-y-1">
-          <ListCard title="Notifications" leading={<Bell className="h-5 w-5 text-muted-foreground" />} showChevron />
-          <ListCard title="Preferences" leading={<Settings className="h-5 w-5 text-muted-foreground" />} showChevron />
-          <ListCard title="Help & Support" leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />} showChevron />
+          <ListCard
+            title="Notifications"
+            leading={<Bell className="h-5 w-5 text-muted-foreground" />}
+            showChevron
+            onClick={() => toast.info('Notifications settings coming soon')}
+          />
+          <ListCard
+            title="Preferences"
+            leading={<Settings className="h-5 w-5 text-muted-foreground" />}
+            showChevron
+            onClick={() => toast.info('Preferences coming soon')}
+          />
+          <ListCard
+            title="Help & Support"
+            leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
+            showChevron
+            onClick={() => toast.info('Help center coming soon')}
+          />
         </div>
       </Section>
 

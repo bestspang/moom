@@ -112,7 +112,7 @@ export function MemberHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="justify-center text-xs font-medium text-primary"
-              onClick={() => navigate('/member')}
+              onClick={() => navigate('/member/notifications')}
             >
               View all
             </DropdownMenuItem>

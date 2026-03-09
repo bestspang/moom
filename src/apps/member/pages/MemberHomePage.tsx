@@ -5,16 +5,13 @@ import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
 import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
-import { SummaryCard } from '@/apps/shared/components/SummaryCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Package, Sparkles, ChevronRight, Megaphone, Trophy } from 'lucide-react';
+import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { fetchActiveChallenges, fetchMyChallengeProgress } from '../features/momentum/api';
 import { MomentumCard } from '../features/momentum/MomentumCard';
-import { SquadCard } from '../features/momentum/SquadCard';
-import { UpcomingMilestones } from '../features/momentum/UpcomingMilestones';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { NotificationBell } from '../features/momentum/NotificationBell';
 import { ChallengeCard } from '../features/momentum/ChallengeCard';
@@ -98,7 +95,6 @@ export default function MemberHomePage() {
 
   const isNewUser = upcomingBookings.length === 0 && activePackages.length === 0;
 
-  // Find the next upcoming today booking for TodayCard
   const nextTodayBooking = todayBookings[0];
 
   // Build progress lookup for challenges
@@ -106,11 +102,10 @@ export default function MemberHomePage() {
     (myProgress ?? []).map(p => [p.challengeId, { current_value: p.currentValue, status: p.status }])
   );
 
-  // Filter active challenges that are relevant (not completed)
   const visibleChallenges = (activeChallenges ?? []).filter(c => {
     const prog = progressMap.get(c.id);
     return !prog || prog.status !== 'completed';
-  }).slice(0, 3);
+  }).slice(0, 2);
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
@@ -161,56 +156,28 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Quick actions */}
+      {/* Quick actions — Check In is primary */}
       <Section className="mb-4">
         <div className="flex gap-2">
-          <Button onClick={() => navigate('/member/schedule')} className="flex-1" size="sm">
+          <Button onClick={() => navigate('/member/check-in')} className="flex-1" size="sm">
+            <ScanLine className="h-4 w-4 mr-1.5" />
+            Check In
+          </Button>
+          <Button onClick={() => navigate('/member/schedule')} variant="outline" className="flex-1" size="sm">
             <Calendar className="h-4 w-4 mr-1.5" />
             Book Class
-          </Button>
-          <Button onClick={() => navigate('/member/packages')} variant="outline" className="flex-1" size="sm">
-            <Package className="h-4 w-4 mr-1.5" />
-            Buy Package
           </Button>
         </div>
       </Section>
 
-      {/* Next Up bookings */}
-      <Section
-        title="Next Up"
-        action={
-          upcomingBookings.length > 0 ? (
-            <button onClick={() => navigate('/member/bookings')} className="text-xs font-medium text-primary flex items-center gap-0.5">
-              View all <ChevronRight className="h-3 w-3" />
-            </button>
-          ) : undefined
-        }
-        className="mb-4"
-      >
-        {loadingBookings ? (
-          <div className="space-y-3"><Skeleton className="h-20 rounded-lg" /></div>
-        ) : upcomingBookings.length === 0 ? (
-          <EmptyState
-            title="No upcoming bookings"
-            description="Browse the schedule to book your next class"
-            action={<Button size="sm" onClick={() => navigate('/member/schedule')}>Browse Schedule</Button>}
-          />
-        ) : (
-          <div className="space-y-2">
-            {upcomingBookings.slice(0, 3).map(booking => (
-              <ListCard
-                key={booking.id}
-                title={booking.schedule.className}
-                subtitle={`${format(new Date(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
-                meta={booking.schedule.trainerName ? `with ${booking.schedule.trainerName}` : undefined}
-                trailing={<MobileStatusBadge status={booking.status} />}
-              />
-            ))}
-          </div>
-        )}
-      </Section>
+      {/* Momentum */}
+      {memberId && (
+        <Section className="mb-4">
+          <MomentumCard memberId={memberId} />
+        </Section>
+      )}
 
-      {/* Active Challenges */}
+      {/* Active Challenges — max 2 */}
       {visibleChallenges.length > 0 && (
         <Section
           title="Challenges"
@@ -235,43 +202,40 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Momentum */}
-      {memberId && (
-        <Section className="mb-4">
-          <MomentumCard memberId={memberId} />
-        </Section>
-      )}
-
-      {/* Leaderboard link */}
-      <Section className="mb-4">
-        <button
-          onClick={() => navigate('/member/leaderboard')}
-          className="flex w-full items-center gap-3 rounded-xl bg-card p-3 shadow-sm border border-border hover:bg-accent/50 transition-colors"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-            <Trophy className="h-5 w-5 text-primary" />
+      {/* Next Up bookings — max 2 */}
+      <Section
+        title="Next Up"
+        action={
+          upcomingBookings.length > 0 ? (
+            <button onClick={() => navigate('/member/bookings')} className="text-xs font-medium text-primary flex items-center gap-0.5">
+              View all <ChevronRight className="h-3 w-3" />
+            </button>
+          ) : undefined
+        }
+        className="mb-4"
+      >
+        {loadingBookings ? (
+          <div className="space-y-3"><Skeleton className="h-20 rounded-lg" /></div>
+        ) : upcomingBookings.length === 0 ? (
+          <EmptyState
+            title="No upcoming bookings"
+            description="Browse the schedule to book your next class"
+            action={<Button size="sm" onClick={() => navigate('/member/schedule')}>Browse Schedule</Button>}
+          />
+        ) : (
+          <div className="space-y-2">
+            {upcomingBookings.slice(0, 2).map(booking => (
+              <ListCard
+                key={booking.id}
+                title={booking.schedule.className}
+                subtitle={`${format(new Date(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
+                meta={booking.schedule.trainerName ? `with ${booking.schedule.trainerName}` : undefined}
+                trailing={<MobileStatusBadge status={booking.status} />}
+              />
+            ))}
           </div>
-          <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-foreground">Leaderboard</p>
-            <p className="text-xs text-muted-foreground">See who's on top 🏆</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </button>
+        )}
       </Section>
-
-      {/* Squad */}
-      {memberId && (
-        <Section className="mb-4">
-          <SquadCard memberId={memberId} />
-        </Section>
-      )}
-
-      {/* Upcoming milestones nudge */}
-      {memberId && (
-        <Section className="mb-4">
-          <UpcomingMilestones memberId={memberId} nudgeOnly max={1} />
-        </Section>
-      )}
 
       {/* Pinned announcement */}
       {latestAnnouncement && (
@@ -318,9 +282,7 @@ export default function MemberHomePage() {
                   subtitle={
                     pkg.sessionsRemaining != null
                       ? `${pkg.sessionsRemaining} sessions remaining`
-                      : daysLeft != null
-                        ? undefined
-                        : undefined
+                      : undefined
                   }
                   meta={daysLeft != null ? (
                     <span className={`text-xs font-semibold ${urgencyColor}`}>
@@ -334,14 +296,6 @@ export default function MemberHomePage() {
           </div>
         </Section>
       )}
-
-      {/* Stats */}
-      <Section title="Your Stats" className="mb-4">
-        <div className="grid grid-cols-2 gap-3">
-          <SummaryCard label="This Week" value={String(todayBookings.length)} subtitle="classes booked" />
-          <SummaryCard label="Packages" value={String(activePackages.length)} subtitle="active" />
-        </div>
-      </Section>
     </div>
   );
 }

@@ -1,98 +1,47 @@
 
 
-# UX/UI Deep Review + Feature Completion: Member & Trainer Apps
+# Fix: Promotions export missing columns in Settings
 
-## Current State Analysis
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-After reviewing all member and trainer app files, here's what I found:
+## Fix (surgical, 1 file)
 
-### Already Working (No Changes Needed)
-- **Referral notification to referrer**: Already implemented in `gamification-process-event` (lines 542-568) — inserts notification with 🎉 emoji when referred friend checks in
-- **Social proof on check-in**: `SocialProofCheckins` component exists and is integrated into `CheckInCelebration`
-- **Smart Check-in**: Full QR + manual flow with gamification
-- **Dashboard**: Momentum, challenges, referral, AI suggestions, packages with expiry
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### UX/UI Issues Found
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**Member App:**
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-1. **Header "View all" notifications links to `/member` (home) instead of `/member/notifications`** — line 116 in MemberHeader.tsx
-2. **Duplicate notification bell** — Header has its own bell dropdown AND `MobilePageHeader` shows `NotificationBell` on home. Two competing notification UIs
-3. **Homepage is overloaded** — 12+ sections stacked vertically. User gets lost. Need hierarchy + grouping
-4. **Bottom nav missing Check-in** — The most important action (check-in for XP) is buried. No quick access from nav
-5. **Leaderboard section duplicated** — Both a standalone `Section` card AND a link inside `MomentumCard` go to leaderboard
-6. **Stats card shows wrong data** — "This Week" shows `todayBookings.length` (TODAY's count, not week's)
-7. **SuggestedClassCard navigates to `/member/schedule/:id`** but that route expects a class detail page — works fine
-8. **No Check-in CTA on home** — User must navigate to `/member/check-in` but there's no prominent CTA
-
-**Trainer App:**
-9. **No header** — TrainerLayout has no persistent header (unlike MemberLayout), so no branding/notifications
-10. **Profile page menu items don't navigate** — ListCard items for Notifications/Preferences/Help have no `onClick` handlers
-11. **Today's classes query doesn't filter by trainer** — Shows ALL classes, not just the logged-in trainer's classes
-
-### Implementation Plan
-
-#### Part 1: Fix UX Bugs (Critical)
-
-**1. Fix notification "View all" link** (MemberHeader.tsx)
-- Change `/member` → `/member/notifications`
-
-**2. Remove duplicate leaderboard section** (MemberHomePage.tsx)
-- Remove standalone leaderboard `Section` (lines 246-260) — already accessible from MomentumCard
-
-**3. Fix stats "This Week" count** (MemberHomePage.tsx)
-- Change from `todayBookings.length` to actual weekly booking count
-
-**4. Add Check-in to bottom nav** (MemberBottomNav.tsx)
-- Replace 5-tab nav with smarter layout: Home, Schedule, **Check-in** (center, prominent), Bookings, Profile
-- Move Packages access to Profile page menu (it's already in the header path)
-
-**5. Add Check-in CTA to homepage** (MemberHomePage.tsx)
-- Add a prominent "Check In" button alongside "Book Class" in quick actions
-
-#### Part 2: Reduce Homepage Clutter
-
-**6. Reorganize MemberHomePage sections** — priority order:
-1. Today's class (TodayCard) — keep
-2. Quick actions (Book + Check-in + Buy Package) — enhance
-3. MomentumCard — keep (includes streak, XP, leaderboard, freeze)
-4. Active challenges — keep (max 2)
-5. Upcoming bookings — keep (max 2)
-6. Announcement — keep if exists
-7. Referral card — keep
-8. AI suggestions — keep
-9. Active packages — keep
-10. Remove: standalone leaderboard link, squad card (move to profile), milestones nudge (move to momentum), separate stats section (redundant with momentum)
-
-#### Part 3: Trainer App Polish
-
-**7. Add TrainerHeader** — Simple fixed header with branding + avatar dropdown
-- Mirror MemberHeader pattern but simpler (no notifications needed initially)
-
-**8. Fix TrainerProfilePage** — Wire up menu item navigation
-- Notifications → coming soon toast
-- Preferences → coming soon toast  
-- Help → coming soon toast
-
-**9. Filter trainer schedule by logged-in trainer** — Add `.eq('trainer_id', staffId)` to today's classes query on TrainerHomePage
-
-#### Part 4: Visual Micro-improvements
-
-**10. Notification page icon mapping** — Add type-specific icons (currently all text-only)
-**11. Consistent animation** — Ensure all pages use `animate-in fade-in-0 slide-in-from-bottom-2`
-
-### Files to Touch
-- `src/apps/member/components/MemberHeader.tsx` (fix notification link)
-- `src/apps/member/components/MemberBottomNav.tsx` (add check-in tab)
-- `src/apps/member/pages/MemberHomePage.tsx` (reorganize, fix stats, add check-in CTA, remove duplicates)
-- `src/apps/trainer/layouts/TrainerLayout.tsx` (add header)
-- `src/apps/trainer/pages/TrainerProfilePage.tsx` (wire menu items)
-- `src/apps/trainer/pages/TrainerHomePage.tsx` (filter by trainer)
-
-### Risk Assessment
-- Bottom nav change: low risk — swapping Package for Check-in
-- Homepage reorganization: medium risk — removing sections could affect user expectations, but simplification is net positive
-- Trainer header: low risk — additive, no existing code affected
-- No database changes needed
-- No edge function changes needed
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

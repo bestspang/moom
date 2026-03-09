@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Home, Calendar, Users, Dumbbell, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { TrainerHeader } from '../components/TrainerHeader';
 
 const TRAINER_NAV = [
   { label: 'Home', path: '/trainer', icon: Home },
@@ -29,7 +30,8 @@ export function TrainerLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="flex-1 pb-20">
+      <TrainerHeader />
+      <div className="flex-1 pt-14 pb-20">
         <Outlet />
       </div>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-bottom">
