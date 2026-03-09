@@ -140,11 +140,9 @@ export default function MemberHomePage() {
       </Section>
 
       {/* Momentum */}
-      {memberId && (
-        <Section className="mb-4">
-          <MomentumCard memberId={memberId} />
-        </Section>
-      )}
+      <Section className="mb-4">
+        <MomentumCard memberId={memberId} />
+      </Section>
 
 
 
