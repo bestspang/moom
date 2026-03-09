@@ -18,6 +18,8 @@ import { UpcomingMilestones } from '../features/momentum/UpcomingMilestones';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { NotificationBell } from '../features/momentum/NotificationBell';
 import { ChallengeCard } from '../features/momentum/ChallengeCard';
+import { ReferralCard } from '../features/referral/ReferralCard';
+import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
