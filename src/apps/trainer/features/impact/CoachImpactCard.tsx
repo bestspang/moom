@@ -109,7 +109,7 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
         </div>
 
         {/* Metrics grid */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-5 gap-2 mb-4">
           {metrics.map(m => {
             const Icon = m.icon;
             return (
