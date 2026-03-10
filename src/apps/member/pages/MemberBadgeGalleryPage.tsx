@@ -163,7 +163,7 @@ export default function MemberBadgeGalleryPage() {
           <div className="grid grid-cols-2 gap-3">
             {lockedBadges.map((badge) => {
               const style = getTierStyle(badge.tier);
-              const badgeTypeInfo = BADGE_TYPE_LABELS[badge.badge_type ?? 'permanent'] ?? BADGE_TYPE_LABELS.permanent;
+              const badgeTypeInfo = BADGE_TYPE_KEYS[badge.badge_type ?? 'permanent'] ?? BADGE_TYPE_KEYS.permanent;
 
               return (
                 <div
