@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Settings, Dumbbell } from 'lucide-react';
 
 const STORAGE_KEY = 'checkin-display-location';
-const TOKEN_LIFETIME = 120; // seconds
+const TOKEN_LIFETIME = 30; // seconds
 
 function CircularCountdown({ remaining, total }: { remaining: number; total: number }) {
   const radius = 54;
