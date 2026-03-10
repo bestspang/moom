@@ -263,29 +263,44 @@ function StreaksTab({ memberId, t }: { memberId: string | null; t: (key: string,
 }
 
 function AttendanceTab({ memberId, t }: { memberId: string | null; t: (key: string, opts?: any) => string }) {
+  const [timeWindow, setTimeWindow] = useState<LeaderboardTimeWindow>('month');
+
+  const chipOptions = TIME_WINDOW_OPTIONS.map(o => ({
+    value: o.value,
+    label: o.value === 'all' ? t('member.periodAllTime') : o.value === 'month' ? t('member.periodMonthly') : t('member.periodWeekly'),
+  }));
+
   const { data, isLoading } = useQuery({
-    queryKey: ['attendance-leaderboard'],
-    queryFn: fetchAttendanceLeaderboard,
+    queryKey: ['attendance-leaderboard', timeWindow],
+    queryFn: () => fetchAttendanceLeaderboardByWindow(timeWindow),
     staleTime: 60_000,
   });
 
   if (isLoading) return <LeaderboardSkeleton />;
-  if (!data?.length) return <EmptyLeaderboard message={t('member.noAttendanceYet')} />;
+  if (!data?.length) return (
+    <div className="space-y-3">
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={(v) => setTimeWindow(v as LeaderboardTimeWindow)} />
+      <EmptyLeaderboard message={t('member.noAttendanceYet')} />
+    </div>
+  );
 
   return (
-    <div className="space-y-2">
-      {data.map((entry) => (
-        <LeaderboardEntryRow
-          key={entry.memberId}
-          rank={entry.rank}
-          firstName={entry.firstName}
-          lastName={entry.lastName}
-          avatarUrl={entry.avatarUrl}
-          isMe={memberId === entry.memberId}
-          badge={t('member.checkInsThisMonth', { count: entry.checkInCount ?? 0 })}
-          youLabel={t('member.youLabel')}
-        />
-      ))}
+    <div className="space-y-4">
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={(v) => setTimeWindow(v as LeaderboardTimeWindow)} />
+      <div className="space-y-2">
+        {data.map((entry) => (
+          <LeaderboardEntryRow
+            key={entry.memberId}
+            rank={entry.rank}
+            firstName={entry.firstName}
+            lastName={entry.lastName}
+            avatarUrl={entry.avatarUrl}
+            isMe={memberId === entry.memberId}
+            badge={t('member.checkInsThisMonth', { count: entry.checkInCount ?? 0 })}
+            youLabel={t('member.youLabel')}
+          />
+        ))}
+      </div>
     </div>
   );
 }
