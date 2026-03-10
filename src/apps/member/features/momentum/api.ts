@@ -760,6 +760,7 @@ export async function fetchChallengeCompletionStats(memberId: string | null): Pr
 // ─── Squad Activity Feed ────────────────────────────────────
 
 export interface SquadActivityEntry {
+  auditLogId: string;
   memberId: string;
   firstName: string | null;
   avatarUrl: string | null;
@@ -776,6 +777,7 @@ export async function fetchSquadActivityFeed(squadId: string, limit = 15): Promi
   });
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
+    auditLogId: r.audit_log_id,
     memberId: r.member_id,
     firstName: r.first_name,
     avatarUrl: r.avatar_url,
@@ -784,4 +786,41 @@ export async function fetchSquadActivityFeed(squadId: string, limit = 15): Promi
     xpDelta: r.xp_delta,
     createdAt: r.created_at,
   }));
+}
+
+// ─── Squad Feed Reactions ───────────────────────────────────
+
+export interface FeedReaction {
+  count: number;
+  reactedByMe: boolean;
+}
+
+export async function fetchSquadFeedReactions(auditLogIds: string[]): Promise<Map<string, FeedReaction>> {
+  if (!auditLogIds.length) return new Map();
+
+  const { data, error } = await supabase.rpc('get_squad_feed_reactions', {
+    p_audit_log_ids: auditLogIds,
+  });
+  if (error) throw error;
+
+  const map = new Map<string, FeedReaction>();
+  for (const r of (data ?? [])) {
+    map.set(r.audit_log_id, {
+      count: Number(r.reaction_count),
+      reactedByMe: !!r.reacted_by_me,
+    });
+  }
+  return map;
+}
+
+export async function toggleSquadFeedReaction(auditLogId: string): Promise<FeedReaction> {
+  const { data, error } = await supabase.rpc('toggle_squad_feed_reaction', {
+    p_audit_log_id: auditLogId,
+  });
+  if (error) throw error;
+  const row = (data as any)?.[0] ?? data;
+  return {
+    count: Number(row?.new_count ?? 0),
+    reactedByMe: !!row?.reacted,
+  };
 }

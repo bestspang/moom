@@ -1856,6 +1856,8 @@ export default {
     activityLeveledUp: 'เลเวลอัพ',
     activityEarnedXp: 'ได้รับ XP',
     noActivityYet: 'ยังไม่มีกิจกรรม — กลับมาเช็คอีกครั้งนะ!',
+    cheer: 'เชียร์',
+    cheered: 'เชียร์แล้ว!',
     squadMemberCount: '{{count}} สมาชิก',
     // Coupons page
     myCoupons: 'คูปองของฉัน',
