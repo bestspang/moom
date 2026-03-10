@@ -23,9 +23,9 @@ import { useState } from 'react';
 
 function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('member.goodMorning');
+  if (hour < 17) return t('member.goodAfternoon');
+  return t('member.goodEvening');
 }
 
 export default function MemberHomePage() {
