@@ -1,20 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Phone } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
 
 type SignupFormData = { firstName: string; lastName: string; email: string; password: string; confirmPassword: string };
+type SignupMode = 'email' | 'phone';
+
+const RESEND_COOLDOWN = 60;
 
 const MemberSignup: React.FC = () => {
   const { t } = useLanguage();
@@ -26,6 +31,23 @@ const MemberSignup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [signupMode, setSignupMode] = useState<SignupMode>('email');
+
+  // Phone OTP state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneFirstName, setPhoneFirstName] = useState('');
+  const [phoneLastName, setPhoneLastName] = useState('');
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [isPhoneLoading, setIsPhoneLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => setResendTimer(p => p - 1), 1000);
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const schema = z.object({
     firstName: z.string().min(1, t('validation.required')),
@@ -74,6 +96,67 @@ const MemberSignup: React.FC = () => {
     }
   };
 
+  const handleSendPhoneOtp = async () => {
+    const cleaned = phoneNumber.replace(/\s/g, '');
+    if (!cleaned || cleaned.length < 8) {
+      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.phoneNumber') + ' is required' });
+      return;
+    }
+    if (!phoneFirstName.trim()) {
+      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.firstName') + ' is required' });
+      return;
+    }
+    setIsPhoneLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: cleaned,
+        options: {
+          data: {
+            signup_surface: 'member',
+            first_name: phoneFirstName.trim(),
+            last_name: phoneLastName.trim(),
+            ...(referralCode ? { referral_code: referralCode } : {}),
+          },
+        },
+      });
+      if (error) {
+        toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
+      } else {
+        setPhoneOtpSent(true);
+        setResendTimer(RESEND_COOLDOWN);
+        toast({ title: t('auth.otpSent'), description: t('auth.otpSentDescription') + ' ' + cleaned });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: t('auth.signupFailed') });
+    } finally {
+      setIsPhoneLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = useCallback(async (code: string) => {
+    if (code.length !== 6) return;
+    const cleaned = phoneNumber.replace(/\s/g, '');
+    setIsVerifying(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: cleaned,
+        token: code,
+        type: 'sms',
+      });
+      if (error) {
+        toast({ variant: 'destructive', title: t('auth.invalidCode'), description: error.message });
+        setPhoneOtpCode('');
+      } else {
+        toast({ title: t('auth.signupSuccess'), description: t('auth.welcomeBack') });
+        navigate('/member');
+      }
+    } catch {
+      toast({ variant: 'destructive', title: t('auth.signupFailed') });
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [phoneNumber, navigate, t, toast]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md">
@@ -110,44 +193,154 @@ const MemberSignup: React.FC = () => {
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('common.or')}</span>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">{t('auth.firstName')}</Label>
-                <Input id="firstName" {...register('firstName')} className={errors.firstName ? 'border-destructive' : ''} />
-                {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+          {/* Mode toggle: Email / Phone */}
+          <div className="flex rounded-lg bg-muted p-1 mb-4">
+            <button
+              type="button"
+              onClick={() => { setSignupMode('email'); setPhoneOtpSent(false); setPhoneOtpCode(''); }}
+              className={`flex-1 rounded-md py-2 text-xs font-medium transition-all ${signupMode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {t('auth.email')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSignupMode('phone'); setPhoneOtpSent(false); setPhoneOtpCode(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all ${signupMode === 'phone' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Phone className="h-3.5 w-3.5" />
+              {t('auth.phoneOtp')}
+            </button>
+          </div>
+
+          {signupMode === 'email' ? (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">{t('auth.firstName')}</Label>
+                  <Input id="firstName" {...register('firstName')} className={errors.firstName ? 'border-destructive' : ''} />
+                  {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">{t('auth.lastName')}</Label>
+                  <Input id="lastName" {...register('lastName')} className={errors.lastName ? 'border-destructive' : ''} />
+                  {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">{t('auth.lastName')}</Label>
-                <Input id="lastName" {...register('lastName')} className={errors.lastName ? 'border-destructive' : ''} />
-                {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
+                <Label htmlFor="email">{t('auth.email')}</Label>
+                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
-              <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...register('password')} className={errors.password ? 'border-destructive pr-10' : 'pr-10'} />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('auth.password')}</Label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...register('password')} className={errors.password ? 'border-destructive pr-10' : 'pr-10'} />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
               </div>
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
+                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} className={errors.confirmPassword ? 'border-destructive' : ''} />
+                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('auth.signUp')}
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {phoneOtpSent ? (
+                <div className="text-center py-4 space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Phone className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{t('auth.enterCode')}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t('auth.otpSentDescription')} <span className="font-medium text-foreground">{phoneNumber}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={phoneOtpCode}
+                      onChange={(val) => {
+                        setPhoneOtpCode(val);
+                        if (val.length === 6) handleVerifyPhoneOtp(val);
+                      }}
+                      disabled={isVerifying}
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map(i => (
+                          <InputOTPSlot key={i} index={i} />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  {isVerifying && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('auth.verifyCode')}...
+                    </div>
+                  )}
+
+                  <div className="flex flex-col items-center gap-2">
+                    {resendTimer > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {t('auth.resendIn').replace('{{seconds}}', String(resendTimer))}
+                      </p>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={handleSendPhoneOtp} disabled={isPhoneLoading}>
+                        {t('auth.resendCode')}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => { setPhoneOtpSent(false); setPhoneOtpCode(''); }}>
+                      Use a different number
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>{t('auth.firstName')}</Label>
+                      <Input
+                        value={phoneFirstName}
+                        onChange={(e) => setPhoneFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('auth.lastName')}</Label>
+                      <Input
+                        value={phoneLastName}
+                        onChange={(e) => setPhoneLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('auth.phoneNumber')}</Label>
+                    <Input
+                      type="tel"
+                      placeholder={t('auth.phonePlaceholder')}
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendPhoneOtp()}
+                    />
+                  </div>
+                  <Button type="button" className="w-full" disabled={isPhoneLoading} onClick={handleSendPhoneOtp}>
+                    {isPhoneLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('auth.sendOtp')}
+                  </Button>
+                </>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
-              <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} className={errors.confirmPassword ? 'border-destructive' : ''} />
-              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.signUp')}
-            </Button>
-          </form>
+          )}
 
           <p className="text-center text-sm text-muted-foreground mt-4">
             {t('auth.hasAccount')}{' '}
