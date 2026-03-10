@@ -184,6 +184,10 @@ export default function MemberSquadPage() {
         </div>
       </Section>
 
+      <Section title={t('member.recentSquadActivity')} className="mb-4">
+        <SquadActivityFeed squadId={squad.id} />
+      </Section>
+
       <Section className="mb-8">
         <Button
           variant="outline"
