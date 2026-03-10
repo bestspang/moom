@@ -4239,6 +4239,19 @@ export type Database = {
           xp_delta: number
         }[]
       }
+      get_streak_around_me: {
+        Args: { p_member_id: string; p_range?: number }
+        Returns: {
+          avatar_url: string
+          current_level: number
+          current_streak: number
+          first_name: string
+          last_name: string
+          member_id: string
+          rank: number
+          total_xp: number
+        }[]
+      }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
