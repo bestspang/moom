@@ -1,66 +1,47 @@
 
 
-# Phase 12: Trainer Roster Page
-
-## Status
-- Phase 8: Squad Activity Feed ✅
-- Phase 9: Squad Reactions ✅
-- Phase 10: Trainer Badges Page ✅
-- Phase 11: Leaderboard Time Windows ✅
+# Fix: Promotions export missing columns in Settings
 
 ## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The Trainer Roster page (`/trainer/roster`) is currently a "Coming Soon" placeholder. Trainers need to see their assigned members — who they train, when they last attended, and basic contact info. This is a core trainer workflow feature.
+## Fix (surgical, 1 file)
 
-## Data Source
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-The `schedule` table links trainers to classes, and `class_bookings` links members to scheduled classes. By joining these, we can derive which members a trainer regularly sees. Additionally, `member_attendance` provides last-attended dates.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-We can build this without a dedicated "assigned members" table by querying members who have booked classes taught by this trainer (within a recent window, e.g. last 90 days).
-
-## Plan
-
-### 1. Database: Create `get_trainer_roster` RPC
-
-```text
-get_trainer_roster(p_staff_id uuid, p_days int DEFAULT 90)
-→ Returns: member_id, first_name, last_name, avatar_url, 
-           total_sessions, last_attended, phone, email
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-Logic:
-- Finds all `schedule` entries where `trainer_id = p_staff_id` within the last `p_days` days
-- Joins `class_bookings` to find members who booked those classes
-- Aggregates: total sessions count, most recent check-in date
-- Joins `members` for name/avatar/contact info
-- `SECURITY DEFINER` so trainers can access member contact details they wouldn't normally see
-- Validates the caller is the trainer (via `identity_map`)
-
-### 2. Frontend: Update `TrainerRosterPage.tsx`
-
-Replace the "Coming Soon" placeholder with:
-- Summary stat: total unique members trained
-- Searchable member list with:
-  - Avatar/initials + name
-  - Total sessions together
-  - Last attended date
-  - Phone (tap to call)
-- Sort by: most recent, most sessions, alphabetical
-- Empty state when no data
-
-### 3. i18n
-
-~8 keys: `trainer.rosterSubtitle`, `trainer.totalMembers`, `trainer.sessionsCount`, `trainer.lastSeen`, `trainer.noRosterData`, `trainer.rosterDesc`, `trainer.sortRecent`, `trainer.sortSessions`
-
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `get_trainer_roster` RPC |
-| `src/apps/trainer/pages/TrainerRosterPage.tsx` | Replace placeholder with roster UI |
-| `src/apps/trainer/features/impact/api.ts` | Add `fetchTrainerRoster` |
-| `src/i18n/locales/en.ts` | ~8 new keys |
-| `src/i18n/locales/th.ts` | ~8 new keys |
-
-No new tables. Uses existing schedule + booking + member data.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
