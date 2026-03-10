@@ -206,24 +206,58 @@ function StreaksTab({ memberId, t }: { memberId: string | null; t: (key: string,
     staleTime: 60_000,
   });
 
+  const { data: aroundMe } = useQuery({
+    queryKey: ['streak-around-me', memberId],
+    queryFn: () => fetchStreakAroundMe(memberId!),
+    enabled: !!memberId,
+    staleTime: 60_000,
+  });
+
   if (isLoading) return <LeaderboardSkeleton />;
   if (!data?.length) return <EmptyLeaderboard message={t('member.noStreakDataYet')} />;
 
+  const isInTop20 = memberId && data.some(e => e.memberId === memberId);
+
   return (
-    <div className="space-y-2">
-      {data.map((entry) => (
-        <LeaderboardEntryRow
-          key={entry.memberId}
-          rank={entry.rank}
-          firstName={entry.firstName}
-          lastName={entry.lastName}
-          avatarUrl={entry.avatarUrl}
-          isMe={memberId === entry.memberId}
-          badge={t('member.dayStreak', { count: entry.currentStreak ?? 0 })}
-          subtitle={`Lv.${entry.level}`}
-          youLabel={t('member.youLabel')}
-        />
-      ))}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {data.map((entry) => (
+          <LeaderboardEntryRow
+            key={entry.memberId}
+            rank={entry.rank}
+            firstName={entry.firstName}
+            lastName={entry.lastName}
+            avatarUrl={entry.avatarUrl}
+            isMe={memberId === entry.memberId}
+            badge={t('member.dayStreak', { count: entry.currentStreak ?? 0 })}
+            subtitle={`Lv.${entry.level}`}
+            youLabel={t('member.youLabel')}
+          />
+        ))}
+      </div>
+
+      {!isInTop20 && aroundMe && aroundMe.length > 0 && (
+        <div className="pt-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+            {t('member.aroundYou')}
+          </p>
+          <div className="space-y-2">
+            {aroundMe.map((entry) => (
+              <LeaderboardEntryRow
+                key={entry.memberId}
+                rank={entry.rank}
+                firstName={entry.firstName}
+                lastName={entry.lastName}
+                avatarUrl={entry.avatarUrl}
+                isMe={memberId === entry.memberId}
+                badge={t('member.dayStreak', { count: entry.currentStreak ?? 0 })}
+                subtitle={`Lv.${entry.level}`}
+                youLabel={t('member.youLabel')}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
