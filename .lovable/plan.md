@@ -1,61 +1,47 @@
 
 
-# Phase 9: Squad Reactions & Encouragement
+# Fix: Promotions export missing columns in Settings
 
-Phase 8 added the squad activity feed. The next high-impact squad social feature is **reactions** — letting squad members tap a quick encouragement on feed entries. This is the lightest social interaction that makes squads feel alive without becoming noisy social media.
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## What We Build
+## Fix (surgical, 1 file)
 
-A simple "cheer" reaction on squad activity feed items. One reaction type only (a fire/flame emoji representing encouragement). Members can tap once per feed entry. The count shows inline.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 1. Database
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-New table: `squad_feed_reactions`
-
-```sql
-CREATE TABLE squad_feed_reactions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  audit_log_id uuid NOT NULL REFERENCES gamification_audit_log(id) ON DELETE CASCADE,
-  member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(audit_log_id, member_id)
-);
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-RLS: Members can insert/delete their own reactions. Select via a SECURITY DEFINER RPC (since audit_log has restricted RLS).
-
-New RPC: `get_squad_feed_reactions(p_audit_log_ids uuid[])` returns `audit_log_id, count, reacted_by_me` for a batch of feed entries.
-
-New RPC: `toggle_squad_feed_reaction(p_audit_log_id uuid)` — inserts or deletes the reaction, returns new count. Validates caller is in the same squad as the audit log entry's member.
-
-### 2. API
-
-In `api.ts`:
-- `fetchSquadFeedReactions(auditLogIds: string[]): Promise<Map<string, { count: number; reactedByMe: boolean }>>`
-- `toggleSquadFeedReaction(auditLogId: string): Promise<{ count: number; reactedByMe: boolean }>`
-
-### 3. UI Changes
-
-Update `SquadActivityFeed.tsx`:
-- Add a small flame/fire button on each feed entry
-- Show reaction count when > 0
-- Optimistic toggle on tap
-- Subtle animation on react (scale bounce)
-
-The `get_squad_activity_feed` RPC needs to also return `audit_log_id` so we can reference entries for reactions.
-
-### 4. i18n
-
-~2 keys: `member.cheer`, `member.cheered`
-
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `squad_feed_reactions` table + 2 RPCs + RLS |
-| Migration SQL | Update `get_squad_activity_feed` to return `id` column |
-| `src/apps/member/features/momentum/api.ts` | Add reaction fetchers |
-| `src/apps/member/features/momentum/SquadActivityFeed.tsx` | Add reaction buttons |
-| `src/i18n/locales/en.ts` | 2 new keys |
-| `src/i18n/locales/th.ts` | 2 new keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

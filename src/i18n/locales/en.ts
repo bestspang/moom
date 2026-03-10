@@ -1857,6 +1857,8 @@ export default {
     activityLeveledUp: 'leveled up',
     activityEarnedXp: 'earned XP',
     noActivityYet: 'No activity yet — check back soon!',
+    cheer: 'Cheer',
+    cheered: 'Cheered!',
     // Coupons page
     myCoupons: 'My Coupons',
     couponActive: 'Active',
