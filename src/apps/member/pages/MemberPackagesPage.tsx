@@ -9,14 +9,17 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Package, Check } from 'lucide-react';
+import { Package, Check, Zap, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyPackages, fetchAvailablePackages } from '../api/services';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 export default function MemberPackagesPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { memberId, isAuthenticated } = useMemberSession();
   const [tab, setTab] = useState<'my' | 'browse'>('my');
 
@@ -32,9 +35,38 @@ export default function MemberPackagesPage() {
     enabled: isAuthenticated,
   });
 
+  // Gamification nudge — fetch package_purchase rule
+  const { data: pkgRule } = useQuery({
+    queryKey: ['gamification-rule-package'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('gamification_rules')
+        .select('xp_value, points_value')
+        .eq('action_key', 'package_purchase')
+        .eq('is_active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+
   return (
     <div className="animate-in fade-in-0 duration-200">
       <MobilePageHeader title="Packages" subtitle="Active & available packages" />
+
+      {/* Gamification nudge */}
+      {pkgRule && (
+        <div className="px-4 mb-3">
+          <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/10 px-3 py-2">
+            <Zap className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              {t('auth.earnXpOnRenewal')
+                .replace('{{xp}}', String(pkgRule.xp_value))
+                .replace('{{coins}}', String(pkgRule.points_value))}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Tab toggle */}
       <div className="px-4 mb-4">
