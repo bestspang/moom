@@ -140,7 +140,7 @@ const MemberLogin: React.FC = () => {
   const handleSendPhoneOtp = async () => {
     const cleaned = phoneNumber.replace(/\s/g, '');
     if (!cleaned || cleaned.length < 8) {
-      toast({ variant: 'destructive', title: t('auth.loginFailed'), description: t('auth.phoneNumber') + ' is required' });
+      toast({ variant: 'destructive', title: t('auth.loginFailed'), description: t('validation.required') });
       return;
     }
     setIsOtpLoading(true);
@@ -371,7 +371,7 @@ const MemberLogin: React.FC = () => {
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setPhoneOtpSent(false); setPhoneOtpCode(''); }}>
-                      {t('auth.useDifferentEmail').replace('email', 'number')}
+                      {t('auth.useDifferentNumber')}
                     </Button>
                   </div>
                 </div>

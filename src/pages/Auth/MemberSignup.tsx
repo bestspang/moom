@@ -116,11 +116,11 @@ const MemberSignup: React.FC = () => {
   const handleSendPhoneOtp = async () => {
     const cleaned = phoneNumber.replace(/\s/g, '');
     if (!cleaned || cleaned.length < 8) {
-      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.phoneNumber') + ' is required' });
+      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('validation.required') });
       return;
     }
     if (!phoneFirstName.trim()) {
-      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.firstName') + ' is required' });
+      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('validation.required') });
       return;
     }
     setIsPhoneLoading(true);

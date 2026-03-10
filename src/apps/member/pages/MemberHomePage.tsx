@@ -202,7 +202,7 @@ export default function MemberHomePage() {
                 key={booking.id}
                 title={booking.schedule.className}
                 subtitle={`${format(new Date(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
-                meta={booking.schedule.trainerName ? `with ${booking.schedule.trainerName}` : undefined}
+                meta={booking.schedule.trainerName ? t('member.withTrainer').replace('{{name}}', booking.schedule.trainerName) : undefined}
                 trailing={<MobileStatusBadge status={booking.status} />}
               />
             ))}
