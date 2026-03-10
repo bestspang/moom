@@ -4187,6 +4187,18 @@ export type Database = {
         Returns: undefined
       }
       get_my_member_id: { Args: { _user_id: string }; Returns: string }
+      get_squad_activity_feed: {
+        Args: { p_limit?: number; p_squad_id: string }
+        Returns: {
+          action_key: string
+          avatar_url: string
+          created_at: string
+          event_type: string
+          first_name: string
+          member_id: string
+          xp_delta: number
+        }[]
+      }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
