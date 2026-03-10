@@ -193,3 +193,41 @@ export async function fetchAllBadgesForTrainer(): Promise<{ id: string; nameEn: 
     iconUrl: b.icon_url,
   }));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Trainer Roster                                                     */
+/* ------------------------------------------------------------------ */
+
+export interface RosterMember {
+  memberId: string;
+  firstName: string;
+  lastName: string | null;
+  avatarUrl: string | null;
+  totalSessions: number;
+  lastAttended: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
+export async function fetchTrainerRoster(days = 90): Promise<RosterMember[]> {
+  const staffId = await getStaffId();
+  if (!staffId) return [];
+
+  const { data, error } = await supabase.rpc('get_trainer_roster', {
+    p_staff_id: staffId,
+    p_days: days,
+  } as any);
+
+  if (error || !data) return [];
+
+  return (data as any[]).map((r) => ({
+    memberId: r.member_id,
+    firstName: r.first_name,
+    lastName: r.last_name,
+    avatarUrl: r.avatar_url,
+    totalSessions: Number(r.total_sessions),
+    lastAttended: r.last_attended,
+    phone: r.phone,
+    email: r.email,
+  }));
+}
