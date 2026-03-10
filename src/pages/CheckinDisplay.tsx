@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLocations } from '@/hooks/useLocations';
 import { useGenerateQRToken, getTokenTimeRemaining } from '@/hooks/useCheckinQR';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MapPin, Settings, Dumbbell } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MapPin, Settings, Dumbbell, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STORAGE_KEY = 'checkin-display-location';
 const TOKEN_LIFETIME = 30; // seconds
@@ -62,6 +65,7 @@ function LiveClock() {
 
 export default function CheckinDisplay() {
   const { t } = useLanguage();
+  const { user, loading: authLoading, signIn, accessLevel } = useAuth();
   const { data: locations = [] } = useLocations();
   const generateQR = useGenerateQRToken();
 
@@ -72,7 +76,21 @@ export default function CheckinDisplay() {
   const [pulse, setPulse] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const locationName = locations.find((l) => l.id === locationId)?.name || '';
+
+  // Check if user has operator-level access
+  const levelOrder: Record<string, number> = {
+    level_1_minimum: 1,
+    level_2_operator: 2,
+    level_3_manager: 3,
+    level_4_master: 4,
+  };
+  const hasAccess = user && accessLevel && (levelOrder[accessLevel] ?? 0) >= 2;
 
   // Determine if location selector should show
   const needsLocation = !locationId || showSettings;
@@ -144,6 +162,60 @@ export default function CheckinDisplay() {
   const checkinUrl = tokenData
     ? `${window.location.origin}/checkin?token=${tokenData.token}`
     : '';
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    const { error } = await signIn(loginEmail, loginPassword);
+    setLoginLoading(false);
+    if (error) {
+      toast.error(error.message || 'Login failed');
+    }
+  };
+
+  // ── Auth loading ──
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Dumbbell className="h-10 w-10 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  // ── Login screen (staff must authenticate) ──
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6 text-center">
+          <Dumbbell className="h-12 w-12 text-primary mx-auto" />
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('checkinDisplay.title')}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Staff login required to start kiosk
+          </p>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" className="w-full" disabled={loginLoading}>
+            <LogIn className="h-4 w-4 mr-2" />
+            {loginLoading ? 'Signing in…' : 'Sign In'}
+          </Button>
+        </form>
+      </div>
+    );
+  }
 
   // ── Location selector screen ──
   if (needsLocation) {
