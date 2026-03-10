@@ -12,6 +12,7 @@ import { CoachImpactCard } from '@/apps/trainer/features/impact/CoachImpactCard'
 import { PartnerReputationCard } from '@/apps/trainer/features/impact/PartnerReputationCard';
 import { fetchTrainerType } from '@/apps/trainer/features/impact/api';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 export default function TrainerHomePage() {
   const { user } = useAuth();
