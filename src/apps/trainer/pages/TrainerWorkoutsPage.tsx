@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -9,6 +10,7 @@ import { Dumbbell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function TrainerWorkoutsPage() {
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['trainer-workouts'],
     queryFn: async () => {
@@ -24,13 +26,13 @@ export default function TrainerWorkoutsPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Workouts" subtitle="Training templates" />
+      <MobilePageHeader title={t('trainer.nav.workouts')} subtitle={t('trainer.trainingTemplates')} />
       {isError ? (
         <QueryError onRetry={() => refetch()} />
       ) : isLoading ? (
         <Section><div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div></Section>
       ) : !data?.length ? (
-        <EmptyState icon={<Dumbbell className="h-10 w-10" />} title="No workouts yet" description="Workouts will appear here once created" />
+        <EmptyState icon={<Dumbbell className="h-10 w-10" />} title={t('trainer.noWorkoutsYet')} description={t('trainer.workoutsWillAppear')} />
       ) : (
         <Section>
           <div className="space-y-2">

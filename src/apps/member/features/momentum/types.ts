@@ -76,6 +76,7 @@ export interface SquadInfo {
   maxMembers: number;
   isActive: boolean;
   members: SquadMemberInfo[];
+  memberCount?: number;
 }
 
 export interface SquadMemberInfo {

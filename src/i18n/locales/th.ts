@@ -1847,6 +1847,8 @@ export default {
     joinButton: 'เข้าร่วม',
     leaveButton: 'ออก',
     memberLabel: 'สมาชิก',
+    xpContribution: 'การมีส่วนร่วม XP',
+    squadMemberCount: '{{count}} สมาชิก',
     // Coupons page
     myCoupons: 'คูปองของฉัน',
     couponActive: 'ใช้ได้',
@@ -2526,5 +2528,31 @@ export default {
     rating: 'เรตติ้ง',
     repeat: 'จองซ้ำ',
     sessions: 'เซสชัน',
+    // Schedule page
+    allUpcomingClasses: 'คลาสที่กำลังจะมาถึง',
+    noClassesFound: 'ไม่พบคลาส',
+    checkBackLater: 'กลับมาตรวจสอบใหม่ภายหลัง',
+    withTrainer: 'กับ {{name}}',
+    spots: '{{current}}/{{capacity}} ที่',
+    // Roster page
+    yourAssignedMembers: 'สมาชิกที่ดูแล',
+    comingSoon: 'เร็วๆ นี้',
+    rosterComingSoonDesc: 'ระบบจัดการรายชื่อสมาชิกจะพร้อมใช้งานในอัปเดตถัดไป',
+    // Workouts page
+    trainingTemplates: 'เทมเพลตการฝึก',
+    noWorkoutsYet: 'ยังไม่มีเวิร์กเอาท์',
+    workoutsWillAppear: 'เวิร์กเอาท์จะแสดงที่นี่เมื่อสร้างแล้ว',
+    // Profile page
+    settings: 'ตั้งค่า',
+    notifications: 'การแจ้งเตือน',
+    preferences: 'การตั้งค่า',
+    helpAndSupport: 'ช่วยเหลือ & สนับสนุน',
+    switchApp: 'สลับแอป',
+    adminPortal: 'Admin Portal',
+    memberApp: 'แอปสมาชิก',
+    trainerRole: 'เทรนเนอร์',
+    notificationsComingSoon: 'ตั้งค่าการแจ้งเตือนเร็วๆ นี้',
+    preferencesComingSoon: 'การตั้งค่าเร็วๆ นี้',
+    helpCenterComingSoon: 'ศูนย์ช่วยเหลือเร็วๆ นี้',
   },
 };

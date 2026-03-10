@@ -1847,6 +1847,8 @@ export default {
     joinButton: 'Join',
     leaveButton: 'Leave',
     memberLabel: 'Member',
+    xpContribution: 'XP Contribution',
+    squadMemberCount: '{{count}} members',
     // Coupons page
     myCoupons: 'My Coupons',
     couponActive: 'Active',
@@ -2674,5 +2676,31 @@ export default {
     rating: 'Rating',
     repeat: 'Repeat',
     sessions: 'Sessions',
+    // Schedule page
+    allUpcomingClasses: 'All upcoming classes',
+    noClassesFound: 'No classes found',
+    checkBackLater: 'Check back later',
+    withTrainer: 'with {{name}}',
+    spots: '{{current}}/{{capacity}} spots',
+    // Roster page
+    yourAssignedMembers: 'Your assigned members',
+    comingSoon: 'Coming soon',
+    rosterComingSoonDesc: 'Member roster management will be available in the next update',
+    // Workouts page
+    trainingTemplates: 'Training templates',
+    noWorkoutsYet: 'No workouts yet',
+    workoutsWillAppear: 'Workouts will appear here once created',
+    // Profile page
+    settings: 'Settings',
+    notifications: 'Notifications',
+    preferences: 'Preferences',
+    helpAndSupport: 'Help & Support',
+    switchApp: 'Switch App',
+    adminPortal: 'Admin Portal',
+    memberApp: 'Member App',
+    trainerRole: 'Trainer',
+    notificationsComingSoon: 'Notifications settings coming soon',
+    preferencesComingSoon: 'Preferences coming soon',
+    helpCenterComingSoon: 'Help center coming soon',
   },
 };

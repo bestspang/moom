@@ -1,58 +1,47 @@
 
 
-# Phase 5B: Squad Social Enhancements + Trainer Pages i18n
+# Fix: Promotions export missing columns in Settings
 
-## Current State
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-Phase 5A delivered enhanced leaderboards (Streaks, Attendance, Around You), squad realtime sync, and trainer impact card i18n. The next logical step:
+## Fix (surgical, 1 file)
 
-1. **Remaining trainer pages have hardcoded English**: `TrainerSchedulePage`, `TrainerRosterPage`, `TrainerWorkoutsPage`, `TrainerProfilePage` — all have ~15 hardcoded strings each
-2. **SquadCard has hardcoded English**: "Join a Squad", "Team up with friends", "total XP"
-3. **Squad page lacks member count on available squads**: `fetchAvailableSquads` returns `members: []` but uses a count query — not surfaced in UI
-4. **Squad contribution visibility**: No way to see which members contribute most XP to the squad
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## Plan
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### Step 1: Trainer Pages i18n (4 files)
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-Add ~25 trainer i18n keys to `en.ts` and `th.ts`:
-- Schedule: "Schedule", "All upcoming classes", "All", "No classes found", "Check back later", "with", "spots"
-- Roster: "Roster", "Your assigned members", "Coming soon", "Member roster management..."
-- Workouts: "Workouts", "Training templates", "No workouts yet", "Workouts will appear here..."
-- Profile: "Profile", "Settings", "Notifications", "Preferences", "Help & Support", "Switch App", "Admin Portal", "Member App", "Sign Out", "Trainer"
-
-Update all 4 files to use `useTranslation()` + `t()`.
-
-### Step 2: SquadCard i18n
-
-Replace 3 hardcoded strings in `SquadCard.tsx` with existing/new `member.*` keys:
-- "Join a Squad" → `t('member.joinSquadTitle')`
-- "Team up with friends to train together" → `t('member.joinSquadHint')`  (already exists)
-- "total XP" → `t('member.totalXp')` (already exists)
-
-### Step 3: Squad Available Count
-
-Update `fetchAvailableSquads` to surface `memberCount` from the count query. Update `MemberSquadPage` available list to show member count.
-
-### Step 4: Squad Contribution Ranking
-
-Add a simple contribution display in the squad detail view — show each member's XP contribution from `member_gamification_profiles.total_xp`, sorted descending. No new DB tables needed.
-
----
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `src/i18n/locales/en.ts` | ~25 new trainer keys + 1 squad key |
-| `src/i18n/locales/th.ts` | ~25 new trainer keys + 1 squad key |
-| `src/apps/trainer/pages/TrainerSchedulePage.tsx` | i18n all strings |
-| `src/apps/trainer/pages/TrainerRosterPage.tsx` | i18n all strings |
-| `src/apps/trainer/pages/TrainerWorkoutsPage.tsx` | i18n all strings |
-| `src/apps/trainer/pages/TrainerProfilePage.tsx` | i18n all strings |
-| `src/apps/member/features/momentum/SquadCard.tsx` | i18n 3 strings |
-| `src/apps/member/features/momentum/api.ts` | Surface memberCount in fetchAvailableSquads, add fetchSquadContributions |
-| `src/apps/member/pages/MemberSquadPage.tsx` | Show member count on available squads, show XP contribution per member |
-
-No database changes. No new Edge Functions. All frontend-only.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
