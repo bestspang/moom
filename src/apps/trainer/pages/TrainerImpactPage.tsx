@@ -162,6 +162,9 @@ export default function TrainerImpactPage() {
           </Section>
         )}
 
+        {/* Badges link */}
+        <BadgesLink t={t} />
+
         {/* Quests */}
         <QuestsSection quests={quests} t={t} />
 
