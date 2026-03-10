@@ -4,12 +4,14 @@ import { fetchPartnerReputationProfile, fetchTrainerQuests } from './api';
 import { PARTNER_TIER_CONFIG } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, Star, RotateCcw, ShieldCheck, Coins, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PartnerReputationCardProps {
   className?: string;
 }
 
 export function PartnerReputationCard({ className }: PartnerReputationCardProps) {
+  const { t } = useTranslation();
   const { data: profile, isLoading } = useQuery({
     queryKey: ['partner-reputation-profile'],
     queryFn: fetchPartnerReputationProfile,
@@ -39,10 +41,10 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
   const arcLength = (scoreAngle / 360) * circumference;
 
   const metrics = [
-    { label: 'Punctuality', value: `${Math.round(profile.punctuality_rate)}%`, icon: Clock },
-    { label: 'Rating', value: profile.avg_rating > 0 ? profile.avg_rating.toFixed(1) : '—', icon: Star },
-    { label: 'Repeat', value: `${Math.round(profile.repeat_booking_rate)}%`, icon: RotateCcw },
-    { label: 'Sessions', value: profile.total_sessions, icon: ShieldCheck },
+    { label: t('trainer.punctuality'), value: `${Math.round(profile.punctuality_rate)}%`, icon: Clock },
+    { label: t('trainer.rating'), value: profile.avg_rating > 0 ? profile.avg_rating.toFixed(1) : '—', icon: Star },
+    { label: t('trainer.repeat'), value: `${Math.round(profile.repeat_booking_rate)}%`, icon: RotateCcw },
+    { label: t('trainer.sessions'), value: profile.total_sessions, icon: ShieldCheck },
   ];
 
   return (
@@ -55,7 +57,7 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
       <div className="bg-card p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Partner Reputation</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{t('trainer.partnerReputation')}</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span
                 className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
@@ -75,7 +77,7 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
                     color: 'hsl(var(--status-success))',
                   }}
                 >
-                  <ShieldCheck className="h-3 w-3" /> Verified
+                  <ShieldCheck className="h-3 w-3" /> {t('trainer.verified')}
                 </span>
               )}
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600">
@@ -133,7 +135,7 @@ export function PartnerReputationCard({ className }: PartnerReputationCardProps)
         {/* Quest preview */}
         {quests && quests.length > 0 && (
           <div className="border-t border-border/50 pt-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Partner Quests</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{t('trainer.partnerQuests')}</p>
             <div className="space-y-1.5">
               {quests.slice(0, 3).map(q => (
                 <div key={q.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">

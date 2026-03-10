@@ -11,9 +11,11 @@ import { format } from 'date-fns';
 import { CoachImpactCard } from '@/apps/trainer/features/impact/CoachImpactCard';
 import { PartnerReputationCard } from '@/apps/trainer/features/impact/PartnerReputationCard';
 import { fetchTrainerType } from '@/apps/trainer/features/impact/api';
+import { useTranslation } from 'react-i18next';
 
 export default function TrainerHomePage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -24,7 +26,6 @@ export default function TrainerHomePage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // Resolve trainer's staff_id from identity_map
   const { data: staffId } = useQuery({
     queryKey: ['trainer-staff-id', user?.id],
     queryFn: async () => {
@@ -75,26 +76,25 @@ export default function TrainerHomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-      <MobilePageHeader title={`Hi, ${firstName}`} subtitle="Today's overview" />
+      <MobilePageHeader title={`Hi, ${firstName}`} subtitle={t('trainer.todaysOverview')} />
 
       <Section className="mb-4">
         <div className="grid grid-cols-2 gap-3">
-          <SummaryCard label="Today's Classes" value={String(todayClasses?.length ?? 0)} icon={<Calendar className="h-5 w-5" />} />
-          <SummaryCard label="Total Bookings" value={String(totalBookings)} subtitle="across today" icon={<Users className="h-5 w-5" />} />
+          <SummaryCard label={t('trainer.todaysClasses')} value={String(todayClasses?.length ?? 0)} icon={<Calendar className="h-5 w-5" />} />
+          <SummaryCard label={t('trainer.totalBookings')} value={String(totalBookings)} subtitle={t('trainer.acrossToday')} icon={<Users className="h-5 w-5" />} />
         </div>
       </Section>
 
-      {/* Trainer Gamification — Coach Impact or Partner Reputation */}
       <Section className="mb-4">
         {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
       </Section>
 
-      <Section title="Today's Schedule" className="mb-4">
+      <Section title={t('trainer.todaysSchedule')} className="mb-4">
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
         ) : !todayClasses?.length ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center">
-            <p className="text-sm text-muted-foreground">No classes today — enjoy your rest day</p>
+            <p className="text-sm text-muted-foreground">{t('trainer.noClassesToday')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function TrainerHomePage() {
                 key={cls.id}
                 title={cls.classes?.name ?? 'Class'}
                 subtitle={`${cls.start_time?.slice(0, 5)} – ${cls.end_time?.slice(0, 5)}${cls.rooms?.name ? ` · ${cls.rooms.name}` : ''}`}
-                meta={`${cls.checked_in ?? 0}/${cls.capacity ?? 0} checked in`}
+                meta={`${cls.checked_in ?? 0}/${cls.capacity ?? 0} ${t('trainer.checkedIn')}`}
               />
             ))}
           </div>
@@ -111,7 +111,7 @@ export default function TrainerHomePage() {
       </Section>
 
       {announcements && announcements.length > 0 && (
-        <Section title="Announcements">
+        <Section title={t('trainer.announcements')}>
           <div className="space-y-2">
             {announcements.map(a => (
               <ListCard

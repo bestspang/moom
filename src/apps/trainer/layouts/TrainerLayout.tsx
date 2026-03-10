@@ -3,18 +3,20 @@ import { Home, Calendar, Users, Dumbbell, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrainerHeader } from '../components/TrainerHeader';
-
-const TRAINER_NAV = [
-  { label: 'Home', path: '/trainer', icon: Home },
-  { label: 'Schedule', path: '/trainer/schedule', icon: Calendar },
-  { label: 'Roster', path: '/trainer/roster', icon: Users },
-  { label: 'Workouts', path: '/trainer/workouts', icon: Dumbbell },
-  { label: 'Profile', path: '/trainer/profile', icon: User },
-];
+import { useTranslation } from 'react-i18next';
 
 export function TrainerLayout() {
   const location = useLocation();
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
+
+  const TRAINER_NAV = [
+    { label: t('trainer.nav.home'), path: '/trainer', icon: Home },
+    { label: t('trainer.nav.schedule'), path: '/trainer/schedule', icon: Calendar },
+    { label: t('trainer.nav.roster'), path: '/trainer/roster', icon: Users },
+    { label: t('trainer.nav.workouts'), path: '/trainer/workouts', icon: Dumbbell },
+    { label: t('trainer.nav.profile'), path: '/trainer/profile', icon: User },
+  ];
 
   if (loading) {
     return (

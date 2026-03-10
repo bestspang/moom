@@ -10,11 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useTranslation } from 'react-i18next';
 
 export function TrainerHeader() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const lastName = user?.user_metadata?.last_name ?? '';
@@ -44,7 +46,7 @@ export function TrainerHeader() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 text-destructive">
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t('trainer.signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
