@@ -43,7 +43,7 @@ type TableName =
   // ── Gamification tables ──
   | 'member_gamification_profiles'
   | 'badge_earnings'
-  | 'challenge_progress'
+  | 'quest_instances'
   | 'reward_redemptions';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
@@ -86,7 +86,7 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   // ── Gamification tables ──
   member_gamification_profiles: ['momentum-profile', 'gamification-profiles'],
   badge_earnings: ['my-badges', 'badge-earnings', 'momentum-profile'],
-  challenge_progress: ['my-challenges', 'challenge-progress'],
+  quest_instances: ['my-quests', 'quest-instances'],
   reward_redemptions: ['my-rewards', 'reward-redemptions', 'momentum-profile'],
 };
 

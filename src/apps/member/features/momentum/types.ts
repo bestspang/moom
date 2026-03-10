@@ -102,23 +102,6 @@ export interface BadgeDefinition {
   durationDays?: number | null;
 }
 
-export interface ChallengeProgressEntry {
-  id: string;
-  challengeId: string;
-  memberId: string;
-  currentValue: number;
-  status: string;
-  completedAt: string | null;
-  challenge?: {
-    id: string;
-    nameEn: string;
-    goalValue: number;
-    goalType: string;
-    rewardXp: number;
-    rewardPoints: number;
-    status: string;
-  };
-}
 
 export const TIER_CONFIG: Record<MomentumTier, { label: string; colorVar: string; minLevel: number }> = {
   starter: { label: 'Starter', colorVar: '--tier-starter', minLevel: 1 },

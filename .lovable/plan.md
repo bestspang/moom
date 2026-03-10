@@ -1,26 +1,47 @@
 
 
-# Phase 3: Purge Legacy Challenge References
+# Fix: Promotions export missing columns in Settings
 
 ## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-Six files still import or reference `ChallengeProgressEntry`, `fetchActiveChallenges`, `fetchMyChallengeProgress`, or `challenge_progress`. These are dead code — the UI no longer renders them after Phase 1-2 cleanup, but the types, API functions, and realtime sync entries remain.
+## Fix (surgical, 1 file)
 
-## Files to Change
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-| File | Change |
-|------|--------|
-| `src/apps/member/features/momentum/types.ts` | Remove `ChallengeProgressEntry` interface |
-| `src/apps/member/features/momentum/api.ts` | Remove `fetchActiveChallenges`, `fetchMyChallengeProgress`, `fetchChallengeCompletionStats` functions and `ChallengeProgressEntry` import |
-| `src/apps/member/features/momentum/QuestCard.tsx` | Delete file — unused (was legacy challenge card, `QuestHub` replaced it) |
-| `src/apps/member/features/momentum/LevelRequirementsCard.tsx` | Change `completedQuests` prop from `ChallengeProgressEntry[]` to `number` (it only uses `.length` anyway) |
-| `src/hooks/useRealtimeSync.ts` | Replace `challenge_progress` entry with `quest_instances` → invalidates `['my-quests']` |
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## What stays untouched
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-- `useGamificationChallenges.ts` — Admin CRUD hook, still used in Admin Gamification Studio (Challenges page). This is valid admin functionality.
-- `gamification-process-event` Edge Function — server-side challenge processing stays; it's backend logic independent of frontend cleanup.
-- `supabase/types.ts` — auto-generated, never edited.
-
-No database changes. No new files.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
