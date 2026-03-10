@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { updateMyProfile } from '../api/services';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
+import { useTranslation } from 'react-i18next';
 
 const editProfileSchema = z.object({
   first_name: z.string().min(1, 'Required'),
@@ -25,6 +26,7 @@ type EditProfileForm = z.infer<typeof editProfileSchema>;
 
 export default function MemberEditProfilePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { firstName, lastName, email, user, memberId } = useMemberSession();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<EditProfileForm>({
@@ -47,43 +49,43 @@ export default function MemberEditProfilePage() {
           idempotency_key: `profile_completed:${memberId}`,
         });
       }
-      toast.success('Profile updated');
+      toast.success(t('member.profileUpdated'));
       navigate('/member/profile');
     },
-    onError: () => toast.error('Failed to update profile'),
+    onError: () => toast.error(t('member.profileUpdateFailed')),
   });
 
   return (
     <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="animate-in fade-in-0 duration-200">
       <div className="px-4 pt-12 pb-2">
         <button type="button" onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t('common.back')}
         </button>
       </div>
 
       <Section className="mb-6">
-        <h1 className="text-xl font-bold text-foreground mb-4">Edit Profile</h1>
+        <h1 className="text-xl font-bold text-foreground mb-4">{t('member.editProfileTitle')}</h1>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">{t('member.firstName')}</Label>
             <Input id="firstName" {...register('first_name')} className="mt-1" />
             {errors.first_name && <p className="text-xs text-destructive mt-1">{errors.first_name.message}</p>}
           </div>
           <div>
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">{t('member.lastName')}</Label>
             <Input id="lastName" {...register('last_name')} className="mt-1" />
             {errors.last_name && <p className="text-xs text-destructive mt-1">{errors.last_name.message}</p>}
           </div>
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('member.emailLabel')}</Label>
             <Input id="email" value={email} readOnly className="mt-1 bg-muted" />
           </div>
           <div>
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t('member.phoneLabel')}</Label>
             <Input id="phone" {...register('phone')} className="mt-1" />
           </div>
           <div>
-            <Label>Preferred Language</Label>
+            <Label>{t('member.preferredLanguage')}</Label>
             <Controller name="preferred_language" control={control} render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
@@ -100,7 +102,7 @@ export default function MemberEditProfilePage() {
 
       <div className="px-4 pb-8">
         <Button type="submit" className="w-full" disabled={isSubmitting || mutation.isPending}>
-          {mutation.isPending ? 'Saving...' : 'Save Changes'}
+          {mutation.isPending ? t('common.saving') : t('member.saveChanges')}
         </Button>
       </div>
     </form>

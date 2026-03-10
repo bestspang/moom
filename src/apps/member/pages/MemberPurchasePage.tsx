@@ -12,22 +12,24 @@ import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
-
-const PAYMENT_METHODS = [
-  { id: 'card', label: 'Credit/Debit Card', icon: CreditCard },
-  { id: 'promptpay', label: 'PromptPay', icon: Smartphone },
-  { id: 'transfer', label: 'Bank Transfer', icon: Building2 },
-] as const;
+import { useTranslation } from 'react-i18next';
 
 type Step = 'review' | 'payment' | 'success';
 
 export default function MemberPurchasePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const { createCheckout, isLoading: checkoutLoading } = useStripeCheckout();
   const [step, setStep] = useState<Step>('review');
   const [paymentMethod, setPaymentMethod] = useState<string>('card');
+
+  const PAYMENT_METHODS = [
+    { id: 'card', label: t('member.creditDebitCard'), icon: CreditCard },
+    { id: 'promptpay', label: t('member.promptPay'), icon: Smartphone },
+    { id: 'transfer', label: t('member.bankTransfer'), icon: Building2 },
+  ] as const;
 
   const { data: packages, isLoading, isError, refetch } = useQuery({
     queryKey: ['available-packages'],
@@ -54,7 +56,7 @@ export default function MemberPurchasePage() {
 
   const BackButton = () => (
     <button onClick={() => step === 'payment' ? setStep('review') : navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-      <ArrowLeft className="h-4 w-4" /> Back
+      <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
 
@@ -75,7 +77,7 @@ export default function MemberPurchasePage() {
   if (!pkg) return (
     <div className="animate-in fade-in-0 duration-200">
       <div className="px-4 pt-12 pb-2"><BackButton /></div>
-      <Section><p className="text-sm text-muted-foreground text-center py-8">Package not found</p></Section>
+      <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.packageNotFound')}</p></Section>
     </div>
   );
 
@@ -85,11 +87,11 @@ export default function MemberPurchasePage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
           <CheckCircle2 className="h-8 w-8" />
         </div>
-        <h1 className="text-xl font-bold text-foreground mb-1">Purchase Initiated!</h1>
-        <p className="text-sm text-muted-foreground mb-6">Check the payment window to complete your purchase.</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">{t('member.purchaseInitiated')}</h1>
+        <p className="text-sm text-muted-foreground mb-6">{t('member.checkPaymentWindow')}</p>
         <div className="space-y-2 w-full max-w-xs">
-          <Button className="w-full" onClick={() => navigate('/member/packages')}>View My Packages</Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate('/member/schedule')}>Book a Class</Button>
+          <Button className="w-full" onClick={() => navigate('/member/packages')}>{t('member.viewMyPackages')}</Button>
+          <Button variant="outline" className="w-full" onClick={() => navigate('/member/schedule')}>{t('member.bookAClass')}</Button>
         </div>
       </div>
     );
@@ -101,7 +103,7 @@ export default function MemberPurchasePage() {
 
       {/* Step indicator */}
       <div className="px-4 mb-4 flex items-center gap-2">
-        {['Review', 'Payment'].map((label, i) => (
+        {[t('member.reviewStep'), t('member.paymentStep')].map((label, i) => (
           <div key={label} className="flex items-center gap-2 flex-1">
             <div className={cn(
               'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
@@ -128,16 +130,16 @@ export default function MemberPurchasePage() {
               <ul className="mt-3 space-y-1.5">
                 {pkg.sessions && (
                   <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />{pkg.sessions} sessions
+                    <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />{t('member.sessionsCount', { n: pkg.sessions })}
                   </li>
                 )}
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />{pkg.termDays} day term
+                  <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />{t('member.dayTermCount', { n: pkg.termDays })}
                 </li>
               </ul>
               <div className="mt-4 pt-3 border-t border-border">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Price</span>
+                  <span className="text-muted-foreground">{t('member.price')}</span>
                   <span className="font-semibold text-foreground">{pkg.price.toLocaleString()}฿</span>
                 </div>
               </div>
@@ -145,7 +147,7 @@ export default function MemberPurchasePage() {
           </Section>
 
           <div className="px-4 pb-8">
-            <Button className="w-full" onClick={() => setStep('payment')}>Continue to Payment</Button>
+            <Button className="w-full" onClick={() => setStep('payment')}>{t('member.continueToPayment')}</Button>
           </div>
         </>
       )}
@@ -154,7 +156,7 @@ export default function MemberPurchasePage() {
         <>
           <Section className="mb-4">
             <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
-              <h2 className="text-base font-semibold text-foreground mb-3">Payment Method</h2>
+              <h2 className="text-base font-semibold text-foreground mb-3">{t('member.paymentMethod')}</h2>
               <div className="space-y-2">
                 {PAYMENT_METHODS.map(method => {
                   const Icon = method.icon;
@@ -190,7 +192,7 @@ export default function MemberPurchasePage() {
 
           <div className="px-4 pb-8">
             <Button className="w-full" onClick={handlePurchase} disabled={checkoutLoading || !memberId}>
-              {checkoutLoading ? 'Processing...' : `Pay ${pkg.price.toLocaleString()}฿`}
+              {checkoutLoading ? t('member.processing') : t('member.payAmount', { amount: pkg.price.toLocaleString() })}
             </Button>
           </div>
         </>

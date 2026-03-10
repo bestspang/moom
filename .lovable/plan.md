@@ -1,49 +1,47 @@
 
 
-# Phase 4E: Complete Member Surface i18n — Final Remaining Pages
+# Fix: Promotions export missing columns in Settings
 
-## Diagnosis
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-Phases 4A-4D localized the core member pages. The following 10 files still contain hardcoded English:
+## Fix (surgical, 1 file)
 
-| File | Hardcoded strings |
-|------|------------------|
-| **MemberSchedulePage** | "Schedule", "Browse & book classes", "All", "No classes found", "Try a different category", "Check back later...", "with", "spots", "Book", "Full" |
-| **MemberAttendancePage** | "Attendance", "Your check-in history", "No check-ins", "Your attendance history will appear here" |
-| **MemberNotificationsPage** | "Notifications", "unread", "All caught up!", "Mark all read", "You're all caught up! 🎉", "We'll let you know when something happens" |
-| **MemberEditProfilePage** | "Edit Profile", "First Name", "Last Name", "Email", "Phone", "Preferred Language", "Back", "Profile updated", "Failed to update profile", "Save Changes", "Saving..." |
-| **MemberLeaderboardPage** | "Leaderboard", "See who's on top 🏆", "XP", "Squads", "Challenges", "(You)", "(Yours)", "No XP earners yet", "No squads yet", "No challenges yet", "members", "completed" |
-| **MemberUploadSlipPage** | "Upload Transfer Slip", "Tap to upload slip image", "JPG, PNG up to 5MB", "Amount (THB)", "Bank Name", "Transfer Date", "Submit Transfer Slip", "Uploading...", "Transfer slip uploaded", "Failed to upload slip", "Back" |
-| **MemberSecurityPage** | "Security & Login", "Account Security", "Manage your login methods" |
-| **MemberMomentumPage** | "Momentum", ~30 strings including tab labels, section titles, event labels, rarity labels, empty states, CTAs |
-| **MemberPurchasePage** | "Credit/Debit Card", "PromptPay", "Bank Transfer", "Review", "Payment", "Package not found", "Purchase Initiated!", "View My Packages", "Book a Class", "Continue to Payment", "Processing...", "Pay", "Payment Method", "Price", "sessions", "day term" |
-| **MemberBottomNav** | "Home", "Schedule", "Check In", "Rewards", "Profile" |
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## Plan
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### Step 1: Add ~80 i18n keys to en.ts and th.ts
-Add keys under `member` namespace for all strings from the 10 files above.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### Step 2: Update each file to use `t()` calls
-
-All files will import `useLanguage` or `useTranslation` and replace hardcoded strings.
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `src/i18n/locales/en.ts` | ~80 new member keys |
-| `src/i18n/locales/th.ts` | ~80 new member keys (Thai) |
-| `src/apps/member/pages/MemberSchedulePage.tsx` | i18n ~10 strings |
-| `src/apps/member/pages/MemberAttendancePage.tsx` | i18n ~4 strings |
-| `src/apps/member/pages/MemberNotificationsPage.tsx` | i18n ~6 strings |
-| `src/apps/member/pages/MemberEditProfilePage.tsx` | i18n ~12 strings |
-| `src/apps/member/pages/MemberLeaderboardPage.tsx` | i18n ~12 strings |
-| `src/apps/member/pages/MemberUploadSlipPage.tsx` | i18n ~11 strings |
-| `src/apps/member/pages/MemberSecurityPage.tsx` | i18n ~3 strings |
-| `src/apps/member/pages/MemberMomentumPage.tsx` | i18n ~30 strings |
-| `src/apps/member/pages/MemberPurchasePage.tsx` | i18n ~15 strings |
-| `src/apps/member/components/MemberBottomNav.tsx` | i18n ~5 nav labels |
-
-No database changes. No new Edge Functions. All frontend-only.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
