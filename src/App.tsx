@@ -148,6 +148,7 @@ const App = () => (
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />
+                <Route path="/checkin-display" element={<CheckinDisplay />} />
 
                 {/* LIFF public routes */}
                 <Route path="/liff/member" element={<LiffMemberApp />} />
