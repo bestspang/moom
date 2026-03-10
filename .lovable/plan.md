@@ -1,63 +1,47 @@
 
 
-# Phase 4C: Final i18n Cleanup + Remaining Hardcoded Strings
+# Fix: Promotions export missing columns in Settings
 
-## Diagnosis
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-After auditing every member-facing file, the following hardcoded English strings remain:
+## Fix (surgical, 1 file)
 
-### MemberHomePage.tsx
-- Line 26-29: `getTimeGreeting()` returns hardcoded "Good morning"/"Good afternoon"/"Good evening"
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### MemberRewardsPage.tsx
-- Lines 14-24: `EVENT_LABELS` dictionary entirely hardcoded English ("Check-in", "Quest", "Streak Bonus", etc.)
-- Line 81: `Level {profile.level}` hardcoded
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### MemberBadgeGalleryPage.tsx
-- Lines 13-18: `TIER_COLORS` labels hardcoded ("Common", "Rare", "Epic", "Legendary")
-- Lines 20-25: `BADGE_TYPE_LABELS` labels hardcoded ("Permanent", "Boost", "Access", "Seasonal")
-- Lines 32-33: "Expired", "d left" hardcoded
-- Lines 39-42: Effect descriptions hardcoded ("coin bonus", "XP bonus", "Unlocks access")
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### MemberPackagesPage.tsx
-- Line 111: `Expires ${format(...)}` hardcoded
-- Line 62: uses `auth.earnXpOnRenewal` — should be in `member` namespace
-
-### Namespace issue
-- `auth.earnXpOnRenewal`, `auth.almostThere`, `auth.xpToNextLevel` are member-surface strings incorrectly placed under `auth` namespace
-
-## Plan
-
-### Step 1: Add ~20 new i18n keys to en.ts and th.ts
-
-Add to `member` namespace:
-- `goodMorning`, `goodAfternoon`, `goodEvening`
-- `eventCheckin`, `eventQuest`, `eventStreakBonus`, `eventChallenge`, `eventReferral`, `eventPurchase`, `eventBadgeEarned`, `eventActivityReward`, `eventRedemption`
-- `levelLabel` (for "Level {{n}}")
-- `tierCommon`, `tierRare`, `tierEpic`, `tierLegendary`
-- `typePermanent`, `typeBoost`, `typeAccess`, `typeSeasonal`
-- `badgeExpired`, `badgeDaysLeft`
-- `effectCoinBonus`, `effectXpBonus`, `effectAccess`
-- `expiresOn`
-- `earnXpOnRenewal`, `almostThere`, `xpToNextLevel` (move from auth namespace)
-
-### Step 2: Update files to use `t()` for all remaining hardcoded strings
-
-- **MemberHomePage.tsx**: Update `getTimeGreeting` to use `t()`. Fix `auth.almostThere` → `member.almostThere`, `auth.xpToNextLevel` → `member.xpToNextLevel`.
-- **MemberRewardsPage.tsx**: Replace `EVENT_LABELS` with `t()` calls. Fix "Level" string.
-- **MemberBadgeGalleryPage.tsx**: Replace tier/type labels, expiry text, and effect descriptions with `t()`.
-- **MemberPackagesPage.tsx**: Fix "Expires" string. Fix `auth.earnXpOnRenewal` → `member.earnXpOnRenewal`.
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `src/i18n/locales/en.ts` | Add ~20 keys to member namespace |
-| `src/i18n/locales/th.ts` | Add ~20 keys (Thai translations) |
-| `src/apps/member/pages/MemberHomePage.tsx` | i18n greeting + fix namespace |
-| `src/apps/member/pages/MemberRewardsPage.tsx` | i18n event labels + level |
-| `src/apps/member/pages/MemberBadgeGalleryPage.tsx` | i18n tier/type/expiry/effect labels |
-| `src/apps/member/pages/MemberPackagesPage.tsx` | i18n "Expires" + fix namespace |
-
-No database changes. No new Edge Functions. All frontend-only.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

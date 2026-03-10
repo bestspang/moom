@@ -11,16 +11,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Gift, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 
-const EVENT_LABELS: Record<string, string> = {
-  checkin: 'Check-in',
-  quest_complete: 'Quest',
-  streak_bonus: 'Streak Bonus',
-  challenge_complete: 'Challenge',
-  referral: 'Referral',
-  purchase: 'Purchase',
-  badge_earned: 'Badge Earned',
-  rule_reward: 'Activity Reward',
-  redemption: 'Redemption',
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  checkin: 'member.eventCheckin',
+  quest_complete: 'member.eventQuest',
+  streak_bonus: 'member.eventStreakBonus',
+  challenge_complete: 'member.eventChallenge',
+  referral: 'member.eventReferral',
+  purchase: 'member.eventPurchase',
+  badge_earned: 'member.eventBadgeEarned',
+  rule_reward: 'member.eventActivityReward',
+  redemption: 'member.eventRedemption',
 };
 
 export default function MemberRewardsPage() {
@@ -78,7 +78,7 @@ export default function MemberRewardsPage() {
                   <TierBadge tier={profile.tier} level={profile.level} />
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Gift className="h-3 w-3" />
-                    Level {profile.level}
+                    {t('member.levelLabel').replace('{{n}}', String(profile.level))}
                   </div>
                 </div>
               </div>
@@ -137,7 +137,7 @@ export default function MemberRewardsPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      {EVENT_LABELS[entry.eventType] ?? entry.eventType}
+                      {EVENT_LABEL_KEYS[entry.eventType] ? t(EVENT_LABEL_KEYS[entry.eventType]) : entry.eventType}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(entry.createdAt), 'MMM d, yyyy · h:mm a')}

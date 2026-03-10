@@ -59,7 +59,7 @@ export default function MemberPackagesPage() {
           <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/10 px-3 py-2">
             <Zap className="h-3.5 w-3.5 text-primary flex-shrink-0" />
             <p className="text-xs text-muted-foreground">
-              {t('auth.earnXpOnRenewal')
+              {t('member.earnXpOnRenewal')
                 .replace('{{xp}}', String(pkgRule.xp_value))
                 .replace('{{coins}}', String(pkgRule.points_value))}
             </p>
@@ -108,7 +108,7 @@ export default function MemberPackagesPage() {
                     pkg.sessionsRemaining != null
                       ? `${pkg.sessionsRemaining}/${pkg.sessionsTotal ?? '∞'} ${t('member.sessionsRemaining').replace('{{n}} ', '')}`
                       : pkg.expiryDate
-                        ? `Expires ${format(parseISO(pkg.expiryDate), 'd MMM yyyy')}`
+                        ? t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy'))
                         : undefined
                   }
                   trailing={<MobileStatusBadge status={pkg.status} />}
