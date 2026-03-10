@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type {
   MomentumProfile, MemberBadgeEarning, RewardItem, RewardRedemption,
   PointsLedgerEntry, SquadInfo, SquadMemberInfo, BadgeDefinition,
-  ChallengeProgressEntry,
 } from './types';
 import { tierFromLevel } from './types';
 
