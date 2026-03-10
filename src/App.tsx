@@ -73,6 +73,7 @@ import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
+import CheckinDisplay from "./pages/CheckinDisplay";
 import DiagnosticsAuthPage from "./pages/Auth/DiagnosticsAuthPage";
 import GamificationStudio from "./pages/gamification/GamificationStudio";
 import GamificationOverview from "./pages/gamification/GamificationOverview";
@@ -147,6 +148,7 @@ const App = () => (
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />
+                <Route path="/checkin-display" element={<CheckinDisplay />} />
 
                 {/* LIFF public routes */}
                 <Route path="/liff/member" element={<LiffMemberApp />} />

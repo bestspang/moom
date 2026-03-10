@@ -407,6 +407,14 @@ export default {
     gym: 'Gym',
   },
 
+  // Check-in Display (kiosk)
+  checkinDisplay: {
+    title: 'Check-in Display',
+    scanToCheckIn: 'Scan to Check In',
+    selectLocation: 'Select a location to display the QR code',
+    autoRefresh: 'Auto-refreshes every 2 minutes',
+  },
+
   // Members
   members: {
     title: 'Members',

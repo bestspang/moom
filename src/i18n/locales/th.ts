@@ -407,6 +407,14 @@ export default {
     gym: 'ยิม',
   },
 
+  // Check-in Display (kiosk)
+  checkinDisplay: {
+    title: 'จอเช็คอิน',
+    scanToCheckIn: 'สแกนเพื่อเช็คอิน',
+    selectLocation: 'เลือกสาขาเพื่อแสดง QR Code',
+    autoRefresh: 'รีเฟรชอัตโนมัติทุก 2 นาที',
+  },
+
   // Members
   members: {
     title: 'สมาชิก',
