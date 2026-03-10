@@ -117,6 +117,58 @@ export default function CheckinDisplay() {
     };
   }, [needsLocation]);
 
+  // Realtime subscription for check-in events
+  useEffect(() => {
+    if (!locationId || needsLocation) return;
+
+    const channel = supabase
+      .channel('kiosk-checkin-feedback')
+      .on<Record<string, unknown>>(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'checkin_qr_tokens',
+          filter: `location_id=eq.${locationId}`,
+        },
+        async (payload) => {
+          const newRecord = payload.new as Record<string, unknown>;
+          const oldRecord = payload.old as Record<string, unknown>;
+
+          // Only trigger when used_at changes from null to a value
+          if (!oldRecord?.used_at && newRecord?.used_at) {
+            // Try to fetch member name
+            let memberName = '';
+            const memberId = newRecord.member_id as string | null;
+            if (memberId) {
+              const { data: member } = await supabase
+                .from('members')
+                .select('first_name, last_name')
+                .eq('id', memberId)
+                .single();
+              if (member) {
+                memberName = [member.first_name, member.last_name].filter(Boolean).join(' ');
+              }
+            }
+
+            setCelebration({ memberName: memberName || 'Member' });
+
+            // Clear after 3 seconds
+            if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+            celebrationTimeoutRef.current = setTimeout(() => {
+              setCelebration(null);
+            }, 3000);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+    };
+  }, [locationId, needsLocation]);
+
   // Generate QR token
   const generate = useCallback(async () => {
     if (!locationId) return;
