@@ -10,18 +10,18 @@ import { Trophy, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
-const TIER_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  bronze: { bg: 'bg-amber-100 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', label: 'Common' },
-  silver: { bg: 'bg-slate-100 dark:bg-slate-800/30', text: 'text-slate-600 dark:text-slate-300', label: 'Rare' },
-  gold: { bg: 'bg-yellow-100 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400', label: 'Epic' },
-  platinum: { bg: 'bg-violet-100 dark:bg-violet-900/20', text: 'text-violet-700 dark:text-violet-400', label: 'Legendary' },
+const TIER_STYLES: Record<string, { bg: string; text: string; labelKey: string }> = {
+  bronze: { bg: 'bg-amber-100 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', labelKey: 'member.tierCommon' },
+  silver: { bg: 'bg-slate-100 dark:bg-slate-800/30', text: 'text-slate-600 dark:text-slate-300', labelKey: 'member.tierRare' },
+  gold: { bg: 'bg-yellow-100 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400', labelKey: 'member.tierEpic' },
+  platinum: { bg: 'bg-violet-100 dark:bg-violet-900/20', text: 'text-violet-700 dark:text-violet-400', labelKey: 'member.tierLegendary' },
 };
 
-const BADGE_TYPE_LABELS: Record<string, { label: string; className: string }> = {
-  permanent: { label: 'Permanent', className: 'bg-primary/10 text-primary' },
-  boost: { label: 'Boost', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' },
-  access: { label: 'Access', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
-  seasonal: { label: 'Seasonal', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400' },
+const BADGE_TYPE_KEYS: Record<string, { labelKey: string; className: string }> = {
+  permanent: { labelKey: 'member.typePermanent', className: 'bg-primary/10 text-primary' },
+  boost: { labelKey: 'member.typeBoost', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' },
+  access: { labelKey: 'member.typeAccess', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
+  seasonal: { labelKey: 'member.typeSeasonal', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400' },
 };
 
 function getExpiryText(earnedAt: string, durationDays?: number | null): string | null {
