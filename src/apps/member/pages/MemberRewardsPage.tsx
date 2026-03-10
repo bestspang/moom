@@ -78,7 +78,7 @@ export default function MemberRewardsPage() {
                   <TierBadge tier={profile.tier} level={profile.level} />
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Gift className="h-3 w-3" />
-                    Level {profile.level}
+                    {t('member.levelLabel').replace('{{n}}', String(profile.level))}
                   </div>
                 </div>
               </div>
