@@ -4,12 +4,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocations } from '@/hooks/useLocations';
 import { useGenerateQRToken, getTokenTimeRemaining } from '@/hooks/useCheckinQR';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Settings, Dumbbell, LogIn } from 'lucide-react';
+import { MapPin, Settings, Dumbbell, LogIn, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'checkin-display-location';
