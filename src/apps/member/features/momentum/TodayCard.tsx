@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
-import { Clock, MapPin, ChevronRight } from 'lucide-react';
-import { differenceInMinutes, format } from 'date-fns';
+import { Clock, ChevronRight } from 'lucide-react';
+import { differenceInMinutes } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface TodayCardProps {
   booking: {
@@ -18,6 +19,7 @@ interface TodayCardProps {
 }
 
 export function TodayCard({ booking, onTap, className }: TodayCardProps) {
+  const { t } = useTranslation();
   const now = new Date();
   const [h, m] = booking.schedule.startTime.split(':').map(Number);
   const classTime = new Date(booking.schedule.date);
@@ -28,10 +30,12 @@ export function TodayCard({ booking, onTap, className }: TodayCardProps) {
   const isSoon = minsUntil > 0 && minsUntil <= 120;
 
   const urgencyLabel = isHappeningNow
-    ? '🔥 Happening now!'
+    ? t('member.happeningNow')
     : isSoon
-      ? `⏰ Starting in ${minsUntil < 60 ? `${minsUntil} min` : `${Math.floor(minsUntil / 60)}h ${minsUntil % 60}m`}`
-      : `📅 Today at ${booking.schedule.startTime.slice(0, 5)}`;
+      ? minsUntil < 60
+        ? t('member.startingInMin', { min: minsUntil })
+        : t('member.startingInHour', { h: Math.floor(minsUntil / 60), min: minsUntil % 60 })
+      : t('member.todayAt', { time: booking.schedule.startTime.slice(0, 5) });
 
   return (
     <button
@@ -61,7 +65,7 @@ export function TodayCard({ booking, onTap, className }: TodayCardProps) {
             {booking.schedule.trainerName && (
               <>
                 <span className="text-border">·</span>
-                <span className="truncate">with {booking.schedule.trainerName}</span>
+                <span className="truncate">{t('member.withTrainerLabel', { name: booking.schedule.trainerName })}</span>
               </>
             )}
           </div>

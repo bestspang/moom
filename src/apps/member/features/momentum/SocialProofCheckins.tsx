@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SocialProofCheckinsProps {
   memberId: string;
@@ -63,6 +64,7 @@ async function fetchTodaySquadCheckins(memberId: string) {
 }
 
 export function SocialProofCheckins({ memberId }: SocialProofCheckinsProps) {
+  const { t } = useTranslation();
   const { data } = useQuery({
     queryKey: ['squad-today-checkins', memberId],
     queryFn: () => fetchTodaySquadCheckins(memberId),
@@ -80,10 +82,12 @@ export function SocialProofCheckins({ memberId }: SocialProofCheckinsProps) {
     const remaining = data.total - displayNames.length;
     const formatted = formatNameList(displayNames);
     text = remaining > 0
-      ? `${formatted} +${remaining} more also training today!`
-      : `${formatted} also training today!`;
+      ? t('member.squadMoreTraining', { names: formatted, more: remaining })
+      : t('member.squadTrainingToday', { names: formatted });
   } else {
-    text = `${data.total} ${data.total === 1 ? 'person' : 'people'} working out today! 💪`;
+    text = data.total === 1
+      ? t('member.personWorkingOut')
+      : t('member.peopleWorkingOut', { count: data.total });
   }
 
   const Icon = isSquad ? Users : Activity;

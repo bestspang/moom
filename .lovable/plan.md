@@ -1,54 +1,47 @@
 
 
-# Phase 5D: Complete Momentum Components i18n
+# Fix: Promotions export missing columns in Settings
 
-## Current State
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-Phases 5A-5C localized the leaderboard, squad, trainer surface, QuestHub, and MomentumCard. However, **9 momentum components** still have hardcoded English strings totaling ~50 user-facing strings. These components appear on high-traffic member surfaces (home, momentum hub, check-in celebration, rewards store).
+## Fix (surgical, 1 file)
 
-## Plan
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### Step 1: Add ~50 i18n keys to `en.ts` and `th.ts`
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Group under `member.*`:
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-**BadgeGrid** (3 keys): `completeChallengesForBadges`, `badgeLabel`, rarity labels (`rarityCommon`, `rarityRare`, `rarityEpic`, `rarityLegendary`)
-
-**ChallengeCard** (6 keys): `ending`, `daysLeft`, `progress`, `completed`, `joinChallenge`, `joining`
-
-**RewardDropCard** (9 keys): `rewardClaimed`, `rewardClaimFailed`, `limited`, `soldOut`, `levelRequired`, `itemsLeft`, `coinPlusCash`, `claimed`, `claiming`, `notEnough`, `claim`
-
-**StreakFreezeButton** (4 keys): `freezeStreak`, `freezing`, `streakFrozenUntil`, `freezeFailed`, `needCoinToFreeze`
-
-**TodayCard** (4 keys): `happeningNow`, `startingIn`, `todayAt`, `withTrainer`
-
-**SocialProofCheckins** (3 keys): `squadTrainingToday`, `moreTrainingToday`, `peopleWorkingOut`
-
-**LevelPerksCard** (3 keys): `levelPerks`, `unlocked`, `comingNext`
-
-**LevelRequirementsCard** (5 keys): `levelRequirements`, `totalXpLabel`, `weeklyStreakLabel`, `questsCompletedLabel`, `badgesEarnedLabel`
-
-**UpcomingMilestones** (4 keys): `almostThere`, `moreToUnlock`, `nextMilestones`, `moreToGo`
-
-### Step 2: Update 9 component files
-
-Each file gets `useTranslation()` import and all hardcoded strings replaced with `t()` calls. Dynamic strings use i18next interpolation (e.g., `t('member.levelRequired', { level: reward.levelRequired })`).
-
-### Files Modified
-
-| File | Hardcoded Strings |
-|------|------------------|
-| `src/i18n/locales/en.ts` | ~50 new keys |
-| `src/i18n/locales/th.ts` | ~50 new keys |
-| `src/apps/member/features/momentum/BadgeGrid.tsx` | 5 strings |
-| `src/apps/member/features/momentum/ChallengeCard.tsx` | 6 strings |
-| `src/apps/member/features/momentum/RewardDropCard.tsx` | 9 strings |
-| `src/apps/member/features/momentum/StreakFreezeButton.tsx` | 5 strings |
-| `src/apps/member/features/momentum/TodayCard.tsx` | 4 strings |
-| `src/apps/member/features/momentum/SocialProofCheckins.tsx` | 3 strings |
-| `src/apps/member/features/momentum/LevelPerksCard.tsx` | 3 strings |
-| `src/apps/member/features/momentum/LevelRequirementsCard.tsx` | 5 strings |
-| `src/apps/member/features/momentum/UpcomingMilestones.tsx` | 4 strings |
-
-No database changes. No new files. Frontend-only. This completes member momentum i18n coverage.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

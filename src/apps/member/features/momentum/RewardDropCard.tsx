@@ -6,6 +6,7 @@ import { Gift, Lock, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface RewardDropCardProps {
   reward: RewardItem;
@@ -16,6 +17,7 @@ interface RewardDropCardProps {
 }
 
 export function RewardDropCard({ reward, memberId, userLevel, userPoints, alreadyRedeemed }: RewardDropCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const levelLocked = userLevel < reward.levelRequired;
   const pointsLocked = userPoints < reward.pointsCost;
@@ -30,7 +32,7 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
       queryClient.invalidateQueries({ queryKey: ['gamification-rewards-member'] });
       queryClient.invalidateQueries({ queryKey: ['my-redemptions'] });
       queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
-      toast.success('Reward claimed! 🎉');
+      toast.success(t('member.rewardClaimed'));
       fireGamificationEvent({
         event_type: 'reward_redeemed',
         member_id: memberId,
@@ -38,7 +40,7 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
         metadata: { reward_id: reward.id, points_spent: reward.pointsCost },
       });
     },
-    onError: () => toast.error('Failed to claim reward'),
+    onError: () => toast.error(t('member.rewardClaimFailed')),
   });
 
   return (
@@ -54,7 +56,7 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
 
         {isLimited && !levelLocked && (
           <div className="absolute top-3 -left-7 w-28 text-center py-1 text-[9px] font-black uppercase tracking-wider text-primary-foreground bg-destructive -rotate-45">
-            Limited
+            {t('member.limitedLabel')}
           </div>
         )}
 
@@ -64,20 +66,20 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
               <Lock className="h-5 w-5 text-muted-foreground animate-pulse" />
             </div>
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Level {reward.levelRequired} Required
+              {t('member.levelRequired', { level: reward.levelRequired })}
             </span>
           </div>
         )}
 
         {soldOut && !levelLocked && (
           <div className="absolute top-2.5 right-2.5 rounded-full bg-destructive/90 px-2.5 py-1 text-[10px] font-black text-destructive-foreground uppercase tracking-wider">
-            Sold Out
+            {t('member.soldOut')}
           </div>
         )}
 
         {remaining !== null && !soldOut && !levelLocked && (
           <div className="absolute top-2.5 right-2.5 rounded-full bg-card/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-bold text-foreground shadow-sm">
-            {remaining} left
+            {t('member.itemsLeft', { n: remaining })}
           </div>
         )}
       </div>
@@ -86,7 +88,7 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
         {/* Reward type label */}
         {reward.rewardType && reward.rewardType !== 'digital' && (
           <span className="inline-block text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 bg-accent text-accent-foreground mb-1.5">
-            {reward.rewardType === 'hybrid' ? 'Coin + Cash' : reward.rewardType}
+            {reward.rewardType === 'hybrid' ? t('member.coinPlusCash') : reward.rewardType}
           </span>
         )}
         <h3 className="text-sm font-bold text-foreground line-clamp-1">{reward.nameEn}</h3>
@@ -109,7 +111,7 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
 
           {alreadyRedeemed ? (
             <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
-              <Check className="h-4 w-4" /> Claimed
+              <Check className="h-4 w-4" /> {t('member.claimedLabel')}
             </div>
           ) : (
             <Button
@@ -119,8 +121,8 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
               onClick={() => claimMutation.mutate()}
               className="h-8 text-xs px-3 font-bold"
             >
-              {claimMutation.isPending ? 'Claiming...' : pointsLocked ? 'Not enough' : (
-                <><Sparkles className="h-3.5 w-3.5 mr-1" />Claim</>
+              {claimMutation.isPending ? t('member.claimingLabel') : pointsLocked ? t('member.notEnoughPoints') : (
+                <><Sparkles className="h-3.5 w-3.5 mr-1" />{t('member.claimReward')}</>
               )}
             </Button>
           )}
