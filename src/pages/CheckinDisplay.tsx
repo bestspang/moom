@@ -72,9 +72,11 @@ export default function CheckinDisplay() {
 
   const [locationId, setLocationId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
   const [showSettings, setShowSettings] = useState(false);
-  const [tokenData, setTokenData] = useState<{ token: string; expires_at: string } | null>(null);
+  const [tokenData, setTokenData] = useState<{ token: string; expires_at: string; id?: string } | null>(null);
   const [countdown, setCountdown] = useState(TOKEN_LIFETIME);
   const [pulse, setPulse] = useState(false);
+  const [celebration, setCelebration] = useState<{ memberName: string } | null>(null);
+  const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   // Login form state
