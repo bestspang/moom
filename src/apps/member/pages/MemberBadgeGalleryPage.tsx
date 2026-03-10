@@ -175,10 +175,10 @@ export default function MemberBadgeGalleryPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <span className={`text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 ${badgeTypeInfo.className}`}>
-                      {badgeTypeInfo.label}
+                      {t(badgeTypeInfo.labelKey)}
                     </span>
                     <span className={`text-[8px] font-black uppercase tracking-widest rounded-full px-2 py-0.5 ${style.bg} ${style.text}`}>
-                      {style.label}
+                      {t(style.labelKey)}
                     </span>
                   </div>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg} grayscale`}>
