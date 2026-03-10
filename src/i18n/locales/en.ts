@@ -1592,6 +1592,8 @@ export default {
     passwordSpecial: 'Password must contain at least one special character',
     passwordsNotMatch: 'Passwords do not match',
     confirmPassword: 'Please confirm your password',
+    mustBePositive: 'Must be a positive number',
+    fileTooLarge: 'File is too large (max 5MB)',
   },
 
   // Auth
