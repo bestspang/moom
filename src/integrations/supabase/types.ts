@@ -4191,6 +4191,17 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
       }
+      get_xp_leaderboard: {
+        Args: { p_limit?: number; p_since: string }
+        Returns: {
+          avatar_url: string
+          current_level: number
+          first_name: string
+          last_name: string
+          member_id: string
+          sum_xp: number
+        }[]
+      }
       has_min_access_level: {
         Args: {
           _min_level: Database["public"]["Enums"]["access_level"]

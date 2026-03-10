@@ -1,44 +1,47 @@
 
 
-# Phase 7: Leaderboard Time Windows (Weekly / Monthly / All-Time)
+# Fix: Promotions export missing columns in Settings
 
-## Current State
-The XP leaderboard tab only shows all-time rankings from `member_gamification_profiles.total_xp`. There's no way to see who earned the most XP this week or this month. The expansion plan calls for time-windowed leaderboards as a core motivational feature — it lets consistent recent performers shine, not just long-time members.
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## What We Build
+## Fix (surgical, 1 file)
 
-Add a **time-window selector** (All-Time / This Month / This Week) to the XP leaderboard tab. Weekly and monthly rankings are computed by summing `xp_ledger.delta` within the time window, aggregated by `member_id`.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### Backend: Database View (migration)
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Create a reusable DB function `get_xp_leaderboard(p_since timestamptz, p_limit int)` that:
-- Sums `xp_ledger.delta` grouped by `member_id` where `created_at >= p_since`
-- Joins `members` for name/avatar
-- Joins `member_gamification_profiles` for level
-- Returns rows ordered by `sum_xp DESC`, limited to `p_limit`
-- Uses `SECURITY DEFINER` so members can call it (xp_ledger has staff-only RLS)
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### Frontend Changes
-
-**`api.ts`** — Add `fetchXpLeaderboardByWindow(window: 'all' | 'month' | 'week')`:
-- `'all'` → existing `fetchXpLeaderboard()` logic (from profiles table)
-- `'month'` / `'week'` → calls the new RPC function with appropriate `p_since`
-
-**`MemberLeaderboardPage.tsx`** — Inside `XpLeaderboardTab`:
-- Add a `FilterChips` row with 3 chips: All-Time, This Month, This Week
-- State: `timeWindow` defaults to `'all'`
-- Query key includes `timeWindow`; queryFn dispatches to the right fetcher
-- "Around You" section also adapts to the selected window
-
-**i18n** — Add 3 keys: `member.allTime`, `member.thisMonth`, `member.thisWeek`
-
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `get_xp_leaderboard` RPC function |
-| `src/apps/member/features/momentum/api.ts` | Add `fetchXpLeaderboardByWindow` + `fetchAroundMeByWindow` |
-| `src/apps/member/pages/MemberLeaderboardPage.tsx` | Add time-window chips to XP tab |
-| `src/i18n/locales/en.ts` | 3 new keys |
-| `src/i18n/locales/th.ts` | 3 new keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
