@@ -57,7 +57,7 @@ export function LevelRequirementsCard({
 }: LevelRequirementsCardProps) {
   const reqs = deriveRequirements(
     profile,
-    completedQuests.length,
+    completedQuests,
     totalBadges,
   );
 

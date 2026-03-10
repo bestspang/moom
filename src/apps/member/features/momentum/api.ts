@@ -100,51 +100,6 @@ export async function fetchAllBadges(): Promise<BadgeDefinition[]> {
   }));
 }
 
-// ─── Challenges ─────────────────────────────────────────────
-
-export async function fetchActiveChallenges() {
-  const { data, error } = await supabase
-    .from('gamification_challenges')
-    .select('*')
-    .eq('status', 'active')
-    .order('end_date', { ascending: true });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function fetchMyChallengeProgress(memberId: string): Promise<ChallengeProgressEntry[]> {
-  if (!memberId) return [];
-
-  const { data, error } = await supabase
-    .from('challenge_progress')
-    .select('*, challenge:gamification_challenges(*)')
-    .eq('member_id', memberId);
-
-  if (error) throw error;
-
-  return (data ?? []).map((row: any) => {
-    const c = row.challenge;
-    return {
-      id: row.id,
-      challengeId: row.challenge_id,
-      memberId: row.member_id,
-      currentValue: row.current_value,
-      status: row.status,
-      completedAt: row.completed_at,
-      challenge: c ? {
-        id: c.id,
-        nameEn: c.name_en,
-        goalValue: c.goal_value,
-        goalType: c.goal_type,
-        rewardXp: c.reward_xp ?? 0,
-        rewardPoints: c.reward_points ?? 0,
-        status: c.status,
-      } : undefined,
-    };
-  });
-}
-
 // ─── Rewards ────────────────────────────────────────────────
 
 export async function fetchRewards(): Promise<RewardItem[]> {
