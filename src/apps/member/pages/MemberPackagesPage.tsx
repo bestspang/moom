@@ -108,7 +108,7 @@ export default function MemberPackagesPage() {
                     pkg.sessionsRemaining != null
                       ? `${pkg.sessionsRemaining}/${pkg.sessionsTotal ?? '∞'} ${t('member.sessionsRemaining').replace('{{n}} ', '')}`
                       : pkg.expiryDate
-                        ? `Expires ${format(parseISO(pkg.expiryDate), 'd MMM yyyy')}`
+                        ? t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy'))
                         : undefined
                   }
                   trailing={<MobileStatusBadge status={pkg.status} />}

@@ -137,7 +137,7 @@ export default function MemberRewardsPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      {EVENT_LABELS[entry.eventType] ?? entry.eventType}
+                      {EVENT_LABEL_KEYS[entry.eventType] ? t(EVENT_LABEL_KEYS[entry.eventType]) : entry.eventType}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(entry.createdAt), 'MMM d, yyyy · h:mm a')}

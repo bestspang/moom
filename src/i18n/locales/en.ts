@@ -1737,6 +1737,44 @@ export default {
     dayTerm: '{{n}} day term',
     purchase: 'Purchase',
     popular: 'Popular',
+    // Greetings
+    goodMorning: 'Good morning',
+    goodAfternoon: 'Good afternoon',
+    goodEvening: 'Good evening',
+    // Event labels (rewards history)
+    eventCheckin: 'Check-in',
+    eventQuest: 'Quest',
+    eventStreakBonus: 'Streak Bonus',
+    eventChallenge: 'Challenge',
+    eventReferral: 'Referral',
+    eventPurchase: 'Purchase',
+    eventBadgeEarned: 'Badge Earned',
+    eventActivityReward: 'Activity Reward',
+    eventRedemption: 'Redemption',
+    levelLabel: 'Level {{n}}',
+    // Badge tiers
+    tierCommon: 'Common',
+    tierRare: 'Rare',
+    tierEpic: 'Epic',
+    tierLegendary: 'Legendary',
+    // Badge types
+    typePermanent: 'Permanent',
+    typeBoost: 'Boost',
+    typeAccess: 'Access',
+    typeSeasonal: 'Seasonal',
+    // Badge expiry
+    badgeExpired: 'Expired',
+    badgeDaysLeft: '{{n}}d left',
+    // Badge effects
+    effectCoinBonus: '+{{amount}} coin bonus',
+    effectXpBonus: '+{{amount}} XP bonus',
+    effectAccess: 'Unlocks access',
+    // Package
+    expiresOn: 'Expires {{date}}',
+    // Moved from auth namespace
+    earnXpOnRenewal: 'Renewing your package earns +{{xp}} XP & +{{coins}} Coin',
+    almostThere: 'Almost there!',
+    xpToNextLevel: '{{xp}} more XP to reach Level {{level}}',
   },
 
   // Members form fields

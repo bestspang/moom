@@ -160,9 +160,9 @@ export default function MemberHomePage() {
                 <Zap className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-foreground">{t('auth.almostThere')}</p>
+                <p className="text-xs font-bold text-foreground">{t('member.almostThere')}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {t('auth.xpToNextLevel')
+                  {t('member.xpToNextLevel')
                     .replace('{{xp}}', String(xpRemaining))
                     .replace('{{level}}', String(momentumProfile.level + 1))}
                 </p>

@@ -1737,6 +1737,44 @@ export default {
     dayTerm: '{{n}} วัน',
     purchase: 'ซื้อ',
     popular: 'ยอดนิยม',
+    // Greetings
+    goodMorning: 'สวัสดีตอนเช้า',
+    goodAfternoon: 'สวัสดีตอนบ่าย',
+    goodEvening: 'สวัสดีตอนเย็น',
+    // Event labels (rewards history)
+    eventCheckin: 'เช็คอิน',
+    eventQuest: 'เควส',
+    eventStreakBonus: 'โบนัสสตรีค',
+    eventChallenge: 'ชาเลนจ์',
+    eventReferral: 'ชวนเพื่อน',
+    eventPurchase: 'ซื้อแพ็กเกจ',
+    eventBadgeEarned: 'ได้รับแบดจ์',
+    eventActivityReward: 'รางวัลกิจกรรม',
+    eventRedemption: 'แลกรางวัล',
+    levelLabel: 'เลเวล {{n}}',
+    // Badge tiers
+    tierCommon: 'ธรรมดา',
+    tierRare: 'หายาก',
+    tierEpic: 'เอพิค',
+    tierLegendary: 'ตำนาน',
+    // Badge types
+    typePermanent: 'ถาวร',
+    typeBoost: 'บูสต์',
+    typeAccess: 'ปลดล็อก',
+    typeSeasonal: 'ซีซัน',
+    // Badge expiry
+    badgeExpired: 'หมดอายุ',
+    badgeDaysLeft: 'เหลือ {{n}} วัน',
+    // Badge effects
+    effectCoinBonus: '+{{amount}} โบนัส Coin',
+    effectXpBonus: '+{{amount}} โบนัส XP',
+    effectAccess: 'ปลดล็อกการเข้าถึง',
+    // Package
+    expiresOn: 'หมดอายุ {{date}}',
+    // Moved from auth namespace
+    earnXpOnRenewal: 'ต่อแพ็กเกจรับ +{{xp}} XP & +{{coins}} Coin',
+    almostThere: 'ใกล้แล้ว!',
+    xpToNextLevel: 'อีก {{xp}} XP ถึงเลเวล {{level}}',
   },
 
   // Members form fields
