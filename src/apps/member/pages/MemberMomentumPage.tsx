@@ -214,7 +214,7 @@ export default function MemberMomentumPage() {
           {/* Level-up requirements breakdown */}
           <LevelRequirementsCard
             profile={profile}
-            completedQuests={[]}
+            completedQuests={0}
             totalBadges={badges?.length ?? 0}
           />
 
