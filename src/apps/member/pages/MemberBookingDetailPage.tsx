@@ -27,8 +27,10 @@ export default function MemberBookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { memberId } = useMemberSession();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const { data: booking, isLoading, isError, refetch } = useQuery({
     queryKey: ['booking', id],
