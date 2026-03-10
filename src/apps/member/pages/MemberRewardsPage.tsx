@@ -25,7 +25,7 @@ const EVENT_LABEL_KEYS: Record<string, string> = {
 
 export default function MemberRewardsPage() {
   const { memberId } = useMemberSession();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],

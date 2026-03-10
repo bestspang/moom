@@ -38,6 +38,25 @@ export default function MemberBookingDetailPage() {
     enabled: !!id,
   });
 
+  const scheduleId = booking?.schedule?.id;
+  const isAttended = booking?.status === 'attended';
+
+  // Must be before any early returns (Rules of Hooks)
+  const { data: existingRating } = useQuery({
+    queryKey: ['class-rating', scheduleId, memberId],
+    queryFn: async () => {
+      if (!memberId || !scheduleId) return null;
+      const { data } = await (supabase as any)
+        .from('class_ratings')
+        .select('rating, comment')
+        .eq('schedule_id', scheduleId)
+        .eq('member_id', memberId)
+        .maybeSingle();
+      return data as { rating: number; comment: string | null } | null;
+    },
+    enabled: !!isAttended && !!memberId && !!scheduleId,
+  });
+
   const cancelMutation = useMutation({
     mutationFn: () => cancelBooking(id!, cancelReason || undefined),
     onSuccess: () => {
@@ -78,23 +97,6 @@ export default function MemberBookingDetailPage() {
 
   const { schedule } = booking;
   const canCancel = booking.status === 'booked' || booking.status === 'waitlisted';
-  const isAttended = booking.status === 'attended';
-
-  // Check if already rated
-  const { data: existingRating } = useQuery({
-    queryKey: ['class-rating', schedule.id, memberId],
-    queryFn: async () => {
-      if (!memberId) return null;
-      const { data } = await (supabase as any)
-        .from('class_ratings')
-        .select('rating, comment')
-        .eq('schedule_id', schedule.id)
-        .eq('member_id', memberId)
-        .maybeSingle();
-      return data as { rating: number; comment: string | null } | null;
-    },
-    enabled: isAttended && !!memberId,
-  });
 
   return (
     <div className="animate-in fade-in-0 duration-200">

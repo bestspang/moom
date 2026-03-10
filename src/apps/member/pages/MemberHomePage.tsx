@@ -261,7 +261,7 @@ export default function MemberHomePage() {
                     <span className={`text-xs font-semibold ${urgencyColor}`}>
                       {daysLeft <= 0 ? t('member.expired') : t('member.daysLeft').replace('{{n}}', String(daysLeft))}
                     </span>
-                  ) as any : undefined}
+                  ) : undefined}
                   trailing={<MobileStatusBadge status={pkg.status} />}
                 />
               );

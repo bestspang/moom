@@ -42,12 +42,7 @@ export default function MemberPurchasePage() {
     if (!memberId || !id) return;
     try {
       await createCheckout({ member_id: memberId, package_id: id });
-      fireGamificationEvent({
-        event_type: 'package_purchased',
-        member_id: memberId,
-        idempotency_key: `purchase:${id}:${Date.now()}`,
-        metadata: { package_id: id },
-      });
+      // Gamification event is fired server-side via stripe-webhook after payment confirmation
       setStep('success');
     } catch {
       // error already toasted by hook
