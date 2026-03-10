@@ -598,61 +598,93 @@ export async function fetchAttendanceLeaderboard(): Promise<LeaderboardEntry[]> 
 }
 
 export async function fetchAroundMeLeaderboard(memberId: string): Promise<LeaderboardEntry[]> {
+  return fetchAroundMeByWindow(memberId, 'all');
+}
+
+export async function fetchAroundMeByWindow(memberId: string, window: LeaderboardTimeWindow): Promise<LeaderboardEntry[]> {
   if (!memberId) return [];
 
-  // Get user's XP
-  const { data: myProfile } = await supabase
-    .from('member_gamification_profiles')
-    .select('total_xp')
-    .eq('member_id', memberId)
-    .maybeSingle();
+  if (window === 'all') {
+    // Original logic using profiles table
+    const { data: myProfile } = await supabase
+      .from('member_gamification_profiles')
+      .select('total_xp')
+      .eq('member_id', memberId)
+      .maybeSingle();
 
-  if (!myProfile) return [];
+    if (!myProfile) return [];
 
-  const myXp = myProfile.total_xp;
+    const myXp = myProfile.total_xp;
 
-  // Get 5 above (higher XP) and 5 below (lower XP), plus the user
-  const { data: above } = await supabase
-    .from('member_gamification_profiles')
-    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
-    .gt('total_xp', myXp)
-    .order('total_xp', { ascending: true })
-    .limit(5);
+    const { data: above } = await supabase
+      .from('member_gamification_profiles')
+      .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+      .gt('total_xp', myXp)
+      .order('total_xp', { ascending: true })
+      .limit(5);
 
-  const { data: below } = await supabase
-    .from('member_gamification_profiles')
-    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
-    .lt('total_xp', myXp)
-    .order('total_xp', { ascending: false })
-    .limit(5);
+    const { data: below } = await supabase
+      .from('member_gamification_profiles')
+      .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+      .lt('total_xp', myXp)
+      .order('total_xp', { ascending: false })
+      .limit(5);
 
-  const { data: me } = await supabase
-    .from('member_gamification_profiles')
-    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
-    .eq('member_id', memberId);
+    const { data: me } = await supabase
+      .from('member_gamification_profiles')
+      .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+      .eq('member_id', memberId);
 
-  // Count how many are above to determine rank
-  const { count: aboveCount } = await supabase
-    .from('member_gamification_profiles')
-    .select('member_id', { count: 'exact', head: true })
-    .gt('total_xp', myXp);
+    const { count: aboveCount } = await supabase
+      .from('member_gamification_profiles')
+      .select('member_id', { count: 'exact', head: true })
+      .gt('total_xp', myXp);
 
-  const myRank = (aboveCount ?? 0) + 1;
+    const myRank = (aboveCount ?? 0) + 1;
 
-  const combined = [
-    ...((above ?? []).reverse()),
-    ...(me ?? []),
-    ...(below ?? []),
-  ];
+    const combined = [
+      ...((above ?? []).reverse()),
+      ...(me ?? []),
+      ...(below ?? []),
+    ];
 
-  return combined.map((row: any, idx: number) => ({
+    return combined.map((row: any, idx: number) => ({
+      memberId: row.member_id,
+      firstName: row.member?.first_name ?? '',
+      lastName: row.member?.last_name ?? '',
+      avatarUrl: row.member?.avatar_url ?? null,
+      totalXp: row.total_xp,
+      level: row.current_level,
+      rank: myRank - ((above ?? []).length) + idx,
+    }));
+  }
+
+  // For week/month windows, use RPC to get a larger set and find user position
+  const since = getSinceDate(window)!;
+  const { data, error } = await supabase.rpc('get_xp_leaderboard', {
+    p_since: since,
+    p_limit: 200,
+  });
+
+  if (error) throw error;
+  if (!data?.length) return [];
+
+  const rows = data as any[];
+  const myIdx = rows.findIndex((r: any) => r.member_id === memberId);
+  if (myIdx === -1) return [];
+
+  const start = Math.max(0, myIdx - 5);
+  const end = Math.min(rows.length, myIdx + 6);
+  const slice = rows.slice(start, end);
+
+  return slice.map((row: any, idx: number) => ({
     memberId: row.member_id,
-    firstName: row.member?.first_name ?? '',
-    lastName: row.member?.last_name ?? '',
-    avatarUrl: row.member?.avatar_url ?? null,
-    totalXp: row.total_xp,
+    firstName: row.first_name ?? '',
+    lastName: row.last_name ?? '',
+    avatarUrl: row.avatar_url ?? null,
+    totalXp: Number(row.sum_xp),
     level: row.current_level,
-    rank: myRank - ((above ?? []).length) + idx,
+    rank: start + idx + 1,
   }));
 }
 
