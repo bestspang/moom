@@ -178,7 +178,7 @@ export default function CheckinDisplay() {
         expiresInSeconds: TOKEN_LIFETIME,
         tokenType: 'checkin',
       });
-      setTokenData({ token: result.token, expires_at: result.expires_at });
+      setTokenData({ token: result.token, expires_at: result.expires_at, id: result.id });
       setPulse(true);
       setTimeout(() => setPulse(false), 600);
     } catch {
