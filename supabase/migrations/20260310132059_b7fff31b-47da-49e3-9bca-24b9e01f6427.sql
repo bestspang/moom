@@ -1,0 +1,1 @@
+ALTER TABLE public.checkin_qr_tokens ALTER COLUMN member_id DROP NOT NULL;

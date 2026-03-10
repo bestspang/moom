@@ -405,7 +405,7 @@ export type Database = {
           expires_at: string
           id: string
           location_id: string
-          member_id: string
+          member_id: string | null
           token: string
           token_type: string | null
           used_at: string | null
@@ -416,7 +416,7 @@ export type Database = {
           expires_at: string
           id?: string
           location_id: string
-          member_id: string
+          member_id?: string | null
           token: string
           token_type?: string | null
           used_at?: string | null
@@ -427,7 +427,7 @@ export type Database = {
           expires_at?: string
           id?: string
           location_id?: string
-          member_id?: string
+          member_id?: string | null
           token?: string
           token_type?: string | null
           used_at?: string | null

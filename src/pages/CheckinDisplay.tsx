@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLocations } from '@/hooks/useLocations';
 import { useGenerateQRToken, getTokenTimeRemaining } from '@/hooks/useCheckinQR';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MapPin, Settings, Dumbbell } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MapPin, Settings, Dumbbell, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STORAGE_KEY = 'checkin-display-location';
 const TOKEN_LIFETIME = 30; // seconds
