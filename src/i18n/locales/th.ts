@@ -1847,6 +1847,8 @@ export default {
     joinButton: 'เข้าร่วม',
     leaveButton: 'ออก',
     memberLabel: 'สมาชิก',
+    xpContribution: 'การมีส่วนร่วม XP',
+    squadMemberCount: '{{count}} สมาชิก',
     // Coupons page
     myCoupons: 'คูปองของฉัน',
     couponActive: 'ใช้ได้',
