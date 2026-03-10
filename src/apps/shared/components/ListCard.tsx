@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 interface ListCardProps {
   title: string;
   subtitle?: string;
-  meta?: string;
+  meta?: React.ReactNode;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   onClick?: () => void;
