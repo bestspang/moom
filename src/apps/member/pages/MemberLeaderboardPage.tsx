@@ -32,28 +32,46 @@ const RANK_COLORS = [
   'text-amber-600',
 ] as const;
 
+const TIME_WINDOW_OPTIONS: { value: LeaderboardTimeWindow; label: string }[] = [
+  { value: 'all', label: '' },
+  { value: 'month', label: '' },
+  { value: 'week', label: '' },
+];
+
 function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: string, opts?: any) => string }) {
+  const [timeWindow, setTimeWindow] = useState<LeaderboardTimeWindow>('all');
+
+  const chipOptions = TIME_WINDOW_OPTIONS.map(o => ({
+    value: o.value,
+    label: o.value === 'all' ? t('member.periodAllTime') : o.value === 'month' ? t('member.periodMonthly') : t('member.periodWeekly'),
+  }));
+
   const { data, isLoading } = useQuery({
-    queryKey: ['xp-leaderboard'],
-    queryFn: fetchXpLeaderboard,
+    queryKey: ['xp-leaderboard', timeWindow],
+    queryFn: () => fetchXpLeaderboardByWindow(timeWindow),
     staleTime: 60_000,
   });
 
   const { data: aroundMe } = useQuery({
-    queryKey: ['around-me-leaderboard', memberId],
-    queryFn: () => fetchAroundMeLeaderboard(memberId!),
+    queryKey: ['around-me-leaderboard', memberId, timeWindow],
+    queryFn: () => fetchAroundMeByWindow(memberId!, timeWindow),
     enabled: !!memberId,
     staleTime: 60_000,
   });
 
   if (isLoading) return <LeaderboardSkeleton />;
-  if (!data?.length) return <EmptyLeaderboard message={t('member.noXpEarnersYet')} />;
+  if (!data?.length) return (
+    <div className="space-y-3">
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={setTimeWindow} />
+      <EmptyLeaderboard message={t('member.noXpEarnersYet')} />
+    </div>
+  );
 
-  // Check if user is in top 20
   const isInTop20 = memberId && data.some(e => e.memberId === memberId);
 
   return (
     <div className="space-y-4">
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={setTimeWindow} />
       <div className="space-y-2">
         {data.map((entry) => (
           <LeaderboardEntryRow
@@ -70,7 +88,6 @@ function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: s
         ))}
       </div>
 
-      {/* Around You section — only show if user is NOT in top 20 */}
       {!isInTop20 && aroundMe && aroundMe.length > 0 && (
         <div className="pt-2">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">
