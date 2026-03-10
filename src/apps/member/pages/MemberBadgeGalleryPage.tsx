@@ -115,7 +115,7 @@ export default function MemberBadgeGalleryPage() {
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
                   {expiryText && (
-                    <div className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[8px] font-bold ${expiryText === 'Expired' ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'}`}>
+                    <div className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[8px] font-bold ${expiryText === t('member.badgeExpired') ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'}`}>
                       {expiryText}
                     </div>
                   )}
