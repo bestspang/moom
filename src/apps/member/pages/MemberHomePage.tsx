@@ -20,9 +20,8 @@ import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
-function getTimeGreeting(): string {
+function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
@@ -53,42 +52,33 @@ export default function MemberHomePage() {
     enabled: isAuthenticated,
   });
 
-  // For "Almost There" nudge
   const { data: momentumProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],
     queryFn: () => fetchMomentumProfile(memberId!),
     enabled: !!memberId,
   });
 
-
-
-
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
   const latestAnnouncement = announcements?.[0];
 
-  const greeting = getTimeGreeting();
+  const greeting = getTimeGreeting(t);
   const title = firstName ? `${greeting}, ${firstName}` : `${greeting}!`;
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayBookings = upcomingBookings.filter(b => b.schedule.date === todayStr);
   const subtitle = todayBookings.length > 0
-    ? `You have ${todayBookings.length} booking${todayBookings.length > 1 ? 's' : ''} today`
-    : 'Ready to train?';
+    ? (todayBookings.length > 1
+      ? t('member.bookingsTodayPlural').replace('{{count}}', String(todayBookings.length))
+      : t('member.bookingsToday').replace('{{count}}', String(todayBookings.length)))
+    : t('member.readyToTrain');
 
   const isNewUser = upcomingBookings.length === 0 && activePackages.length === 0;
-
   const nextTodayBooking = todayBookings[0];
-
-
-
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-      <MobilePageHeader
-        title={title}
-        subtitle={subtitle}
-      />
+      <MobilePageHeader title={title} subtitle={subtitle} />
 
       {/* Onboarding for new users */}
       {isNewUser && !onboardingDismissed && (
@@ -97,24 +87,24 @@ export default function MemberHomePage() {
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">Welcome to MOOM!</p>
+                <p className="text-sm font-semibold text-foreground">{t('member.welcomeToMoom')}</p>
               </div>
               <button onClick={() => setOnboardingDismissed(true)} className="text-xs text-muted-foreground hover:text-foreground">
-                Dismiss
+                {t('member.dismiss')}
               </button>
             </div>
             <ol className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-                Browse classes in the schedule
+                {t('member.onboardingStep1')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-                Book your first session
+                {t('member.onboardingStep2')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-                Check in to earn XP
+                {t('member.onboardingStep3')}
               </li>
             </ol>
           </div>
@@ -131,16 +121,16 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Quick actions — Check In is primary */}
+      {/* Quick actions */}
       <Section className="mb-4">
         <div className="flex gap-2">
           <Button onClick={() => navigate('/member/check-in')} className="flex-1" size="sm">
             <ScanLine className="h-4 w-4 mr-1.5" />
-            Check In
+            {t('member.checkIn')}
           </Button>
           <Button onClick={() => navigate('/member/schedule')} variant="outline" className="flex-1" size="sm">
             <Calendar className="h-4 w-4 mr-1.5" />
-            Book Class
+            {t('member.bookClass')}
           </Button>
         </div>
       </Section>
@@ -185,14 +175,13 @@ export default function MemberHomePage() {
         );
       })()}
 
-
-      {/* Next Up bookings — max 2 */}
+      {/* Next Up bookings */}
       <Section
-        title="Next Up"
+        title={t('member.nextUp')}
         action={
           upcomingBookings.length > 0 ? (
             <button onClick={() => navigate('/member/bookings')} className="text-xs font-medium text-primary flex items-center gap-0.5">
-              View all <ChevronRight className="h-3 w-3" />
+              {t('common.viewAll')} <ChevronRight className="h-3 w-3" />
             </button>
           ) : undefined
         }
@@ -202,9 +191,9 @@ export default function MemberHomePage() {
           <div className="space-y-3"><Skeleton className="h-20 rounded-lg" /></div>
         ) : upcomingBookings.length === 0 ? (
           <EmptyState
-            title="No upcoming bookings"
-            description="Browse the schedule to book your next class"
-            action={<Button size="sm" onClick={() => navigate('/member/schedule')}>Browse Schedule</Button>}
+            title={t('member.noUpcomingBookings')}
+            description={t('member.browseScheduleHint')}
+            action={<Button size="sm" onClick={() => navigate('/member/schedule')}>{t('member.browseSchedule')}</Button>}
           />
         ) : (
           <div className="space-y-2">
@@ -249,7 +238,7 @@ export default function MemberHomePage() {
 
       {/* Active packages with expiry countdown */}
       {activePackages.length > 0 && (
-        <Section title="Active Packages" className="mb-6">
+        <Section title={t('member.activePackages')} className="mb-6">
           <div className="space-y-2">
             {activePackages.map(pkg => {
               const daysLeft = pkg.expiryDate
@@ -265,12 +254,12 @@ export default function MemberHomePage() {
                   title={pkg.packageName}
                   subtitle={
                     pkg.sessionsRemaining != null
-                      ? `${pkg.sessionsRemaining} sessions remaining`
+                      ? t('member.sessionsRemaining').replace('{{n}}', String(pkg.sessionsRemaining))
                       : undefined
                   }
                   meta={daysLeft != null ? (
                     <span className={`text-xs font-semibold ${urgencyColor}`}>
-                      {daysLeft <= 0 ? 'Expired' : `${daysLeft}d left`}
+                      {daysLeft <= 0 ? t('member.expired') : t('member.daysLeft').replace('{{n}}', String(daysLeft))}
                     </span>
                   ) as any : undefined}
                   trailing={<MobileStatusBadge status={pkg.status} />}

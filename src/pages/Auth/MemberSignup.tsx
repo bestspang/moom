@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
+import { isCustomDomain } from '@/apps/shared/hostname';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,12 +83,28 @@ const MemberSignup: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      if (result.error) {
-        toast({ variant: 'destructive', title: t('auth.signupFailed'), description: result.error.message });
+      if (isCustomDomain()) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/member',
+            skipBrowserRedirect: true,
+            queryParams: { prompt: 'select_account' },
+          },
+        });
+        if (error) {
+          toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
+        } else if (data?.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+        if (result.error) {
+          toast({ variant: 'destructive', title: t('auth.signupFailed'), description: result.error.message });
+        }
       }
     } catch {
       toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.googleSignInFailed') });
@@ -166,12 +183,12 @@ const MemberSignup: React.FC = () => {
               <span className="text-primary-foreground font-bold text-xl">M</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Join MOOM</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.joinMoom')}</CardTitle>
           <CardDescription>{t('auth.signupDescription')}</CardDescription>
           {referralCode && (
             <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
-              <p className="text-xs text-primary font-semibold">🎉 Referral code applied: {referralCode}</p>
-              <p className="text-xs text-muted-foreground">You'll both earn reward points!</p>
+              <p className="text-xs text-primary font-semibold">{t('auth.referralApplied').replace('{{code}}', referralCode)}</p>
+              <p className="text-xs text-muted-foreground">{t('auth.referralBothEarn')}</p>
             </div>
           )}
         </CardHeader>
@@ -185,7 +202,7 @@ const MemberSignup: React.FC = () => {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
             )}
-            Sign up with Google
+            {t('auth.signUpWithGoogle')}
           </Button>
 
           <div className="relative my-4">
@@ -301,7 +318,7 @@ const MemberSignup: React.FC = () => {
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setPhoneOtpSent(false); setPhoneOtpCode(''); }}>
-                      Use a different number
+                      {t('auth.useDifferentNumber')}
                     </Button>
                   </div>
                 </div>

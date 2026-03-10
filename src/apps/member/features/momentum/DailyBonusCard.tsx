@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Zap, ScanLine, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DailyBonusCardProps {
   className?: string;
@@ -10,6 +11,7 @@ interface DailyBonusCardProps {
 
 export function DailyBonusCard({ className }: DailyBonusCardProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { data: rule } = useQuery({
     queryKey: ['gamification-rule-checkin'],
@@ -45,8 +47,8 @@ export function DailyBonusCard({ className }: DailyBonusCardProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-foreground">Check in today</p>
-        <p className="text-xs text-muted-foreground">Earn bonus XP & keep your streak 🔥</p>
+        <p className="text-sm font-bold text-foreground">{t('member.checkInToday')}</p>
+        <p className="text-xs text-muted-foreground">{t('member.earnBonusXp')}</p>
       </div>
 
       <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary flex-shrink-0">
