@@ -115,6 +115,7 @@ import MemberNotificationsPage from "@/apps/member/pages/MemberNotificationsPage
 import MemberReferralPage from "@/apps/member/pages/MemberReferralPage";
 import MemberMomentumPage from "@/apps/member/pages/MemberMomentumPage";
 import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
+import TrainerImpactPage from "@/apps/trainer/pages/TrainerImpactPage";
 import TrainerSchedulePage from "@/apps/trainer/pages/TrainerSchedulePage";
 import TrainerRosterPage from "@/apps/trainer/pages/TrainerRosterPage";
 import TrainerWorkoutsPage from "@/apps/trainer/pages/TrainerWorkoutsPage";
@@ -183,6 +184,7 @@ const App = () => (
                 {/* ===== Trainer Surface (mobile-first) ===== */}
                 <Route path="/trainer" element={<TrainerLayout />}>
                   <Route index element={<TrainerHomePage />} />
+                  <Route path="impact" element={<TrainerImpactPage />} />
                   <Route path="schedule" element={<TrainerSchedulePage />} />
                   <Route path="roster" element={<TrainerRosterPage />} />
                   <Route path="workouts" element={<TrainerWorkoutsPage />} />

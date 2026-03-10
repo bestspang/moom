@@ -1,52 +1,47 @@
 
 
-# Phase 6: Trainer Impact Detail Page
+# Fix: Promotions export missing columns in Settings
 
-## What Exists
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The trainer surface has 5 pages (home, schedule, roster, workouts, profile). The home page shows a `CoachImpactCard` or `PartnerReputationCard` depending on trainer type, but there is **no dedicated gamification/impact page** where trainers can see their full score breakdown, quest list, tier progress, and score history. The member surface has `MemberMomentumPage` as a rich equivalent — trainers need the same depth.
+## Fix (surgical, 1 file)
 
-The backend already supports this: `trainer_gamification_scores` stores score/breakdown/coin_balance, `quest_templates` has `audience_type: trainer_inhouse | trainer_freelance`, and the API layer (`fetchCoachImpactProfile`, `fetchPartnerReputationProfile`, `fetchTrainerQuests`) already exists.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## Plan
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 1. Create `TrainerImpactPage.tsx`
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-New file: `src/apps/trainer/pages/TrainerImpactPage.tsx`
-
-A single page that adapts based on trainer type (in_house vs freelance):
-
-- **Hero section**: Score circle (reuse from impact cards), tier badge, coin balance
-- **Metrics grid**: 4 key metrics from the breakdown (attendance rate, return rate, etc.)
-- **Quests section**: Active trainer quests from `fetchTrainerQuests()`, showing goal/reward
-- **Tier progress**: Current tier, next tier threshold, progress bar
-- **Score history placeholder**: "Coming soon" section for future weekly score charts
-
-All strings use `useTranslation()` with new `trainer.*` i18n keys.
-
-### 2. Add route + navigation
-
-- Add `/trainer/impact` route in `App.tsx` under the trainer layout
-- Make the impact card on `TrainerHomePage` tappable — navigating to `/trainer/impact`
-- Optionally add an "Impact" tab to the bottom nav (replacing or alongside an existing tab)
-
-### 3. Add ~15 i18n keys
-
-Under `trainer.*` in both `en.ts` and `th.ts`:
-- `impactScore`, `reputationScore`, `tierProgress`, `nextTier`, `currentTier`
-- `trainerQuests`, `noQuestsAvailable`, `scoreBreakdown`
-- `coachImpactTitle`, `partnerReputationTitle`
-- `viewImpactDetail`, `scoreHistoryComingSoon`
-
-### Files
-
-| File | Action |
-|------|--------|
-| `src/apps/trainer/pages/TrainerImpactPage.tsx` | **Create** — full impact detail page |
-| `src/App.tsx` | Add route `/trainer/impact` |
-| `src/apps/trainer/pages/TrainerHomePage.tsx` | Make impact card tappable (wrap with onClick → navigate) |
-| `src/i18n/locales/en.ts` | ~15 new trainer keys |
-| `src/i18n/locales/th.ts` | ~15 new trainer keys |
-
-No database changes. No new API functions needed (reuses existing `fetchCoachImpactProfile`, `fetchPartnerReputationProfile`, `fetchTrainerQuests`, `fetchTrainerType`).
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

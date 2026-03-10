@@ -12,10 +12,12 @@ import { CoachImpactCard } from '@/apps/trainer/features/impact/CoachImpactCard'
 import { PartnerReputationCard } from '@/apps/trainer/features/impact/PartnerReputationCard';
 import { fetchTrainerType } from '@/apps/trainer/features/impact/api';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 export default function TrainerHomePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -86,7 +88,9 @@ export default function TrainerHomePage() {
       </Section>
 
       <Section className="mb-4">
-        {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
+        <button onClick={() => navigate('/trainer/impact')} className="w-full text-left">
+          {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
+        </button>
       </Section>
 
       <Section title={t('trainer.todaysSchedule')} className="mb-4">
