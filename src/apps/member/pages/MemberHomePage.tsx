@@ -155,6 +155,35 @@ export default function MemberHomePage() {
         <MomentumCard memberId={memberId} />
       </Section>
 
+      {/* Almost There nudge — within 15% of next level */}
+      {momentumProfile && (() => {
+        const currentLevelXP = xpForLevel(momentumProfile.level - 1);
+        const nextLevelXP = xpForLevel(momentumProfile.level);
+        const xpNeeded = nextLevelXP - currentLevelXP;
+        const xpRemaining = nextLevelXP - momentumProfile.totalXp;
+        const progress = xpNeeded > 0 ? ((momentumProfile.totalXp - currentLevelXP) / xpNeeded) * 100 : 0;
+        if (progress < 85 || xpRemaining <= 0) return null;
+        return (
+          <Section className="mb-4">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex items-center gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-foreground">{t('auth.almostThere')}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('auth.xpToNextLevel')
+                    .replace('{{xp}}', String(xpRemaining))
+                    .replace('{{level}}', String(momentumProfile.level + 1))}
+                </p>
+              </div>
+              <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden flex-shrink-0">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          </Section>
+        );
+      })()}
 
 
       {/* Next Up bookings — max 2 */}
