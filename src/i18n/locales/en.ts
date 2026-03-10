@@ -1849,6 +1849,14 @@ export default {
     memberLabel: 'Member',
     xpContribution: 'XP Contribution',
     squadMemberCount: '{{count}} members',
+    // Squad activity feed
+    recentSquadActivity: 'Recent Activity',
+    activityCheckedIn: 'checked in',
+    activityEarnedBadge: 'earned a badge',
+    activityCompletedQuest: 'completed a quest',
+    activityLeveledUp: 'leveled up',
+    activityEarnedXp: 'earned XP',
+    noActivityYet: 'No activity yet — check back soon!',
     // Coupons page
     myCoupons: 'My Coupons',
     couponActive: 'Active',

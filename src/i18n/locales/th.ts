@@ -1848,6 +1848,14 @@ export default {
     leaveButton: 'ออก',
     memberLabel: 'สมาชิก',
     xpContribution: 'การมีส่วนร่วม XP',
+    // Squad activity feed
+    recentSquadActivity: 'กิจกรรมล่าสุด',
+    activityCheckedIn: 'เช็คอิน',
+    activityEarnedBadge: 'ได้รับแบดจ์',
+    activityCompletedQuest: 'ทำเควสสำเร็จ',
+    activityLeveledUp: 'เลเวลอัพ',
+    activityEarnedXp: 'ได้รับ XP',
+    noActivityYet: 'ยังไม่มีกิจกรรม — กลับมาเช็คอีกครั้งนะ!',
     squadMemberCount: '{{count}} สมาชิก',
     // Coupons page
     myCoupons: 'คูปองของฉัน',
