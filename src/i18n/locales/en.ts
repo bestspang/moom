@@ -1990,6 +1990,10 @@ export default {
     uploadingSlip: 'Uploading...',
     slipUploaded: 'Transfer slip uploaded',
     slipUploadFailed: 'Failed to upload slip',
+    // Attendance stats
+    totalCheckIns: 'Total',
+    thisMonth: 'This month',
+    thisWeek: 'This week',
     // Security page
     securityTitle: 'Security & Login',
     accountSecurity: 'Account Security',

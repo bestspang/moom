@@ -1990,6 +1990,10 @@ export default {
     uploadingSlip: 'กำลังอัปโหลด...',
     slipUploaded: 'อัปโหลดสลิปสำเร็จ',
     slipUploadFailed: 'อัปโหลดสลิปไม่สำเร็จ',
+    // Attendance stats
+    totalCheckIns: 'ทั้งหมด',
+    thisMonth: 'เดือนนี้',
+    thisWeek: 'สัปดาห์นี้',
     // Security page
     securityTitle: 'ความปลอดภัยและการเข้าสู่ระบบ',
     accountSecurity: 'ความปลอดภัยของบัญชี',
