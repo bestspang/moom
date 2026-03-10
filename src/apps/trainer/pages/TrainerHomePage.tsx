@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 export default function TrainerHomePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const today = format(new Date(), 'yyyy-MM-dd');
 
