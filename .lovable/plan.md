@@ -1,47 +1,63 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 4B: Auth Polish + Member i18n + Diagnostics Enhancement
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Diagnosis
 
-## Fix (surgical, 1 file)
+After inspecting all member-facing files, here's what still needs fixing:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### Auth Issues
+1. **MemberSignup Google login on custom domains** — Line 85-96 uses `lovable.auth.signInWithOAuth` directly without the `isCustomDomain()` check that MemberLogin has. On `member.moom.fit`, Google OAuth will use the wrong redirect.
+2. **Hardcoded strings in MemberSignup** — "Sign up with Google" (L188), "Join MOOM" (L169), "Use a different number" (L304), referral copy (L174-175).
+3. **DiagnosticsAuthPage** missing phone verification state and phone number display.
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+### i18n Issues (hardcoded English across member surface)
+Across ~8 member files, approximately 40+ strings are hardcoded English instead of using `t()`:
+- **MemberHomePage**: "Welcome to MOOM!", "Dismiss", "Browse classes...", "Check In", "Book Class", "Next Up", "View all", "No upcoming bookings", "Active Packages", "Ready to train?", etc.
+- **MemberBadgeGalleryPage**: "Badge Collection", "No badges yet", "Earned", "Locked", "Collected"
+- **MemberRewardsPage**: "Reward Wallet", "Momentum Coin", "Redeemable Rewards", "Points History", "No Rewards Available", etc.
+- **MemberProfilePage**: "Profile", "Edit Profile", "Sign Out", "Admin Portal", all menu labels
+- **MemberPackagesPage**: "My Packages", "Browse", "No packages", tab labels
+- **DailyBonusCard**: "Check in today", "Earn bonus XP..."
+- **CheckInCelebration**: "Keep Going 🚀", "Quest Progress", "Coin earned"
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+## Plan
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Step 1: Add ~50 i18n keys to en.ts and th.ts
+Add keys under a `member` namespace covering all hardcoded strings found above.
+
+### Step 2: Fix MemberSignup Google OAuth for custom domains
+Apply the same `isCustomDomain()` pattern from MemberLogin — use `supabase.auth.signInWithOAuth` with `redirectTo` on custom domains, `lovable.auth` otherwise.
+
+### Step 3: i18n all member pages
+Update these files to use `t()` for all user-visible strings:
+- `MemberHomePage.tsx` (~15 strings)
+- `MemberBadgeGalleryPage.tsx` (~8 strings)
+- `MemberRewardsPage.tsx` (~10 strings)  
+- `MemberProfilePage.tsx` (~12 strings)
+- `MemberPackagesPage.tsx` (~6 strings)
+- `DailyBonusCard.tsx` (~2 strings)
+- `CheckInCelebration.tsx` (~4 strings)
+- `MemberSignup.tsx` (~4 strings)
+
+### Step 4: Enhance DiagnosticsAuthPage
+Add phone verification state (`user?.phone`, `user?.phone_confirmed_at`), provider list, and member ID resolution display.
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/i18n/locales/en.ts` | Add ~50 member surface keys |
+| `src/i18n/locales/th.ts` | Add ~50 member surface keys (Thai) |
+| `src/pages/Auth/MemberSignup.tsx` | Fix Google OAuth custom domain + i18n |
+| `src/apps/member/pages/MemberHomePage.tsx` | i18n all strings |
+| `src/apps/member/pages/MemberBadgeGalleryPage.tsx` | i18n all strings |
+| `src/apps/member/pages/MemberRewardsPage.tsx` | i18n all strings |
+| `src/apps/member/pages/MemberProfilePage.tsx` | i18n all strings |
+| `src/apps/member/pages/MemberPackagesPage.tsx` | i18n all strings |
+| `src/apps/member/features/momentum/DailyBonusCard.tsx` | i18n strings |
+| `src/apps/member/features/momentum/CheckInCelebration.tsx` | i18n strings |
+| `src/pages/Auth/DiagnosticsAuthPage.tsx` | Add phone verification display |
+
+No database changes. No new Edge Functions. All frontend-only.
 
