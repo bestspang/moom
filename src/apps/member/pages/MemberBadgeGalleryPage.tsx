@@ -104,9 +104,9 @@ export default function MemberBadgeGalleryPage() {
           <div className="grid grid-cols-2 gap-3">
             {badges.map((mb, i) => {
               const style = getTierStyle(mb.badge?.tier);
-              const badgeTypeInfo = BADGE_TYPE_LABELS[mb.badge?.badgeType ?? 'permanent'] ?? BADGE_TYPE_LABELS.permanent;
-              const expiryText = getExpiryText(mb.earnedAt, mb.badge?.durationDays);
-              const effectText = formatEffect(mb.badge?.effectType, mb.badge?.effectValue as Record<string, unknown> | undefined);
+              const badgeTypeInfo = BADGE_TYPE_KEYS[mb.badge?.badgeType ?? 'permanent'] ?? BADGE_TYPE_KEYS.permanent;
+              const expiryText = getExpiryText(mb.earnedAt, mb.badge?.durationDays, t);
+              const effectText = formatEffect(mb.badge?.effectType, mb.badge?.effectValue as Record<string, unknown> | undefined, t);
 
               return (
                 <div
