@@ -15,7 +15,8 @@ import {
   type CoachLevel,
   type PartnerTier,
 } from '@/apps/trainer/features/impact/types';
-import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Clock, Star, RefreshCw, Zap, ShieldCheck } from 'lucide-react';
+import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Clock, Star, RefreshCw, Zap, ShieldCheck, Trophy, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 
