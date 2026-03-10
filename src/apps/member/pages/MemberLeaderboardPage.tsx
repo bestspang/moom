@@ -62,7 +62,7 @@ function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: s
   if (isLoading) return <LeaderboardSkeleton />;
   if (!data?.length) return (
     <div className="space-y-3">
-      <FilterChips options={chipOptions} selected={timeWindow} onChange={setTimeWindow} />
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={(v) => setTimeWindow(v as LeaderboardTimeWindow)} />
       <EmptyLeaderboard message={t('member.noXpEarnersYet')} />
     </div>
   );
