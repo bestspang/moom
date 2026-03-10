@@ -1,168 +1,95 @@
 
 
-# Full System Audit: MOOM Momentum Club — Completeness Report
+# Phase 4: Member Auth Fixes + UX Polish
 
-## Executive Verdict
+## Diagnosis
 
-**The system is production-ready for Phase 1 launch.** All 12 parts of your master spec are implemented. Below is the section-by-section status.
+### Auth Issues
+1. **No Phone OTP login** — spec requires it, not built
+2. **MemberLogin hardcoded English** — "Password", "Email Link", "Check your email", "Send sign-in link" are not i18n'd
+3. **Google OAuth redirect on custom domains** uses `skipBrowserRedirect: true` + manual `window.location.href` — works but loses the `prompt: "select_account"` param
+4. **MemberSignup** has Google but no Email OTP or Phone OTP signup path
+5. **No post-login verification prompt** — if user signs up via Google but has no verified phone, nothing guides them
 
----
+### UX Issues
+1. **DailyBonusCard** hardcodes "+8 XP · +1" — should pull from gamification rules like CheckInCelebration does
+2. **MemberPackagesPage** has no gamification connection — no "earn XP when you renew" nudge
+3. **Badge Gallery** shows earned badges only — no "locked" badges section showing what to aim for
+4. **MomentumCard** is dense but good — minor: "View all" text needs better contrast
+5. **Home page** has good structure — could benefit from an "Almost there" milestone nudge
 
-## PART 1 — Architecture (COMPLETE)
+## Plan (2 Milestones)
 
-| Requirement | Status |
-|-------------|--------|
-| `src/apps/admin` (via `src/pages/*`, `src/components/*`) | Done — desktop-first admin surface |
-| `src/apps/member` | Done — 20 pages, mobile-first layout |
-| `src/apps/trainer` | Done — 5 pages, mobile-first layout |
-| `src/apps/staff` | Done — 5 pages, mobile-first layout |
-| `src/apps/shared` | Done — SurfaceContext, SurfaceGuard, hostname utils |
-| Separate layouts (AdminShell, MemberShell, etc.) | Done — MainLayout, MemberLayout, TrainerLayout, StaffLayout |
+### Milestone 1: Auth Friction Fixes (Priority)
 
-## PART 2 — Hostname/Domain-Aware Routing (COMPLETE)
+**A. Add Phone OTP to MemberLogin** (`src/pages/Auth/MemberLogin.tsx`)
+- Add a third login mode: `'password' | 'email_otp' | 'phone_otp'`
+- Replace the 2-button toggle with a 3-option pill group: Password | Email Link | Phone
+- Phone OTP flow: phone input → `supabase.auth.signInWithOtp({ phone })` → 6-digit code entry via InputOTP → verify → session
+- Include resend timer (60s countdown), error states, expired code handling
+- i18n all new strings in both `en.ts` and `th.ts`
 
-| Requirement | Status |
-|-------------|--------|
-| `detectSurface()` | Done |
-| `isAdminHost()` / `isMemberHost()` | Done |
-| `SurfaceGuard` cross-domain redirects | Done |
-| `buildCrossSurfaceUrl()` | Done |
-| `?surface=` dev override | Done |
-| Diagnostics page (`/diagnostics/surface`) | Done |
-| Auth diagnostics (`/diagnostics/auth`) | Done |
+**B. Add Phone OTP to MemberSignup** (`src/pages/Auth/MemberSignup.tsx`)
+- Add phone signup option alongside Google / email+password
+- Phone signup: enter phone → OTP → verify → collect first/last name → complete
+- Pass `signup_surface: 'member'` metadata
 
-## PART 3 — Authentication (COMPLETE)
+**C. Fix i18n in auth pages**
+- Replace all hardcoded English strings in MemberLogin and MemberSignup with `t()` calls
+- Add missing keys to `en.ts` and `th.ts`: `auth.phoneLogin`, `auth.sendOtp`, `auth.enterCode`, `auth.resendIn`, `auth.phoneNumber`, `auth.verifyCode`, `auth.otpExpired`, `auth.invalidCode`, `auth.emailLink`, `auth.passwordLogin`, `auth.phoneOtp`
 
-| Requirement | Status |
-|-------------|--------|
-| Admin login only (no signup on admin.moom.fit) | Done — `/signup` redirects to `/login` when `detectSurface() === 'admin'` |
-| Member login + signup + Google OAuth | Done — MemberLogin, MemberSignup |
-| Legacy account claim (email match) | Done — `handle_new_user` trigger auto-claims |
-| Google login | Done — via `lovable.auth.signInWithOAuth` |
-| Password login | Done |
-| Email OTP (magic link) | Done — MemberLogin supports OTP mode |
-| Multi-role accounts | Done — `user_roles` table, `allRoles` in AuthContext |
-| Cross-surface session transfer | Done — hash-based token transfer |
-| Identity linking | Done — `IdentityLinkingCard` on security page |
+**D. Improve Google OAuth redirect consistency**
+- On custom domains, add `queryParams: { prompt: 'select_account' }` to the Supabase OAuth options so account selection works the same as on lovable.app
 
-**Not yet implemented:** Phone OTP login. This is a spec item but not yet built.
+**E. Auth diagnostics enhancement** (`src/pages/Auth/DiagnosticsAuthPage.tsx`)
+- Add phone verification state display
+- Add OTP flow state info
 
-## PART 4 — Role Model & Access (COMPLETE)
+### Milestone 2: Member UX Polish
 
-| Requirement | Status |
-|-------------|--------|
-| Roles: member, front_desk, trainer, freelance_trainer, admin, owner | Done — `app_role` enum |
-| Access levels: level_1 through level_4 | Done — `access_level` enum |
-| `ProtectedRoute` with `minAccessLevel` | Done |
-| `usePermissions()` granular resource checks | Done — 20+ resources |
-| `has_min_access_level()` server-side RPC | Done |
-| Role-based surface switching (headers, profile) | Done |
+**A. DailyBonusCard dynamic values** (`src/apps/member/features/momentum/DailyBonusCard.tsx`)
+- Query `gamification_rules` for `check_in` action to show real XP/Coin values instead of hardcoded "+8 XP · +1"
 
-## PART 5 — Core Surfaces (COMPLETE)
+**B. Badge Gallery — add locked badges** (`src/apps/member/pages/MemberBadgeGalleryPage.tsx`)
+- Fetch all `gamification_badges` (not just earned)
+- Show earned badges first, then locked badges (greyed out, with description of how to earn)
+- Add a "X / Y Collected" counter
 
-**Member:** Home, Schedule, Bookings, Packages, Check-in, Profile, Edit Profile, Attendance, Upload Slip, Security, Notifications, Referral — all built.
+**C. Packages page — gamification nudge** (`src/apps/member/pages/MemberPackagesPage.tsx`)
+- Add a small info banner: "Renewing your package earns XP + Coin"
+- Pull values from `gamification_rules` where `action_key = 'package_purchase'`
 
-**Trainer:** Home, Schedule, Roster, Workouts, Profile — all built.
+**D. Home "Almost There" section** (`src/apps/member/pages/MemberHomePage.tsx`)
+- After MomentumCard, show an "Almost there" nudge if the user is within 15% of next level
+- Show: "X more XP to reach Level Y" with a mini progress indicator
 
-**Staff:** Home, Check-in, Members, Payments, Profile — all built.
+**E. MomentumCard minor polish** (`src/apps/member/features/momentum/MomentumCard.tsx`)
+- Ensure "View all" text contrasts on primary background (already uses `primary-foreground/0.7`, just verify)
 
-## PART 6 — Gamification Readiness (COMPLETE)
+## Files to Create/Update
 
-All prerequisites satisfied: architecture, routing, auth, identity resolution (`get_my_member_id`), core business tables (members, packages, attendance, bookings), and anti-abuse infrastructure.
+| File | Action |
+|------|--------|
+| `src/pages/Auth/MemberLogin.tsx` | Add phone OTP mode, i18n fixes |
+| `src/pages/Auth/MemberSignup.tsx` | Add phone OTP signup option, i18n fixes |
+| `src/i18n/locales/en.ts` | Add ~15 new auth keys |
+| `src/i18n/locales/th.ts` | Add ~15 new auth keys (Thai) |
+| `src/apps/member/features/momentum/DailyBonusCard.tsx` | Dynamic XP/Coin from rules |
+| `src/apps/member/pages/MemberBadgeGalleryPage.tsx` | Add locked badges section |
+| `src/apps/member/pages/MemberPackagesPage.tsx` | Add gamification nudge |
+| `src/apps/member/pages/MemberHomePage.tsx` | Add "Almost there" milestone nudge |
+| `src/pages/Auth/DiagnosticsAuthPage.tsx` | Add phone verification state |
 
-## PART 7–8 — MOOM Momentum Club Economy (COMPLETE)
+No database changes needed. No new Edge Functions. All changes are frontend-only.
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| XP system | Done | 24 gamification rules with correct XP values |
-| Coin system | Done | `points_ledger` (functionally = coin_ledger) |
-| Level ladder (1-20) | Done | 20 levels seeded in `gamification_levels` matching spec exactly |
-| Tier names | Done | Starter/Mover/Strong/Elite/Legend with correct breakpoints |
-| Quest templates | Done | 22 templates (8 daily, 8 weekly, 4 monthly, 2 seasonal) |
-| Quest assignment | Done | Edge Function: daily + weekly |
-| Quest claiming | Done | Edge Function with XP/Coin/badge/coupon rewards |
-| Badge definitions | Done | 19 badges seeded with types (permanent/boost/access/seasonal) |
-| Badge effects | Done | effect_type + effect_value + duration_days |
-| Reward catalog | Done | 19 rewards with hybrid pricing, level/badge gates |
-| Reward redemption | Done | Edge Function with server-side validation |
-| Coupon templates | Done | 8 templates seeded |
-| Coupon wallet | Done | Issue + track + expire |
-| Shop reward rules | Done | 4 rules seeded |
-| Economy guardrails | Done | 14 rules seeded |
-
-## PART 9 — Database & Event Foundation (COMPLETE)
-
-| Table (Spec Name) | Actual Table | Seeded |
-|-------------------|-------------|--------|
-| gamify_profiles | member_gamification_profiles | Auto-created on first event |
-| level_tiers | gamification_levels | 20 rows |
-| xp_ledger | xp_ledger | — |
-| coin_ledger | points_ledger | — |
-| quest_templates | quest_templates | 22 rows |
-| quest_instances | quest_instances | — |
-| badge_definitions | gamification_badges | 19 rows |
-| badge_awards | badge_earnings | — |
-| reward_catalog | gamification_rewards | 19 rows |
-| reward_redemptions | reward_redemptions | — |
-| coupon_templates | coupon_templates | 8 rows |
-| coupon_wallet | coupon_wallet | — |
-| season_campaigns | gamification_seasons | — |
-| squads | squads | — |
-| squad_memberships | squad_memberships | — |
-| trainer_tiers | gamification_trainer_tiers | 10 rows |
-| trainer_scores | trainer_gamification_scores | — |
-| trainer_action_rewards | trainer_action_rewards | 11 rows |
-| shop_reward_rules | shop_reward_rules | 4 rows |
-| economy_guardrails | economy_guardrails | 14 rows |
-| gamification_events | gamification_audit_log + event_outbox | — |
-
-**Event processing:** `gamification-process-event` Edge Function handles check_in, class_attendance, pt_session, open_gym, shop_order, package_purchase, review, referral events with idempotency, cooldowns, and daily caps.
-
-## PART 10 — Phase 1 UI (COMPLETE)
-
-**Member surfaces:**
-- Home widgets (MomentumCard, DailyBonusCard, TodayCard) ✓
-- Momentum Hub (`/member/momentum`) ✓
-- Rewards page (`/member/rewards`) ✓
-- Badge gallery (`/member/badges`) ✓
-- Coupon wallet (`/member/coupons`) ✓
-- Leaderboard (`/member/leaderboard`) ✓
-- Squad page (`/member/squad`) ✓
-- Check-in celebration with quest progress ✓
-
-**Admin surfaces:**
-- Gamification Studio with 11 sub-pages ✓
-- Overview, Rules, Levels, Badges, Rewards, Quests, Coupons, Shop Rules, Trainers, Risk, Challenges ✓
-
-**Trainer surfaces:**
-- CoachImpactCard (in-house) ✓
-- PartnerReputationCard (freelance) ✓
-
-## PART 11 — Safety & Abuse Prevention (COMPLETE)
-
-All enforced server-side in Edge Functions:
-- Idempotency keys ✓
-- Cooldown checks ✓
-- Daily caps ✓
-- Refund rollback support ✓
-- Reward stock/level/badge checks ✓
-- Economy guardrails table ✓
-
-## PART 12 — Remaining Items (Phase 2 Backlog)
-
-| Item | Priority | Notes |
-|------|----------|-------|
-| **Phone OTP login** | Medium | Spec requires it, not yet built on member login page |
-| Shop/package purchase → gamification event wiring | Medium | Events defined but not triggered from payment flows |
-| Monthly/seasonal quest auto-assignment | Low | Only daily/weekly implemented in Edge Function |
-| Quest progress auto-tracking for all goal_types | Low | Some goal types need additional wiring |
-| Realtime-enabled tables for gamification | Low | `quest_instances` and `badge_earnings` not in `supabase_realtime` publication |
-
----
-
-## Verdict
-
-**Phase 1 is COMPLETE.** The only notable gap against the master spec is **Phone OTP login** — all other 12 parts are fully implemented.
-
-No code changes are needed for this audit. The system is ready for production launch.
+## Implementation Order
+1. i18n keys first (both languages)
+2. MemberLogin phone OTP
+3. MemberSignup phone OTP
+4. Google OAuth fix
+5. DailyBonusCard dynamic values
+6. Badge Gallery locked badges
+7. Home "Almost there" nudge
+8. Packages gamification nudge
+9. Auth diagnostics enhancement
 
