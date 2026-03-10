@@ -42,7 +42,7 @@ export default function MemberUploadSlipPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('member.fileTooLarge'));
+      toast.error(t('validation.fileTooLarge'));
       return;
     }
 
