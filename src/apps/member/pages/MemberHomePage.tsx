@@ -17,7 +17,7 @@ import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { useState } from 'react';
 
