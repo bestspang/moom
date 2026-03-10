@@ -1592,6 +1592,8 @@ export default {
     passwordSpecial: 'รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว',
     passwordsNotMatch: 'รหัสผ่านไม่ตรงกัน',
     confirmPassword: 'กรุณายืนยันรหัสผ่าน',
+    mustBePositive: 'ต้องเป็นจำนวนที่มากกว่า 0',
+    fileTooLarge: 'ไฟล์ใหญ่เกินไป (สูงสุด 5MB)',
   },
 
   // Auth
