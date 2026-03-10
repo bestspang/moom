@@ -1,71 +1,47 @@
 
 
-# Phase 8: Squad Activity Feed
+# Fix: Promotions export missing columns in Settings
 
-## Current State
-The squad page shows members and XP contributions, but there's no sense of "what's happening" — no activity, no life. The expansion plan calls for squad social features to make members feel connected and accountable. The simplest, highest-impact addition is an **activity feed** showing recent squad member actions.
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Data Source
-The `gamification_audit_log` table already captures every gamification event per member (check-ins, badge earns, quest completions, level-ups). It has RLS restricted to staff, so we need a `SECURITY DEFINER` RPC that returns recent events only for members in the caller's squad.
+## Fix (surgical, 1 file)
 
-## Plan
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 1. Database: Create `get_squad_activity_feed` RPC
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-```text
-get_squad_activity_feed(p_squad_id uuid, p_limit int DEFAULT 20)
-→ Returns: member_id, first_name, avatar_url, event_type, action_key, xp_delta, created_at
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-Logic:
-- Validates the calling user is a member of `p_squad_id` (via `get_my_member_id` + `squad_memberships`)
-- Joins `gamification_audit_log` for members in the squad, ordered by `created_at DESC`
-- Returns last `p_limit` entries with member name/avatar
-- `SECURITY DEFINER` to bypass audit log RLS
-
-### 2. Frontend: Add feed API + types
-
-In `api.ts`:
-- `fetchSquadActivityFeed(squadId: string): Promise<SquadActivityEntry[]>`
-- Type: `{ memberId, firstName, avatarUrl, eventType, actionKey, xpDelta, createdAt }`
-
-### 3. Frontend: Add `SquadActivityFeed` component
-
-New file: `src/apps/member/features/momentum/SquadActivityFeed.tsx`
-
-Renders a compact list of recent squad activities with:
-- Member avatar/initials + name
-- Action description (mapped from `event_type`/`action_key` to human-readable i18n strings)
-- XP earned badge
-- Relative timestamp (e.g., "2h ago")
-- Max 15 items, no pagination needed initially
-
-Event type display mapping (frontend):
-- `check_in` → "Checked in"
-- `badge_earned` → "Earned a badge"
-- `quest_completed` → "Completed a quest"  
-- `level_up` → "Leveled up"
-- Default → "Earned XP"
-
-### 4. Integrate into `MemberSquadPage.tsx`
-
-Add a new `Section` titled "Recent Activity" below the members list, rendering `SquadActivityFeed` when the user has a squad.
-
-### 5. i18n keys (~8 keys)
-
-Under `member.*`:
-- `squadActivity`, `checkedIn`, `earnedBadge`, `completedQuest`, `leveledUp`, `earnedXp`, `noActivityYet`, `recentActivity`
-
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `get_squad_activity_feed` RPC |
-| `src/apps/member/features/momentum/api.ts` | Add `fetchSquadActivityFeed` |
-| `src/apps/member/features/momentum/SquadActivityFeed.tsx` | **Create** — activity feed component |
-| `src/apps/member/pages/MemberSquadPage.tsx` | Add activity feed section |
-| `src/i18n/locales/en.ts` | ~8 new keys |
-| `src/i18n/locales/th.ts` | ~8 new keys |
-
-No changes to existing tables. No new tables. Uses existing audit data.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

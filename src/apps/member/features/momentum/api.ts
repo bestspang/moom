@@ -756,3 +756,32 @@ export async function fetchChallengeCompletionStats(memberId: string | null): Pr
     currentUserCompleted: userCompleted.has(t.id),
   }));
 }
+
+// ─── Squad Activity Feed ────────────────────────────────────
+
+export interface SquadActivityEntry {
+  memberId: string;
+  firstName: string | null;
+  avatarUrl: string | null;
+  eventType: string;
+  actionKey: string | null;
+  xpDelta: number;
+  createdAt: string;
+}
+
+export async function fetchSquadActivityFeed(squadId: string, limit = 15): Promise<SquadActivityEntry[]> {
+  const { data, error } = await supabase.rpc('get_squad_activity_feed', {
+    p_squad_id: squadId,
+    p_limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    memberId: r.member_id,
+    firstName: r.first_name,
+    avatarUrl: r.avatar_url,
+    eventType: r.event_type,
+    actionKey: r.action_key,
+    xpDelta: r.xp_delta,
+    createdAt: r.created_at,
+  }));
+}

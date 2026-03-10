@@ -7,7 +7,8 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { Users, LogOut, Crown, Zap } from 'lucide-react';
+import { Users, LogOut, Crown, Zap, Activity } from 'lucide-react';
+import { SquadActivityFeed } from '../features/momentum/SquadActivityFeed';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import {
@@ -181,6 +182,10 @@ export default function MemberSquadPage() {
             );
           })}
         </div>
+      </Section>
+
+      <Section title={t('member.recentSquadActivity')} className="mb-4">
+        <SquadActivityFeed squadId={squad.id} />
       </Section>
 
       <Section className="mb-8">
