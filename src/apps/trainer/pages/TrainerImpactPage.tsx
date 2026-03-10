@@ -361,6 +361,28 @@ function QuestsSection({ quests, t }: { quests: any[] | undefined; t: any }) {
   );
 }
 
+function BadgesLink({ t }: { t: any }) {
+  return (
+    <Section className="mb-4">
+      <Link
+        to="/trainer/badges"
+        className="flex items-center justify-between rounded-2xl bg-card p-4 border border-border/50 group hover:border-primary/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Trophy className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">{t('trainer.viewAllBadges')}</p>
+            <p className="text-[11px] text-muted-foreground">{t('trainer.badgesSubtitle')}</p>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+      </Link>
+    </Section>
+  );
+}
+
 function ScoreHistoryPlaceholder({ t }: { t: any }) {
   return (
     <Section title={t('trainer.scoreBreakdown')} className="mb-4">
