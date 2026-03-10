@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useMemberSession } from '../../hooks/useMemberSession';
 import { fetchMyQuests, assignQuests, claimQuest, type QuestInstance } from './api';
 import { Button } from '@/components/ui/button';
@@ -7,19 +8,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Zap, Coins, Target, Clock, Check, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
+import type { TFunction } from 'i18next';
 
-function QuestInstanceCard({ quest, onClaim }: { quest: QuestInstance; onClaim: (id: string) => void }) {
-  const t = quest.template;
-  if (!t) return null;
+function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClaim: (id: string) => void; t: TFunction }) {
+  const tmpl = quest.template;
+  if (!tmpl) return null;
 
-  const progress = Math.min(quest.progressValue / t.goalValue, 1);
+  const progress = Math.min(quest.progressValue / tmpl.goalValue, 1);
   const isCompleted = quest.status === 'completed';
   const isClaimed = quest.status === 'claimed';
   const isExpired = quest.status === 'expired';
 
-  const periodColor = t.questPeriod === 'daily'
+  const periodColor = tmpl.questPeriod === 'daily'
     ? 'bg-primary/10 text-primary'
-    : t.questPeriod === 'weekly'
+    : tmpl.questPeriod === 'weekly'
     ? 'bg-blue-500/10 text-blue-600'
     : 'bg-amber-500/10 text-amber-600';
 
@@ -31,21 +33,21 @@ function QuestInstanceCard({ quest, onClaim }: { quest: QuestInstance; onClaim: 
             <Target className="h-4.5 w-4.5 text-primary" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground leading-tight">{t.nameEn}</p>
-            {t.descriptionEn && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{t.descriptionEn}</p>
+            <p className="text-sm font-bold text-foreground leading-tight">{tmpl.nameEn}</p>
+            {tmpl.descriptionEn && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tmpl.descriptionEn}</p>
             )}
           </div>
         </div>
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${periodColor}`}>
-          {t.questPeriod}
+          {tmpl.questPeriod}
         </span>
       </div>
 
       {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{quest.progressValue} / {t.goalValue}</span>
+          <span>{quest.progressValue} / {tmpl.goalValue}</span>
           <span>{Math.round(progress * 100)}%</span>
         </div>
         <Progress value={progress * 100} className="h-2" />
@@ -54,31 +56,31 @@ function QuestInstanceCard({ quest, onClaim }: { quest: QuestInstance; onClaim: 
       {/* Rewards + action */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {t.xpReward > 0 && (
+          {tmpl.xpReward > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-              <Zap className="h-2.5 w-2.5" /> +{t.xpReward} XP
+              <Zap className="h-2.5 w-2.5" /> +{tmpl.xpReward} XP
             </span>
           )}
-          {t.coinReward > 0 && (
+          {tmpl.coinReward > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-              <Coins className="h-2.5 w-2.5" /> +{t.coinReward}
+              <Coins className="h-2.5 w-2.5" /> +{tmpl.coinReward}
             </span>
           )}
         </div>
 
         {isClaimed ? (
           <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
-            <Check className="h-3.5 w-3.5" /> Claimed
+            <Check className="h-3.5 w-3.5" /> {t('member.questClaimed')}
           </span>
         ) : isCompleted ? (
           <Button size="sm" className="h-7 text-xs font-bold px-3" onClick={() => onClaim(quest.id)}>
-            <Sparkles className="h-3 w-3 mr-1" /> Claim
+            <Sparkles className="h-3 w-3 mr-1" /> {t('member.questClaim')}
           </Button>
         ) : isExpired ? (
-          <span className="text-xs font-medium text-muted-foreground">Expired</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('member.questExpired')}</span>
         ) : (
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" /> In progress
+            <Clock className="h-3 w-3" /> {t('member.questInProgress')}
           </span>
         )}
       </div>
@@ -89,6 +91,7 @@ function QuestInstanceCard({ quest, onClaim }: { quest: QuestInstance; onClaim: 
 export function QuestHub() {
   const queryClient = useQueryClient();
   const { memberId } = useMemberSession();
+  const { t } = useTranslation();
 
   const { data: quests, isLoading } = useQuery({
     queryKey: ['my-quests', memberId],
@@ -122,9 +125,9 @@ export function QuestHub() {
       queryClient.invalidateQueries({ queryKey: ['my-quests'] });
       queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
       queryClient.invalidateQueries({ queryKey: ['points-history'] });
-      toast.success(`+${data.xp_granted} XP, +${data.coin_granted} Coin claimed! 🎉`);
+      toast.success(t('member.questClaimSuccess', { xp: data.xp_granted, coin: data.coin_granted }));
     },
-    onError: () => toast.error('Failed to claim quest reward'),
+    onError: () => toast.error(t('member.questClaimFailed')),
   });
 
   if (isLoading) {
@@ -145,9 +148,9 @@ export function QuestHub() {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
         <Target className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-sm font-medium text-foreground">No quests yet</p>
+        <p className="text-sm font-medium text-foreground">{t('member.noQuestsYet')}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Quests refresh daily — check back soon!
+          {t('member.questsCheckBackSoon')}
         </p>
       </div>
     );
@@ -158,12 +161,12 @@ export function QuestHub() {
       {dailyQuests.length > 0 && (
         <div>
           <p className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            ☀️ Daily Quests
-            <span className="text-[10px] font-medium text-muted-foreground">resets daily</span>
+            ☀️ {t('member.dailyQuests')}
+            <span className="text-[10px] font-medium text-muted-foreground">{t('member.resetsDaily')}</span>
           </p>
           <div className="space-y-3">
             {dailyQuests.map(q => (
-              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} />
+              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} t={t} />
             ))}
           </div>
         </div>
@@ -172,12 +175,12 @@ export function QuestHub() {
       {weeklyQuests.length > 0 && (
         <div>
           <p className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            📅 Weekly Quests
-            <span className="text-[10px] font-medium text-muted-foreground">resets Mon</span>
+            📅 {t('member.weeklyQuests')}
+            <span className="text-[10px] font-medium text-muted-foreground">{t('member.resetsMon')}</span>
           </p>
           <div className="space-y-3">
             {weeklyQuests.map(q => (
-              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} />
+              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} t={t} />
             ))}
           </div>
         </div>
@@ -186,11 +189,11 @@ export function QuestHub() {
       {monthlyQuests.length > 0 && (
         <div>
           <p className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            🏆 Monthly / Seasonal
+            🏆 {t('member.monthlySeasonal')}
           </p>
           <div className="space-y-3">
             {monthlyQuests.map(q => (
-              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} />
+              <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} t={t} />
             ))}
           </div>
         </div>

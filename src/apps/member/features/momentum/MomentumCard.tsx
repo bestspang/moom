@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { fetchMomentumProfile, fetchMyBadges, fetchMyQuests, type QuestInstance } from './api';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
@@ -28,6 +29,7 @@ const DEFAULT_PROFILE: MomentumProfile = {
 
 export function MomentumCard({ memberId, className }: MomentumCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: profile, isLoading } = useQuery({
     queryKey: ['momentum-profile', memberId],
     queryFn: () => fetchMomentumProfile(memberId!),
@@ -115,7 +117,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
             className="flex items-center gap-1 text-[10px] font-bold"
             style={{ color: 'hsl(var(--primary-foreground) / 0.7)' }}
           >
-            View all <ChevronRight className="h-3 w-3" />
+            {t('member.viewAll')} <ChevronRight className="h-3 w-3" />
           </div>
         </div>
 
@@ -125,7 +127,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
             className="mt-3 text-xs font-medium text-center rounded-lg py-2"
             style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.15)', color: 'hsl(var(--primary-foreground))' }}
           >
-            ✨ Check in to start earning XP!
+            {t('member.startEarningXp')}
           </p>
         )}
       </div>
@@ -135,21 +137,21 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
         <div className="px-4 py-3 space-y-2 border-t border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <Target className="h-3 w-3" />
-            Today's Quests
+            {t('member.todaysQuests')}
           </p>
           {activeQuests.map((quest) => {
-            const t = quest.template;
-            if (!t) return null;
-            const pct = Math.min((quest.progressValue / t.goalValue) * 100, 100);
-            const isWeekly = t.questPeriod === 'weekly';
+            const tmpl = quest.template;
+            if (!tmpl) return null;
+            const pct = Math.min((quest.progressValue / tmpl.goalValue) * 100, 100);
+            const isWeekly = tmpl.questPeriod === 'weekly';
             return (
               <div key={quest.id} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-foreground truncate">{t.nameEn}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{tmpl.nameEn}</p>
                     {isWeekly && (
                       <span className="text-[8px] font-bold uppercase rounded-full px-1.5 py-0.5 flex-shrink-0" style={{ color: 'hsl(var(--status-info))', backgroundColor: 'hsl(var(--status-info) / 0.1)' }}>
-                        weekly
+                        {t('member.weeklyLabel')}
                       </span>
                     )}
                   </div>
@@ -161,7 +163,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
                   </div>
                 </div>
                 <span className="text-[10px] font-bold text-muted-foreground tabular-nums flex-shrink-0">
-                  {quest.progressValue}/{t.goalValue}
+                  {quest.progressValue}/{tmpl.goalValue}
                 </span>
               </div>
             );
@@ -172,12 +174,12 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
       {/* Badge gallery horizontal scroll */}
       <div className="px-4 py-3 border-t border-border">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Badges</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('member.badges')}</p>
           <button
             className="text-[10px] font-semibold text-primary flex items-center gap-0.5"
             onClick={(e) => { e.stopPropagation(); navigate('/member/badges'); }}
           >
-            View all <ChevronRight className="h-3 w-3" />
+            {t('member.viewAll')} <ChevronRight className="h-3 w-3" />
           </button>
         </div>
         {displayBadges.length > 0 ? (
@@ -199,7 +201,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Lock className="h-3.5 w-3.5" />
-            <span className="text-xs">Earn your first badge!</span>
+            <span className="text-xs">{t('member.earnFirstBadge')}</span>
           </div>
         )}
       </div>
@@ -211,14 +213,14 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
           onClick={(e) => { e.stopPropagation(); navigate('/member/leaderboard'); }}
         >
           <Trophy className="h-3.5 w-3.5" />
-          Leaderboard
+          {t('member.leaderboard')}
         </button>
         <button
           className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
           onClick={(e) => { e.stopPropagation(); navigate('/member/squad'); }}
         >
           <Users className="h-3.5 w-3.5" />
-          My Squad
+          {t('member.mySquad')}
         </button>
       </div>
     </div>
