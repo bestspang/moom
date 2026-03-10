@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { fetchMySquad } from './api';
 import { useNavigate } from 'react-router-dom';
 import { Users, ChevronRight } from 'lucide-react';
@@ -12,6 +13,7 @@ function getInitials(first?: string, last?: string): string {
 }
 
 export function SquadCard({ memberId }: SquadCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: squad, isLoading } = useQuery({
     queryKey: ['my-squad', memberId],
@@ -34,8 +36,8 @@ export function SquadCard({ memberId }: SquadCardProps) {
         className="w-full rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center transition-colors hover:border-primary/50 hover:bg-primary/10"
       >
         <Users className="h-8 w-8 mx-auto text-primary/60 mb-2" />
-        <p className="text-sm font-semibold text-foreground">Join a Squad</p>
-        <p className="text-xs text-muted-foreground mt-1">Team up with friends to train together</p>
+        <p className="text-sm font-semibold text-foreground">{t('member.squad')}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('member.joinSquadHint')}</p>
       </button>
     );
   }
@@ -82,7 +84,7 @@ export function SquadCard({ memberId }: SquadCardProps) {
 
       {/* Total XP */}
       <div className="mt-2 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">{squad.totalXp.toLocaleString()}</span> total XP
+        <span className="font-semibold text-foreground">{squad.totalXp.toLocaleString()}</span> {t('member.totalXp')}
       </div>
     </button>
   );

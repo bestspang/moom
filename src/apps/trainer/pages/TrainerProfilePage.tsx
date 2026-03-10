@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -10,9 +11,10 @@ import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { toast } from 'sonner';
 
 export default function TrainerProfilePage() {
+  const { t } = useTranslation();
   const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
-  const firstName = user?.user_metadata?.first_name ?? 'Trainer';
+  const firstName = user?.user_metadata?.first_name ?? t('trainer.trainerRole');
   const lastName = user?.user_metadata?.last_name ?? '';
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const email = user?.email ?? '';
@@ -26,7 +28,7 @@ export default function TrainerProfilePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Profile" />
+      <MobilePageHeader title={t('trainer.nav.profile')} />
 
       <Section className="mb-4">
         <div className="flex items-center gap-4 rounded-lg bg-card p-4 shadow-sm">
@@ -36,40 +38,40 @@ export default function TrainerProfilePage() {
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground truncate">{fullName}</p>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
-            <p className="text-xs text-primary mt-0.5">Trainer</p>
+            <p className="text-xs text-primary mt-0.5">{t('trainer.trainerRole')}</p>
           </div>
         </div>
       </Section>
 
-      <Section title="Settings">
+      <Section title={t('trainer.settings')}>
         <div className="space-y-1">
           <ListCard
-            title="Notifications"
+            title={t('trainer.notifications')}
             leading={<Bell className="h-5 w-5 text-muted-foreground" />}
             showChevron
-            onClick={() => toast.info('Notifications settings coming soon')}
+            onClick={() => toast.info(t('trainer.notificationsComingSoon'))}
           />
           <ListCard
-            title="Preferences"
+            title={t('trainer.preferences')}
             leading={<Settings className="h-5 w-5 text-muted-foreground" />}
             showChevron
-            onClick={() => toast.info('Preferences coming soon')}
+            onClick={() => toast.info(t('trainer.preferencesComingSoon'))}
           />
           <ListCard
-            title="Help & Support"
+            title={t('trainer.helpAndSupport')}
             leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
             showChevron
-            onClick={() => toast.info('Help center coming soon')}
+            onClick={() => toast.info(t('trainer.helpCenterComingSoon'))}
           />
         </div>
       </Section>
 
       {/* Surface switcher */}
-      <Section title="Switch App" className="mt-4">
+      <Section title={t('trainer.switchApp')} className="mt-4">
         <div className="space-y-1">
           {hasAdminAccess && (
             <ListCard
-              title="Admin Portal"
+              title={t('trainer.adminPortal')}
               leading={<ShieldCheck className="h-5 w-5 text-muted-foreground" />}
               showChevron
               onClick={async () => {
@@ -78,7 +80,7 @@ export default function TrainerProfilePage() {
             />
           )}
           <ListCard
-            title="Member App"
+            title={t('trainer.memberApp')}
             leading={<Users className="h-5 w-5 text-muted-foreground" />}
             showChevron
             onClick={async () => {
@@ -91,7 +93,7 @@ export default function TrainerProfilePage() {
       <Section className="mt-6">
         <Button variant="outline" className="w-full text-destructive border-destructive/30" onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {t('trainer.signOut')}
         </Button>
       </Section>
     </div>

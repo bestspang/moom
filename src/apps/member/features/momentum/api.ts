@@ -395,7 +395,50 @@ export async function fetchAvailableSquads(): Promise<SquadInfo[]> {
     maxMembers: s.max_members,
     isActive: s.is_active,
     members: [],
+    memberCount: s.squad_memberships?.[0]?.count ?? 0,
   }));
+}
+
+export interface SquadContribution {
+  memberId: string;
+  firstName: string;
+  lastName: string;
+  totalXp: number;
+}
+
+export async function fetchSquadContributions(squadId: string): Promise<SquadContribution[]> {
+  // Get squad member IDs
+  const { data: memberships, error: mErr } = await supabase
+    .from('squad_memberships')
+    .select('member_id, member:members(first_name, last_name)')
+    .eq('squad_id', squadId);
+
+  if (mErr) throw mErr;
+  if (!memberships?.length) return [];
+
+  const memberIds = memberships.map((m: any) => m.member_id);
+
+  // Get XP for each member
+  const { data: profiles, error: pErr } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp')
+    .in('member_id', memberIds);
+
+  if (pErr) throw pErr;
+
+  const xpMap = new Map<string, number>();
+  for (const p of (profiles ?? [])) {
+    xpMap.set(p.member_id, p.total_xp);
+  }
+
+  return memberships
+    .map((m: any) => ({
+      memberId: m.member_id,
+      firstName: m.member?.first_name ?? '',
+      lastName: m.member?.last_name ?? '',
+      totalXp: xpMap.get(m.member_id) ?? 0,
+    }))
+    .sort((a: SquadContribution, b: SquadContribution) => b.totalXp - a.totalXp);
 }
 
 export async function joinSquad(memberId: string, squadId: string) {

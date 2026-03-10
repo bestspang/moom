@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -12,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 export default function TrainerSchedulePage() {
+  const { t } = useTranslation();
   const [category, setCategory] = useState('all');
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -43,8 +45,8 @@ export default function TrainerSchedulePage() {
   const categoryFilters = useMemo(() => {
     const items = data ?? [];
     const names = Array.from(new Set(items.map(c => c.categoryName).filter(Boolean))) as string[];
-    return [{ value: 'all', label: 'All' }, ...names.map(n => ({ value: n, label: n }))];
-  }, [data]);
+    return [{ value: 'all', label: t('common.all') }, ...names.map(n => ({ value: n, label: n }))];
+  }, [data, t]);
 
   const filtered = useMemo(() => {
     const items = data ?? [];
@@ -61,7 +63,7 @@ export default function TrainerSchedulePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Schedule" subtitle="All upcoming classes" />
+      <MobilePageHeader title={t('trainer.nav.schedule')} subtitle={t('trainer.allUpcomingClasses')} />
       <div className="px-4 mb-4">
         <FilterChips options={categoryFilters} selected={category} onChange={setCategory} />
       </div>
@@ -70,7 +72,7 @@ export default function TrainerSchedulePage() {
       ) : isLoading ? (
         <Section><div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div></Section>
       ) : Object.keys(grouped).length === 0 ? (
-        <EmptyState icon={<Calendar className="h-10 w-10" />} title="No classes found" description="Check back later" />
+        <EmptyState icon={<Calendar className="h-10 w-10" />} title={t('trainer.noClassesFound')} description={t('trainer.checkBackLater')} />
       ) : (
         Object.entries(grouped).map(([date, classes]) => (
           <Section key={date} title={format(parseISO(date), 'EEEE, d MMM')} className="mb-6">
@@ -80,7 +82,7 @@ export default function TrainerSchedulePage() {
                   key={cls.id}
                   title={cls.className}
                   subtitle={`${cls.startTime.slice(0, 5)} – ${cls.endTime.slice(0, 5)}${cls.roomName ? ` · ${cls.roomName}` : ''}`}
-                  meta={cls.trainerName ? `with ${cls.trainerName} · ${cls.checkedIn}/${cls.capacity}` : `${cls.checkedIn}/${cls.capacity} spots`}
+                  meta={cls.trainerName ? `${t('trainer.withTrainer', { name: cls.trainerName })} · ${cls.checkedIn}/${cls.capacity}` : t('trainer.spots', { current: cls.checkedIn, capacity: cls.capacity })}
                 />
               ))}
             </div>
