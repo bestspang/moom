@@ -1,47 +1,55 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 4D: Final Member Surface i18n + Check-in Page Polish
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Diagnosis
 
-## Fix (surgical, 1 file)
+Phases 4A/B/C completed auth fixes (Phone OTP, Google OAuth, domain-aware redirects) and i18n for core pages (Home, Rewards, Badges, Profile, Packages, Login, Signup). The following member pages still have fully hardcoded English:
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+| Page | Hardcoded strings |
+|------|------------------|
+| `MemberCheckInPage.tsx` | "Check-in", "Day X streak!", "Scan QR", "or type code", "Member code...", "Check In & Earn XP", "Checking in...", "Stop", "Failed to check in", camera error |
+| `MemberBookingsPage.tsx` | "My Bookings", "Your upcoming & past bookings", filter labels (All/Upcoming/Past/Cancelled), "No bookings" |
+| `MemberBookingDetailPage.tsx` | "Booking Details", cancel dialog, all field labels, error/success toasts |
+| `MemberClassDetailPage.tsx` | "Class Details", "Book This Class", booking confirmation dialog, "Cancellation Policy", capacity labels |
+| `MemberSquadPage.tsx` | "My Squad", "Available Squads", leave/join dialogs, member count, XP labels |
+| `MemberCouponsPage.tsx` | "My Coupons", tab labels, discount labels ("% off", "฿X off"), "All items"/"Merchandise"/"Packages" |
+| `MemberReferralPage.tsx` | "Invite Friends", "Share & earn rewards", "Referral History", copy/share labels |
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## Plan
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### Step 1: Add ~60 i18n keys to en.ts and th.ts
+Add to `member` namespace covering all strings from the 7 pages above.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### Step 2: Update each page to use `t()` calls
+
+**MemberCheckInPage.tsx** (~12 strings): Title, subtitle, scan button, code input, CTA, loading, error, stop button.
+
+**MemberBookingsPage.tsx** (~8 strings): Title, subtitle, filter labels, empty state.
+
+**MemberBookingDetailPage.tsx** (~15 strings): Section titles, cancel dialog, field labels, toasts.
+
+**MemberClassDetailPage.tsx** (~12 strings): Booking confirmation, capacity, cancellation policy, field labels.
+
+**MemberSquadPage.tsx** (~12 strings): Title, squad info, leave/join dialogs, empty states.
+
+**MemberCouponsPage.tsx** (~10 strings): Title, tabs, discount labels, applies-to labels, status labels.
+
+**MemberReferralPage.tsx** (~10 strings): Title, subtitle, stats labels, copy/share buttons, history section.
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/i18n/locales/en.ts` | Add ~60 member keys |
+| `src/i18n/locales/th.ts` | Add ~60 member keys (Thai) |
+| `src/apps/member/pages/MemberCheckInPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberBookingsPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberBookingDetailPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberClassDetailPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberSquadPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberCouponsPage.tsx` | Full i18n |
+| `src/apps/member/pages/MemberReferralPage.tsx` | Full i18n |
+
+No database changes. No new Edge Functions. All frontend-only.
 
