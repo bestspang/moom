@@ -50,6 +50,14 @@ export async function fetchCoachImpactProfile(): Promise<CoachImpactProfile | nu
 
   const bd = (data.breakdown ?? {}) as Record<string, number>;
 
+  // Fetch avg rating from class_ratings
+  const { data: ratingData } = await supabase.rpc('get_trainer_avg_rating', {
+    p_staff_id: staffId,
+    p_days: 90,
+  } as any);
+
+  const ratingRow = Array.isArray(ratingData) ? ratingData[0] : ratingData;
+
   return {
     id: data.id,
     staff_id: data.staff_id,
@@ -61,6 +69,8 @@ export async function fetchCoachImpactProfile(): Promise<CoachImpactProfile | nu
     member_return_rate: bd.member_return_rate ?? 0,
     pt_log_completion_rate: bd.pt_log_completion_rate ?? 0,
     current_streak_weeks: bd.current_streak_weeks ?? 0,
+    avg_rating: ratingRow?.avg_rating ? Number(ratingRow.avg_rating) : null,
+    total_ratings: ratingRow?.total_ratings ? Number(ratingRow.total_ratings) : 0,
   };
 }
 

@@ -12,20 +12,25 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Clock, MapPin, User } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, User, Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { fetchBookingById, cancelBooking } from '../api/services';
+import { useMemberSession } from '../hooks/useMemberSession';
+import { ClassRatingSheet } from '../features/momentum/ClassRatingSheet';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function MemberBookingDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { memberId } = useMemberSession();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const { data: booking, isLoading, isError, refetch } = useQuery({
     queryKey: ['booking', id],
@@ -73,6 +78,23 @@ export default function MemberBookingDetailPage() {
 
   const { schedule } = booking;
   const canCancel = booking.status === 'booked' || booking.status === 'waitlisted';
+  const isAttended = booking.status === 'attended';
+
+  // Check if already rated
+  const { data: existingRating } = useQuery({
+    queryKey: ['class-rating', schedule.id, memberId],
+    queryFn: async () => {
+      if (!memberId) return null;
+      const { data } = await (supabase as any)
+        .from('class_ratings')
+        .select('rating, comment')
+        .eq('schedule_id', schedule.id)
+        .eq('member_id', memberId)
+        .maybeSingle();
+      return data as { rating: number; comment: string | null } | null;
+    },
+    enabled: isAttended && !!memberId,
+  });
 
   return (
     <div className="animate-in fade-in-0 duration-200">
@@ -124,6 +146,46 @@ export default function MemberBookingDetailPage() {
         </div>
       </Section>
 
+      {/* Rating section for attended bookings */}
+      {isAttended && memberId && (
+        <Section className="mb-6">
+          <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
+            {existingRating ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t('member.yourRating')}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star
+                        key={s}
+                        className={`h-4 w-4 ${s <= existingRating.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'}`}
+                      />
+                    ))}
+                  </div>
+                  {existingRating.comment && (
+                    <p className="text-xs text-muted-foreground mt-1">{existingRating.comment}</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setRatingOpen(true)}>
+                  {t('common.edit')}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t('member.howWasClass')}</p>
+                  <p className="text-xs text-muted-foreground">{t('member.ratingHint')}</p>
+                </div>
+                <Button size="sm" onClick={() => setRatingOpen(true)} className="gap-1.5">
+                  <Star className="h-3.5 w-3.5" />
+                  {t('member.rateClass')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
       {canCancel && (
         <div className="px-4 pb-8">
           <Button
@@ -164,6 +226,18 @@ export default function MemberBookingDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Rating sheet */}
+      {memberId && (
+        <ClassRatingSheet
+          open={ratingOpen}
+          onClose={() => {
+            setRatingOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['class-rating', schedule.id, memberId] });
+          }}
+          scheduleId={schedule.id}
+          memberId={memberId}
+        />
+      )}
     </div>
   );
 }
