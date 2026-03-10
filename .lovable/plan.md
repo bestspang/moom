@@ -1,47 +1,32 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Fix: Camera Preview Shows Gray
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Root Cause
 
-## Fix (surgical, 1 file)
+In `startScanning()` (line 102-118):
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
-
-Replace the promotions export `cols` array to match the Promotions page export format:
-
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
+```text
+1. getUserMedia() → gets stream ✅
+2. videoRef.current.srcObject = stream  ← videoRef is NULL here! 
+   (because <video> only renders when scanning === true)
+3. setScanning(true) → now <video> renders, but stream was never attached
 ```
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+The `<video>` element is conditionally rendered only when `scanning` is `true` (line 135-137), but the stream is attached to `videoRef` *before* setting `scanning` to `true`.
+
+## Fix
+
+Restructure `startScanning` to:
+1. Get the stream
+2. Store it in `streamRef`
+3. Set `scanning(true)` — this renders the `<video>` element
+4. Use a `useEffect` that watches `scanning` + `streamRef` to attach the stream to the video element and start the scan loop
+
+### File: `src/apps/member/pages/MemberCheckInPage.tsx`
+
+**Changes:**
+- `startScanning`: remove the `videoRef` attachment, just get stream and `setScanning(true)`
+- Add `useEffect` that runs when `scanning` changes: if scanning and streamRef has a stream, attach to videoRef, call play(), start scanFrame loop
+- This guarantees the `<video>` DOM element exists before we try to use it
 
