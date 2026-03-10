@@ -558,15 +558,21 @@ export async function fetchStreakLeaderboard(): Promise<LeaderboardEntry[]> {
 }
 
 export async function fetchAttendanceLeaderboard(): Promise<LeaderboardEntry[]> {
-  // Get current month's start date
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  return fetchAttendanceLeaderboardByWindow('month');
+}
 
-  const { data, error } = await supabase
+export async function fetchAttendanceLeaderboardByWindow(window: LeaderboardTimeWindow): Promise<LeaderboardEntry[]> {
+  const since = window === 'all' ? null : getSinceDate(window);
+
+  let query = supabase
     .from('member_attendance')
-    .select('member_id, members(first_name, last_name, avatar_url)')
-    .gte('check_in_time', monthStart);
+    .select('member_id, members(first_name, last_name, avatar_url)');
 
+  if (since) {
+    query = query.gte('check_in_time', since);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   // Aggregate by member
@@ -594,6 +600,30 @@ export async function fetchAttendanceLeaderboard(): Promise<LeaderboardEntry[]> 
     level: 0,
     rank: idx + 1,
     checkInCount: count,
+  }));
+}
+
+// ─── Streak Around Me ───────────────────────────────────────
+
+export async function fetchStreakAroundMe(memberId: string): Promise<LeaderboardEntry[]> {
+  if (!memberId) return [];
+
+  const { data, error } = await supabase.rpc('get_streak_around_me', {
+    p_member_id: memberId,
+    p_range: 2,
+  });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    memberId: row.member_id,
+    firstName: row.first_name ?? '',
+    lastName: row.last_name ?? '',
+    avatarUrl: row.avatar_url ?? null,
+    totalXp: Number(row.total_xp),
+    level: row.current_level,
+    rank: Number(row.rank),
+    currentStreak: row.current_streak,
   }));
 }
 
