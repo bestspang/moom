@@ -12,12 +12,15 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Clock, MapPin, User } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, User, Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { fetchBookingById, cancelBooking } from '../api/services';
+import { useMemberSession } from '../hooks/useMemberSession';
+import { ClassRatingSheet } from '../features/momentum/ClassRatingSheet';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function MemberBookingDetailPage() {
   const { t } = useTranslation();
