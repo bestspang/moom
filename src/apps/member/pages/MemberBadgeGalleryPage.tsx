@@ -24,26 +24,26 @@ const BADGE_TYPE_KEYS: Record<string, { labelKey: string; className: string }> =
   seasonal: { labelKey: 'member.typeSeasonal', className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400' },
 };
 
-function getExpiryText(earnedAt: string, durationDays?: number | null): string | null {
+function getExpiryText(earnedAt: string, durationDays: number | null | undefined, t: (key: string) => string): string | null {
   if (!durationDays) return null;
   const expiresAt = new Date(earnedAt);
   expiresAt.setDate(expiresAt.getDate() + durationDays);
   const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (daysLeft <= 0) return 'Expired';
-  return `${daysLeft}d left`;
+  if (daysLeft <= 0) return t('member.badgeExpired');
+  return t('member.badgeDaysLeft').replace('{{n}}', String(daysLeft));
 }
 
-function formatEffect(effectType?: string, effectValue?: Record<string, unknown>): string | null {
+function formatEffect(effectType: string | undefined, effectValue: Record<string, unknown> | undefined, t: (key: string) => string): string | null {
   if (!effectType || effectType === 'cosmetic') return null;
   const val = effectValue as Record<string, number> | undefined;
-  if (effectType === 'coin_bonus') return `+${val?.amount ?? '?'} coin bonus`;
-  if (effectType === 'xp_bonus') return `+${val?.amount ?? '?'} XP bonus`;
-  if (effectType === 'access') return 'Unlocks access';
+  if (effectType === 'coin_bonus') return t('member.effectCoinBonus').replace('{{amount}}', String(val?.amount ?? '?'));
+  if (effectType === 'xp_bonus') return t('member.effectXpBonus').replace('{{amount}}', String(val?.amount ?? '?'));
+  if (effectType === 'access') return t('member.effectAccess');
   return effectType.replace(/_/g, ' ');
 }
 
 function getTierStyle(tier?: string) {
-  return TIER_COLORS[tier ?? 'bronze'] ?? TIER_COLORS.bronze;
+  return TIER_STYLES[tier ?? 'bronze'] ?? TIER_STYLES.bronze;
 }
 
 export default function MemberBadgeGalleryPage() {
