@@ -146,6 +146,46 @@ export default function MemberBookingDetailPage() {
         </div>
       </Section>
 
+      {/* Rating section for attended bookings */}
+      {isAttended && memberId && (
+        <Section className="mb-6">
+          <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
+            {existingRating ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t('member.yourRating')}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star
+                        key={s}
+                        className={`h-4 w-4 ${s <= existingRating.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'}`}
+                      />
+                    ))}
+                  </div>
+                  {existingRating.comment && (
+                    <p className="text-xs text-muted-foreground mt-1">{existingRating.comment}</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setRatingOpen(true)}>
+                  {t('common.edit')}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t('member.howWasClass')}</p>
+                  <p className="text-xs text-muted-foreground">{t('member.ratingHint')}</p>
+                </div>
+                <Button size="sm" onClick={() => setRatingOpen(true)} className="gap-1.5">
+                  <Star className="h-3.5 w-3.5" />
+                  {t('member.rateClass')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
       {canCancel && (
         <div className="px-4 pb-8">
           <Button
