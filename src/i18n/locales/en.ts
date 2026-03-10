@@ -1849,7 +1849,6 @@ export default {
     memberLabel: 'Member',
     xpContribution: 'XP Contribution',
     squadMemberCount: '{{count}} members',
-    mySquad: 'My Squad',
     // Coupons page
     myCoupons: 'My Coupons',
     couponActive: 'Active',
