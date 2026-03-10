@@ -73,6 +73,7 @@ import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
+import CheckinDisplay from "./pages/CheckinDisplay";
 import DiagnosticsAuthPage from "./pages/Auth/DiagnosticsAuthPage";
 import GamificationStudio from "./pages/gamification/GamificationStudio";
 import GamificationOverview from "./pages/gamification/GamificationOverview";

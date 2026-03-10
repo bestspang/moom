@@ -1,0 +1,237 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocations } from '@/hooks/useLocations';
+import { useGenerateQRToken, getTokenTimeRemaining } from '@/hooks/useCheckinQR';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { MapPin, Settings, Dumbbell } from 'lucide-react';
+
+const STORAGE_KEY = 'checkin-display-location';
+const TOKEN_LIFETIME = 120; // seconds
+
+function CircularCountdown({ remaining, total }: { remaining: number; total: number }) {
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  const progress = remaining / total;
+  const offset = circumference * (1 - progress);
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width="128" height="128" className="-rotate-90">
+        <circle
+          cx="64" cy="64" r={radius}
+          fill="none"
+          stroke="hsl(var(--muted))"
+          strokeWidth="6"
+        />
+        <circle
+          cx="64" cy="64" r={radius}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+        />
+      </svg>
+      <span className="absolute text-2xl font-bold text-foreground tabular-nums">
+        {minutes}:{String(seconds).padStart(2, '0')}
+      </span>
+    </div>
+  );
+}
+
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="text-sm text-muted-foreground tabular-nums">
+      {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </span>
+  );
+}
+
+export default function CheckinDisplay() {
+  const { t } = useLanguage();
+  const { data: locations = [] } = useLocations();
+  const generateQR = useGenerateQRToken();
+
+  const [locationId, setLocationId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+  const [showSettings, setShowSettings] = useState(false);
+  const [tokenData, setTokenData] = useState<{ token: string; expires_at: string } | null>(null);
+  const [countdown, setCountdown] = useState(TOKEN_LIFETIME);
+  const [pulse, setPulse] = useState(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const locationName = locations.find((l) => l.id === locationId)?.name || '';
+
+  // Determine if location selector should show
+  const needsLocation = !locationId || showSettings;
+
+  // Request wake lock to prevent screen sleep
+  useEffect(() => {
+    let active = true;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    if (!needsLocation) requestWakeLock();
+    return () => {
+      active = false;
+      wakeLockRef.current?.release();
+    };
+  }, [needsLocation]);
+
+  // Generate QR token
+  const generate = useCallback(async () => {
+    if (!locationId) return;
+    try {
+      const result = await generateQR.mutateAsync({
+        locationId,
+        expiresInSeconds: TOKEN_LIFETIME,
+        tokenType: 'checkin',
+      });
+      setTokenData({ token: result.token, expires_at: result.expires_at });
+      setPulse(true);
+      setTimeout(() => setPulse(false), 600);
+    } catch {
+      // retry after 5s on error
+      setTimeout(() => generate(), 5000);
+    }
+  }, [locationId, generateQR]);
+
+  // Auto-generate on location select
+  useEffect(() => {
+    if (locationId && !needsLocation) {
+      generate();
+    }
+  }, [locationId, needsLocation]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Countdown + auto-refresh
+  useEffect(() => {
+    if (!tokenData) return;
+    const interval = setInterval(() => {
+      const remaining = getTokenTimeRemaining(tokenData.expires_at);
+      setCountdown(remaining);
+      if (remaining <= 0) {
+        generate();
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tokenData, generate]);
+
+  const handleSelectLocation = (id: string) => {
+    setLocationId(id);
+    localStorage.setItem(STORAGE_KEY, id);
+    setShowSettings(false);
+    setTokenData(null);
+  };
+
+  const checkinUrl = tokenData
+    ? `${window.location.origin}/checkin?token=${tokenData.token}`
+    : '';
+
+  // ── Location selector screen ──
+  if (needsLocation) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <Dumbbell className="h-12 w-12 text-primary mx-auto" />
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('checkinDisplay.title')}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {t('checkinDisplay.selectLocation')}
+          </p>
+          <Select value={locationId} onValueChange={handleSelectLocation}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('lobby.location')} />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {showSettings && (
+            <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
+              {t('common.cancel')}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Kiosk display ──
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 select-none relative">
+      {/* Settings gear */}
+      <button
+        onClick={() => setShowSettings(true)}
+        className="absolute top-4 right-4 p-2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+        aria-label="Settings"
+      >
+        <Settings className="h-5 w-5" />
+      </button>
+
+      {/* Logo + title */}
+      <div className="mb-8 text-center">
+        <Dumbbell className="h-10 w-10 text-primary mx-auto mb-3" />
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">
+          {t('checkinDisplay.scanToCheckIn')}
+        </h1>
+      </div>
+
+      {/* QR Code */}
+      <div
+        className={`bg-white p-5 rounded-2xl shadow-lg transition-transform duration-300 ${
+          pulse ? 'scale-105' : 'scale-100'
+        }`}
+      >
+        {checkinUrl ? (
+          <QRCodeSVG
+            value={checkinUrl}
+            size={280}
+            level="M"
+            className="w-[200px] h-[200px] md:w-[280px] md:h-[280px]"
+          />
+        ) : (
+          <div className="w-[200px] h-[200px] md:w-[280px] md:h-[280px] flex items-center justify-center">
+            <span className="text-muted-foreground text-sm">{t('common.loading')}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Location */}
+      <div className="mt-6 flex items-center gap-2 text-muted-foreground">
+        <MapPin className="h-4 w-4" />
+        <span className="text-sm font-medium">{locationName}</span>
+      </div>
+
+      {/* Countdown ring */}
+      <div className="mt-6">
+        <CircularCountdown remaining={countdown} total={TOKEN_LIFETIME} />
+      </div>
+
+      {/* Live clock */}
+      <div className="mt-4">
+        <LiveClock />
+      </div>
+    </div>
+  );
+}
