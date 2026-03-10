@@ -78,6 +78,23 @@ export default function MemberBookingDetailPage() {
 
   const { schedule } = booking;
   const canCancel = booking.status === 'booked' || booking.status === 'waitlisted';
+  const isAttended = booking.status === 'attended';
+
+  // Check if already rated
+  const { data: existingRating } = useQuery({
+    queryKey: ['class-rating', schedule.id, memberId],
+    queryFn: async () => {
+      if (!memberId) return null;
+      const { data } = await supabase
+        .from('class_ratings' as any)
+        .select('rating, comment')
+        .eq('schedule_id', schedule.id)
+        .eq('member_id', memberId)
+        .maybeSingle();
+      return data as { rating: number; comment: string | null } | null;
+    },
+    enabled: isAttended && !!memberId,
+  });
 
   return (
     <div className="animate-in fade-in-0 duration-200">
