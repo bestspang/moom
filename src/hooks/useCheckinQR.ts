@@ -76,7 +76,6 @@ export const useGenerateQRToken = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-qr-token'] });
-      toast.success('QR code generated');
     },
     onError: (error) => {
       toast.error('Failed to generate QR code');

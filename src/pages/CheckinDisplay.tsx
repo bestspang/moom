@@ -4,12 +4,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocations } from '@/hooks/useLocations';
 import { useGenerateQRToken, getTokenTimeRemaining } from '@/hooks/useCheckinQR';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Settings, Dumbbell, LogIn } from 'lucide-react';
+import { MapPin, Settings, Dumbbell, LogIn, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'checkin-display-location';
@@ -71,9 +72,11 @@ export default function CheckinDisplay() {
 
   const [locationId, setLocationId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
   const [showSettings, setShowSettings] = useState(false);
-  const [tokenData, setTokenData] = useState<{ token: string; expires_at: string } | null>(null);
+  const [tokenData, setTokenData] = useState<{ token: string; expires_at: string; id?: string } | null>(null);
   const [countdown, setCountdown] = useState(TOKEN_LIFETIME);
   const [pulse, setPulse] = useState(false);
+  const [celebration, setCelebration] = useState<{ memberName: string } | null>(null);
+  const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   // Login form state
@@ -114,6 +117,58 @@ export default function CheckinDisplay() {
     };
   }, [needsLocation]);
 
+  // Realtime subscription for check-in events
+  useEffect(() => {
+    if (!locationId || needsLocation) return;
+
+    const channel = supabase
+      .channel('kiosk-checkin-feedback')
+      .on<Record<string, unknown>>(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'checkin_qr_tokens',
+          filter: `location_id=eq.${locationId}`,
+        },
+        async (payload) => {
+          const newRecord = payload.new as Record<string, unknown>;
+          const oldRecord = payload.old as Record<string, unknown>;
+
+          // Only trigger when used_at changes from null to a value
+          if (!oldRecord?.used_at && newRecord?.used_at) {
+            // Try to fetch member name
+            let memberName = '';
+            const memberId = newRecord.member_id as string | null;
+            if (memberId) {
+              const { data: member } = await supabase
+                .from('members')
+                .select('first_name, last_name')
+                .eq('id', memberId)
+                .single();
+              if (member) {
+                memberName = [member.first_name, member.last_name].filter(Boolean).join(' ');
+              }
+            }
+
+            setCelebration({ memberName: memberName || 'Member' });
+
+            // Clear after 3 seconds
+            if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+            celebrationTimeoutRef.current = setTimeout(() => {
+              setCelebration(null);
+            }, 3000);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+    };
+  }, [locationId, needsLocation]);
+
   // Generate QR token
   const generate = useCallback(async () => {
     if (!locationId) return;
@@ -123,7 +178,7 @@ export default function CheckinDisplay() {
         expiresInSeconds: TOKEN_LIFETIME,
         tokenType: 'checkin',
       });
-      setTokenData({ token: result.token, expires_at: result.expires_at });
+      setTokenData({ token: result.token, expires_at: result.expires_at, id: result.id });
       setPulse(true);
       setTimeout(() => setPulse(false), 600);
     } catch {
@@ -252,6 +307,15 @@ export default function CheckinDisplay() {
   // ── Kiosk display ──
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 select-none relative">
+      {/* Celebration overlay */}
+      {celebration && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 animate-in fade-in duration-300">
+          <CheckCircle2 className="h-24 w-24 text-green-500 mb-6 animate-in zoom-in duration-500" />
+          <h2 className="text-3xl font-bold text-foreground mb-2">Check-in สำเร็จ! ✨</h2>
+          <p className="text-xl text-muted-foreground">{celebration.memberName}</p>
+        </div>
+      )}
+
       {/* Settings gear */}
       <button
         onClick={() => setShowSettings(true)}
