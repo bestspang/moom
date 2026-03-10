@@ -2860,9 +2860,4 @@ export default {
     earnedOn: 'Earned',
   },
 
-  // Validation
-  validation: {
-    required: 'Required',
-    mustBePositive: 'Must be a positive number',
-  },
 };
