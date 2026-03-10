@@ -2676,5 +2676,13 @@ export default {
     scoreBreakdown: 'ประวัติคะแนน',
     scoreHistoryComingSoon: 'ประวัติคะแนนรายสัปดาห์เร็วๆ นี้',
     noImpactData: 'ยังไม่มีข้อมูล Impact',
+    // Trainer badges
+    badgeGallery: 'แกลเลอรีเหรียญตรา',
+    badgesSubtitle: 'ความสำเร็จและการยอมรับของคุณ',
+    earned: 'ได้รับแล้ว',
+    locked: 'ยังไม่ปลดล็อก',
+    noBadgesYet: 'ยังไม่มีเหรียญตรา',
+    viewAllBadges: 'ดูเหรียญตราทั้งหมด',
+    earnedOn: 'ได้รับเมื่อ',
   },
 };

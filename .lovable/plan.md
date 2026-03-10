@@ -1,66 +1,47 @@
 
 
-# Phase 10: Trainer Badges & Achievement Page
+# Fix: Promotions export missing columns in Settings
 
-## Status Check
-- Phase 7: Leaderboard Time Windows ✅
-- Phase 8: Squad Activity Feed ✅
-- Phase 9: Squad Reactions & Encouragement ✅
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## What's Next
+## Fix (surgical, 1 file)
 
-The trainer surface has Home, Impact, Schedule, Roster, Workouts, and Profile — but no **badges or achievement history**. The expansion plan explicitly calls for "coach badges," "partner badge shelf," and "achievement history" as core trainer gamification surfaces.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Currently, `badge_earnings` is member-only (FK to `members.id`). Trainers have no equivalent. We need a lightweight `trainer_badge_earnings` table and a new page.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-## Plan
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 1. Database Migration
-
-**New table: `trainer_badge_earnings`**
-- `id uuid PK`
-- `staff_id uuid NOT NULL REFERENCES staff(id) ON DELETE CASCADE`
-- `badge_id uuid NOT NULL REFERENCES gamification_badges(id) ON DELETE CASCADE`
-- `earned_at timestamptz DEFAULT now()`
-- `metadata jsonb DEFAULT '{}'`
-- `UNIQUE(staff_id, badge_id)`
-
-RLS:
-- Trainers can read their own: `staff_id IN (SELECT id FROM staff WHERE user_id = auth.uid())`
-- Staff can read all: `has_min_access_level(auth.uid(), 'level_1_minimum')`
-- Managers can manage: `has_min_access_level(auth.uid(), 'level_3_manager')`
-
-### 2. API: `src/apps/trainer/features/impact/api.ts`
-
-Add `fetchTrainerBadges(staffId)` — queries `trainer_badge_earnings` joined with `gamification_badges`, and `fetchAllTrainerBadges()` for full gallery (earned vs locked).
-
-### 3. New Page: `src/apps/trainer/pages/TrainerBadgesPage.tsx`
-
-A badge gallery similar to `MemberBadgeGalleryPage.tsx` but adapted for trainers:
-- Shows earned badges prominently with earned date
-- Shows locked badges greyed out
-- Groups by tier (bronze/silver/gold/platinum)
-- Uses trainer-appropriate language ("Coach Achievement" vs "Partner Recognition")
-
-### 4. Routing & Navigation
-
-- Add route: `<Route path="badges" element={<TrainerBadgesPage />} />` under `/trainer`
-- The Impact page already links to this conceptually — add a "View All Badges" link from the Impact page
-- No bottom nav change (keep 5 tabs clean; badges accessible from Impact page)
-
-### 5. i18n
-
-~8 keys: `trainer.badges`, `trainer.badgesSubtitle`, `trainer.earned`, `trainer.locked`, `trainer.noBadgesYet`, `trainer.viewAllBadges`, `trainer.earnedOn`, `trainer.badgeGallery`
-
-### Files
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `trainer_badge_earnings` table + RLS |
-| `src/apps/trainer/features/impact/api.ts` | Add `fetchTrainerBadges` |
-| `src/apps/trainer/pages/TrainerBadgesPage.tsx` | **Create** — badge gallery page |
-| `src/apps/trainer/pages/TrainerImpactPage.tsx` | Add "View All Badges" link |
-| `src/App.tsx` | Add `/trainer/badges` route |
-| `src/i18n/locales/en.ts` | ~8 new keys |
-| `src/i18n/locales/th.ts` | ~8 new keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

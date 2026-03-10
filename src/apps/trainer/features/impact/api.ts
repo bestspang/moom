@@ -132,3 +132,64 @@ export async function fetchTrainerQuests(audienceType: 'trainer_inhouse' | 'trai
     coin_reward: q.coin_reward,
   }));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Trainer Badge Earnings                                             */
+/* ------------------------------------------------------------------ */
+
+export interface TrainerBadgeEarning {
+  id: string;
+  staffId: string;
+  badgeId: string;
+  earnedAt: string;
+  badge: {
+    nameEn: string;
+    descriptionEn: string | null;
+    tier: string;
+    badgeType: string | null;
+    iconUrl: string | null;
+  } | null;
+}
+
+export async function fetchTrainerBadgeEarnings(): Promise<TrainerBadgeEarning[]> {
+  const staffId = await getStaffId();
+  if (!staffId) return [];
+
+  const { data, error } = await supabase
+    .from('trainer_badge_earnings' as any)
+    .select('id, staff_id, badge_id, earned_at, gamification_badges(name_en, description_en, tier, badge_type, icon_url)')
+    .eq('staff_id', staffId)
+    .order('earned_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    staffId: row.staff_id,
+    badgeId: row.badge_id,
+    earnedAt: row.earned_at,
+    badge: row.gamification_badges ? {
+      nameEn: row.gamification_badges.name_en,
+      descriptionEn: row.gamification_badges.description_en,
+      tier: row.gamification_badges.tier,
+      badgeType: row.gamification_badges.badge_type,
+      iconUrl: row.gamification_badges.icon_url,
+    } : null,
+  }));
+}
+
+export async function fetchAllBadgesForTrainer(): Promise<{ id: string; nameEn: string; descriptionEn: string | null; tier: string; badgeType: string | null; iconUrl: string | null }[]> {
+  const { data } = await supabase
+    .from('gamification_badges')
+    .select('id, name_en, description_en, tier, badge_type, icon_url')
+    .eq('is_active', true)
+    .order('display_priority', { ascending: true });
+  return (data ?? []).map((b) => ({
+    id: b.id,
+    nameEn: b.name_en,
+    descriptionEn: b.description_en,
+    tier: b.tier,
+    badgeType: b.badge_type,
+    iconUrl: b.icon_url,
+  }));
+}
