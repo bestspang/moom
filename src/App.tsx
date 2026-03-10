@@ -120,6 +120,7 @@ import TrainerSchedulePage from "@/apps/trainer/pages/TrainerSchedulePage";
 import TrainerRosterPage from "@/apps/trainer/pages/TrainerRosterPage";
 import TrainerWorkoutsPage from "@/apps/trainer/pages/TrainerWorkoutsPage";
 import TrainerProfilePage from "@/apps/trainer/pages/TrainerProfilePage";
+import TrainerBadgesPage from "@/apps/trainer/pages/TrainerBadgesPage";
 import StaffHomePage from "@/apps/staff/pages/StaffHomePage";
 import StaffCheckinPage from "@/apps/staff/pages/StaffCheckinPage";
 import StaffMembersPage from "@/apps/staff/pages/StaffMembersPage";
