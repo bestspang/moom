@@ -44,7 +44,10 @@ type TableName =
   | 'member_gamification_profiles'
   | 'badge_earnings'
   | 'quest_instances'
-  | 'reward_redemptions';
+  | 'reward_redemptions'
+  // ── Squad tables ──
+  | 'squads'
+  | 'squad_memberships';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
