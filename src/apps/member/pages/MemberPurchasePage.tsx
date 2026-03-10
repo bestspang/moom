@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Check, CreditCard, Smartphone, Building2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
-import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useTranslation } from 'react-i18next';
 
 type Step = 'review' | 'payment' | 'success';
