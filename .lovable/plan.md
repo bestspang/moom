@@ -1,47 +1,48 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Phase 11: Streak & Attendance Leaderboard Time Windows
+
+## Status
+- Phase 8: Squad Activity Feed ✅
+- Phase 9: Squad Reactions ✅
+- Phase 10: Trainer Badges Page ✅
 
 ## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+The XP leaderboard tab already has time window filtering (All Time / Monthly / Weekly). The Streak and Attendance tabs do not — they show a single static view. This inconsistency is noticeable and limits the usefulness of those boards.
 
-## Fix (surgical, 1 file)
+## Plan
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### 1. Attendance Leaderboard Time Windows
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+Add `fetchAttendanceLeaderboardByWindow(window: LeaderboardTimeWindow)` in `api.ts`. Compute the `since` date the same way as XP (all time = epoch, month = 1st of month, week = start of week). Query `member_attendance` with `check_in_time >= since`.
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+Update `AttendanceTab` in `MemberLeaderboardPage.tsx` to add `FilterChips` and use the new function.
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+### 2. Streak Leaderboard — Time Window Consideration
+
+Streaks are point-in-time values (`current_streak` on `member_gamification_profiles`), not time-windowed aggregates. A "weekly" streak board doesn't make conceptual sense — you either have a streak or you don't.
+
+Instead of time windows, add an **"Around You" section** to the Streak tab (similar to XP), so users who aren't in the top 20 can see their nearby position. This requires a small RPC or client-side lookup.
+
+For the around-me streak position, we can create a `get_streak_around_me(p_member_id uuid)` RPC that returns the caller's rank and neighbors.
+
+### 3. Database
+
+**New RPC: `get_streak_around_me(p_member_id uuid, p_range int DEFAULT 2)`**
+- Ranks all members by `current_streak DESC` using a CTE with `ROW_NUMBER()`
+- Finds the caller's rank
+- Returns rows within ±`p_range` of that rank
+- `SECURITY DEFINER` to access `member_gamification_profiles`
+
+No new tables needed.
+
+### 4. Files
+
+| File | Action |
+|------|--------|
+| Migration SQL | Create `get_streak_around_me` RPC |
+| `src/apps/member/features/momentum/api.ts` | Add `fetchAttendanceLeaderboardByWindow`, `fetchStreakAroundMe` |
+| `src/apps/member/pages/MemberLeaderboardPage.tsx` | Add FilterChips to Attendance tab, add Around You to Streak tab |
+
+No i18n changes needed — existing keys (`periodAllTime`, `periodMonthly`, `periodWeekly`, `aroundYou`) already cover this.
 
