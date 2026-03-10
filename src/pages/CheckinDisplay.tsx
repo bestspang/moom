@@ -13,7 +13,7 @@ import { MapPin, Settings, Dumbbell, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'checkin-display-location';
-const TOKEN_LIFETIME = 30; // seconds
+const TOKEN_LIFETIME = 15; // seconds
 
 function CircularCountdown({ remaining, total }: { remaining: number; total: number }) {
   const radius = 54;
