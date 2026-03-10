@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
@@ -6,14 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Users, Target, CheckCircle2, Flame, MapPin } from 'lucide-react';
 import { useMemberSession } from '@/apps/member/hooks/useMemberSession';
 import {
-  fetchXpLeaderboard,
+  fetchXpLeaderboardByWindow,
   fetchSquadRankings,
   fetchChallengeCompletionStats,
   fetchStreakLeaderboard,
   fetchAttendanceLeaderboard,
-  fetchAroundMeLeaderboard,
+  fetchAroundMeByWindow,
   type LeaderboardEntry,
   type ChallengeCompletionStat,
+  type LeaderboardTimeWindow,
 } from '@/apps/member/features/momentum/api';
 import type { SquadInfo } from '@/apps/member/features/momentum/types';
 import { cn } from '@/lib/utils';
