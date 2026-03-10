@@ -2068,6 +2068,23 @@ export default {
     nextMilestones: 'Next Milestones',
     oneMoreToUnlock: '1 more to unlock!',
     moreToGo: '{{n}} more to go',
+    // ReferralCard (home)
+    referralCardTitle: 'Invite Friends, Earn Points!',
+    referralCardHint: 'Share your code & both get 200 Coin',
+    referralCardStats: '{{count}} friend{{s}} joined · {{coins}} Coin earned',
+    referralShareText: 'Use my code {{code}} to sign up and we both get 200 reward points! 🎉',
+    referralJoinTitle: 'Join MOOM!',
+    referralCopied: 'Copied!',
+    referralShare: 'Share',
+    referralLinkCopied: 'Link copied! Share it with friends 🎉',
+    referralLinkCopiedShort: 'Link copied!',
+    // SuggestedClassCard
+    suggestedForYou: 'Suggested for You',
+    basedOnFavorites: 'Based on your favorites',
+    popularThisWeek: 'Popular this week',
+    suggestedClassFallback: 'Class',
+    // XPToast
+    keepMomentum: 'Keep up the momentum!',
     // Purchase page
     creditDebitCard: 'Credit/Debit Card',
     promptPay: 'PromptPay',

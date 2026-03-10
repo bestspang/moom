@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Gift, Users, ChevronRight, Copy, Check } from 'lucide-react';
+import { Gift, ChevronRight, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchOrCreateReferralCode, fetchReferralStats } from './api';
 import { toast } from 'sonner';
@@ -12,6 +13,7 @@ interface ReferralCardProps {
 
 export function ReferralCard({ memberId }: ReferralCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const { data: code, isLoading: loadingCode } = useQuery({
@@ -32,20 +34,20 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Join MOOM!',
-          text: `Use my code ${code} to sign up and we both get 200 reward points! 🎉`,
+          title: t('member.referralJoinTitle'),
+          text: t('member.referralShareText', { code }),
           url: shareUrl,
         });
       } else {
         await navigator.clipboard.writeText(shareUrl);
         setCopied(true);
-        toast.success('Link copied! Share it with friends 🎉');
+        toast.success(t('member.referralLinkCopied'));
         setTimeout(() => setCopied(false), 2000);
       }
     } catch {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success('Link copied!');
+      toast.success(t('member.referralLinkCopiedShort'));
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -63,11 +65,15 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
         <Gift className="h-5 w-5 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">Invite Friends, Earn Points!</p>
+        <p className="text-sm font-semibold text-foreground">{t('member.referralCardTitle')}</p>
         <p className="text-xs text-muted-foreground">
           {stats?.totalCompleted
-            ? `${stats.totalCompleted} friend${stats.totalCompleted > 1 ? 's' : ''} joined · ${stats.totalPointsEarned} Coin earned`
-            : 'Share your code & both get 200 Coin'}
+            ? t('member.referralCardStats', {
+                count: stats.totalCompleted,
+                s: stats.totalCompleted > 1 ? 's' : '',
+                coins: stats.totalPointsEarned,
+              })
+            : t('member.referralCardHint')}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -79,7 +85,7 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
           className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
         >
           {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? 'Copied!' : 'Share'}
+          {copied ? t('member.referralCopied') : t('member.referralShare')}
         </button>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </div>
