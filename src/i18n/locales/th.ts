@@ -2711,10 +2711,4 @@ export default {
     viewAllBadges: 'ดูเหรียญตราทั้งหมด',
     earnedOn: 'ได้รับเมื่อ',
   },
-
-  // Validation
-  validation: {
-    required: 'จำเป็นต้องกรอก',
-    mustBePositive: 'ต้องเป็นจำนวนที่มากกว่า 0',
-  },
 };
