@@ -3,6 +3,7 @@ import { fetchAllBadges, fetchMyBadges, fetchMomentumProfile } from './api';
 import { Award, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BadgeDefinition } from './types';
+import { useTranslation } from 'react-i18next';
 
 interface UpcomingMilestonesProps {
   memberId: string;
@@ -28,6 +29,7 @@ function getBadgeTarget(badge: BadgeDefinition): { type: string; value: number }
 }
 
 export function UpcomingMilestones({ memberId, className, max = 3, nudgeOnly = false }: UpcomingMilestonesProps) {
+  const { t } = useTranslation();
   const { data: allBadges } = useQuery({
     queryKey: ['all-badges'],
     queryFn: fetchAllBadges,
@@ -81,8 +83,8 @@ export function UpcomingMilestones({ memberId, className, max = 3, nudgeOnly = f
           <Target className="h-3.5 w-3.5 text-accent-foreground" />
         </div>
         <p className="text-xs font-medium text-foreground">
-          <span className="text-primary font-bold">Almost there!</span>{' '}
-          {m.remaining} more to unlock "{m.badge.nameEn}"
+          <span className="text-primary font-bold">{t('member.almostThereLabel')}</span>{' '}
+          {t('member.moreToUnlock', { n: m.remaining, name: m.badge.nameEn })}
         </p>
       </div>
     );
@@ -92,7 +94,7 @@ export function UpcomingMilestones({ memberId, className, max = 3, nudgeOnly = f
     <div className={cn('space-y-3', className)}>
       <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
         <Target className="h-3 w-3 text-primary" />
-        Next Milestones
+        {t('member.nextMilestones')}
       </p>
       {upcoming.map(m => (
         <div key={m.badge.id} className="flex items-center gap-3">
@@ -124,9 +126,9 @@ export function UpcomingMilestones({ memberId, className, max = 3, nudgeOnly = f
             <p className="text-sm font-semibold text-foreground truncate">{m.badge.nameEn}</p>
             <p className="text-xs text-muted-foreground">
               {m.remaining === 1 ? (
-                <span className="text-primary font-medium">1 more to unlock!</span>
+                <span className="text-primary font-medium">{t('member.oneMoreToUnlock')}</span>
               ) : (
-                `${m.remaining} more to go`
+                t('member.moreToGo', { n: m.remaining })
               )}
             </p>
           </div>

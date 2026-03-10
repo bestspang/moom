@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMyBadges } from './api';
 import { Award, Lock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from 'react-i18next';
 
 interface BadgeGridProps {
   memberId: string;
@@ -17,11 +18,11 @@ const RARITY_MAP: Record<string, string> = {
   platinum: '--rarity-legendary',
 };
 
-const RARITY_LABELS: Record<string, { label: string; className: string }> = {
-  bronze: { label: 'Common', className: 'text-muted-foreground' },
-  silver: { label: 'Rare', className: 'text-blue-500' },
-  gold: { label: 'Epic', className: 'text-yellow-500' },
-  platinum: { label: 'Legendary', className: 'text-violet-500' },
+const RARITY_KEYS: Record<string, string> = {
+  bronze: 'rarityCommon',
+  silver: 'rarityRare',
+  gold: 'rarityEpic',
+  platinum: 'rarityLegendary',
 };
 
 function getRarityVar(tier?: string): string {
@@ -29,6 +30,7 @@ function getRarityVar(tier?: string): string {
 }
 
 export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
+  const { t } = useTranslation();
   const { data: badges, isLoading } = useQuery({
     queryKey: ['my-badges', memberId],
     queryFn: () => fetchMyBadges(memberId),
@@ -53,7 +55,7 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
           <Lock className="h-6 w-6 text-muted-foreground/40" />
         </div>
-        <p className="text-xs font-medium text-muted-foreground">Complete challenges to earn badges</p>
+        <p className="text-xs font-medium text-muted-foreground">{t('member.completeChallengesForBadges')}</p>
       </div>
     );
   }
@@ -62,6 +64,7 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
     <div className={cn('grid grid-cols-4 gap-3', className)}>
       {displayed.map((mb, i) => {
         const rarityVar = getRarityVar(mb.badge?.tier);
+        const rarityKey = RARITY_KEYS[mb.badge?.tier ?? ''];
         return (
           <div
             key={mb.id}
@@ -83,11 +86,17 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
               </div>
             )}
             <span className="text-[10px] font-semibold text-foreground leading-tight">
-              {mb.badge?.nameEn ?? 'Badge'}
+              {mb.badge?.nameEn ?? t('member.badgeLabel')}
             </span>
-            {mb.badge?.tier && RARITY_LABELS[mb.badge.tier] && (
-              <span className={`text-[8px] font-bold uppercase tracking-wider ${RARITY_LABELS[mb.badge.tier].className}`}>
-                {RARITY_LABELS[mb.badge.tier].label}
+            {rarityKey && (
+              <span className={cn(
+                'text-[8px] font-bold uppercase tracking-wider',
+                mb.badge?.tier === 'bronze' && 'text-muted-foreground',
+                mb.badge?.tier === 'silver' && 'text-blue-500',
+                mb.badge?.tier === 'gold' && 'text-yellow-500',
+                mb.badge?.tier === 'platinum' && 'text-violet-500',
+              )}>
+                {t(`member.${rarityKey}`)}
               </span>
             )}
           </div>

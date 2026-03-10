@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { Trophy, Calendar, Sparkles, Zap, Gift, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { differenceInDays } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface ChallengeCardProps {
   challenge: {
@@ -25,6 +26,7 @@ interface ChallengeCardProps {
 }
 
 export function ChallengeCard({ challenge, progress, onJoin, joining, className }: ChallengeCardProps) {
+  const { t } = useTranslation();
   const daysLeft = differenceInDays(new Date(challenge.end_date), new Date());
   const isJoined = !!progress;
   const isCompleted = progress?.status === 'completed';
@@ -73,7 +75,7 @@ export function ChallengeCard({ challenge, progress, onJoin, joining, className 
             }}
           >
             <Calendar className="h-3 w-3" />
-            {daysLeft > 0 ? `${daysLeft}d` : 'Ending'}
+            {daysLeft > 0 ? t('member.challengeDaysLeft', { n: daysLeft }) : t('member.ending')}
           </div>
         </div>
 
@@ -103,7 +105,7 @@ export function ChallengeCard({ challenge, progress, onJoin, joining, className 
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="font-semibold text-foreground">
-                {isCompleted ? '🎉 Completed!' : 'Progress'}
+                {isCompleted ? t('member.challengeCompleted') : t('member.challengeProgress')}
               </span>
               <span className="text-muted-foreground tabular-nums font-medium">
                 {progress.current_value}/{challenge.goal_value}
@@ -134,7 +136,7 @@ export function ChallengeCard({ challenge, progress, onJoin, joining, className 
         ) : (
           <Button size="sm" className="w-full font-bold" onClick={() => onJoin?.(challenge.id)} disabled={joining}>
             <Sparkles className="h-4 w-4 mr-1.5" />
-            {joining ? 'Joining...' : 'Join Challenge'}
+            {joining ? t('member.joiningChallenge') : t('member.joinChallenge')}
           </Button>
         )}
       </div>

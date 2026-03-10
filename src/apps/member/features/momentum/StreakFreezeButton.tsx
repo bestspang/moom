@@ -4,6 +4,7 @@ import { Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface StreakFreezeButtonProps {
   memberId: string;
@@ -13,13 +14,14 @@ interface StreakFreezeButtonProps {
 const FREEZE_COST = 50;
 
 export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeButtonProps) {
+  const { t } = useTranslation();
   const [freezing, setFreezing] = useState(false);
   const queryClient = useQueryClient();
   const canAfford = availablePoints >= FREEZE_COST;
 
   const handleFreeze = async () => {
     if (!canAfford) {
-      toast.error(`Need ${FREEZE_COST} Coin to freeze streak (you have ${availablePoints})`);
+      toast.error(t('member.needCoinToFreeze', { cost: FREEZE_COST, balance: availablePoints }));
       return;
     }
 
@@ -34,12 +36,12 @@ export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeBu
         return;
       }
 
-      toast.success(`Streak frozen until ${result.freeze_until} 🛡️`, {
-        description: `${FREEZE_COST} Coin spent`,
+      toast.success(t('member.streakFrozenUntil', { date: result.freeze_until }), {
+        description: t('member.freezeCoinSpent', { cost: FREEZE_COST }),
       });
       queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
     } catch {
-      toast.error('Failed to freeze streak');
+      toast.error(t('member.freezeFailed'));
     } finally {
       setFreezing(false);
     }
@@ -54,7 +56,7 @@ export function StreakFreezeButton({ memberId, availablePoints }: StreakFreezeBu
       className="gap-1.5 text-xs"
     >
       <Shield className="h-3.5 w-3.5" />
-      {freezing ? 'Freezing...' : `Freeze (${FREEZE_COST} Coin)`}
+      {freezing ? t('member.freezingStreak') : t('member.freezeStreak', { cost: FREEZE_COST })}
     </Button>
   );
 }
