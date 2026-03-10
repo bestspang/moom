@@ -4252,6 +4252,19 @@ export type Database = {
           total_xp: number
         }[]
       }
+      get_trainer_roster: {
+        Args: { p_days?: number; p_staff_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          first_name: string
+          last_attended: string
+          last_name: string
+          member_id: string
+          phone: string
+          total_sessions: number
+        }[]
+      }
       get_user_access_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["access_level"]
