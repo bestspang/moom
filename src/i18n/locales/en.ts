@@ -1847,6 +1847,9 @@ export default {
     joinButton: 'Join',
     leaveButton: 'Leave',
     memberLabel: 'Member',
+    xpContribution: 'XP Contribution',
+    squadMemberCount: '{{count}} members',
+    mySquad: 'My Squad',
     // Coupons page
     myCoupons: 'My Coupons',
     couponActive: 'Active',
