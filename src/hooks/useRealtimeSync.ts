@@ -43,7 +43,7 @@ type TableName =
   // ── Gamification tables ──
   | 'member_gamification_profiles'
   | 'badge_earnings'
-  | 'challenge_progress'
+  | 'quest_instances'
   | 'reward_redemptions';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
