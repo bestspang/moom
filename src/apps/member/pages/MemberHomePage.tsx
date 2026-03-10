@@ -53,6 +53,13 @@ export default function MemberHomePage() {
     enabled: isAuthenticated,
   });
 
+  // For "Almost There" nudge
+  const { data: momentumProfile } = useQuery({
+    queryKey: ['momentum-profile', memberId],
+    queryFn: () => fetchMomentumProfile(memberId!),
+    enabled: !!memberId,
+  });
+
 
 
 
