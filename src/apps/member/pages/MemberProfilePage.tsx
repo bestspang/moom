@@ -22,7 +22,7 @@ const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_
 export default function MemberProfilePage() {
   const { signOut, allRoles } = useAuth();
   const { firstName, lastName, email, memberId } = useMemberSession();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
 
