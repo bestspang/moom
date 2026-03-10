@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { Users, LogOut, Crown, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -20,6 +21,7 @@ function getInitials(first?: string, last?: string): string {
 }
 
 export default function MemberSquadPage() {
+  const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const queryClient = useQueryClient();
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -41,50 +43,49 @@ export default function MemberSquadPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-squad'] });
       queryClient.invalidateQueries({ queryKey: ['available-squads'] });
-      toast.success('Joined squad! 🤝');
+      toast.success(t('member.joinedSquad'));
     },
-    onError: () => toast.error('Failed to join squad'),
+    onError: () => toast.error(t('member.joinSquadFailed')),
   });
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveSquad(memberId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-squad'] });
-      toast.success('Left squad');
+      toast.success(t('member.leftSquad'));
       setShowLeaveConfirm(false);
     },
-    onError: () => toast.error('Failed to leave squad'),
+    onError: () => toast.error(t('member.leaveSquadFailed')),
   });
 
   if (isLoading) {
     return (
       <div className="animate-in fade-in-0 duration-200">
-        <MobilePageHeader title="Squad" />
+        <MobilePageHeader title={t('member.squad')} />
         <Section className="mb-4"><Skeleton className="h-40 rounded-xl" /></Section>
       </div>
     );
   }
 
-  // No squad — show available squads to join
   if (!squad) {
     return (
       <div className="animate-in fade-in-0 duration-200">
-        <MobilePageHeader title="Squad" />
+        <MobilePageHeader title={t('member.squad')} />
         <Section className="mb-6">
           <div className="text-center py-6">
             <Users className="h-12 w-12 mx-auto text-primary/40 mb-3" />
-            <h2 className="text-lg font-bold text-foreground">Team Up</h2>
-            <p className="text-sm text-muted-foreground mt-1">Join a squad to train together</p>
+            <h2 className="text-lg font-bold text-foreground">{t('member.teamUp')}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t('member.joinSquadHint')}</p>
           </div>
         </Section>
 
-        <Section title="Available Squads" className="mb-6">
+        <Section title={t('member.availableSquads')} className="mb-6">
           {loadingAvailable ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
             </div>
           ) : !availableSquads || availableSquads.length === 0 ? (
-            <EmptyState title="No squads available" description="Check back later for open squads" />
+            <EmptyState title={t('member.noSquadsAvailable')} description={t('member.checkBackSquads')} />
           ) : (
             <div className="space-y-3">
               {availableSquads.map(s => (
@@ -105,7 +106,7 @@ export default function MemberSquadPage() {
                     disabled={joinMutation.isPending}
                     className="flex-shrink-0"
                   >
-                    Join
+                    {t('member.joinButton')}
                   </Button>
                 </div>
               ))}
@@ -116,12 +117,10 @@ export default function MemberSquadPage() {
     );
   }
 
-  // Has squad — show details
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="My Squad" />
+      <MobilePageHeader title={t('member.mySquad')} />
 
-      {/* Squad Header */}
       <Section className="mb-4">
         <div className="rounded-xl bg-primary/5 p-5 text-center relative overflow-hidden border border-primary/10">
           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
@@ -131,13 +130,12 @@ export default function MemberSquadPage() {
           {squad.description && <p className="text-sm text-muted-foreground mt-1">{squad.description}</p>}
           <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-xs font-semibold text-foreground">
             <Zap className="h-3 w-3 text-primary" />
-            {squad.totalXp.toLocaleString()} Total XP
+            {squad.totalXp.toLocaleString()} {t('member.totalXp')}
           </div>
         </div>
       </Section>
 
-      {/* Members */}
-      <Section title={`Members (${squad.members.length}/${squad.maxMembers})`} className="mb-4">
+      <Section title={t('member.membersCount', { current: squad.members.length, max: squad.maxMembers })} className="mb-4">
         <div className="space-y-2">
           {squad.members.map((m, i) => (
             <div key={m.id} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-card border">
@@ -152,7 +150,7 @@ export default function MemberSquadPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">
-                  {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : 'Member'}
+                  {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : t('member.memberLabel')}
                 </p>
                 <p className="text-[11px] text-muted-foreground capitalize">{m.role}</p>
               </div>
@@ -162,7 +160,6 @@ export default function MemberSquadPage() {
         </div>
       </Section>
 
-      {/* Leave */}
       <Section className="mb-8">
         <Button
           variant="outline"
@@ -170,23 +167,23 @@ export default function MemberSquadPage() {
           onClick={() => setShowLeaveConfirm(true)}
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Leave Squad
+          {t('member.leaveSquad')}
         </Button>
       </Section>
 
       <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave Squad?</AlertDialogTitle>
-            <AlertDialogDescription>You'll need to rejoin from the available squads list.</AlertDialogDescription>
+            <AlertDialogTitle>{t('member.leaveSquadConfirm')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('member.leaveSquadDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => leaveMutation.mutate()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Leave
+              {t('member.leaveButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -13,19 +13,21 @@ import { Button } from '@/components/ui/button';
 import { BookOpen } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings } from '../api/services';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 
-const STATUS_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'past', label: 'Past' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
-
 export default function MemberBookingsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { memberId } = useMemberSession();
   const [filter, setFilter] = useState('all');
+
+  const STATUS_FILTERS = [
+    { value: 'all', label: t('member.filterAll') },
+    { value: 'upcoming', label: t('member.filterUpcoming') },
+    { value: 'past', label: t('member.filterPast') },
+    { value: 'cancelled', label: t('member.filterCancelled') },
+  ];
 
   const { data: bookings, isLoading, isError, refetch } = useQuery({
     queryKey: ['member-bookings', memberId],
@@ -44,7 +46,7 @@ export default function MemberBookingsPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="My Bookings" subtitle="Your upcoming & past bookings" />
+      <MobilePageHeader title={t('member.myBookings')} subtitle={t('member.bookingsSubtitle')} />
 
       <div className="px-4 mb-4">
         <FilterChips options={STATUS_FILTERS} selected={filter} onChange={setFilter} />
@@ -60,9 +62,9 @@ export default function MemberBookingsPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-10 w-10" />}
-            title={filter !== 'all' ? 'No bookings' : 'No bookings yet'}
-            description={filter !== 'all' ? 'Try a different filter' : 'Browse the schedule to book your first class'}
-            action={filter === 'all' ? <Button size="sm" onClick={() => navigate('/member/schedule')}>Browse Schedule</Button> : undefined}
+            title={filter !== 'all' ? t('member.noBookings') : t('member.noBookingsYet')}
+            description={filter !== 'all' ? t('member.tryDifferentFilter') : t('member.bookFirstClass')}
+            action={filter === 'all' ? <Button size="sm" onClick={() => navigate('/member/schedule')}>{t('member.browseSchedule')}</Button> : undefined}
           />
         ) : (
           <div className="space-y-2">

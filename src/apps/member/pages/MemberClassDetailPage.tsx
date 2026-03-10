@@ -15,10 +15,12 @@ import { ArrowLeft, Clock, MapPin, User, Users } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { fetchScheduleById, createBooking } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 
 export default function MemberClassDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -36,15 +38,15 @@ export default function MemberClassDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['member-schedule'] });
-      toast.success('Class booked successfully!');
+      toast.success(t('member.classBookedSuccess'));
       navigate('/member/bookings');
     },
-    onError: () => toast.error('Failed to book class'),
+    onError: () => toast.error(t('member.classBookFailed')),
   });
 
   const BackButton = () => (
     <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-      <ArrowLeft className="h-4 w-4" /> Back
+      <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
 
@@ -65,7 +67,7 @@ export default function MemberClassDetailPage() {
   if (!cls) return (
     <div className="animate-in fade-in-0 duration-200">
       <div className="px-4 pt-12 pb-2"><BackButton /></div>
-      <Section><p className="text-sm text-muted-foreground text-center py-8">Class not found</p></Section>
+      <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.classNotFound')}</p></Section>
     </div>
   );
 
@@ -105,22 +107,22 @@ export default function MemberClassDetailPage() {
         </div>
       </Section>
 
-      <Section title="Availability" className="mb-6">
+      <Section title={t('member.availability')} className="mb-6">
         <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 text-sm">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{cls.checkedIn} / {cls.capacity}</span>
             </div>
-            <span className="text-xs text-muted-foreground">{capacityPct}% full</span>
+            <span className="text-xs text-muted-foreground">{t('member.percentFull', { pct: capacityPct })}</span>
           </div>
           <Progress value={capacityPct} className="h-2" />
         </div>
       </Section>
 
-      <Section title="Cancellation Policy" className="mb-8">
+      <Section title={t('member.cancellationPolicy')} className="mb-8">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Free cancellation up to 4 hours before class. Late cancellations may count as a used session.
+          {t('member.cancellationPolicyText')}
         </p>
       </Section>
 
@@ -131,25 +133,25 @@ export default function MemberClassDetailPage() {
           disabled={!memberId || bookMutation.isPending}
           onClick={() => setConfirmOpen(true)}
         >
-          {bookMutation.isPending ? 'Booking...' : isFull ? 'Join Waitlist' : 'Book This Class'}
+          {bookMutation.isPending ? t('member.bookingInProgress') : isFull ? t('member.joinWaitlist') : t('member.bookThisClass')}
         </Button>
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{isFull ? 'Join Waitlist?' : 'Confirm Booking'}</AlertDialogTitle>
+            <AlertDialogTitle>{isFull ? t('member.confirmJoinWaitlist') : t('member.confirmBooking')}</AlertDialogTitle>
             <AlertDialogDescription>
               {isFull
-                ? `You'll be added to the waitlist for ${cls.className}. We'll notify you if a spot opens up.`
-                : `Book ${cls.className} on ${format(parseISO(cls.scheduledDate), 'EEE, d MMM')} at ${cls.startTime.slice(0, 5)}?`
+                ? t('member.waitlistDescription', { className: cls.className })
+                : t('member.bookingConfirmDescription', { className: cls.className, date: format(parseISO(cls.scheduledDate), 'EEE, d MMM'), time: cls.startTime.slice(0, 5) })
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => bookMutation.mutate()}>
-              {isFull ? 'Join Waitlist' : 'Book Now'}
+              {isFull ? t('member.joinWaitlist') : t('member.bookNow')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

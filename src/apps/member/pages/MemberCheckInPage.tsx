@@ -11,9 +11,11 @@ import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
+import { useTranslation } from 'react-i18next';
 import jsQR from 'jsqr';
 
 export default function MemberCheckInPage() {
+  const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const [memberCode, setMemberCode] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -32,12 +34,10 @@ export default function MemberCheckInPage() {
     enabled: !!memberId,
   });
 
-
   const handleCheckIn = useCallback(async (code: string) => {
     if (!code.trim() || !memberId) return;
     setIsChecking(true);
     try {
-      // Insert attendance record
       const { error } = await supabase
         .from('member_attendance')
         .insert({
@@ -49,7 +49,6 @@ export default function MemberCheckInPage() {
 
       if (error) throw error;
 
-      // Fire gamification event (non-blocking, idempotent)
       fireGamificationEvent({
         event_type: 'check_in',
         member_id: memberId,
@@ -63,11 +62,11 @@ export default function MemberCheckInPage() {
       stopScanning();
       setShowCelebration(true);
     } catch {
-      toast.error('Failed to check in. Please try again.');
+      toast.error(t('member.checkinFailed'));
     } finally {
       setIsChecking(false);
     }
-  }, [memberId, queryClient]);
+  }, [memberId, queryClient, t]);
 
   const stopScanning = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -114,20 +113,20 @@ export default function MemberCheckInPage() {
       setScanning(true);
       rafRef.current = requestAnimationFrame(scanFrame);
     } catch {
-      setCameraError('Camera access denied. Use the manual input below.');
+      setCameraError(t('member.cameraAccessDenied'));
     }
-  }, [scanFrame]);
+  }, [scanFrame, t]);
 
   useEffect(() => () => stopScanning(), [stopScanning]);
 
   return (
     <div className="animate-in fade-in-0 duration-200">
       <MobilePageHeader
-        title="Check-in"
+        title={t('member.checkinTitle')}
         subtitle={
           profile?.currentStreak
-            ? `Day ${profile.currentStreak} streak! Keep it going 🔥`
-            : 'Scan QR or enter code to earn XP'
+            ? t('member.streakDay', { n: profile.currentStreak })
+            : t('member.scanQrHint')
         }
       />
 
@@ -136,9 +135,7 @@ export default function MemberCheckInPage() {
           {scanning ? (
             <div className="relative w-full max-w-xs aspect-square rounded-xl overflow-hidden border-2 border-primary bg-foreground/5">
               <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
-              {/* Scan line */}
               <div className="absolute left-2 right-2 h-0.5 bg-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.5)] animate-scan-line pointer-events-none" />
-              {/* Corner markers */}
               {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((pos, i) => (
                 <div
                   key={i}
@@ -166,7 +163,7 @@ export default function MemberCheckInPage() {
                 onClick={stopScanning}
               >
                 <CameraOff className="h-4 w-4 mr-1.5" />
-                Stop
+                {t('member.stopCamera')}
               </Button>
             </div>
           ) : (
@@ -177,7 +174,7 @@ export default function MemberCheckInPage() {
               >
                 <div className="flex flex-col items-center gap-1.5 text-primary-foreground">
                   <Camera className="h-10 w-10 group-hover:animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Scan QR</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{t('member.scanQr')}</span>
                 </div>
               </button>
               {cameraError && (
@@ -188,7 +185,7 @@ export default function MemberCheckInPage() {
 
           <div className="flex items-center gap-3 w-full max-w-xs">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">or type code</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('member.orTypeCode')}</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
@@ -196,7 +193,7 @@ export default function MemberCheckInPage() {
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Member code..."
+                placeholder={t('member.memberCodePlaceholder')}
                 value={memberCode}
                 onChange={e => setMemberCode(e.target.value)}
                 className="pl-9 text-center font-mono text-lg tracking-wider"
@@ -210,7 +207,7 @@ export default function MemberCheckInPage() {
               disabled={isChecking || !memberCode.trim()}
             >
               <Zap className="h-5 w-5" />
-              {isChecking ? 'Checking in...' : 'Check In & Earn XP'}
+              {isChecking ? t('member.checkingIn') : t('member.checkInEarnXp')}
             </Button>
           </div>
         </div>

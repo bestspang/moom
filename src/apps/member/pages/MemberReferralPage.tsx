@@ -10,9 +10,11 @@ import { useState } from 'react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchOrCreateReferralCode, fetchReferralStats } from '../features/referral/api';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 
 export default function MemberReferralPage() {
+  const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const [copied, setCopied] = useState(false);
 
@@ -35,29 +37,28 @@ export default function MemberReferralPage() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Join MOOM!',
-          text: `Use my code ${code} to sign up and we both get 200 Coin! 🎉`,
+          title: t('member.shareTitle'),
+          text: t('member.shareText', { code }),
           url: shareUrl,
         });
       } else {
         await navigator.clipboard.writeText(shareUrl);
         setCopied(true);
-        toast.success('Link copied! Share it with friends 🎉');
+        toast.success(t('member.linkCopied'));
         setTimeout(() => setCopied(false), 2000);
       }
     } catch {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success('Link copied!');
+      toast.success(t('member.linkCopiedShort'));
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-      <MobilePageHeader title="Invite Friends" subtitle="Share & earn rewards together!" />
+      <MobilePageHeader title={t('member.inviteFriendsTitle')} subtitle={t('member.inviteFriendsSubtitle')} />
 
-      {/* Referral Code Card */}
       <Section className="mb-4">
         <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-5 text-center">
           <div className="flex justify-center mb-3">
@@ -65,29 +66,26 @@ export default function MemberReferralPage() {
               <Gift className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-2">Your referral code</p>
+          <p className="text-sm text-muted-foreground mb-2">{t('member.yourReferralCode')}</p>
           {loadingCode ? (
             <Skeleton className="h-10 w-40 mx-auto mb-3" />
           ) : (
             <p className="text-2xl font-black tracking-widest text-foreground mb-3">{code}</p>
           )}
-          <p className="text-xs text-muted-foreground mb-4">
-            Both you and your friend get <span className="font-bold text-primary">200 Coin</span> when they check in! 🎉
-          </p>
+          <p className="text-xs text-muted-foreground mb-4" dangerouslySetInnerHTML={{ __html: t('member.referralRewardText') }} />
           <Button onClick={handleCopy} className="w-full" size="sm">
             {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Share2 className="h-4 w-4 mr-1.5" />}
-            {copied ? 'Copied!' : 'Share Invite Link'}
+            {copied ? t('member.copied') : t('member.shareInviteLink')}
           </Button>
         </div>
       </Section>
 
-      {/* How it works */}
-      <Section title="How It Works" className="mb-4">
+      <Section title={t('member.howItWorks')} className="mb-4">
         <div className="space-y-3">
           {[
-            { step: 1, text: 'Share your code or link with friends', icon: Share2 },
-            { step: 2, text: 'They sign up using your code', icon: Users },
-            { step: 3, text: 'You both earn 200 Coin on their first check-in!', icon: Trophy },
+            { step: 1, text: t('member.howStep1'), icon: Share2 },
+            { step: 2, text: t('member.howStep2'), icon: Users },
+            { step: 3, text: t('member.howStep3'), icon: Trophy },
           ].map(({ step, text, icon: Icon }) => (
             <div key={step} className="flex items-center gap-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold flex-shrink-0">
@@ -102,8 +100,7 @@ export default function MemberReferralPage() {
         </div>
       </Section>
 
-      {/* Stats */}
-      <Section title="Your Referral Stats" className="mb-4">
+      <Section title={t('member.yourReferralStats')} className="mb-4">
         {loadingStats ? (
           <div className="grid grid-cols-3 gap-3">
             <Skeleton className="h-20 rounded-lg" />
@@ -112,21 +109,20 @@ export default function MemberReferralPage() {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
-            <SummaryCard label="Invited" value={String(stats?.totalInvited ?? 0)} subtitle="friends" />
-            <SummaryCard label="Joined" value={String(stats?.totalCompleted ?? 0)} subtitle="completed" />
-            <SummaryCard label="Earned" value={String(stats?.totalPointsEarned ?? 0)} subtitle="Coin" />
+            <SummaryCard label={t('member.invited')} value={String(stats?.totalInvited ?? 0)} subtitle={t('member.friends')} />
+            <SummaryCard label={t('member.joined')} value={String(stats?.totalCompleted ?? 0)} subtitle={t('member.completed')} />
+            <SummaryCard label={t('member.coinEarnedLabel')} value={String(stats?.totalPointsEarned ?? 0)} subtitle={t('member.coinUnit')} />
           </div>
         )}
       </Section>
 
-      {/* Referral History */}
-      <Section title="Referral History" className="mb-6">
+      <Section title={t('member.referralHistory')} className="mb-6">
         {loadingStats ? (
           <Skeleton className="h-16 rounded-lg" />
         ) : !stats?.referrals?.filter(r => r.referredMemberId).length ? (
           <EmptyState
-            title="No referrals yet"
-            description="Share your code and invite friends to join MOOM!"
+            title={t('member.noReferrals')}
+            description={t('member.noReferralsHint')}
           />
         ) : (
           <div className="space-y-2">
@@ -134,14 +130,14 @@ export default function MemberReferralPage() {
               <div key={ref.id} className="flex items-center justify-between rounded-lg border bg-card p-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {ref.status === 'completed' ? '✅ Joined & checked in' : '⏳ Signed up'}
+                    {ref.status === 'completed' ? t('member.referralCompleted') : t('member.referralPending')}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(ref.createdAt), 'd MMM yyyy')}
                   </p>
                 </div>
                 {ref.rewardGranted && (
-                  <span className="text-xs font-bold text-primary">+200 Coin</span>
+                  <span className="text-xs font-bold text-primary">{t('member.referralReward')}</span>
                 )}
               </div>
             ))}

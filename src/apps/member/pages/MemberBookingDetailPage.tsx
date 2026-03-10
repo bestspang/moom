@@ -16,9 +16,11 @@ import { ArrowLeft, Clock, MapPin, User } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { fetchBookingById, cancelBooking } from '../api/services';
 
 export default function MemberBookingDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -36,15 +38,15 @@ export default function MemberBookingDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
-      toast.success('Booking cancelled');
+      toast.success(t('member.bookingCancelled'));
       navigate('/member/bookings');
     },
-    onError: () => toast.error('Failed to cancel booking'),
+    onError: () => toast.error(t('member.bookingCancelFailed')),
   });
 
   const BackButton = () => (
     <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-      <ArrowLeft className="h-4 w-4" /> Back
+      <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
 
@@ -65,7 +67,7 @@ export default function MemberBookingDetailPage() {
   if (!booking) return (
     <div className="animate-in fade-in-0 duration-200">
       <div className="px-4 pt-12 pb-2"><BackButton /></div>
-      <Section><p className="text-sm text-muted-foreground text-center py-8">Booking not found</p></Section>
+      <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.bookingNotFound')}</p></Section>
     </div>
   );
 
@@ -79,7 +81,7 @@ export default function MemberBookingDetailPage() {
       <Section className="mb-6">
         <div className="rounded-lg bg-card p-5 shadow-sm border border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-muted-foreground">Booking</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('member.bookingLabel')}</span>
             <MobileStatusBadge status={booking.status} />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-4">{schedule.className}</h1>
@@ -99,23 +101,23 @@ export default function MemberBookingDetailPage() {
         </div>
       </Section>
 
-      <Section title="Booking Details" className="mb-6">
+      <Section title={t('member.bookingDetails')} className="mb-6">
         <div className="rounded-lg bg-card p-4 shadow-sm border border-border space-y-2">
           {booking.bookedAt && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Booked at</span>
+              <span className="text-muted-foreground">{t('member.bookedAt')}</span>
               <span className="text-foreground">{format(parseISO(booking.bookedAt), 'PPp')}</span>
             </div>
           )}
           {booking.cancelledAt && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Cancelled at</span>
+              <span className="text-muted-foreground">{t('member.cancelledAt')}</span>
               <span className="text-foreground">{format(parseISO(booking.cancelledAt), 'PPp')}</span>
             </div>
           )}
           {booking.cancelReason && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Reason</span>
+              <span className="text-muted-foreground">{t('member.reason')}</span>
               <span className="text-foreground">{booking.cancelReason}</span>
             </div>
           )}
@@ -130,7 +132,7 @@ export default function MemberBookingDetailPage() {
             onClick={() => setCancelOpen(true)}
             disabled={cancelMutation.isPending}
           >
-            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
+            {cancelMutation.isPending ? t('member.cancellingBooking') : t('member.cancelBooking')}
           </Button>
         </div>
       )}
@@ -138,26 +140,26 @@ export default function MemberBookingDetailPage() {
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogTitle>{t('member.cancelBooking')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel your booking for {schedule.className}?
+              {t('member.cancelBookingConfirm', { className: schedule.className })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="px-6 pb-2">
             <Textarea
-              placeholder="Reason for cancellation (optional)"
+              placeholder={t('member.cancelReasonPlaceholder')}
               value={cancelReason}
               onChange={e => setCancelReason(e.target.value)}
               rows={2}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogCancel>{t('member.keepBooking')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => cancelMutation.mutate()}
             >
-              Cancel Booking
+              {t('member.cancelBooking')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
