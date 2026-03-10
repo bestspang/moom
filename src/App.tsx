@@ -184,6 +184,7 @@ const App = () => (
                 {/* ===== Trainer Surface (mobile-first) ===== */}
                 <Route path="/trainer" element={<TrainerLayout />}>
                   <Route index element={<TrainerHomePage />} />
+                  <Route path="impact" element={<TrainerImpactPage />} />
                   <Route path="schedule" element={<TrainerSchedulePage />} />
                   <Route path="roster" element={<TrainerRosterPage />} />
                   <Route path="workouts" element={<TrainerWorkoutsPage />} />

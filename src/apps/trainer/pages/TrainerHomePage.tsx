@@ -88,7 +88,9 @@ export default function TrainerHomePage() {
       </Section>
 
       <Section className="mb-4">
-        {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
+        <button onClick={() => navigate('/trainer/impact')} className="w-full text-left">
+          {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
+        </button>
       </Section>
 
       <Section title={t('trainer.todaysSchedule')} className="mb-4">
