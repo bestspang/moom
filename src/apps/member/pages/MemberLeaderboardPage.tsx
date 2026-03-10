@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { LeaderboardEntryRow } from '@/apps/member/features/momentum/leaderboard/LeaderboardEntryRow';
 import { LeaderboardSkeleton, EmptyLeaderboard } from '@/apps/member/features/momentum/leaderboard/LeaderboardSkeleton';
+import { FilterChips } from '@/apps/shared/components/FilterChips';
 import { Crown, Medal, Award } from 'lucide-react';
 
 const RANK_ICONS = [Crown, Medal, Award] as const;
