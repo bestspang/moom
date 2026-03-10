@@ -2,7 +2,7 @@ import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
