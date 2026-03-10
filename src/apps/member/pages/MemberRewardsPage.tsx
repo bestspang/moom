@@ -11,16 +11,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Gift, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 
-const EVENT_LABELS: Record<string, string> = {
-  checkin: 'Check-in',
-  quest_complete: 'Quest',
-  streak_bonus: 'Streak Bonus',
-  challenge_complete: 'Challenge',
-  referral: 'Referral',
-  purchase: 'Purchase',
-  badge_earned: 'Badge Earned',
-  rule_reward: 'Activity Reward',
-  redemption: 'Redemption',
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  checkin: 'member.eventCheckin',
+  quest_complete: 'member.eventQuest',
+  streak_bonus: 'member.eventStreakBonus',
+  challenge_complete: 'member.eventChallenge',
+  referral: 'member.eventReferral',
+  purchase: 'member.eventPurchase',
+  badge_earned: 'member.eventBadgeEarned',
+  rule_reward: 'member.eventActivityReward',
+  redemption: 'member.eventRedemption',
 };
 
 export default function MemberRewardsPage() {
