@@ -798,13 +798,13 @@ export interface FeedReaction {
 export async function fetchSquadFeedReactions(auditLogIds: string[]): Promise<Map<string, FeedReaction>> {
   if (!auditLogIds.length) return new Map();
 
-  const { data, error } = await supabase.rpc('get_squad_feed_reactions', {
+  const { data, error } = await (supabase.rpc as any)('get_squad_feed_reactions', {
     p_audit_log_ids: auditLogIds,
   });
   if (error) throw error;
 
   const map = new Map<string, FeedReaction>();
-  for (const r of (data ?? [])) {
+  for (const r of (data ?? []) as any[]) {
     map.set(r.audit_log_id, {
       count: Number(r.reaction_count),
       reactedByMe: !!r.reacted_by_me,
@@ -814,7 +814,7 @@ export async function fetchSquadFeedReactions(auditLogIds: string[]): Promise<Ma
 }
 
 export async function toggleSquadFeedReaction(auditLogId: string): Promise<FeedReaction> {
-  const { data, error } = await supabase.rpc('toggle_squad_feed_reaction', {
+  const { data, error } = await (supabase.rpc as any)('toggle_squad_feed_reaction', {
     p_audit_log_id: auditLogId,
   });
   if (error) throw error;
