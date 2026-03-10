@@ -307,6 +307,15 @@ export default function CheckinDisplay() {
   // ── Kiosk display ──
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 select-none relative">
+      {/* Celebration overlay */}
+      {celebration && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 animate-in fade-in duration-300">
+          <CheckCircle2 className="h-24 w-24 text-green-500 mb-6 animate-in zoom-in duration-500" />
+          <h2 className="text-3xl font-bold text-foreground mb-2">Check-in สำเร็จ! ✨</h2>
+          <p className="text-xl text-muted-foreground">{celebration.memberName}</p>
+        </div>
+      )}
+
       {/* Settings gear */}
       <button
         onClick={() => setShowSettings(true)}
