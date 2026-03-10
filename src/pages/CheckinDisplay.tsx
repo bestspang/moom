@@ -65,6 +65,7 @@ function LiveClock() {
 
 export default function CheckinDisplay() {
   const { t } = useLanguage();
+  const { user, loading: authLoading, signIn, accessLevel } = useAuth();
   const { data: locations = [] } = useLocations();
   const generateQR = useGenerateQRToken();
 
@@ -75,7 +76,21 @@ export default function CheckinDisplay() {
   const [pulse, setPulse] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const locationName = locations.find((l) => l.id === locationId)?.name || '';
+
+  // Check if user has operator-level access
+  const levelOrder: Record<string, number> = {
+    level_1_minimum: 1,
+    level_2_operator: 2,
+    level_3_manager: 3,
+    level_4_master: 4,
+  };
+  const hasAccess = user && accessLevel && (levelOrder[accessLevel] ?? 0) >= 2;
 
   // Determine if location selector should show
   const needsLocation = !locationId || showSettings;
