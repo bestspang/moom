@@ -371,7 +371,7 @@ const MemberLogin: React.FC = () => {
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setPhoneOtpSent(false); setPhoneOtpCode(''); }}>
-                      {t('auth.useDifferentEmail').replace('email', 'number')}
+                      {t('auth.useDifferentNumber')}
                     </Button>
                   </div>
                 </div>

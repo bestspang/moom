@@ -120,7 +120,7 @@ const MemberSignup: React.FC = () => {
       return;
     }
     if (!phoneFirstName.trim()) {
-      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.firstName') + ' is required' });
+      toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('validation.required') });
       return;
     }
     setIsPhoneLoading(true);
