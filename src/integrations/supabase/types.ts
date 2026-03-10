@@ -4191,6 +4191,7 @@ export type Database = {
         Args: { p_limit?: number; p_squad_id: string }
         Returns: {
           action_key: string
+          audit_log_id: string
           avatar_url: string
           created_at: string
           event_type: string
