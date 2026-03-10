@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TierBadge } from '../features/momentum/TierBadge';
 import { RewardDropCard } from '../features/momentum/RewardDropCard';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Gift, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -24,6 +25,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 export default function MemberRewardsPage() {
   const { memberId } = useMemberSession();
+  const { t } = useLanguage();
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],
@@ -52,7 +54,7 @@ export default function MemberRewardsPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Reward Wallet" />
+      <MobilePageHeader title={t('member.rewardWallet')} />
 
       {/* Balance card */}
       <Section className="mb-6">
@@ -65,11 +67,11 @@ export default function MemberRewardsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                    Momentum Coin
+                    {t('member.momentumCoin')}
                   </p>
                   <p className="text-3xl font-bold text-foreground">
                     {profile.availablePoints.toLocaleString()}
-                    <span className="text-sm font-medium text-muted-foreground ml-1">Coin</span>
+                    <span className="text-sm font-medium text-muted-foreground ml-1">{t('member.coinUnit')}</span>
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -83,12 +85,12 @@ export default function MemberRewardsPage() {
             </div>
           </div>
         ) : (
-          <EmptyState title="No momentum profile" description="Start checking in to earn rewards" />
+          <EmptyState title={t('member.noPointsYet')} description={t('member.noPointsHint')} />
         )}
       </Section>
 
       {/* Redeemable rewards */}
-      <Section title="Redeemable Rewards" className="mb-6">
+      <Section title={t('member.redeemableRewards')} className="mb-6">
         {loadingRewards ? (
           <div className="grid grid-cols-2 gap-3">
             {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-52 rounded-xl" />)}
@@ -96,9 +98,9 @@ export default function MemberRewardsPage() {
         ) : !rewards || rewards.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
             <Gift className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm font-medium text-foreground">No Rewards Available</p>
+            <p className="text-sm font-medium text-foreground">{t('member.noRewardsAvailable')}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Check back soon for exclusive merchandise and perks you can unlock with Coin.
+              {t('member.noRewardsHint')}
             </p>
           </div>
         ) : (
@@ -118,13 +120,13 @@ export default function MemberRewardsPage() {
       </Section>
 
       {/* Points History */}
-      <Section title="Points History" className="mb-8">
+      <Section title={t('member.pointsHistory')} className="mb-8">
         {loadingHistory ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
           </div>
         ) : !history || history.length === 0 ? (
-          <EmptyState title="No points yet" description="Earn Coin by checking in and completing challenges" />
+          <EmptyState title={t('member.noPointsYet')} description={t('member.noPointsHint')} />
         ) : (
           <div className="space-y-1">
             {history.map(entry => (
@@ -143,7 +145,7 @@ export default function MemberRewardsPage() {
                   </div>
                 </div>
                 <span className={`text-sm font-semibold ${entry.delta >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                  {entry.delta >= 0 ? '+' : ''}{entry.delta} Coin
+                  {entry.delta >= 0 ? '+' : ''}{entry.delta} {t('member.coinUnit')}
                 </span>
               </div>
             ))}

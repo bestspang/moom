@@ -57,8 +57,10 @@ const DiagnosticsAuthPage: React.FC = () => {
           <Row label="Authenticated" value={user ? 'Yes' : 'No'} />
           <Row label="User ID" value={user?.id} />
           <Row label="Email" value={user?.email} />
+          <Row label="Phone" value={user?.phone} />
           <Row label="Provider" value={user?.app_metadata?.provider} />
           <Row label="Email verified" value={user?.email_confirmed_at ? 'Yes' : 'No'} />
+          <Row label="Phone verified" value={user?.phone_confirmed_at ? 'Yes' : 'No'} />
           <Row label="Session expires" value={session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : null} />
         </CardContent>
       </Card>

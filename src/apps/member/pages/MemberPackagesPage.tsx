@@ -9,7 +9,7 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Package, Check, Zap, Coins } from 'lucide-react';
+import { Package, Check, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyPackages, fetchAvailablePackages } from '../api/services';
@@ -35,7 +35,6 @@ export default function MemberPackagesPage() {
     enabled: isAuthenticated,
   });
 
-  // Gamification nudge — fetch package_purchase rule
   const { data: pkgRule } = useQuery({
     queryKey: ['gamification-rule-package'],
     queryFn: async () => {
@@ -52,7 +51,7 @@ export default function MemberPackagesPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Packages" subtitle="Active & available packages" />
+      <MobilePageHeader title={t('member.packages')} subtitle={t('member.packagesSubtitle')} />
 
       {/* Gamification nudge */}
       {pkgRule && (
@@ -71,16 +70,16 @@ export default function MemberPackagesPage() {
       {/* Tab toggle */}
       <div className="px-4 mb-4">
         <div className="flex rounded-lg bg-muted p-1">
-          {(['my', 'browse'] as const).map(t => (
+          {(['my', 'browse'] as const).map(tabKey => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={cn(
                 'flex-1 rounded-md py-2 text-sm font-medium transition-all',
-                tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                tab === tabKey ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              {t === 'my' ? 'My Packages' : 'Browse'}
+              {tabKey === 'my' ? t('member.myPackages') : t('member.browse')}
             </button>
           ))}
         </div>
@@ -95,9 +94,9 @@ export default function MemberPackagesPage() {
           ) : !myPackages || myPackages.length === 0 ? (
             <EmptyState
               icon={<Package className="h-10 w-10" />}
-              title="No packages"
-              description="Purchase a package to start booking classes"
-              action={<Button size="sm" onClick={() => setTab('browse')}>Browse Packages</Button>}
+              title={t('member.noPackages')}
+              description={t('member.noPackagesHint')}
+              action={<Button size="sm" onClick={() => setTab('browse')}>{t('member.browsePackages')}</Button>}
             />
           ) : (
             <div className="space-y-2">
@@ -107,7 +106,7 @@ export default function MemberPackagesPage() {
                   title={pkg.packageName}
                   subtitle={
                     pkg.sessionsRemaining != null
-                      ? `${pkg.sessionsRemaining}/${pkg.sessionsTotal ?? '∞'} sessions remaining`
+                      ? `${pkg.sessionsRemaining}/${pkg.sessionsTotal ?? '∞'} ${t('member.sessionsRemaining').replace('{{n}} ', '')}`
                       : pkg.expiryDate
                         ? `Expires ${format(parseISO(pkg.expiryDate), 'd MMM yyyy')}`
                         : undefined
@@ -133,7 +132,7 @@ export default function MemberPackagesPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-base font-semibold text-foreground">{pkg.nameEn}</h3>
                         {pkg.isPopular && (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Popular</span>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{t('member.popular')}</span>
                         )}
                       </div>
                       {pkg.descriptionEn && <p className="text-xs text-muted-foreground mt-0.5">{pkg.descriptionEn}</p>}
@@ -144,14 +143,14 @@ export default function MemberPackagesPage() {
                   <ul className="space-y-1 mb-3">
                     {pkg.sessions && (
                       <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-primary flex-shrink-0" />{pkg.sessions} sessions
+                        <Check className="h-3 w-3 text-primary flex-shrink-0" />{t('member.sessions').replace('{{n}}', String(pkg.sessions))}
                       </li>
                     )}
                     <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Check className="h-3 w-3 text-primary flex-shrink-0" />{pkg.termDays} day term
+                      <Check className="h-3 w-3 text-primary flex-shrink-0" />{t('member.dayTerm').replace('{{n}}', String(pkg.termDays))}
                     </li>
                   </ul>
-                  <Button size="sm" className="w-full" onClick={() => navigate(`/member/packages/${pkg.id}/purchase`)}>Purchase</Button>
+                  <Button size="sm" className="w-full" onClick={() => navigate(`/member/packages/${pkg.id}/purchase`)}>{t('member.purchase')}</Button>
                 </div>
               ))}
             </div>

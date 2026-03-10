@@ -11,6 +11,7 @@ import { Sparkles, Zap, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CheckInCelebrationProps {
   open: boolean;
@@ -61,6 +62,7 @@ function useCheckInRule() {
 
 export function CheckInCelebration({ open, onClose, profile }: CheckInCelebrationProps) {
   const [autoDismiss, setAutoDismiss] = useState(0);
+  const { t } = useLanguage();
   const { data: rule } = useCheckInRule();
   const xpTarget = rule?.xp_value ?? 100;
   const rpTarget = rule?.points_value ?? 10;
@@ -69,7 +71,6 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
 
   const memberId = profile?.memberId;
 
-  // Fetch active daily quests for quest progress section
   const { data: quests } = useQuery({
     queryKey: ['my-quests', memberId],
     queryFn: () => fetchMyQuests(memberId!),
@@ -80,7 +81,6 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
     (q: QuestInstance) => q.status === 'in_progress' && q.template?.questPeriod === 'daily'
   );
 
-  // Auto-dismiss in ~10s (1% every 100ms)
   useEffect(() => {
     if (!open) { setAutoDismiss(0); return; }
     const interval = setInterval(() => {
@@ -138,7 +138,7 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
               +{xpDisplay} XP
             </p>
             <p className="text-base font-bold mt-1.5 text-primary">
-              +{rpDisplay} Coin earned 🔥
+              +{rpDisplay} {t('member.coinEarned')}
             </p>
           </div>
         </div>
@@ -158,18 +158,18 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
         {activeQuests.length > 0 && (
           <div className="px-6 py-3 border-t border-border">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Target className="h-3 w-3 text-primary" /> Quest Progress
+              <Target className="h-3 w-3 text-primary" /> {t('member.questProgress')}
             </p>
             <div className="space-y-2">
               {activeQuests.slice(0, 2).map((q: QuestInstance) => {
-                const t = q.template;
-                if (!t) return null;
-                const pct = Math.min(100, Math.round((q.progressValue / t.goalValue) * 100));
+                const tmpl = q.template;
+                if (!tmpl) return null;
+                const pct = Math.min(100, Math.round((q.progressValue / tmpl.goalValue) * 100));
                 return (
                   <div key={q.id}>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-foreground font-semibold truncate">{t.nameEn}</span>
-                      <span className="text-muted-foreground ml-2 flex-shrink-0 tabular-nums">{q.progressValue}/{t.goalValue}</span>
+                      <span className="text-foreground font-semibold truncate">{tmpl.nameEn}</span>
+                      <span className="text-muted-foreground ml-2 flex-shrink-0 tabular-nums">{q.progressValue}/{tmpl.goalValue}</span>
                     </div>
                     <Progress value={pct} className="h-2" />
                   </div>
@@ -179,7 +179,7 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
           </div>
         )}
 
-        {/* Social proof - squad members training today */}
+        {/* Social proof */}
         {profile.memberId && (
           <SocialProofCheckins memberId={profile.memberId} />
         )}
@@ -188,7 +188,7 @@ export function CheckInCelebration({ open, onClose, profile }: CheckInCelebratio
         <div className="px-6 pb-6 pt-2 space-y-2">
           <Button onClick={onClose} className="w-full font-bold text-base" size="lg">
             <Sparkles className="h-4 w-4 mr-1.5" />
-            Keep Going 🚀
+            {t('member.keepGoing')}
           </Button>
           <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
             <div

@@ -5,6 +5,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Trophy, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,7 @@ function getTierStyle(tier?: string) {
 
 export default function MemberBadgeGalleryPage() {
   const { memberId } = useMemberSession();
+  const { t } = useLanguage();
 
   const { data: badges, isLoading } = useQuery({
     queryKey: ['my-badges', memberId],
@@ -54,7 +56,6 @@ export default function MemberBadgeGalleryPage() {
     enabled: !!memberId,
   });
 
-  // Fetch ALL badges for locked section
   const { data: allBadges } = useQuery({
     queryKey: ['all-badges'],
     queryFn: async () => {
@@ -75,7 +76,7 @@ export default function MemberBadgeGalleryPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Badge Collection" subtitle="Your achievements and milestones" />
+      <MobilePageHeader title={t('member.badgeCollection')} subtitle={t('member.badgeSubtitle')} />
 
       {/* Collection counter */}
       {!isLoading && total > 0 && (
@@ -83,21 +84,21 @@ export default function MemberBadgeGalleryPage() {
           <div className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 py-2.5">
             <Trophy className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold text-foreground">{earned}</span>
-            <span className="text-sm text-muted-foreground">/ {total} Collected</span>
+            <span className="text-sm text-muted-foreground">/ {total} {t('member.collected')}</span>
           </div>
         </div>
       )}
 
       {/* Earned Badges */}
-      <Section title={earned > 0 ? 'Earned' : undefined}>
+      <Section title={earned > 0 ? t('member.earned') : undefined}>
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)}
           </div>
         ) : !badges || badges.length === 0 ? (
           <EmptyState
-            title="No badges yet"
-            description="Keep checking in and completing challenges to earn badges"
+            title={t('member.noBadgesYet')}
+            description={t('member.noBadgesHint')}
           />
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -158,7 +159,7 @@ export default function MemberBadgeGalleryPage() {
 
       {/* Locked Badges */}
       {lockedBadges.length > 0 && (
-        <Section title="Locked" className="mt-4">
+        <Section title={t('member.locked')} className="mt-4">
           <div className="grid grid-cols-2 gap-3">
             {lockedBadges.map((badge) => {
               const style = getTierStyle(badge.tier);

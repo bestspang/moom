@@ -2,6 +2,7 @@ import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
@@ -21,6 +22,7 @@ const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_
 export default function MemberProfilePage() {
   const { signOut, allRoles } = useAuth();
   const { firstName, lastName, email, memberId } = useMemberSession();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
 
@@ -37,20 +39,20 @@ export default function MemberProfilePage() {
   });
 
   const menuItems = [
-    { label: 'Edit Profile', icon: User, path: '/member/profile/edit' },
-    { label: 'Invite Friends', icon: Gift, path: '/member/referral' },
-    { label: 'Attendance History', icon: CalendarCheck, path: '/member/attendance' },
-    { label: 'Reward Wallet', icon: CreditCard, path: '/member/rewards' },
-    { label: 'Badge Collection', icon: Award, path: '/member/badges' },
-    { label: 'My Squad', icon: Heart, path: '/member/squad' },
-    { label: 'Security & Login', icon: Lock, path: '/member/security' },
-    { label: 'Notifications', icon: Bell, path: '/member/notifications' },
-    { label: 'Support', icon: HelpCircle, path: '' },
+    { label: t('member.editProfile'), icon: User, path: '/member/profile/edit' },
+    { label: t('member.inviteFriends'), icon: Gift, path: '/member/referral' },
+    { label: t('member.attendanceHistory'), icon: CalendarCheck, path: '/member/attendance' },
+    { label: t('member.rewardWalletMenu'), icon: CreditCard, path: '/member/rewards' },
+    { label: t('member.badgeCollectionMenu'), icon: Award, path: '/member/badges' },
+    { label: t('member.mySquad'), icon: Heart, path: '/member/squad' },
+    { label: t('member.securityLogin'), icon: Lock, path: '/member/security' },
+    { label: t('member.notifications'), icon: Bell, path: '/member/notifications' },
+    { label: t('member.support'), icon: HelpCircle, path: '' },
   ];
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Profile" />
+      <MobilePageHeader title={t('member.profile')} />
 
       {/* Avatar & name */}
       <Section className="mb-6">
@@ -77,9 +79,9 @@ export default function MemberProfilePage() {
             <div className="flex items-center justify-between">
               <StreakFlame weeklyCheckinDays={momentum.weeklyCheckinDays} currentStreakWeeks={momentum.currentStreak} />
               <div className="text-right">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Coin Balance</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t('member.coinBalance')}</p>
                 <p className="text-lg font-bold text-foreground">
-                  {momentum.availablePoints.toLocaleString()} <span className="text-xs text-muted-foreground font-medium">Coin</span>
+                  {momentum.availablePoints.toLocaleString()} <span className="text-xs text-muted-foreground font-medium">{t('member.coinUnit')}</span>
                 </p>
               </div>
             </div>
@@ -88,13 +90,13 @@ export default function MemberProfilePage() {
 
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">{badges?.length ?? 0}</span> badges earned
+                <span className="font-semibold text-foreground">{badges?.length ?? 0}</span> {t('member.badgesEarned').replace('{{n}} ', '')}
               </p>
               <button
                 onClick={() => navigate('/member/badges')}
                 className="text-xs font-medium text-primary hover:underline"
               >
-                View all →
+                {t('member.viewAllBadges')}
               </button>
             </div>
 
@@ -115,7 +117,7 @@ export default function MemberProfilePage() {
                   if (item.path) {
                     navigate(item.path);
                   } else {
-                    import('sonner').then(({ toast }) => toast.info('Coming soon'));
+                    import('sonner').then(({ toast }) => toast.info(t('member.comingSoon')));
                   }
                 }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted"
@@ -137,7 +139,7 @@ export default function MemberProfilePage() {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted border border-border bg-card"
           >
             <Shield className="h-5 w-5 text-primary" />
-            <span className="flex-1 text-sm font-medium text-foreground">Admin Portal</span>
+            <span className="flex-1 text-sm font-medium text-foreground">{t('member.adminPortal')}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </a>
         </Section>
@@ -151,7 +153,7 @@ export default function MemberProfilePage() {
           onClick={() => signOut()}
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {t('member.signOut')}
         </Button>
       </Section>
     </div>
