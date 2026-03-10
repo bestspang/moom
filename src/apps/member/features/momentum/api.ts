@@ -472,21 +472,64 @@ export interface LeaderboardEntry {
   checkInCount?: number;
 }
 
+export type LeaderboardTimeWindow = 'all' | 'month' | 'week';
+
+function getSinceDate(window: LeaderboardTimeWindow): string | null {
+  if (window === 'all') return null;
+  const now = new Date();
+  if (window === 'month') {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01T00:00:00+07:00`;
+  }
+  // week: Monday of current week
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diff);
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, '0');
+  const d = String(monday.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}T00:00:00+07:00`;
+}
+
 export async function fetchXpLeaderboard(): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase
-    .from('member_gamification_profiles')
-    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
-    .order('total_xp', { ascending: false })
-    .limit(20);
+  return fetchXpLeaderboardByWindow('all');
+}
+
+export async function fetchXpLeaderboardByWindow(window: LeaderboardTimeWindow): Promise<LeaderboardEntry[]> {
+  if (window === 'all') {
+    const { data, error } = await supabase
+      .from('member_gamification_profiles')
+      .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+      .order('total_xp', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any, idx: number) => ({
+      memberId: row.member_id,
+      firstName: row.member?.first_name ?? '',
+      lastName: row.member?.last_name ?? '',
+      avatarUrl: row.member?.avatar_url ?? null,
+      totalXp: row.total_xp,
+      level: row.current_level,
+      rank: idx + 1,
+    }));
+  }
+
+  const since = getSinceDate(window)!;
+  const { data, error } = await supabase.rpc('get_xp_leaderboard', {
+    p_since: since,
+    p_limit: 20,
+  });
 
   if (error) throw error;
 
   return (data ?? []).map((row: any, idx: number) => ({
     memberId: row.member_id,
-    firstName: row.member?.first_name ?? '',
-    lastName: row.member?.last_name ?? '',
-    avatarUrl: row.member?.avatar_url ?? null,
-    totalXp: row.total_xp,
+    firstName: row.first_name ?? '',
+    lastName: row.last_name ?? '',
+    avatarUrl: row.avatar_url ?? null,
+    totalXp: Number(row.sum_xp),
     level: row.current_level,
     rank: idx + 1,
   }));
