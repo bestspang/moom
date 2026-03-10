@@ -106,16 +106,25 @@ export default function MemberCheckInPage() {
         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
       setScanning(true);
-      rafRef.current = requestAnimationFrame(scanFrame);
     } catch {
       setCameraError(t('member.cameraAccessDenied'));
     }
-  }, [scanFrame, t]);
+  }, [t]);
+
+  // Attach stream to video element AFTER it's rendered
+  useEffect(() => {
+    if (!scanning || !streamRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.srcObject = streamRef.current;
+    video.play().then(() => {
+      rafRef.current = requestAnimationFrame(scanFrame);
+    }).catch(() => {
+      setCameraError(t('member.cameraAccessDenied'));
+      stopScanning();
+    });
+  }, [scanning, scanFrame, t, stopScanning]);
 
   useEffect(() => () => stopScanning(), [stopScanning]);
 
