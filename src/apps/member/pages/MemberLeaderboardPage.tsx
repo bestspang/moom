@@ -16,6 +16,7 @@ import {
 } from '@/apps/member/features/momentum/api';
 import type { SquadInfo } from '@/apps/member/features/momentum/types';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const RANK_ICONS = [Crown, Medal, Award] as const;
 const RANK_COLORS = [
@@ -24,7 +25,7 @@ const RANK_COLORS = [
   'text-amber-600',
 ] as const;
 
-function XpLeaderboardTab({ memberId }: { memberId: string | null }) {
+function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: string, opts?: any) => string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['xp-leaderboard'],
     queryFn: fetchXpLeaderboard,
@@ -32,7 +33,7 @@ function XpLeaderboardTab({ memberId }: { memberId: string | null }) {
   });
 
   if (isLoading) return <LeaderboardSkeleton />;
-  if (!data?.length) return <EmptyLeaderboard message="No XP earners yet" />;
+  if (!data?.length) return <EmptyLeaderboard message={t('member.noXpEarnersYet')} />;
 
   return (
     <div className="space-y-2">
@@ -63,7 +64,7 @@ function XpLeaderboardTab({ memberId }: { memberId: string | null }) {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground truncate">
                 {entry.firstName} {entry.lastName}
-                {isMe && <span className="text-primary ml-1">(You)</span>}
+                {isMe && <span className="text-primary ml-1">{t('member.youLabel')}</span>}
               </p>
               <p className="text-xs text-muted-foreground">Lv.{entry.level}</p>
             </div>
@@ -77,7 +78,7 @@ function XpLeaderboardTab({ memberId }: { memberId: string | null }) {
   );
 }
 
-function SquadRankingsTab({ currentSquadId }: { currentSquadId?: string | null }) {
+function SquadRankingsTab({ currentSquadId, t }: { currentSquadId?: string | null; t: (key: string, opts?: any) => string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['squad-rankings'],
     queryFn: fetchSquadRankings,
@@ -85,7 +86,7 @@ function SquadRankingsTab({ currentSquadId }: { currentSquadId?: string | null }
   });
 
   if (isLoading) return <LeaderboardSkeleton />;
-  if (!data?.length) return <EmptyLeaderboard message="No squads yet" />;
+  if (!data?.length) return <EmptyLeaderboard message={t('member.noSquadsYet')} />;
 
   return (
     <div className="space-y-2">
@@ -112,10 +113,10 @@ function SquadRankingsTab({ currentSquadId }: { currentSquadId?: string | null }
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground truncate">
                 {squad.name}
-                {isMySquad && <span className="text-primary ml-1">(Yours)</span>}
+                {isMySquad && <span className="text-primary ml-1">{t('member.yoursLabel')}</span>}
               </p>
               <p className="text-xs text-muted-foreground">
-                {(squad as any).memberCount ?? squad.members.length} members
+                {(squad as any).memberCount ?? squad.members.length} {t('member.membersLabel')}
               </p>
             </div>
             <Badge variant="secondary" className="text-xs font-bold">
@@ -128,7 +129,7 @@ function SquadRankingsTab({ currentSquadId }: { currentSquadId?: string | null }
   );
 }
 
-function ChallengesTab({ memberId }: { memberId: string | null }) {
+function ChallengesTab({ memberId, t }: { memberId: string | null; t: (key: string) => string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['challenge-completion-stats', memberId],
     queryFn: () => fetchChallengeCompletionStats(memberId),
@@ -136,7 +137,7 @@ function ChallengesTab({ memberId }: { memberId: string | null }) {
   });
 
   if (isLoading) return <LeaderboardSkeleton />;
-  if (!data?.length) return <EmptyLeaderboard message="No challenges yet" />;
+  if (!data?.length) return <EmptyLeaderboard message={t('member.noChallengesYet')} />;
 
   return (
     <div className="space-y-2">
@@ -149,7 +150,7 @@ function ChallengesTab({ memberId }: { memberId: string | null }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground truncate">{stat.nameEn}</p>
             <p className="text-xs text-muted-foreground">
-              {stat.completedCount} completed
+              {stat.completedCount} {t('member.completedLabel')}
             </p>
           </div>
           {stat.currentUserCompleted && (
@@ -182,28 +183,29 @@ function EmptyLeaderboard({ message }: { message: string }) {
 
 export default function MemberLeaderboardPage() {
   const { memberId } = useMemberSession();
+  const { t } = useTranslation();
 
   return (
     <div className="pb-24">
       <MobilePageHeader
-        title="Leaderboard"
-        subtitle="See who's on top 🏆"
+        title={t('member.leaderboard')}
+        subtitle={t('member.leaderboardSubtitle')}
       />
       <Section>
         <Tabs defaultValue="xp" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="xp" className="text-xs">🔥 XP</TabsTrigger>
-            <TabsTrigger value="squads" className="text-xs">👥 Squads</TabsTrigger>
-            <TabsTrigger value="challenges" className="text-xs">🎯 Challenges</TabsTrigger>
+            <TabsTrigger value="xp" className="text-xs">{t('member.tabXp')}</TabsTrigger>
+            <TabsTrigger value="squads" className="text-xs">{t('member.tabSquads')}</TabsTrigger>
+            <TabsTrigger value="challenges" className="text-xs">{t('member.tabChallenges')}</TabsTrigger>
           </TabsList>
           <TabsContent value="xp">
-            <XpLeaderboardTab memberId={memberId} />
+            <XpLeaderboardTab memberId={memberId} t={t} />
           </TabsContent>
           <TabsContent value="squads">
-            <SquadRankingsTab />
+            <SquadRankingsTab t={t} />
           </TabsContent>
           <TabsContent value="challenges">
-            <ChallengesTab memberId={memberId} />
+            <ChallengesTab memberId={memberId} t={t} />
           </TabsContent>
         </Tabs>
       </Section>

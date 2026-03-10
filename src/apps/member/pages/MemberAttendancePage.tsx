@@ -8,9 +8,11 @@ import { ClipboardCheck } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyAttendance } from '../api/services';
+import { useTranslation } from 'react-i18next';
 
 export default function MemberAttendancePage() {
   const { memberId } = useMemberSession();
+  const { t } = useTranslation();
 
   const { data: records, isLoading, isError, refetch } = useQuery({
     queryKey: ['member-attendance', memberId],
@@ -20,7 +22,7 @@ export default function MemberAttendancePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Attendance" subtitle="Your check-in history" />
+      <MobilePageHeader title={t('member.attendance')} subtitle={t('member.attendanceSubtitle')} />
 
       <Section>
         {isError ? (
@@ -28,7 +30,7 @@ export default function MemberAttendancePage() {
         ) : isLoading ? (
           <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
         ) : !records || records.length === 0 ? (
-          <EmptyState icon={<ClipboardCheck className="h-10 w-10" />} title="No check-ins" description="Your attendance history will appear here" />
+          <EmptyState icon={<ClipboardCheck className="h-10 w-10" />} title={t('member.noCheckIns')} description={t('member.noCheckInsHint')} />
         ) : (
           <div className="space-y-2">
             {records.map(r => (

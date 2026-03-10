@@ -11,9 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from 'lucide-react';
 import { fetchSchedule, type ScheduleItem } from '../api/services';
 import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 export default function MemberSchedulePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [category, setCategory] = useState('all');
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -25,10 +27,10 @@ export default function MemberSchedulePage() {
     const items = data ?? [];
     const names = Array.from(new Set(items.map(c => c.categoryName).filter(Boolean))) as string[];
     return [
-      { value: 'all', label: 'All' },
+      { value: 'all', label: t('member.allCategories') },
       ...names.map(n => ({ value: n, label: n })),
     ];
-  }, [data]);
+  }, [data, t]);
 
   const filtered = useMemo(() => {
     const items = data ?? [];
@@ -45,7 +47,7 @@ export default function MemberSchedulePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Schedule" subtitle="Browse & book classes" />
+      <MobilePageHeader title={t('member.schedule')} subtitle={t('member.scheduleSubtitle')} />
 
       <div className="px-4 mb-4">
         <FilterChips options={categoryFilters} selected={category} onChange={setCategory} />
@@ -64,8 +66,8 @@ export default function MemberSchedulePage() {
       ) : Object.keys(grouped).length === 0 ? (
         <EmptyState
           icon={<Calendar className="h-10 w-10" />}
-          title="No classes found"
-          description={category !== 'all' ? 'Try a different category' : 'Check back later for updated schedules'}
+          title={t('member.noClassesFound')}
+          description={category !== 'all' ? t('member.tryDifferentCategory') : t('member.checkBackSchedule')}
         />
       ) : (
         Object.entries(grouped).map(([date, classes]) => (
@@ -76,11 +78,11 @@ export default function MemberSchedulePage() {
                   key={cls.id}
                   title={cls.className}
                   subtitle={`${cls.startTime.slice(0, 5)} – ${cls.endTime.slice(0, 5)}${cls.roomName ? ` · ${cls.roomName}` : ''}`}
-                  meta={cls.trainerName ? `with ${cls.trainerName} · ${cls.checkedIn}/${cls.capacity}` : `${cls.checkedIn}/${cls.capacity} spots`}
+                  meta={cls.trainerName ? `${t('member.withTrainer', { name: cls.trainerName })} · ${cls.checkedIn}/${cls.capacity}` : t('member.spotsLabel', { current: cls.checkedIn, max: cls.capacity })}
                   trailing={
                     cls.checkedIn < cls.capacity
-                      ? <span className="text-xs font-medium text-primary">Book</span>
-                      : <span className="text-xs text-muted-foreground">Full</span>
+                      ? <span className="text-xs font-medium text-primary">{t('member.bookButton')}</span>
+                      : <span className="text-xs text-muted-foreground">{t('member.fullLabel')}</span>
                   }
                   onClick={() => navigate(`/member/schedule/${cls.id}`)}
                 />

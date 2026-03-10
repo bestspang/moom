@@ -5,6 +5,7 @@ import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, M
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const NOTIFICATION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   referral_completed: Gift,
@@ -25,6 +26,7 @@ function NotificationIcon({ type }: { type?: string | null }) {
 }
 
 export default function MemberNotificationsPage() {
+  const { t } = useTranslation();
   const { data: notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
@@ -34,8 +36,8 @@ export default function MemberNotificationsPage() {
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader
-        title="Notifications"
-        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+        title={t('member.notificationsTitle')}
+        subtitle={unreadCount > 0 ? t('member.unreadCount', { count: unreadCount }) : t('member.allCaughtUp')}
         action={
           unreadCount > 0 ? (
             <Button
@@ -46,7 +48,7 @@ export default function MemberNotificationsPage() {
               disabled={markAllAsRead.isPending}
             >
               <CheckCheck className="h-4 w-4" />
-              Mark all read
+              {t('member.markAllRead')}
             </Button>
           ) : undefined
         }
@@ -63,8 +65,8 @@ export default function MemberNotificationsPage() {
               <Bell className="h-8 w-8 text-primary/40" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">You're all caught up! 🎉</p>
-              <p className="text-xs text-muted-foreground mt-0.5">We'll let you know when something happens</p>
+              <p className="text-sm font-semibold text-foreground">{t('member.allCaughtUpEmoji')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('member.notificationsEmptyHint')}</p>
             </div>
           </div>
         ) : (

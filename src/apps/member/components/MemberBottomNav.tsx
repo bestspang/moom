@@ -3,24 +3,26 @@ import {
   Home, Calendar, User, ScanLine, Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   center?: boolean;
 }
 
 const MEMBER_NAV: NavItem[] = [
-  { label: 'Home', path: '/member', icon: Home },
-  { label: 'Schedule', path: '/member/schedule', icon: Calendar },
-  { label: 'Check In', path: '/member/check-in', icon: ScanLine, center: true },
-  { label: 'Rewards', path: '/member/rewards', icon: Gift },
-  { label: 'Profile', path: '/member/profile', icon: User },
+  { labelKey: 'member.navHome', path: '/member', icon: Home },
+  { labelKey: 'member.navSchedule', path: '/member/schedule', icon: Calendar },
+  { labelKey: 'member.navCheckIn', path: '/member/check-in', icon: ScanLine, center: true },
+  { labelKey: 'member.navRewards', path: '/member/rewards', icon: Gift },
+  { labelKey: 'member.navProfile', path: '/member/profile', icon: User },
 ];
 
 export function MemberBottomNav() {
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-bottom">
@@ -30,6 +32,7 @@ export function MemberBottomNav() {
             location.pathname === item.path ||
             (item.path !== '/member' && location.pathname.startsWith(item.path));
           const Icon = item.icon;
+          const label = t(item.labelKey);
 
           if (item.center) {
             return (
@@ -49,7 +52,7 @@ export function MemberBottomNav() {
                   <Icon className="h-5 w-5" />
                 </div>
                 <span className={cn('text-[10px] font-semibold', isActive ? 'text-primary' : 'text-muted-foreground')}>
-                  {item.label}
+                  {label}
                 </span>
               </Link>
             );
@@ -68,7 +71,7 @@ export function MemberBottomNav() {
             >
               <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5px]')} />
               <span className={cn('font-medium', isActive && 'font-semibold')}>
-                {item.label}
+                {label}
               </span>
             </Link>
           );

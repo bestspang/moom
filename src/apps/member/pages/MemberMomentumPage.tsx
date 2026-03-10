@@ -29,18 +29,7 @@ import {
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { LevelRequirementsCard } from '../features/momentum/LevelRequirementsCard';
 import { LevelPerksCard } from '../features/momentum/LevelPerksCard';
-
-const EVENT_LABELS: Record<string, string> = {
-  checkin: 'Check-in',
-  quest_complete: 'Quest',
-  streak_bonus: 'Streak Bonus',
-  challenge_complete: 'Challenge',
-  referral: 'Referral',
-  purchase: 'Purchase',
-  badge_earned: 'Badge Earned',
-  rule_reward: 'Activity Reward',
-  redemption: 'Redemption',
-};
+import { useTranslation } from 'react-i18next';
 
 const BADGE_TIER_COLORS: Record<string, string> = {
   bronze: 'border-amber-400/50',
@@ -49,17 +38,37 @@ const BADGE_TIER_COLORS: Record<string, string> = {
   platinum: 'border-violet-400/50',
 };
 
-const RARITY_LABELS: Record<string, { label: string; className: string }> = {
-  bronze: { label: 'Common', className: 'text-muted-foreground' },
-  silver: { label: 'Rare', className: 'text-blue-500' },
-  gold: { label: 'Epic', className: 'text-yellow-500' },
-  platinum: { label: 'Legendary', className: 'text-violet-500' },
+const RARITY_KEYS: Record<string, string> = {
+  bronze: 'member.tierCommon',
+  silver: 'member.tierRare',
+  gold: 'member.tierEpic',
+  platinum: 'member.tierLegendary',
+};
+
+const RARITY_CLASSNAMES: Record<string, string> = {
+  bronze: 'text-muted-foreground',
+  silver: 'text-blue-500',
+  gold: 'text-yellow-500',
+  platinum: 'text-violet-500',
+};
+
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  checkin: 'member.eventCheckin',
+  quest_complete: 'member.eventQuest',
+  streak_bonus: 'member.eventStreakBonus',
+  challenge_complete: 'member.eventChallenge',
+  referral: 'member.eventReferral',
+  purchase: 'member.eventPurchase',
+  badge_earned: 'member.eventBadgeEarned',
+  rule_reward: 'member.eventActivityReward',
+  redemption: 'member.eventRedemption',
 };
 
 export default function MemberMomentumPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { memberId } = useMemberSession();
+  const { t } = useTranslation();
 
   // ── Queries ──
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -100,7 +109,7 @@ export default function MemberMomentumPage() {
   if (loadingProfile) {
     return (
       <div className="animate-in fade-in-0 duration-200">
-        <MobilePageHeader title="Momentum" />
+        <MobilePageHeader title={t('member.momentum')} />
         <div className="px-4 space-y-4">
           <Skeleton className="h-32 rounded-2xl" />
           <Skeleton className="h-10 rounded-lg" />
@@ -113,12 +122,12 @@ export default function MemberMomentumPage() {
   if (!profile) {
     return (
       <div className="animate-in fade-in-0 duration-200">
-        <MobilePageHeader title="Momentum" />
+        <MobilePageHeader title={t('member.momentum')} />
         <Section>
           <EmptyState
-            title="Start Your Journey"
-            description="Check in to your first class to unlock your momentum profile"
-            action={<Button size="sm" onClick={() => navigate('/member/check-in')}>Check In</Button>}
+            title={t('member.startYourJourney')}
+            description={t('member.startJourneyHint')}
+            action={<Button size="sm" onClick={() => navigate('/member/check-in')}>{t('member.checkIn')}</Button>}
           />
         </Section>
       </div>
@@ -129,35 +138,30 @@ export default function MemberMomentumPage() {
     <div className="animate-in fade-in-0 duration-200 pb-4">
       {/* ── Hero: Profile Summary with big XP ── */}
       <div className="relative overflow-hidden" style={{ backgroundColor: 'hsl(var(--primary))' }}>
-        {/* Decorative circles */}
         <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
         <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
 
         <div className="relative px-5 pt-14 pb-5">
-          {/* Hero XP number */}
           <div className="text-center mb-4">
             <p className="text-4xl font-black tracking-tight" style={{ color: 'hsl(var(--primary-foreground))' }}>
               {profile.totalXp.toLocaleString()}
               <span className="text-lg font-bold ml-1 opacity-70">XP</span>
             </p>
             <p className="text-xs font-medium mt-0.5" style={{ color: 'hsl(var(--primary-foreground) / 0.6)' }}>
-              {profile.availablePoints.toLocaleString()} Coin available
+              {t('member.coinAvailable', { n: profile.availablePoints.toLocaleString() })}
             </p>
           </div>
 
-          {/* Tier badge centered */}
           <div className="flex justify-center mb-3">
             <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
               <TierBadge tier={profile.tier} level={profile.level} size="lg" />
             </div>
           </div>
 
-          {/* XP Progress */}
           <div className="[&_span]:text-primary-foreground/80 [&_.inline-flex]:!bg-white/20 mb-4">
             <XPProgressBar totalXP={profile.totalXp} level={profile.level} />
           </div>
 
-          {/* Streak + Freeze */}
           <div className="flex items-center justify-between">
             <StreakFlame
               weeklyCheckinDays={profile.weeklyCheckinDays}
@@ -168,7 +172,6 @@ export default function MemberMomentumPage() {
         </div>
       </div>
 
-      {/* Daily Bonus Nudge */}
       <div className="px-4 -mt-2 mb-2">
         <DailyBonusCard />
       </div>
@@ -178,25 +181,24 @@ export default function MemberMomentumPage() {
         <TabsList className="w-full grid grid-cols-3 bg-card border border-border shadow-sm rounded-xl">
           <TabsTrigger value="level" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:shadow-none">
             <Shield className="h-3.5 w-3.5" />
-            Level
+            {t('member.tabLevel')}
           </TabsTrigger>
           <TabsTrigger value="quests" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:shadow-none">
             <Target className="h-3.5 w-3.5" />
-            Quests
+            {t('member.tabQuests')}
           </TabsTrigger>
           <TabsTrigger value="rewards" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:shadow-none">
             <Gift className="h-3.5 w-3.5" />
-            Rewards
+            {t('member.tabRewards')}
           </TabsTrigger>
         </TabsList>
 
         {/* ═══ Level Tab ═══ */}
         <TabsContent value="level" className="space-y-4 mt-4">
-          {/* Level details card */}
           <div className="rounded-xl border bg-card p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Current Level</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('member.currentLevel')}</p>
                 <p className="text-2xl font-black text-foreground">{profile.level}</p>
               </div>
               <TierBadge tier={profile.tier} level={profile.level} size="lg" />
@@ -204,52 +206,48 @@ export default function MemberMomentumPage() {
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Next level at {nextLevelXP.toLocaleString()} XP</span>
-                <span>{(nextLevelXP - profile.totalXp).toLocaleString()} XP to go</span>
+                <span>{t('member.nextLevelAt', { xp: nextLevelXP.toLocaleString() })}</span>
+                <span>{t('member.xpToGo', { xp: (nextLevelXP - profile.totalXp).toLocaleString() })}</span>
               </div>
               <XPProgressBar totalXP={profile.totalXp} level={profile.level} />
             </div>
           </div>
 
-          {/* Level-up requirements breakdown */}
           <LevelRequirementsCard
             profile={profile}
             completedQuests={0}
             totalBadges={badges?.length ?? 0}
           />
 
-          {/* Level Perks */}
           <LevelPerksCard currentLevel={profile.level} />
 
-          {/* Streak card */}
           <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Streak</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">{t('member.streak')}</p>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-xl font-black text-foreground">{profile.currentStreak}w streak</p>
-                <p className="text-xs text-muted-foreground">Longest: {profile.longestStreak}w</p>
+                <p className="text-xl font-black text-foreground">{t('member.weekStreak', { n: profile.currentStreak })}</p>
+                <p className="text-xs text-muted-foreground">{t('member.longestStreak', { n: profile.longestStreak })}</p>
               </div>
               <StreakFlame weeklyCheckinDays={profile.weeklyCheckinDays} currentStreakWeeks={profile.currentStreak} />
             </div>
           </div>
 
-          {/* Badges horizontal scroll */}
-          {/* Badges with rarity labels */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-foreground">Badges</p>
+              <p className="text-sm font-bold text-foreground">{t('member.badges')}</p>
               <button
                 onClick={() => navigate('/member/badges')}
                 className="flex items-center gap-0.5 text-xs font-medium text-primary"
               >
-                View all <ChevronRight className="h-3 w-3" />
+                {t('member.viewAll')} <ChevronRight className="h-3 w-3" />
               </button>
             </div>
             {badges && badges.length > 0 ? (
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                 {badges.slice(0, 8).map((mb) => {
                   const tierClass = BADGE_TIER_COLORS[mb.badge?.tier ?? 'bronze'] ?? BADGE_TIER_COLORS.bronze;
-                  const rarityLabel = RARITY_LABELS[mb.badge?.tier ?? 'bronze'] ?? RARITY_LABELS.bronze;
+                  const rarityKey = RARITY_KEYS[mb.badge?.tier ?? 'bronze'] ?? RARITY_KEYS.bronze;
+                  const rarityClassName = RARITY_CLASSNAMES[mb.badge?.tier ?? 'bronze'] ?? RARITY_CLASSNAMES.bronze;
                   return (
                     <div
                       key={mb.id}
@@ -265,8 +263,8 @@ export default function MemberMomentumPage() {
                       <p className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2">
                         {mb.badge?.nameEn ?? 'Badge'}
                       </p>
-                      <span className={`text-[8px] font-bold uppercase tracking-wider ${rarityLabel.className}`}>
-                        {rarityLabel.label}
+                      <span className={`text-[8px] font-bold uppercase tracking-wider ${rarityClassName}`}>
+                        {t(rarityKey)}
                       </span>
                     </div>
                   );
@@ -275,12 +273,11 @@ export default function MemberMomentumPage() {
             ) : (
               <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-muted-foreground">
                 <Award className="h-4 w-4" />
-                <span className="text-xs font-medium">Complete quests to earn badges!</span>
+                <span className="text-xs font-medium">{t('member.noBadgesEarnHint')}</span>
               </div>
             )}
           </div>
 
-          {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => navigate('/member/leaderboard')}
@@ -288,8 +285,8 @@ export default function MemberMomentumPage() {
             >
               <Award className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm font-bold text-foreground">Leaderboard</p>
-                <p className="text-[10px] text-muted-foreground">See rankings</p>
+                <p className="text-sm font-bold text-foreground">{t('member.leaderboard')}</p>
+                <p className="text-[10px] text-muted-foreground">{t('member.seeRankings')}</p>
               </div>
             </button>
             <button
@@ -298,8 +295,8 @@ export default function MemberMomentumPage() {
             >
               <Trophy className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm font-bold text-foreground">Squad</p>
-                <p className="text-[10px] text-muted-foreground">Team up</p>
+                <p className="text-sm font-bold text-foreground">{t('member.squad')}</p>
+                <p className="text-[10px] text-muted-foreground">{t('member.teamUp')}</p>
               </div>
             </button>
           </div>
@@ -307,22 +304,20 @@ export default function MemberMomentumPage() {
 
         {/* ═══ Quests Tab ═══ */}
         <TabsContent value="quests" className="space-y-4 mt-4">
-          {/* Daily/Weekly/Monthly Quest Hub */}
           <QuestHub />
         </TabsContent>
 
         {/* ═══ Rewards Tab ═══ */}
         <TabsContent value="rewards" className="space-y-4 mt-4">
-          {/* Balance card */}
           <div className="rounded-xl border bg-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                  Momentum Coin
+                  {t('member.momentumCoin')}
                 </p>
                 <p className="text-3xl font-bold text-foreground">
                   {profile.availablePoints.toLocaleString()}
-                  <span className="text-sm font-medium text-muted-foreground ml-1">Coin</span>
+                  <span className="text-sm font-medium text-muted-foreground ml-1">{t('member.coinUnit')}</span>
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -331,9 +326,8 @@ export default function MemberMomentumPage() {
             </div>
           </div>
 
-          {/* Redeemable rewards */}
           <div>
-            <p className="text-sm font-bold text-foreground mb-3">Redeem Rewards</p>
+            <p className="text-sm font-bold text-foreground mb-3">{t('member.redeemRewards')}</p>
             {loadingRewards ? (
               <div className="grid grid-cols-2 gap-3">
                 {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-52 rounded-xl" />)}
@@ -341,9 +335,9 @@ export default function MemberMomentumPage() {
             ) : !rewards || rewards.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
                 <Gift className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm font-medium text-foreground">No Rewards Yet</p>
+                <p className="text-sm font-medium text-foreground">{t('member.noRewardsYet')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Exclusive rewards are coming soon — keep earning Coin!
+                  {t('member.noRewardsComingSoon')}
                 </p>
               </div>
             ) : (
@@ -362,15 +356,14 @@ export default function MemberMomentumPage() {
             )}
           </div>
 
-          {/* Points History */}
           <div>
-            <p className="text-sm font-bold text-foreground mb-3">Points History</p>
+            <p className="text-sm font-bold text-foreground mb-3">{t('member.pointsHistory')}</p>
             {loadingHistory ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
               </div>
             ) : !history || history.length === 0 ? (
-              <EmptyState title="No points yet" description="Earn Coin by checking in and completing quests" />
+              <EmptyState title={t('member.noPointsYet')} description={t('member.noPointsHint')} />
             ) : (
               <div className="space-y-1 rounded-xl border bg-card overflow-hidden">
                 {history.slice(0, 15).map(entry => (
@@ -381,7 +374,7 @@ export default function MemberMomentumPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">
-                          {EVENT_LABELS[entry.eventType] ?? entry.eventType}
+                          {EVENT_LABEL_KEYS[entry.eventType] ? t(EVENT_LABEL_KEYS[entry.eventType]) : entry.eventType}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {format(new Date(entry.createdAt), 'MMM d · h:mm a')}
