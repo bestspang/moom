@@ -71,7 +71,7 @@ function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: s
 
   return (
     <div className="space-y-4">
-      <FilterChips options={chipOptions} selected={timeWindow} onChange={setTimeWindow} />
+      <FilterChips options={chipOptions} selected={timeWindow} onChange={(v) => setTimeWindow(v as LeaderboardTimeWindow)} />
       <div className="space-y-2">
         {data.map((entry) => (
           <LeaderboardEntryRow
