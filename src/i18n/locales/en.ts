@@ -2824,5 +2824,13 @@ export default {
     scoreBreakdown: 'Score History',
     scoreHistoryComingSoon: 'Weekly score history coming soon',
     noImpactData: 'No impact data available yet',
+    // Trainer badges
+    badgeGallery: 'Badge Gallery',
+    badgesSubtitle: 'Your achievements & recognition',
+    earned: 'Earned',
+    locked: 'Locked',
+    noBadgesYet: 'No badges earned yet',
+    viewAllBadges: 'View All Badges',
+    earnedOn: 'Earned',
   },
 };
