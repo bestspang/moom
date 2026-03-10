@@ -557,6 +557,48 @@ export type Database = {
         }
         Relationships: []
       }
+      class_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          member_id: string
+          rating: number
+          schedule_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          member_id: string
+          rating: number
+          schedule_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string
+          rating?: number
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_ratings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_ratings_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_waitlist: {
         Row: {
           created_at: string | null
@@ -4250,6 +4292,13 @@ export type Database = {
           member_id: string
           rank: number
           total_xp: number
+        }[]
+      }
+      get_trainer_avg_rating: {
+        Args: { p_days?: number; p_staff_id: string }
+        Returns: {
+          avg_rating: number
+          total_ratings: number
         }[]
       }
       get_trainer_roster: {
