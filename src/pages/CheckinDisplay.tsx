@@ -163,6 +163,60 @@ export default function CheckinDisplay() {
     ? `${window.location.origin}/checkin?token=${tokenData.token}`
     : '';
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    const { error } = await signIn(loginEmail, loginPassword);
+    setLoginLoading(false);
+    if (error) {
+      toast.error(error.message || 'Login failed');
+    }
+  };
+
+  // ── Auth loading ──
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Dumbbell className="h-10 w-10 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  // ── Login screen (staff must authenticate) ──
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6 text-center">
+          <Dumbbell className="h-12 w-12 text-primary mx-auto" />
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('checkinDisplay.title')}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Staff login required to start kiosk
+          </p>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" className="w-full" disabled={loginLoading}>
+            <LogIn className="h-4 w-4 mr-2" />
+            {loginLoading ? 'Signing in…' : 'Sign In'}
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
   // ── Location selector screen ──
   if (needsLocation) {
     return (
