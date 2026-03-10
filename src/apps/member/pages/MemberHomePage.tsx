@@ -7,14 +7,17 @@ import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone } from 'lucide-react';
+import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone, Zap } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
+import { fetchMomentumProfile } from '../features/momentum/api';
+import { xpForLevel } from '../features/momentum/types';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -28,6 +31,7 @@ function getTimeGreeting(): string {
 
 export default function MemberHomePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
@@ -47,6 +51,13 @@ export default function MemberHomePage() {
     queryKey: ['member-announcements'],
     queryFn: fetchActiveAnnouncements,
     enabled: isAuthenticated,
+  });
+
+  // For "Almost There" nudge
+  const { data: momentumProfile } = useQuery({
+    queryKey: ['momentum-profile', memberId],
+    queryFn: () => fetchMomentumProfile(memberId!),
+    enabled: !!memberId,
   });
 
 
@@ -144,6 +155,35 @@ export default function MemberHomePage() {
         <MomentumCard memberId={memberId} />
       </Section>
 
+      {/* Almost There nudge — within 15% of next level */}
+      {momentumProfile && (() => {
+        const currentLevelXP = xpForLevel(momentumProfile.level - 1);
+        const nextLevelXP = xpForLevel(momentumProfile.level);
+        const xpNeeded = nextLevelXP - currentLevelXP;
+        const xpRemaining = nextLevelXP - momentumProfile.totalXp;
+        const progress = xpNeeded > 0 ? ((momentumProfile.totalXp - currentLevelXP) / xpNeeded) * 100 : 0;
+        if (progress < 85 || xpRemaining <= 0) return null;
+        return (
+          <Section className="mb-4">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex items-center gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-foreground">{t('auth.almostThere')}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('auth.xpToNextLevel')
+                    .replace('{{xp}}', String(xpRemaining))
+                    .replace('{{level}}', String(momentumProfile.level + 1))}
+                </p>
+              </div>
+              <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden flex-shrink-0">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          </Section>
+        );
+      })()}
 
 
       {/* Next Up bookings — max 2 */}

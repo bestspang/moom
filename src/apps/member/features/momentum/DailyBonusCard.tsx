@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Zap, ScanLine, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DailyBonusCardProps {
   className?: string;
@@ -8,6 +10,23 @@ interface DailyBonusCardProps {
 
 export function DailyBonusCard({ className }: DailyBonusCardProps) {
   const navigate = useNavigate();
+
+  const { data: rule } = useQuery({
+    queryKey: ['gamification-rule-checkin'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('gamification_rules')
+        .select('xp_value, points_value')
+        .eq('action_key', 'check_in')
+        .eq('is_active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const xp = rule?.xp_value ?? 8;
+  const coins = rule?.points_value ?? 1;
 
   return (
     <button
@@ -17,7 +36,6 @@ export function DailyBonusCard({ className }: DailyBonusCardProps) {
         className,
       )}
     >
-      {/* Pulse dot */}
       <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15">
         <ScanLine className="h-5 w-5 text-primary" />
         <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
@@ -33,10 +51,10 @@ export function DailyBonusCard({ className }: DailyBonusCardProps) {
 
       <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary flex-shrink-0">
         <Zap className="h-3 w-3" />
-        +8 XP
+        +{xp} XP
         <span className="opacity-60">·</span>
         <Coins className="h-3 w-3" />
-        +1
+        +{coins}
       </div>
     </button>
   );

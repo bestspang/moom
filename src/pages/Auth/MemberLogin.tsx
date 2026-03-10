@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail, Phone, KeyRound } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
@@ -14,9 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
 
 type LoginFormData = { email: string; password: string };
+type LoginMode = 'password' | 'email_otp' | 'phone_otp';
+
+const RESEND_COOLDOWN = 60;
 
 const MemberLogin: React.FC = () => {
   const { t } = useLanguage();
@@ -27,9 +31,26 @@ const MemberLogin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState<LoginMode>('password');
+
+  // Email OTP state
   const [otpEmail, setOtpEmail] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+
+  // Phone OTP state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Resend timer
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => setResendTimer(p => p - 1), 1000);
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const schema = z.object({
     email: z.string().email(t('validation.invalidEmail')),
@@ -58,15 +79,13 @@ const MemberLogin: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      console.log('[MemberLogin] Starting Google OAuth...');
-
-      // On custom domains, bypass the lovable auth-bridge and use supabase directly
       if (isCustomDomain()) {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: window.location.origin + '/member',
             skipBrowserRedirect: true,
+            queryParams: { prompt: 'select_account' },
           },
         });
         if (error) {
@@ -75,32 +94,28 @@ const MemberLogin: React.FC = () => {
           window.location.href = data.url;
         }
       } else {
-        // On lovable.app / localhost, use the managed auth-bridge
         const result = await lovable.auth.signInWithOAuth("google", {
           redirect_uri: window.location.origin,
           extraParams: { prompt: "select_account" },
         });
-        console.log('[MemberLogin] OAuth result:', { redirected: (result as any).redirected, error: result.error?.message });
         if (result.error) {
           toast({ variant: 'destructive', title: t('auth.loginFailed'), description: result.error.message });
         }
       }
-    } catch (err) {
-      console.error('[MemberLogin] OAuth exception:', err);
+    } catch {
       toast({ variant: 'destructive', title: t('auth.loginFailed'), description: t('auth.googleSignInFailed') });
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  const handleSendOtp = async () => {
+  const handleSendEmailOtp = async () => {
     if (!otpEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpEmail)) {
-      toast({ variant: 'destructive', title: 'Invalid email', description: 'Please enter a valid email address.' });
+      toast({ variant: 'destructive', title: t('validation.invalidEmail') });
       return;
     }
     setIsOtpLoading(true);
     try {
-      console.log('[MemberLogin] Sending magic link to:', otpEmail);
       const { error } = await supabase.auth.signInWithOtp({
         email: otpEmail,
         options: {
@@ -109,19 +124,82 @@ const MemberLogin: React.FC = () => {
         },
       });
       if (error) {
-        console.error('[MemberLogin] OTP error:', error);
-        toast({ variant: 'destructive', title: 'Send failed', description: error.message });
+        toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
       } else {
-        setOtpSent(true);
-        toast({ title: 'Check your email ✉️', description: 'We sent a sign-in link to your email.' });
+        setEmailOtpSent(true);
+        setResendTimer(RESEND_COOLDOWN);
+        toast({ title: t('auth.checkYourEmail'), description: t('auth.weSentLink') + ' ' + otpEmail });
       }
-    } catch (err) {
-      console.error('[MemberLogin] OTP exception:', err);
-      toast({ variant: 'destructive', title: 'Send failed', description: 'Something went wrong.' });
+    } catch {
+      toast({ variant: 'destructive', title: t('auth.loginFailed') });
     } finally {
       setIsOtpLoading(false);
     }
   };
+
+  const handleSendPhoneOtp = async () => {
+    const cleaned = phoneNumber.replace(/\s/g, '');
+    if (!cleaned || cleaned.length < 8) {
+      toast({ variant: 'destructive', title: t('auth.loginFailed'), description: t('auth.phoneNumber') + ' is required' });
+      return;
+    }
+    setIsOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: cleaned,
+        options: { data: { signup_surface: 'member' } },
+      });
+      if (error) {
+        toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
+      } else {
+        setPhoneOtpSent(true);
+        setResendTimer(RESEND_COOLDOWN);
+        toast({ title: t('auth.otpSent'), description: t('auth.otpSentDescription') + ' ' + cleaned });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: t('auth.loginFailed') });
+    } finally {
+      setIsOtpLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = useCallback(async (code: string) => {
+    if (code.length !== 6) return;
+    const cleaned = phoneNumber.replace(/\s/g, '');
+    setIsVerifying(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: cleaned,
+        token: code,
+        type: 'sms',
+      });
+      if (error) {
+        toast({ variant: 'destructive', title: t('auth.invalidCode'), description: error.message });
+        setPhoneOtpCode('');
+      } else {
+        toast({ title: t('auth.loginSuccess'), description: t('auth.welcomeBack') });
+        navigate('/member');
+      }
+    } catch {
+      toast({ variant: 'destructive', title: t('auth.loginFailed') });
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [phoneNumber, navigate, t, toast]);
+
+  const switchMode = (mode: LoginMode) => {
+    setLoginMode(mode);
+    setEmailOtpSent(false);
+    setPhoneOtpSent(false);
+    setPhoneOtpCode('');
+    setResendTimer(0);
+  };
+
+  const modes: { key: LoginMode; label: string; icon: React.ReactNode }[] = [
+    { key: 'password', label: t('auth.passwordLogin'), icon: <KeyRound className="h-3.5 w-3.5" /> },
+    { key: 'email_otp', label: t('auth.emailLink'), icon: <Mail className="h-3.5 w-3.5" /> },
+    { key: 'phone_otp', label: t('auth.phoneOtp'), icon: <Phone className="h-3.5 w-3.5" /> },
+  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -136,7 +214,7 @@ const MemberLogin: React.FC = () => {
           <CardDescription>{t('auth.loginDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Google sign-in first for member (preferred flow) */}
+          {/* Google sign-in */}
           <Button type="button" variant="outline" className="w-full" disabled={isGoogleLoading} onClick={handleGoogleSignIn}>
             {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -154,30 +232,27 @@ const MemberLogin: React.FC = () => {
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('common.or')}</span>
           </div>
 
-          {/* Toggle between password and email OTP */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              type="button"
-              variant={loginMode === 'password' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => { setLoginMode('password'); setOtpSent(false); }}
-            >
-              Password
-            </Button>
-            <Button
-              type="button"
-              variant={loginMode === 'otp' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => { setLoginMode('otp'); setOtpSent(false); }}
-            >
-              <Mail className="mr-1.5 h-3.5 w-3.5" />
-              Email Link
-            </Button>
+          {/* 3-option mode selector */}
+          <div className="flex rounded-lg bg-muted p-1 mb-4">
+            {modes.map(m => (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => switchMode(m.key)}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all ${
+                  loginMode === m.key
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {m.icon}
+                <span className="hidden sm:inline">{m.label}</span>
+              </button>
+            ))}
           </div>
 
-          {loginMode === 'password' ? (
+          {/* === Password mode === */}
+          {loginMode === 'password' && (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t('auth.email')}</Label>
@@ -202,19 +277,22 @@ const MemberLogin: React.FC = () => {
                 {t('auth.login')}
               </Button>
             </form>
-          ) : (
+          )}
+
+          {/* === Email OTP mode === */}
+          {loginMode === 'email_otp' && (
             <div className="space-y-4">
-              {otpSent ? (
+              {emailOtpSent ? (
                 <div className="text-center py-6 space-y-3">
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                     <Mail className="h-8 w-8 text-primary" />
                   </div>
-                  <p className="font-medium">Check your email ✉️</p>
+                  <p className="font-medium">{t('auth.checkYourEmail')}</p>
                   <p className="text-sm text-muted-foreground">
-                    We sent a sign-in link to <span className="font-medium text-foreground">{otpEmail}</span>
+                    {t('auth.weSentLink')} <span className="font-medium text-foreground">{otpEmail}</span>
                   </p>
-                  <Button variant="ghost" size="sm" onClick={() => setOtpSent(false)}>
-                    Use a different email
+                  <Button variant="ghost" size="sm" onClick={() => setEmailOtpSent(false)}>
+                    {t('auth.useDifferentEmail')}
                   </Button>
                 </div>
               ) : (
@@ -227,16 +305,93 @@ const MemberLogin: React.FC = () => {
                       placeholder="email@example.com"
                       value={otpEmail}
                       onChange={(e) => setOtpEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendEmailOtp()}
                     />
                   </div>
-                  <Button type="button" className="w-full" disabled={isOtpLoading} onClick={handleSendOtp}>
+                  <Button type="button" className="w-full" disabled={isOtpLoading} onClick={handleSendEmailOtp}>
                     {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send sign-in link
+                    {t('auth.sendSignInLink')}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    No password needed — we'll email you a magic link
+                    {t('auth.noPasswordNeeded')}
                   </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* === Phone OTP mode === */}
+          {loginMode === 'phone_otp' && (
+            <div className="space-y-4">
+              {phoneOtpSent ? (
+                <div className="text-center py-4 space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Phone className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{t('auth.enterCode')}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t('auth.otpSentDescription')} <span className="font-medium text-foreground">{phoneNumber}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={phoneOtpCode}
+                      onChange={(val) => {
+                        setPhoneOtpCode(val);
+                        if (val.length === 6) handleVerifyPhoneOtp(val);
+                      }}
+                      disabled={isVerifying}
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map(i => (
+                          <InputOTPSlot key={i} index={i} />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  {isVerifying && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('auth.verifyCode')}...
+                    </div>
+                  )}
+
+                  <div className="flex flex-col items-center gap-2">
+                    {resendTimer > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {t('auth.resendIn').replace('{{seconds}}', String(resendTimer))}
+                      </p>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={handleSendPhoneOtp} disabled={isOtpLoading}>
+                        {t('auth.resendCode')}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => { setPhoneOtpSent(false); setPhoneOtpCode(''); }}>
+                      {t('auth.useDifferentEmail').replace('email', 'number')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">{t('auth.phoneNumber')}</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={t('auth.phonePlaceholder')}
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendPhoneOtp()}
+                    />
+                  </div>
+                  <Button type="button" className="w-full" disabled={isOtpLoading} onClick={handleSendPhoneOtp}>
+                    {isOtpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('auth.sendOtp')}
+                  </Button>
                 </>
               )}
             </div>
