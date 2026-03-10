@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchCoachImpactProfile, fetchTrainerQuests } from './api';
 import { COACH_LEVEL_CONFIG } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Zap } from 'lucide-react';
+import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Zap, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface CoachImpactCardProps {
