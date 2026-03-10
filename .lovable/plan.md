@@ -1,135 +1,47 @@
 
 
-# Audit Report: MOOM Momentum Club — What's Built vs What's Needed
+# Fix: Promotions export missing columns in Settings
 
-## Summary
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The system is **~90% complete for Phase 1**. The database schema uses different table names than your spec document but is **functionally equivalent and already populated with all seed data**. Here is the full comparison.
+## Fix (surgical, 1 file)
 
----
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-## 1. Database Schema — BUILT (different names, same function)
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-| Your Spec Table | Actual DB Table | Status |
-|----------------|----------------|--------|
-| `gamify_profiles` | `member_gamification_profiles` | Built — tracks XP, level, coin, streak |
-| `level_tiers` | `gamification_levels` | Built — 20 rows seeded |
-| `xp_ledger` | `xp_ledger` | Built |
-| `coin_ledger` | `points_ledger` | Built (column = "delta", not "coin_delta") |
-| `quest_templates` | `quest_templates` | Built — 22 templates seeded |
-| `quest_instances` | `quest_instances` | Built |
-| `badge_definitions` | `gamification_badges` | Built — 19 badges seeded |
-| `badge_awards` | `badge_earnings` | Built |
-| `reward_catalog` | `gamification_rewards` | Built — 19 rewards seeded |
-| `reward_redemptions` | `reward_redemptions` | Built |
-| `coupon_templates` | `coupon_templates` | Built — 8 templates seeded |
-| `coupon_wallet` | `coupon_wallet` | Built |
-| `shop_reward_rules` | `shop_reward_rules` | Built — 4 rules seeded |
-| `economy_guardrails` | `economy_guardrails` | Built — 14 rules seeded |
-| `gamification_events` | `gamification_audit_log` + `event_outbox` | Built (split into 2 tables) |
-| `squads` | `squads` | Built |
-| `squad_memberships` | `squad_memberships` | Built |
-| `season_campaigns` | `gamification_seasons` | Built |
-| `trainer_tiers` | `gamification_trainer_tiers` | Built — 10 tiers seeded |
-| `trainer_scores` | `trainer_gamification_scores` | Built |
-| `trainer_action_rewards` | `trainer_action_rewards` | Built — 11 actions seeded |
-| `gamification_rules` | `gamification_rules` | Built — 24 rules seeded (event processing rules) |
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-**Seed data total: 127 config rows + 24 rules = all matching ECONOMY_V1.md**
-
----
-
-## 2. Edge Functions (Backend) — ALL BUILT
-
-| Function | Status | Purpose |
-|----------|--------|---------|
-| `gamification-process-event` | Built (677 lines) | Core XP/Coin/streak/level/challenge/quest processing |
-| `gamification-assign-quests` | Built | Daily/weekly quest assignment |
-| `gamification-claim-quest` | Built | Claim completed quest, award XP/Coin/badge/coupon |
-| `gamification-redeem-reward` | Built | Reward redemption + admin void/rollback |
-| `gamification-issue-coupon` | Built | Issue coupon from template |
-| `streak-freeze` | Built | Streak freeze |
-| `sync-gamification-config` | Built | Config sync |
-
----
-
-## 3. Member UI Surfaces — ALL BUILT
-
-| Page | Route | Status |
-|------|-------|--------|
-| Home gamification widgets | `/member` | Built — MomentumCard, DailyBonusCard, TodayCard |
-| Momentum Hub | `/member/momentum` | Built — XP hero, tier badge, level requirements, QuestHub |
-| Rewards page | `/member/rewards` | Built — coin balance, redeemable rewards, points history |
-| Badge gallery | `/member/badges` | Built — earned/locked badges with effects |
-| Check-in with gamification | `/member/checkin` | Built — fires gamification event, quest progress celebration |
-| Leaderboard | `/member/leaderboard` | Built — XP ranking |
-| Squad page | `/member/squad` | Built — join/leave/view |
-| Coupon wallet | `/member/coupons` | Built |
-| Bottom nav | — | Updated — "Rewards" tab (Phase 1-3 cleanup done) |
-
----
-
-## 4. Admin UI Surfaces — ALL BUILT
-
-| Page | Route | Status |
-|------|-------|--------|
-| Gamification Overview | `/gamification` | Built — economy health stats, config counts |
-| Badge manager | `/gamification/badges` | Built — CRUD |
-| Reward manager | `/gamification/rewards` | Built — CRUD |
-| Quest manager | `/gamification/quests` | Built — CRUD |
-| Rules manager | `/gamification/rules` | Built — CRUD |
-| Challenge manager | `/gamification/challenges` | Built — CRUD (legacy, but admin can still manage) |
-| Level manager | `/gamification/levels` | Built — CRUD |
-| Coupon manager | `/gamification/coupons` | Built |
-| Shop rules | `/gamification/shop-rules` | Built |
-| Trainer tiers | `/gamification/trainers` | Built |
-| Audit log | `/gamification/studio` | Built |
-
----
-
-## 5. Trainer UI Surfaces — BUILT
-
-| Component | Status |
-|-----------|--------|
-| CoachImpactCard (in-house) | Built |
-| PartnerReputationCard (freelance) | Built |
-
----
-
-## 6. Anti-Abuse / Guardrails — BUILT
-
-All enforced server-side in `gamification-process-event`:
-- Idempotency keys (duplicate prevention)
-- Cooldown checks (e.g., 720 min for check-in)
-- Daily caps (per action_key)
-- Economy guardrails table (14 rules)
-- Refund rollback support in `gamification-redeem-reward`
-
----
-
-## 7. What's LEFT (Small Remaining Items)
-
-| Item | Priority | Notes |
-|------|----------|-------|
-| `fetchChallengeCompletionStats` in `api.ts` (lines 472-515) | Low | Still references legacy `challenge_progress` table. Used by Leaderboard "Challenges" tab. Should be removed or converted to quest-based stats. |
-| `redeemReward` in `api.ts` does client-side insert | Medium | Should call `gamification-redeem-reward` Edge Function instead of direct DB insert, to enforce server-side validation (level check, stock, daily limit). |
-| No live event triggers for shop/package purchase | Phase 2 | The spec defines `shop_order_paid` and `package_purchase_paid` events — these are not yet wired from the payment/approval flows. |
-| Monthly/Seasonal quest assignment | Phase 2 | `gamification-assign-quests` only handles daily/weekly. Monthly/seasonal assignment is not yet automated. |
-| Quest progress auto-increment | Phase 2 | Quest progress tracking relies on `gamification-process-event` but not all goal_types have increment logic wired. |
-
----
-
-## Verdict
-
-**Phase 1 is COMPLETE for launch.** The schema, seed data, event processing, all member/admin/trainer surfaces, and anti-abuse measures are all in production-ready state.
-
-### Recommended Next Steps (in order)
-
-1. **Fix `redeemReward` to use Edge Function** — Critical for server-side enforcement (10 min fix)
-2. **Remove `fetchChallengeCompletionStats`** legacy reference — Clean code debt (5 min)
-3. **Wire shop/package purchase → gamification events** — Phase 2 feature
-4. **Monthly quest auto-assignment** — Phase 2 feature
-5. **Quest progress auto-tracking for all goal_types** — Phase 2 feature
-
-Shall I implement items 1 and 2 now?
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

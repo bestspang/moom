@@ -151,20 +151,20 @@ export async function fetchMyRedemptions(memberId: string): Promise<RewardRedemp
   }));
 }
 
-export async function redeemReward(memberId: string, rewardId: string, pointsCost: number) {
+export async function redeemReward(memberId: string, rewardId: string, _pointsCost: number) {
   const idempotencyKey = `${memberId}-${rewardId}-${Date.now()}`;
 
-  const { error } = await supabase
-    .from('reward_redemptions')
-    .insert({
-      member_id: memberId,
+  const { data, error } = await supabase.functions.invoke('gamification-redeem-reward', {
+    body: {
       reward_id: rewardId,
-      points_spent: pointsCost,
+      member_id: memberId,
       idempotency_key: idempotencyKey,
-      status: 'pending',
-    });
+    },
+  });
 
   if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 // ─── Points History ─────────────────────────────────────────
@@ -477,39 +477,41 @@ export interface ChallengeCompletionStat {
 }
 
 export async function fetchChallengeCompletionStats(memberId: string | null): Promise<ChallengeCompletionStat[]> {
-  const { data: challenges, error: cErr } = await supabase
-    .from('gamification_challenges')
-    .select('id, name_en, status')
-    .in('status', ['active', 'completed'])
-    .order('end_date', { ascending: false })
+  // Quest-based stats (replaced legacy challenge_progress)
+  const { data: templates, error: tErr } = await supabase
+    .from('quest_templates')
+    .select('id, name_en')
+    .eq('is_active', true)
+    .in('quest_period', ['monthly', 'seasonal'])
+    .order('sort_order', { ascending: true })
     .limit(20);
 
-  if (cErr) throw cErr;
-  if (!challenges?.length) return [];
+  if (tErr) throw tErr;
+  if (!templates?.length) return [];
 
-  const challengeIds = challenges.map(c => c.id);
+  const templateIds = templates.map(t => t.id);
 
-  const { data: progress, error: pErr } = await supabase
-    .from('challenge_progress')
-    .select('challenge_id, member_id, status')
-    .in('challenge_id', challengeIds)
-    .eq('status', 'completed');
+  const { data: instances, error: iErr } = await supabase
+    .from('quest_instances')
+    .select('quest_template_id, member_id, status')
+    .in('quest_template_id', templateIds)
+    .in('status', ['completed', 'claimed']);
 
-  if (pErr) throw pErr;
+  if (iErr) throw iErr;
 
   const countMap: Record<string, number> = {};
   const userCompleted = new Set<string>();
-  for (const p of (progress ?? [])) {
-    countMap[p.challenge_id] = (countMap[p.challenge_id] ?? 0) + 1;
-    if (memberId && p.member_id === memberId) {
-      userCompleted.add(p.challenge_id);
+  for (const inst of (instances ?? [])) {
+    countMap[inst.quest_template_id] = (countMap[inst.quest_template_id] ?? 0) + 1;
+    if (memberId && inst.member_id === memberId) {
+      userCompleted.add(inst.quest_template_id);
     }
   }
 
-  return challenges.map(c => ({
-    challengeId: c.id,
-    nameEn: c.name_en,
-    completedCount: countMap[c.id] ?? 0,
-    currentUserCompleted: userCompleted.has(c.id),
+  return templates.map(t => ({
+    challengeId: t.id,
+    nameEn: t.name_en,
+    completedCount: countMap[t.id] ?? 0,
+    currentUserCompleted: userCompleted.has(t.id),
   }));
 }
