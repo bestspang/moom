@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchMySquad, fetchAvailableSquads, joinSquad, leaveSquad } from '../features/momentum/api';
+import { fetchMySquad, fetchAvailableSquads, joinSquad, leaveSquad, fetchSquadContributions } from '../features/momentum/api';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
@@ -36,6 +36,12 @@ export default function MemberSquadPage() {
     queryKey: ['available-squads'],
     queryFn: fetchAvailableSquads,
     enabled: !!memberId && !squad && !isLoading,
+  });
+
+  const { data: contributions } = useQuery({
+    queryKey: ['squad-contributions', squad?.id],
+    queryFn: () => fetchSquadContributions(squad!.id),
+    enabled: !!squad?.id,
   });
 
   const joinMutation = useMutation({
@@ -98,6 +104,7 @@ export default function MemberSquadPage() {
                     {s.description && <p className="text-xs text-muted-foreground line-clamp-1">{s.description}</p>}
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span><Zap className="h-3 w-3 inline mr-0.5" />{s.totalXp.toLocaleString()} XP</span>
+                      <span><Users className="h-3 w-3 inline mr-0.5" />{t('member.squadMemberCount', { count: s.memberCount ?? 0 })}</span>
                     </div>
                   </div>
                   <Button
@@ -115,6 +122,14 @@ export default function MemberSquadPage() {
         </Section>
       </div>
     );
+  }
+
+  // Build contribution map for inline display
+  const contributionMap = new Map<string, number>();
+  if (contributions) {
+    for (const c of contributions) {
+      contributionMap.set(c.memberId, c.totalXp);
+    }
   }
 
   return (
@@ -137,26 +152,34 @@ export default function MemberSquadPage() {
 
       <Section title={t('member.membersCount', { current: squad.members.length, max: squad.maxMembers })} className="mb-4">
         <div className="space-y-2">
-          {squad.members.map((m, i) => (
-            <div key={m.id} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-card border">
-              <div
-                className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{
-                  backgroundColor: `hsl(${(i * 60) % 360}, 60%, 85%)`,
-                  color: `hsl(${(i * 60) % 360}, 60%, 30%)`,
-                }}
-              >
-                {getInitials(m.firstName, m.lastName)}
+          {squad.members.map((m, i) => {
+            const xp = contributionMap.get(m.memberId);
+            return (
+              <div key={m.id} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-card border">
+                <div
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{
+                    backgroundColor: `hsl(${(i * 60) % 360}, 60%, 85%)`,
+                    color: `hsl(${(i * 60) % 360}, 60%, 30%)`,
+                  }}
+                >
+                  {getInitials(m.firstName, m.lastName)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : t('member.memberLabel')}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground capitalize">{m.role}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {xp !== undefined && (
+                    <span className="text-[11px] text-muted-foreground font-medium">{xp.toLocaleString()} XP</span>
+                  )}
+                  {m.role === 'leader' && <Crown className="h-4 w-4 text-amber-500" />}
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  {m.firstName && m.lastName ? `${m.firstName} ${m.lastName}` : t('member.memberLabel')}
-                </p>
-                <p className="text-[11px] text-muted-foreground capitalize">{m.role}</p>
-              </div>
-              {m.role === 'leader' && <Crown className="h-4 w-4 text-amber-500" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Section>
 
