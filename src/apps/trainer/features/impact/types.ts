@@ -12,6 +12,8 @@ export interface CoachImpactProfile {
   member_return_rate: number;
   pt_log_completion_rate: number;
   current_streak_weeks: number;
+  avg_rating: number | null;
+  total_ratings: number;
 }
 
 export interface PartnerReputationProfile {
