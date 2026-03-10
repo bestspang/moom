@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Circle } from 'lucide-react';
-import type { MomentumProfile, ChallengeProgressEntry } from './types';
+import type { MomentumProfile } from './types';
 import { xpForLevel } from './types';
 
 interface LevelRequirementsCardProps {
   profile: MomentumProfile;
-  completedQuests: ChallengeProgressEntry[];
+  completedQuests: number;
   totalBadges: number;
   className?: string;
 }
