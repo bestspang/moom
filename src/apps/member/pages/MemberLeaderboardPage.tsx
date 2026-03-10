@@ -2,21 +2,25 @@ import { useQuery } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, Users, Target, Crown, Medal, Award, CheckCircle2 } from 'lucide-react';
+import { Users, Target, CheckCircle2, Flame, MapPin } from 'lucide-react';
 import { useMemberSession } from '@/apps/member/hooks/useMemberSession';
 import {
   fetchXpLeaderboard,
   fetchSquadRankings,
   fetchChallengeCompletionStats,
+  fetchStreakLeaderboard,
+  fetchAttendanceLeaderboard,
+  fetchAroundMeLeaderboard,
   type LeaderboardEntry,
   type ChallengeCompletionStat,
 } from '@/apps/member/features/momentum/api';
 import type { SquadInfo } from '@/apps/member/features/momentum/types';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { LeaderboardEntryRow } from '@/apps/member/features/momentum/leaderboard/LeaderboardEntryRow';
+import { LeaderboardSkeleton, EmptyLeaderboard } from '@/apps/member/features/momentum/leaderboard/LeaderboardSkeleton';
+import { Crown, Medal, Award } from 'lucide-react';
 
 const RANK_ICONS = [Crown, Medal, Award] as const;
 const RANK_COLORS = [
@@ -32,48 +36,60 @@ function XpLeaderboardTab({ memberId, t }: { memberId: string | null; t: (key: s
     staleTime: 60_000,
   });
 
+  const { data: aroundMe } = useQuery({
+    queryKey: ['around-me-leaderboard', memberId],
+    queryFn: () => fetchAroundMeLeaderboard(memberId!),
+    enabled: !!memberId,
+    staleTime: 60_000,
+  });
+
   if (isLoading) return <LeaderboardSkeleton />;
   if (!data?.length) return <EmptyLeaderboard message={t('member.noXpEarnersYet')} />;
 
+  // Check if user is in top 20
+  const isInTop20 = memberId && data.some(e => e.memberId === memberId);
+
   return (
-    <div className="space-y-2">
-      {data.map((entry) => {
-        const isMe = memberId === entry.memberId;
-        const RankIcon = entry.rank <= 3 ? RANK_ICONS[entry.rank - 1] : null;
-        return (
-          <div
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {data.map((entry) => (
+          <LeaderboardEntryRow
             key={entry.memberId}
-            className={cn(
-              'flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm',
-              isMe && 'ring-2 ring-primary'
-            )}
-          >
-            <div className="w-8 text-center flex-shrink-0">
-              {RankIcon ? (
-                <RankIcon className={cn('h-5 w-5 mx-auto', RANK_COLORS[entry.rank - 1])} />
-              ) : (
-                <span className="text-sm font-bold text-muted-foreground">{entry.rank}</span>
-              )}
-            </div>
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={entry.avatarUrl ?? undefined} />
-              <AvatarFallback className="text-xs bg-muted">
-                {entry.firstName?.[0]}{entry.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground truncate">
-                {entry.firstName} {entry.lastName}
-                {isMe && <span className="text-primary ml-1">{t('member.youLabel')}</span>}
-              </p>
-              <p className="text-xs text-muted-foreground">Lv.{entry.level}</p>
-            </div>
-            <Badge variant="secondary" className="text-xs font-bold">
-              {entry.totalXp.toLocaleString()} XP
-            </Badge>
+            rank={entry.rank}
+            firstName={entry.firstName}
+            lastName={entry.lastName}
+            avatarUrl={entry.avatarUrl}
+            isMe={memberId === entry.memberId}
+            badge={`${entry.totalXp.toLocaleString()} XP`}
+            subtitle={`Lv.${entry.level}`}
+            youLabel={t('member.youLabel')}
+          />
+        ))}
+      </div>
+
+      {/* Around You section — only show if user is NOT in top 20 */}
+      {!isInTop20 && aroundMe && aroundMe.length > 0 && (
+        <div className="pt-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+            {t('member.aroundYou')}
+          </p>
+          <div className="space-y-2">
+            {aroundMe.map((entry) => (
+              <LeaderboardEntryRow
+                key={entry.memberId}
+                rank={entry.rank}
+                firstName={entry.firstName}
+                lastName={entry.lastName}
+                avatarUrl={entry.avatarUrl}
+                isMe={memberId === entry.memberId}
+                badge={`${entry.totalXp.toLocaleString()} XP`}
+                subtitle={`Lv.${entry.level}`}
+                youLabel={t('member.youLabel')}
+              />
+            ))}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }
@@ -162,21 +178,59 @@ function ChallengesTab({ memberId, t }: { memberId: string | null; t: (key: stri
   );
 }
 
-function LeaderboardSkeleton() {
+function StreaksTab({ memberId, t }: { memberId: string | null; t: (key: string, opts?: any) => string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['streak-leaderboard'],
+    queryFn: fetchStreakLeaderboard,
+    staleTime: 60_000,
+  });
+
+  if (isLoading) return <LeaderboardSkeleton />;
+  if (!data?.length) return <EmptyLeaderboard message={t('member.noStreakDataYet')} />;
+
   return (
     <div className="space-y-2">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-14 w-full rounded-xl" />
+      {data.map((entry) => (
+        <LeaderboardEntryRow
+          key={entry.memberId}
+          rank={entry.rank}
+          firstName={entry.firstName}
+          lastName={entry.lastName}
+          avatarUrl={entry.avatarUrl}
+          isMe={memberId === entry.memberId}
+          badge={t('member.dayStreak', { count: entry.currentStreak ?? 0 })}
+          subtitle={`Lv.${entry.level}`}
+          youLabel={t('member.youLabel')}
+        />
       ))}
     </div>
   );
 }
 
-function EmptyLeaderboard({ message }: { message: string }) {
+function AttendanceTab({ memberId, t }: { memberId: string | null; t: (key: string, opts?: any) => string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['attendance-leaderboard'],
+    queryFn: fetchAttendanceLeaderboard,
+    staleTime: 60_000,
+  });
+
+  if (isLoading) return <LeaderboardSkeleton />;
+  if (!data?.length) return <EmptyLeaderboard message={t('member.noAttendanceYet')} />;
+
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <Trophy className="h-10 w-10 mb-2 opacity-40" />
-      <p className="text-sm">{message}</p>
+    <div className="space-y-2">
+      {data.map((entry) => (
+        <LeaderboardEntryRow
+          key={entry.memberId}
+          rank={entry.rank}
+          firstName={entry.firstName}
+          lastName={entry.lastName}
+          avatarUrl={entry.avatarUrl}
+          isMe={memberId === entry.memberId}
+          badge={t('member.checkInsThisMonth', { count: entry.checkInCount ?? 0 })}
+          youLabel={t('member.youLabel')}
+        />
+      ))}
     </div>
   );
 }
@@ -193,10 +247,12 @@ export default function MemberLeaderboardPage() {
       />
       <Section>
         <Tabs defaultValue="xp" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="xp" className="text-xs">{t('member.tabXp')}</TabsTrigger>
             <TabsTrigger value="squads" className="text-xs">{t('member.tabSquads')}</TabsTrigger>
             <TabsTrigger value="challenges" className="text-xs">{t('member.tabChallenges')}</TabsTrigger>
+            <TabsTrigger value="streaks" className="text-xs">{t('member.tabStreaks')}</TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs">{t('member.tabAttendance')}</TabsTrigger>
           </TabsList>
           <TabsContent value="xp">
             <XpLeaderboardTab memberId={memberId} t={t} />
@@ -206,6 +262,12 @@ export default function MemberLeaderboardPage() {
           </TabsContent>
           <TabsContent value="challenges">
             <ChallengesTab memberId={memberId} t={t} />
+          </TabsContent>
+          <TabsContent value="streaks">
+            <StreaksTab memberId={memberId} t={t} />
+          </TabsContent>
+          <TabsContent value="attendance">
+            <AttendanceTab memberId={memberId} t={t} />
           </TabsContent>
         </Tabs>
       </Section>

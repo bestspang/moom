@@ -1,94 +1,47 @@
 
 
-# Phase 5A: Enhanced Leaderboard + Trainer Surface i18n
+# Fix: Promotions export missing columns in Settings
 
-## Current State
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The project has a working but minimal post-launch gamification system:
-- **Leaderboard**: Single page with 3 tabs (XP, Squads, Challenges) — flat top-20 list, no time windows, no "around you", no category boards
-- **Squads**: Basic join/leave with XP total — no roles beyond leader/member, no activity feed, no squad challenges
-- **Trainer UI**: CoachImpactCard and PartnerReputationCard exist on trainer home, but the entire trainer surface has hardcoded English (not localized), and there are only 5 routes (home, schedule, roster, workouts, profile) — no dedicated gamification pages
-- **Realtime**: Already enabled for gamification tables (profiles, badges, quest_instances, reward_redemptions) but not for squads
-- **Seasonal**: No campaign hub or seasonal UI exists yet
+## Fix (surgical, 1 file)
 
-## What to Build First (Incremental Phase 5A)
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-Given the project's incremental strategy, this phase focuses on the **highest-impact, lowest-risk** improvements:
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-1. **Enhanced Leaderboard** — add time-window tabs (All-time / This Week / This Month), "Around You" positioning, and streak/attendance category boards
-2. **Trainer Surface i18n** — the trainer surface has ~30 hardcoded English strings across layout, home, and impact cards
-3. **Realtime for squads** — enable realtime on `squads` and `squad_memberships` tables, add to sync layer
-
----
-
-### Step 1: Database — Enable realtime for squad tables
-
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.squads;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.squad_memberships;
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-No schema changes needed — existing tables support all planned features.
-
-### Step 2: Enhanced Leaderboard API
-
-Update `src/apps/member/features/momentum/api.ts`:
-- Add `fetchXpLeaderboardByPeriod(period: 'all' | 'weekly' | 'monthly')` — filters by `created_at` range on `xp_ledger` aggregation or uses `member_gamification_profiles.total_xp` for all-time
-- Add `fetchAroundMeLeaderboard(memberId)` — fetches 5 above + 5 below current user's rank
-- Add `fetchStreakLeaderboard()` — ranked by `current_streak` from `member_gamification_profiles`
-- Add `fetchAttendanceLeaderboard()` — ranked by check-in count from `member_attendance` in current month
-
-### Step 3: Enhanced Leaderboard UI
-
-Update `src/apps/member/pages/MemberLeaderboardPage.tsx`:
-- Add period selector (All-time / This Week / This Month) as sub-tabs or chips within the XP tab
-- Add "Around You" section below top-20 showing user's position with nearby members
-- Add 2 new tabs: Streaks and Attendance
-- Add i18n keys for new UI elements
-
-### Step 4: Realtime Sync Layer Update
-
-Update `src/hooks/useRealtimeSync.ts`:
-- Add `squads` and `squad_memberships` to `TABLE_INVALIDATION_MAP`
-- Map to query keys: `['my-squad', 'available-squads', 'squad-rankings']`
-
-### Step 5: Trainer Surface i18n
-
-Add ~30 trainer keys to `en.ts` and `th.ts` under a `trainer` namespace:
-- `TrainerLayout.tsx`: Nav labels (Home, Schedule, Roster, Workouts, Profile)
-- `TrainerHomePage.tsx`: "Today's overview", "Today's Classes", "Total Bookings", "across today", "Today's Schedule", "No classes today", "Announcements", "checked in"
-- `CoachImpactCard.tsx`: Level labels, metric labels
-- `PartnerReputationCard.tsx`: Tier labels, metric labels
-- `TrainerHeader.tsx`: Any header text
-
-Update all 5 trainer files to use `useTranslation()` + `t()` calls.
-
----
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `src/apps/member/features/momentum/api.ts` | Add 4 new leaderboard fetch functions |
-| `src/apps/member/pages/MemberLeaderboardPage.tsx` | Period selector, Around You, Streak/Attendance tabs |
-| `src/hooks/useRealtimeSync.ts` | Add squads + squad_memberships |
-| `src/i18n/locales/en.ts` | ~40 new keys (leaderboard + trainer) |
-| `src/i18n/locales/th.ts` | ~40 new keys (leaderboard + trainer) |
-| `src/apps/trainer/layouts/TrainerLayout.tsx` | i18n nav labels |
-| `src/apps/trainer/pages/TrainerHomePage.tsx` | i18n all strings |
-| `src/apps/trainer/features/impact/CoachImpactCard.tsx` | i18n labels |
-| `src/apps/trainer/features/impact/PartnerReputationCard.tsx` | i18n labels |
-| `src/apps/trainer/components/TrainerHeader.tsx` | i18n if needed |
-
-### Database Migration
-
-1 migration: enable realtime for `squads` and `squad_memberships`.
-
-### What This Does NOT Include (Future Phases)
-
-- Squad social features (activity feed, reactions) — Phase 5B
-- Seasonal campaign hub — Phase 5C
-- Heavy animations — Phase 5C
-- Dedicated trainer gamification pages (badges, rewards) — Phase 5B
-- Friend/follow leaderboard — Phase 5D
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

@@ -425,6 +425,8 @@ export interface LeaderboardEntry {
   totalXp: number;
   level: number;
   rank: number;
+  currentStreak?: number;
+  checkInCount?: number;
 }
 
 export async function fetchXpLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -444,6 +446,127 @@ export async function fetchXpLeaderboard(): Promise<LeaderboardEntry[]> {
     totalXp: row.total_xp,
     level: row.current_level,
     rank: idx + 1,
+  }));
+}
+
+export async function fetchStreakLeaderboard(): Promise<LeaderboardEntry[]> {
+  const { data, error } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp, current_level, current_streak, member:members(first_name, last_name, avatar_url)')
+    .gt('current_streak', 0)
+    .order('current_streak', { ascending: false })
+    .limit(20);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any, idx: number) => ({
+    memberId: row.member_id,
+    firstName: row.member?.first_name ?? '',
+    lastName: row.member?.last_name ?? '',
+    avatarUrl: row.member?.avatar_url ?? null,
+    totalXp: row.total_xp,
+    level: row.current_level,
+    rank: idx + 1,
+    currentStreak: row.current_streak,
+  }));
+}
+
+export async function fetchAttendanceLeaderboard(): Promise<LeaderboardEntry[]> {
+  // Get current month's start date
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const { data, error } = await supabase
+    .from('member_attendance')
+    .select('member_id, members(first_name, last_name, avatar_url)')
+    .gte('check_in_time', monthStart);
+
+  if (error) throw error;
+
+  // Aggregate by member
+  const countMap = new Map<string, { count: number; member: any }>();
+  for (const row of (data ?? []) as any[]) {
+    const existing = countMap.get(row.member_id);
+    if (existing) {
+      existing.count++;
+    } else {
+      countMap.set(row.member_id, { count: 1, member: row.members });
+    }
+  }
+
+  // Sort and return top 20
+  const sorted = [...countMap.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 20);
+
+  return sorted.map(([memberId, { count, member }], idx) => ({
+    memberId,
+    firstName: member?.first_name ?? '',
+    lastName: member?.last_name ?? '',
+    avatarUrl: member?.avatar_url ?? null,
+    totalXp: 0,
+    level: 0,
+    rank: idx + 1,
+    checkInCount: count,
+  }));
+}
+
+export async function fetchAroundMeLeaderboard(memberId: string): Promise<LeaderboardEntry[]> {
+  if (!memberId) return [];
+
+  // Get user's XP
+  const { data: myProfile } = await supabase
+    .from('member_gamification_profiles')
+    .select('total_xp')
+    .eq('member_id', memberId)
+    .maybeSingle();
+
+  if (!myProfile) return [];
+
+  const myXp = myProfile.total_xp;
+
+  // Get 5 above (higher XP) and 5 below (lower XP), plus the user
+  const { data: above } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+    .gt('total_xp', myXp)
+    .order('total_xp', { ascending: true })
+    .limit(5);
+
+  const { data: below } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+    .lt('total_xp', myXp)
+    .order('total_xp', { ascending: false })
+    .limit(5);
+
+  const { data: me } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id, total_xp, current_level, member:members(first_name, last_name, avatar_url)')
+    .eq('member_id', memberId);
+
+  // Count how many are above to determine rank
+  const { count: aboveCount } = await supabase
+    .from('member_gamification_profiles')
+    .select('member_id', { count: 'exact', head: true })
+    .gt('total_xp', myXp);
+
+  const myRank = (aboveCount ?? 0) + 1;
+
+  const combined = [
+    ...((above ?? []).reverse()),
+    ...(me ?? []),
+    ...(below ?? []),
+  ];
+
+  return combined.map((row: any, idx: number) => ({
+    memberId: row.member_id,
+    firstName: row.member?.first_name ?? '',
+    lastName: row.member?.last_name ?? '',
+    avatarUrl: row.member?.avatar_url ?? null,
+    totalXp: row.total_xp,
+    level: row.current_level,
+    rank: myRank - ((above ?? []).length) + idx,
   }));
 }
 

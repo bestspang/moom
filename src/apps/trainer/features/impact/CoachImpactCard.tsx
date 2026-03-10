@@ -4,12 +4,14 @@ import { fetchCoachImpactProfile, fetchTrainerQuests } from './api';
 import { COACH_LEVEL_CONFIG } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, TrendingUp, ClipboardCheck, Flame, Coins, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CoachImpactCardProps {
   className?: string;
 }
 
 export function CoachImpactCard({ className }: CoachImpactCardProps) {
+  const { t } = useTranslation();
   const { data: profile, isLoading } = useQuery({
     queryKey: ['coach-impact-profile'],
     queryFn: fetchCoachImpactProfile,
@@ -39,10 +41,10 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
   const arcLength = (scoreAngle / 360) * circumference;
 
   const metrics = [
-    { label: 'Classes', value: profile.total_classes_taught, icon: Users },
-    { label: 'Attendance', value: `${Math.round(profile.avg_attendance_rate)}%`, icon: TrendingUp },
-    { label: 'Return Rate', value: `${Math.round(profile.member_return_rate)}%`, icon: ClipboardCheck },
-    { label: 'Streak', value: `${profile.current_streak_weeks}w`, icon: Flame },
+    { label: t('trainer.classes'), value: profile.total_classes_taught, icon: Users },
+    { label: t('trainer.attendance'), value: `${Math.round(profile.avg_attendance_rate)}%`, icon: TrendingUp },
+    { label: t('trainer.returnRate'), value: `${Math.round(profile.member_return_rate)}%`, icon: ClipboardCheck },
+    { label: t('trainer.streak'), value: `${profile.current_streak_weeks}w`, icon: Flame },
   ];
 
   return (
@@ -55,7 +57,7 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
       <div className="bg-card p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Coach Impact</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{t('trainer.coachImpact')}</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span
                 className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
@@ -122,7 +124,7 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
         {/* Quest preview */}
         {quests && quests.length > 0 && (
           <div className="border-t border-border/50 pt-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Coach Quests</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{t('trainer.coachQuests')}</p>
             <div className="space-y-1.5">
               {quests.slice(0, 3).map(q => (
                 <div key={q.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">

@@ -44,7 +44,10 @@ type TableName =
   | 'member_gamification_profiles'
   | 'badge_earnings'
   | 'quest_instances'
-  | 'reward_redemptions';
+  | 'reward_redemptions'
+  // ── Squad tables ──
+  | 'squads'
+  | 'squad_memberships';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -84,10 +87,13 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
   transfer_slips: ['transfer-slips', 'transfer-slip-stats', 'transfer-slip-detail'],
   // ── Gamification tables ──
-  member_gamification_profiles: ['momentum-profile', 'gamification-profiles'],
+  member_gamification_profiles: ['momentum-profile', 'gamification-profiles', 'xp-leaderboard', 'streak-leaderboard'],
   badge_earnings: ['my-badges', 'badge-earnings', 'momentum-profile'],
   quest_instances: ['my-quests', 'quest-instances'],
   reward_redemptions: ['my-rewards', 'reward-redemptions', 'momentum-profile'],
+  // ── Squad tables ──
+  squads: ['my-squad', 'available-squads', 'squad-rankings'],
+  squad_memberships: ['my-squad', 'available-squads', 'squad-rankings'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
