@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from 'i18next';
 import { useMemberSession } from '@/apps/member/hooks/useMemberSession';
 
 /**
@@ -31,7 +32,7 @@ export function XPToast() {
           toast(`+${delta} XP`, {
             description: row.event_type
               ? row.event_type.replace(/_/g, ' ')
-              : 'Keep up the momentum!',
+              : i18n.t('member.keepMomentum'),
             duration: 3000,
             position: 'top-center',
           });

@@ -2068,6 +2068,23 @@ export default {
     nextMilestones: 'เป้าหมายถัดไป',
     oneMoreToUnlock: 'อีก 1 เพื่อปลดล็อก!',
     moreToGo: 'อีก {{n}}',
+    // ReferralCard (home)
+    referralCardTitle: 'ชวนเพื่อน รับแต้ม!',
+    referralCardHint: 'แชร์โค้ดของคุณ ทั้งคู่ได้ 200 Coin',
+    referralCardStats: 'เพื่อน {{count}} คนเข้าร่วม · ได้ {{coins}} Coin',
+    referralShareText: 'ใช้โค้ด {{code}} สมัครสมาชิก เราทั้งคู่ได้ 200 แต้ม! 🎉',
+    referralJoinTitle: 'สมัคร MOOM!',
+    referralCopied: 'คัดลอกแล้ว!',
+    referralShare: 'แชร์',
+    referralLinkCopied: 'คัดลอกลิงก์แล้ว! แชร์ให้เพื่อนเลย 🎉',
+    referralLinkCopiedShort: 'คัดลอกลิงก์แล้ว!',
+    // SuggestedClassCard
+    suggestedForYou: 'แนะนำสำหรับคุณ',
+    basedOnFavorites: 'จากคลาสที่คุณชอบ',
+    popularThisWeek: 'ยอดนิยมสัปดาห์นี้',
+    suggestedClassFallback: 'คลาส',
+    // XPToast
+    keepMomentum: 'รักษาโมเมนตัมไว้!',
     // Purchase page
     creditDebitCard: 'บัตรเครดิต/เดบิต',
     promptPay: 'พร้อมเพย์',

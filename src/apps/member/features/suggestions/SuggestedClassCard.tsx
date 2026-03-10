@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,7 +12,7 @@ interface SuggestedClassCardProps {
 interface Suggestion {
   scheduleId: string;
   className: string;
-  reason: string;
+  reasonKey: 'basedOnFavorites' | 'popularThisWeek';
   date: string;
   time: string;
 }
@@ -65,8 +66,8 @@ async function fetchSuggestions(memberId: string): Promise<Suggestion[]> {
     const isPreferred = topCat && s.class?.category_id === topCat;
     suggestions.push({
       scheduleId: s.id,
-      className: s.class?.name ?? 'Class',
-      reason: isPreferred ? 'Based on your favorites' : 'Popular this week',
+      className: s.class?.name ?? '',
+      reasonKey: isPreferred ? 'basedOnFavorites' : 'popularThisWeek',
       date: s.scheduled_date,
       time: s.start_time?.slice(0, 5) ?? '',
     });
@@ -77,12 +78,13 @@ async function fetchSuggestions(memberId: string): Promise<Suggestion[]> {
 
 export function SuggestedClassCard({ memberId }: SuggestedClassCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const { data: suggestions, isLoading } = useQuery({
     queryKey: ['suggested-classes', memberId],
     queryFn: () => fetchSuggestions(memberId),
     enabled: !!memberId,
-    staleTime: 5 * 60 * 1000, // 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading) return <Skeleton className="h-20 rounded-xl" />;
@@ -92,7 +94,7 @@ export function SuggestedClassCard({ memberId }: SuggestedClassCardProps) {
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 mb-1">
         <Sparkles className="h-4 w-4 text-primary" />
-        <p className="text-sm font-semibold text-foreground">Suggested for You</p>
+        <p className="text-sm font-semibold text-foreground">{t('member.suggestedForYou')}</p>
       </div>
       {suggestions.map(s => (
         <button
@@ -101,8 +103,12 @@ export function SuggestedClassCard({ memberId }: SuggestedClassCardProps) {
           className="flex w-full items-center gap-3 rounded-xl bg-card p-3 shadow-sm border border-border hover:bg-accent/50 transition-colors text-left"
         >
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{s.className}</p>
-            <p className="text-xs text-muted-foreground">{s.reason} · {s.date} {s.time}</p>
+            <p className="text-sm font-semibold text-foreground truncate">
+              {s.className || t('member.suggestedClassFallback')}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t(`member.${s.reasonKey}`)} · {s.date} {s.time}
+            </p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         </button>
