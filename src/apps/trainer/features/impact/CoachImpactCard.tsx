@@ -45,6 +45,7 @@ export function CoachImpactCard({ className }: CoachImpactCardProps) {
     { label: t('trainer.attendance'), value: `${Math.round(profile.avg_attendance_rate)}%`, icon: TrendingUp },
     { label: t('trainer.returnRate'), value: `${Math.round(profile.member_return_rate)}%`, icon: ClipboardCheck },
     { label: t('trainer.streak'), value: `${profile.current_streak_weeks}w`, icon: Flame },
+    ...(profile.avg_rating != null ? [{ label: t('trainer.rating'), value: `${profile.avg_rating}`, icon: Star }] : []),
   ];
 
   return (
