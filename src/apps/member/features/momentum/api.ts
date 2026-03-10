@@ -151,20 +151,20 @@ export async function fetchMyRedemptions(memberId: string): Promise<RewardRedemp
   }));
 }
 
-export async function redeemReward(memberId: string, rewardId: string, pointsCost: number) {
+export async function redeemReward(memberId: string, rewardId: string, _pointsCost: number) {
   const idempotencyKey = `${memberId}-${rewardId}-${Date.now()}`;
 
-  const { error } = await supabase
-    .from('reward_redemptions')
-    .insert({
-      member_id: memberId,
+  const { data, error } = await supabase.functions.invoke('gamification-redeem-reward', {
+    body: {
       reward_id: rewardId,
-      points_spent: pointsCost,
+      member_id: memberId,
       idempotency_key: idempotencyKey,
-      status: 'pending',
-    });
+    },
+  });
 
   if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 // ─── Points History ─────────────────────────────────────────
