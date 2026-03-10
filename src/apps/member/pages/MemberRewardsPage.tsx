@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TierBadge } from '../features/momentum/TierBadge';
 import { RewardDropCard } from '../features/momentum/RewardDropCard';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { Gift, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -25,7 +25,7 @@ const EVENT_LABEL_KEYS: Record<string, string> = {
 
 export default function MemberRewardsPage() {
   const { memberId } = useMemberSession();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],

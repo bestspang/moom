@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Check, CreditCard, Smartphone, Building2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
-import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useTranslation } from 'react-i18next';
 
 type Step = 'review' | 'payment' | 'success';
@@ -42,12 +40,7 @@ export default function MemberPurchasePage() {
     if (!memberId || !id) return;
     try {
       await createCheckout({ member_id: memberId, package_id: id });
-      fireGamificationEvent({
-        event_type: 'package_purchased',
-        member_id: memberId,
-        idempotency_key: `purchase:${id}:${Date.now()}`,
-        metadata: { package_id: id },
-      });
+      // Gamification event is fired server-side via stripe-webhook after payment confirmation
       setStep('success');
     } catch {
       // error already toasted by hook

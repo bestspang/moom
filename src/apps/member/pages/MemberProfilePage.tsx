@@ -2,7 +2,7 @@ import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
@@ -22,7 +22,7 @@ const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_
 export default function MemberProfilePage() {
   const { signOut, allRoles } = useAuth();
   const { firstName, lastName, email, memberId } = useMemberSession();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
 
@@ -47,7 +47,6 @@ export default function MemberProfilePage() {
     { label: t('member.mySquad'), icon: Heart, path: '/member/squad' },
     { label: t('member.securityLogin'), icon: Lock, path: '/member/security' },
     { label: t('member.notifications'), icon: Bell, path: '/member/notifications' },
-    { label: t('member.support'), icon: HelpCircle, path: '' },
   ];
 
   return (

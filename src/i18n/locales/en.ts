@@ -1592,6 +1592,8 @@ export default {
     passwordSpecial: 'Password must contain at least one special character',
     passwordsNotMatch: 'Passwords do not match',
     confirmPassword: 'Please confirm your password',
+    mustBePositive: 'Must be a positive number',
+    fileTooLarge: 'File is too large (max 5MB)',
   },
 
   // Auth
@@ -1988,6 +1990,10 @@ export default {
     uploadingSlip: 'Uploading...',
     slipUploaded: 'Transfer slip uploaded',
     slipUploadFailed: 'Failed to upload slip',
+    // Attendance stats
+    totalCheckIns: 'Total',
+    thisMonth: 'This month',
+    thisWeek: 'This week',
     // Security page
     securityTitle: 'Security & Login',
     accountSecurity: 'Account Security',
@@ -2857,4 +2863,5 @@ export default {
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
   },
+
 };

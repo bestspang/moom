@@ -317,12 +317,12 @@ export default function MemberLeaderboardPage() {
       />
       <Section>
         <Tabs defaultValue="xp" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="xp" className="text-xs">{t('member.tabXp')}</TabsTrigger>
-            <TabsTrigger value="squads" className="text-xs">{t('member.tabSquads')}</TabsTrigger>
-            <TabsTrigger value="challenges" className="text-xs">{t('member.tabChallenges')}</TabsTrigger>
-            <TabsTrigger value="streaks" className="text-xs">{t('member.tabStreaks')}</TabsTrigger>
-            <TabsTrigger value="attendance" className="text-xs">{t('member.tabAttendance')}</TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto no-scrollbar">
+            <TabsTrigger value="xp" className="text-xs flex-shrink-0">{t('member.tabXp')}</TabsTrigger>
+            <TabsTrigger value="squads" className="text-xs flex-shrink-0">{t('member.tabSquads')}</TabsTrigger>
+            <TabsTrigger value="challenges" className="text-xs flex-shrink-0">{t('member.tabChallenges')}</TabsTrigger>
+            <TabsTrigger value="streaks" className="text-xs flex-shrink-0">{t('member.tabStreaks')}</TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs flex-shrink-0">{t('member.tabAttendance')}</TabsTrigger>
           </TabsList>
           <TabsContent value="xp">
             <XpLeaderboardTab memberId={memberId} t={t} />

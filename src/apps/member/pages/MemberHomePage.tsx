@@ -17,7 +17,7 @@ import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { useState } from 'react';
 
@@ -30,7 +30,7 @@ function getTimeGreeting(t: (key: string) => string): string {
 
 export default function MemberHomePage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
@@ -261,7 +261,7 @@ export default function MemberHomePage() {
                     <span className={`text-xs font-semibold ${urgencyColor}`}>
                       {daysLeft <= 0 ? t('member.expired') : t('member.daysLeft').replace('{{n}}', String(daysLeft))}
                     </span>
-                  ) as any : undefined}
+                  ) : undefined}
                   trailing={<MobileStatusBadge status={pkg.status} />}
                 />
               );

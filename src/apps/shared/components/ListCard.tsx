@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 interface ListCardProps {
   title: string;
   subtitle?: string;
-  meta?: string;
+  meta?: React.ReactNode;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   onClick?: () => void;
@@ -30,7 +30,7 @@ export function ListCard({
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-foreground truncate">{title}</p>
         {subtitle && <p className="text-xs text-foreground/70 mt-0.5 truncate">{subtitle}</p>}
-        {meta && <p className="text-xs text-muted-foreground mt-0.5">{meta}</p>}
+        {meta && <div className="text-xs text-muted-foreground mt-0.5">{meta}</div>}
       </div>
       {trailing && <div className="flex-shrink-0">{trailing}</div>}
       {showChevron && onClick && (
