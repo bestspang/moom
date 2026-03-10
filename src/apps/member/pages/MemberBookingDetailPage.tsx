@@ -226,6 +226,18 @@ export default function MemberBookingDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Rating sheet */}
+      {memberId && (
+        <ClassRatingSheet
+          open={ratingOpen}
+          onClose={() => {
+            setRatingOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['class-rating', schedule.id, memberId] });
+          }}
+          scheduleId={schedule.id}
+          memberId={memberId}
+        />
+      )}
     </div>
   );
 }
