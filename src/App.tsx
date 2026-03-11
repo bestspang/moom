@@ -287,6 +287,9 @@ const App = () => (
                     <Route path="shop-rules" element={<GamificationShopRules />} />
                     <Route path="trainers" element={<GamificationTrainers />} />
                     <Route path="risk" element={<GamificationRisk />} />
+                    <Route path="guardrails" element={<GamificationGuardrails />} />
+                    <Route path="operations" element={<GamificationOperations />} />
+                    <Route path="prestige" element={<GamificationPrestige />} />
                   </Route>
                   <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
                 </Route>
