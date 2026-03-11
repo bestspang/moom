@@ -1,106 +1,198 @@
 
 
-# Cross-System Consistency Audit — Findings & Fix Plan
+# Post-Fix Re-Audit — Round 3
 
-## Audit Summary
+## SECTION A — Executive Summary
 
-After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
+The previous rounds fixed server-side validation (check-in, booking creation), storage uploads, and i18n. However, **two critical RLS policy gaps** remain that will cause member-facing features to fail at runtime. The code looks correct but the database policies block member writes.
 
----
+**Overall:** ~90% code-ready, but 2 runtime-breaking RLS issues make key member flows non-functional.
 
-## CONFIRMED BUGS (Ranked by Impact)
+**Biggest Risks:**
+1. Members cannot upload transfer slips — `transactions` INSERT requires `level_3_manager`
+2. Members cannot cancel bookings — `class_bookings` UPDATE requires `level_2_operator`
+3. Remaining `as any` casts mask type mismatches
 
-### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
-
-These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
-
-| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
-|---|---|---|
-| `gamification-process-event` | Yes | Yes |
-| `gamification-admin-ops` | Yes | Yes |
-| `streak-freeze` | Yes | No (exact match only) |
-| `gamification-redeem-reward` | **No** | **No** |
-| `gamification-claim-quest` | **No** | **No** |
-| `gamification-issue-coupon` | **No** | **No** |
-| `gamification-assign-quests` | **No** | **No** |
-| `sync-gamification-config` | **No** | **No** |
-
-**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
-
-**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
-
-### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
-
-Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
-
-**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
-
-### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
-
-`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
-
-These tabs work fine in English but won't localize for Thai users.
-
-**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+**Biggest Strengths:** All prior critical fixes (B1-B4) are correctly implemented. Architecture is clean. Gamification engine is robust.
 
 ---
 
-## VERIFIED WORKING (No Changes Needed)
+## SECTION B — Critical Bugs
 
-| Area | Status | Evidence |
+### B1. CRITICAL: Slip Upload Fails for Members — RLS Blocks INSERT on `transactions`
+
+**Severity:** CRITICAL — feature is completely broken for all members  
+**Root Cause:** `transactions` table RLS only has policies for `level_3_manager+`. The `uploadTransferSlip()` function does a direct client-side `.insert()` into `transactions`, but members have `level_1_minimum` access. The insert will be silently rejected or throw an RLS error.
+
+**Evidence:** DB query confirms only two policies on `transactions`:
+- `Managers can manage transactions` (ALL, `level_3_manager`)
+- `Managers can read transactions` (SELECT, `level_3_manager`)
+
+No INSERT policy exists for members.
+
+**Fix:** Create a `SECURITY DEFINER` RPC `member_upload_slip(p_member_id, p_amount, p_bank_name, p_transfer_date, p_slip_url)` that:
+- Validates the member exists and is active
+- Inserts into `transactions` with proper defaults
+- Returns the transaction reference
+Then update `uploadTransferSlip()` in `services.ts` to call this RPC instead of direct insert.
+
+### B2. CRITICAL: Cancel Booking Fails for Members — RLS Blocks UPDATE on `class_bookings`
+
+**Severity:** CRITICAL — members cannot cancel their own bookings  
+**Root Cause:** `class_bookings` UPDATE policy requires `level_2_operator`. The `cancelBooking()` function does a direct `.update()` which will fail for members (`level_1_minimum`).
+
+Note: `create_booking_safe` works because it's a `SECURITY DEFINER` RPC that bypasses RLS. But cancellation was implemented as a direct client update.
+
+**Fix:** Create a `SECURITY DEFINER` RPC `cancel_booking_safe(p_booking_id, p_member_id, p_reason)` that:
+- Verifies the booking belongs to the member
+- Verifies the booking is in a cancellable state
+- Updates the booking status
+Then update `cancelBooking()` to call this RPC.
+
+---
+
+## SECTION C — Medium-Priority Issues
+
+### C1. `as any` Casts on Enum Values in `services.ts`
+
+`'bank_transfer' as any` and `'pending' as any` — these happen to be valid enum values, so they work at runtime. But the casts bypass compile-time checking. After fixing B1 (moving to RPC), these casts become moot since the RPC handles the insert.
+
+### C2. Google OAuth SVG Duplicated in 3 Auth Files
+
+The same Google icon SVG is copy-pasted in `AdminLogin.tsx`, `MemberLogin.tsx`, and `MemberSignup.tsx`. Extract to a shared component.
+
+### C3. `member_attendance` SELECT Policy Uses `level_1_minimum`
+
+This means any authenticated user can read ALL members' attendance. Not a security crisis but worth narrowing if needed.
+
+---
+
+## SECTION D — End-to-End Flow Matrix (Updated)
+
+| Flow | Status | Notes |
 |---|---|---|
-| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
-| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
-| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
-| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
-| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
-| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
-| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
-| Routes in App.tsx | Correct | All 3 new pages registered |
-| GamificationStudio tabs | Correct | All 14 tabs present and routed |
-| Prestige criteria admin page | Correct | CRUD with audit trail |
-| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
-| Challenge progress tracking | Correct | Both challenges and quests tracked |
-| Referral reward flow | Correct | Reads from guardrails table |
-| Badge auto-unlock | Correct | Condition-based checking works |
+| Member signup | Works | Trigger auto-provisions |
+| Member login (password/Google) | Works | |
+| Check-in | Works | Server-side RPC |
+| Book class | Works | Server-side RPC |
+| Cancel booking | **BROKEN** | RLS blocks member UPDATE (B2) |
+| Upload slip | **BROKEN** | RLS blocks member INSERT on transactions (B1) |
+| Redeem reward | Works | Server-side edge function |
+| Trainer home | Works | staffId resolved from staff table |
+| Staff surface | Works | i18n migrated |
+| Admin operations | Works | |
+
+---
+
+## SECTION H — Priority Fix Plan
+
+### Must Fix Before Launch
+1. **B1** — Create `member_upload_slip` RPC (SECURITY DEFINER) + update `services.ts`
+2. **B2** — Create `cancel_booking_safe` RPC (SECURITY DEFINER) + update `services.ts`
+
+### Should Fix Soon After Launch
+3. **C2** — Extract Google icon to shared component
+
+### Nice to Improve Later
+4. **C1** — Remove remaining `as any` casts
+5. **C3** — Narrow attendance SELECT policy
 
 ---
 
 ## Implementation Plan
 
-### Fix 1 — Standardize CORS across all 6 gamification edge functions
+### Fix B1 — Member Slip Upload RPC
 
-For each of these files, apply the same proven pattern from `gamification-process-event`:
+**Migration SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.member_upload_slip(
+  p_member_id uuid,
+  p_amount numeric,
+  p_bank_name text,
+  p_transfer_date text,
+  p_slip_url text DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_member members%ROWTYPE;
+  v_txn_id text;
+  v_order_name text;
+BEGIN
+  SELECT * INTO v_member FROM members WHERE id = p_member_id;
+  IF NOT FOUND THEN
+    RETURN json_build_object('error', 'member_not_found');
+  END IF;
 
-1. Add `isAllowedOrigin()` with `*.lovable.app` regex
-2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
-3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+  v_txn_id := 'TXN-' || extract(epoch from now())::bigint;
+  v_order_name := 'SLIP-' || extract(epoch from now())::bigint;
 
-Files:
-- `supabase/functions/gamification-redeem-reward/index.ts`
-- `supabase/functions/gamification-claim-quest/index.ts`
-- `supabase/functions/gamification-issue-coupon/index.ts`
-- `supabase/functions/gamification-assign-quests/index.ts`
-- `supabase/functions/sync-gamification-config/index.ts`
-- `supabase/functions/streak-freeze/index.ts`
+  INSERT INTO transactions (
+    transaction_id, order_name, amount, member_id,
+    payment_method, status, transfer_slip_url, notes, source_type
+  ) VALUES (
+    v_txn_id, v_order_name, p_amount, p_member_id,
+    'bank_transfer', 'pending', p_slip_url,
+    'Bank: ' || p_bank_name || ', Date: ' || p_transfer_date,
+    'member_upload'
+  );
 
-**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
+  RETURN json_build_object('success', true, 'transaction_id', v_txn_id);
+END;
+$$;
+```
 
-### Fix 2 — Add i18n keys for new gamification tabs
+**Frontend:** Update `uploadTransferSlip()` to call `supabase.rpc('member_upload_slip', {...})` instead of direct insert.
 
-Files:
-- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
-- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
-- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
+### Fix B2 — Cancel Booking RPC
 
-**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
+**Migration SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.cancel_booking_safe(
+  p_booking_id uuid,
+  p_member_id uuid,
+  p_reason text DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_booking class_bookings%ROWTYPE;
+BEGIN
+  SELECT * INTO v_booking FROM class_bookings
+  WHERE id = p_booking_id AND member_id = p_member_id;
 
----
+  IF NOT FOUND THEN
+    RETURN json_build_object('error', 'not_found', 'message', 'Booking not found or not authorized');
+  END IF;
 
-## What Still Needs Manual Testing After Fix
+  IF v_booking.status NOT IN ('booked', 'waitlisted') THEN
+    RETURN json_build_object('error', 'not_cancellable', 'message', 'Booking cannot be cancelled');
+  END IF;
 
-1. Call reward redemption from member app in preview → verify no CORS error
-2. Claim a quest from member app → verify no CORS error
-3. Use streak freeze from member app → verify no CORS error
-4. Switch app language to Thai → verify new tab names appear correctly
+  UPDATE class_bookings
+  SET status = 'cancelled', cancelled_at = now(), cancellation_reason = p_reason
+  WHERE id = p_booking_id;
+
+  RETURN json_build_object('success', true);
+END;
+$$;
+```
+
+**Frontend:** Update `cancelBooking()` to call `supabase.rpc('cancel_booking_safe', {...})` instead of direct update.
+
+### Files to Edit
+| File | Change |
+|---|---|
+| New migration | Create `member_upload_slip` + `cancel_booking_safe` RPCs |
+| `src/apps/member/api/services.ts` | Replace direct insert/update with RPC calls |
+
+## SECTION J — Final Launch Recommendation
+
+**Not ready yet** — Two core member flows (slip upload and booking cancellation) will fail at runtime due to RLS policy restrictions. Both fixes are small (one migration + ~20 lines of frontend changes).
 
