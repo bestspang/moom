@@ -17,6 +17,7 @@ import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
+import { QuickMenuStrip } from '../components/QuickMenuStrip';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -198,6 +199,11 @@ export default function MemberHomePage() {
           </Section>
         );
       })()}
+
+      {/* Quick Menu Strip */}
+      <Section className="mb-4">
+        <QuickMenuStrip />
+      </Section>
 
       {/* Next Up bookings */}
       <Section

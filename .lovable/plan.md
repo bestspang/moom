@@ -1,50 +1,47 @@
 
 
-# Horizontal Quick Menu + Run Club + Level Perks Sheet
+# Fix: Promotions export missing columns in Settings
 
-## What the user wants
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-1. **Horizontal icon menu** (1 row, scrollable) placed above the "Next Up" section — shortcuts to pages not easily reachable from bottom nav
-2. **Run Club** as the first icon — navigates to a new `/member/run-club` page (coming soon placeholder)
-3. **"More" icon** as the last item — opens a dialog/sheet listing all hard-to-reach member pages
-4. **Level perks on tap** — when tapping the TierBadge/level in MomentumCard (level > 1), show a sheet with level benefits using existing `LevelPerksCard`
+## Fix (surgical, 1 file)
 
-## Changes
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 1. New component: `QuickMenuStrip.tsx`
-Horizontal scrollable row of circular icon buttons. Items:
-- 🏃 Run Club → `/member/run-club`
-- 🏆 Leaderboard → `/member/leaderboard`
-- 👥 Squad → `/member/squad`
-- 🎟️ Coupons → `/member/coupons`
-- 🎫 Packages → `/member/packages`
-- 📋 Attendance → `/member/attendance`
-- 🔗 Referral → `/member/referral`
-- ⋯ More → opens `Dialog` with full list of all member pages
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-Each item: icon + label below, ~56px wide circles in a horizontal scroll.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 2. New page: `MemberRunClubPage.tsx`
-Simple coming-soon placeholder page with Run Club branding. Route: `/member/run-club`.
-
-### 3. MomentumCard: Level perks sheet
-When `level > 1`, make the TierBadge area clickable → opens a `Dialog` containing the existing `LevelPerksCard` component.
-
-### 4. Route registration
-Add `/member/run-club` route in `App.tsx`.
-
-### 5. i18n keys
-Add keys for: `runClub`, `moreMenu`, `comingSoonRunClub`, and quick menu item labels.
-
-### Files
-
-| File | Change |
-|------|--------|
-| `src/apps/member/components/QuickMenuStrip.tsx` | New — horizontal icon menu + "More" dialog |
-| `src/apps/member/pages/MemberRunClubPage.tsx` | New — coming soon placeholder |
-| `src/apps/member/pages/MemberHomePage.tsx` | Insert `<QuickMenuStrip>` above "Next Up" section |
-| `src/apps/member/features/momentum/MomentumCard.tsx` | Wrap TierBadge in clickable area → Dialog with LevelPerksCard (when level > 1) |
-| `src/App.tsx` | Add run-club route |
-| `src/i18n/locales/en.ts` | Add ~8 i18n keys |
-| `src/i18n/locales/th.ts` | Add ~8 i18n keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
