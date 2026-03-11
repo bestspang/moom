@@ -549,6 +549,50 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 7.5) INSERT SP LEDGER (Status Points for tier system)
+    try {
+      const { data: spRule } = await db
+        .from("status_tier_sp_rules")
+        .select("sp_value, daily_cap")
+        .eq("action_key", event_type)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      let spValue = spRule?.sp_value ?? 0;
+
+      // Handle package_purchased SP by term
+      if (event_type === "package_purchased" && metadata) {
+        const termMonths = Number(metadata.term_months) || 1;
+        const termKey = termMonths <= 1 ? "1m" : termMonths <= 3 ? "3m" : termMonths <= 6 ? "6m" : "12m";
+        const { data: pkgSpRule } = await db
+          .from("status_tier_sp_rules")
+          .select("sp_value")
+          .eq("action_key", `package_purchased_${termKey}`)
+          .eq("is_active", true)
+          .maybeSingle();
+        spValue = pkgSpRule?.sp_value ?? 0;
+      }
+
+      // Handle shop_purchase SP (floor(net_paid/400), cap from rule)
+      if (event_type === "shop_purchase" && metadata) {
+        const netPaid = Number(metadata.net_paid) || 0;
+        const rawSp = Math.floor(netPaid / 400);
+        const cap = spRule?.daily_cap ?? 5;
+        spValue = Math.min(rawSp, cap);
+      }
+
+      if (spValue > 0) {
+        await db.from("sp_ledger").insert({
+          member_id,
+          event_type,
+          delta: spValue,
+          metadata: metadata || {},
+        });
+      }
+    } catch (spErr) {
+      console.warn("SP ledger write failed (non-blocking):", spErr);
+    }
+
     // 8) CHECK LEVEL UP
     const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1, member_id);
 
