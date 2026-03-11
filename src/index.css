@@ -111,6 +111,14 @@
     --rarity-epic: 280 65% 55%;
     --rarity-legendary: 45 93% 47%;
 
+    /* Status Tiers (Bronze → Black) */
+    --status-tier-bronze: 30 50% 45%;
+    --status-tier-silver: 210 10% 65%;
+    --status-tier-gold: 45 85% 50%;
+    --status-tier-platinum: 200 15% 75%;
+    --status-tier-diamond: 195 80% 65%;
+    --status-tier-black: 0 0% 15%;
+
     /* Coach levels (in-house trainer) */
     --coach-rising: 210 60% 55%;
     --coach-established: 152 55% 42%;
