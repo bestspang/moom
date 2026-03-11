@@ -26,11 +26,11 @@
 
 ### Social & Engagement Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 7 | Referral Trial | `referral_trial` | 25 | 15 | 5 |
-| 8 | Referral Purchase | `referral_purchase` | 80 | 80 | 5 |
-| 9 | Monthly Review | `review_monthly` | 15 | 5 | 1 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 7 | Referral Trial | `referral_trial` | 25 | 15 | — | 5 |
+| 8 | Referral Purchase | `referral_purchase` | 80 | 80 | 20 | 5 |
+| 9 | Monthly Review | `review_monthly` | 15 | 5 | — | 1 |
 
 ### Streak Events (Auto-triggered)
 
