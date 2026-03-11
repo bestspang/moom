@@ -897,3 +897,102 @@ export async function toggleSquadFeedReaction(auditLogId: string): Promise<FeedR
     reactedByMe: !!row?.reacted,
   };
 }
+
+// ─── Level Benefits & Prestige ──────────────────────────────
+
+export interface LevelBenefit {
+  id: string;
+  levelNumber: number;
+  benefitCode: string;
+  benefitType: string;
+  frequency: string;
+  descriptionEn: string;
+  descriptionTh: string | null;
+  businessCost: string;
+}
+
+export async function fetchLevelBenefits(): Promise<LevelBenefit[]> {
+  const { data, error } = await supabase
+    .from('level_benefits')
+    .select('*')
+    .eq('is_active', true)
+    .order('level_number', { ascending: true })
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    levelNumber: r.level_number,
+    benefitCode: r.benefit_code,
+    benefitType: r.benefit_type,
+    frequency: r.frequency,
+    descriptionEn: r.description_en,
+    descriptionTh: r.description_th,
+    businessCost: r.business_cost,
+  }));
+}
+
+export interface PrestigeCriterion {
+  code: string;
+  met: boolean;
+  current: number;
+  target: number;
+  descriptionEn: string;
+}
+
+export interface PrestigeEligibility {
+  eligible: boolean;
+  criteria: PrestigeCriterion[];
+}
+
+export async function fetchPrestigeEligibility(memberId: string, targetLevel: number): Promise<PrestigeEligibility | null> {
+  if (targetLevel < 18 || targetLevel > 20) return null;
+
+  const { data, error } = await (supabase.rpc as any)('check_prestige_eligibility', {
+    p_member_id: memberId,
+    p_target_level: targetLevel,
+  });
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    eligible: data.eligible,
+    criteria: (data.criteria ?? []).map((c: any) => ({
+      code: c.code,
+      met: c.met,
+      current: c.current,
+      target: c.target,
+      descriptionEn: c.description_en,
+    })),
+  };
+}
+
+export interface PrestigeCriteriaRow {
+  levelNumber: number;
+  criterionCode: string;
+  criterionType: string;
+  targetValue: number;
+  descriptionEn: string;
+  descriptionTh: string | null;
+}
+
+export async function fetchPrestigeCriteria(): Promise<PrestigeCriteriaRow[]> {
+  const { data, error } = await supabase
+    .from('prestige_criteria')
+    .select('*')
+    .eq('is_active', true)
+    .order('level_number', { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((r: any) => ({
+    levelNumber: r.level_number,
+    criterionCode: r.criterion_code,
+    criterionType: r.criterion_type,
+    targetValue: r.target_value,
+    descriptionEn: r.description_en,
+    descriptionTh: r.description_th,
+  }));
+}

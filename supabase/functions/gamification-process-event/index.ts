@@ -182,7 +182,12 @@ async function updateStreak(db: ReturnType<typeof createClient>, memberId: strin
   return { newStreak, newLongest };
 }
 
-async function checkLevelUp(db: ReturnType<typeof createClient>, totalXp: number, currentLevel: number) {
+async function checkLevelUp(
+  db: ReturnType<typeof createClient>,
+  totalXp: number,
+  currentLevel: number,
+  memberId?: string,
+) {
   const { data: levels } = await db
     .from("gamification_levels")
     .select("*")
@@ -194,6 +199,22 @@ async function checkLevelUp(db: ReturnType<typeof createClient>, totalXp: number
   if (levels) {
     for (const lvl of levels) {
       if (totalXp >= lvl.xp_required && lvl.level_number > newLevel) {
+        // Prestige tiers (18-20) require extra criteria beyond XP
+        if (lvl.level_number >= 18 && memberId) {
+          try {
+            const { data: eligibility } = await db.rpc("check_prestige_eligibility", {
+              p_member_id: memberId,
+              p_target_level: lvl.level_number,
+            });
+            if (!eligibility?.eligible) {
+              // XP sufficient but prestige criteria not met — stop here
+              break;
+            }
+          } catch (e) {
+            console.warn("Prestige check failed, blocking level-up:", e);
+            break;
+          }
+        }
         newLevel = lvl.level_number;
         leveledUp = true;
       }
@@ -457,7 +478,7 @@ Deno.serve(async (req) => {
     }
 
     // 8) CHECK LEVEL UP
-    const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1);
+    const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1, member_id);
 
     // 9) UPDATE STREAK
     const { newStreak, newLongest } = await updateStreak(db, member_id, profile.longest_streak || 0);
