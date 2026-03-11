@@ -1,47 +1,20 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Fix TierBadge Starter Color Contrast
 
 ## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+The `--tier-starter` CSS variable is `220 10% 60%` — a desaturated gray that, at 15% opacity background, is nearly invisible. The text is also hard to read.
 
-## Fix (surgical, 1 file)
+## Fix
+Increase saturation and adjust lightness for the starter tier so the badge is clearly visible while still feeling like the "base" tier.
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+### `src/index.css`
+- Light mode: Change `--tier-starter: 220 10% 60%` → `--tier-starter: 220 30% 50%` (richer blue-gray)
+- Dark mode: Change `--tier-starter: 220 10% 50%` → `--tier-starter: 220 30% 55%`
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+This gives a noticeably blue tint that reads well at both 15% bg opacity and full-strength text, while still being the most "neutral" tier compared to the vibrant Mover/Strong/Elite/Legend colors.
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
-
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+| File | Change |
+|------|--------|
+| `src/index.css` | Update `--tier-starter` in both light and dark mode |
 
