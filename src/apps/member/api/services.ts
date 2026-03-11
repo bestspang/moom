@@ -240,20 +240,20 @@ export async function fetchBookingById(bookingId: string): Promise<BookingDetail
   };
 }
 
-// ─── Cancel Booking (B3 fix: requires memberId for auth guard) ───
+// ─── Cancel Booking (uses SECURITY DEFINER RPC to bypass RLS) ───
 export async function cancelBooking(bookingId: string, memberId: string, reason?: string): Promise<void> {
-  const { error, count } = await supabase
-    .from('class_bookings')
-    .update({
-      status: 'cancelled' as any,
-      cancelled_at: new Date().toISOString(),
-      cancellation_reason: reason ?? null,
-    }, { count: 'exact' })
-    .eq('id', bookingId)
-    .eq('member_id', memberId);
+  const { data, error } = await supabase.rpc('cancel_booking_safe', {
+    p_booking_id: bookingId,
+    p_member_id: memberId,
+    p_reason: reason ?? null,
+  });
 
   if (error) throw error;
-  if (count === 0) throw new Error('Booking not found or not authorized');
+
+  const result = data as any;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
+  }
 }
 
 // ─── Schedule Detail (single) ───
@@ -348,19 +348,36 @@ export async function uploadTransferSlip(data: {
     slipUrl = urlData?.publicUrl ?? null;
   }
 
-  const { error } = await supabase
-    .from('transactions')
-    .insert({
-      amount: data.amount,
-      payment_method: 'bank_transfer' as any,
-      status: 'pending' as any,
-      order_name: `SLIP-${Date.now()}`,
-      transaction_id: `TXN-${Date.now()}`,
-      transfer_slip_url: slipUrl,
-      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}`,
-    });
+  // Get member ID from session
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData?.user?.id;
+  if (!userId) throw new Error('Not authenticated');
+
+  const { data: identity } = await supabase
+    .from('identity_map')
+    .select('admin_entity_id')
+    .eq('experience_user_id', userId)
+    .eq('entity_type', 'member')
+    .eq('is_verified', true)
+    .maybeSingle();
+
+  const memberId = identity?.admin_entity_id;
+  if (!memberId) throw new Error('Member identity not found');
+
+  const { data: rpcResult, error } = await supabase.rpc('member_upload_slip', {
+    p_member_id: memberId,
+    p_amount: data.amount,
+    p_bank_name: data.bank_name,
+    p_transfer_date: data.transfer_date,
+    p_slip_url: slipUrl,
+  });
 
   if (error) throw error;
+
+  const result = rpcResult as any;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
+  }
 }
 
 // ─── Self Check-in (B1 fix: uses server-side RPC for validation) ───
