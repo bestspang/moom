@@ -78,7 +78,7 @@ export default function TrainerHomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-      <MobilePageHeader title={`Hi, ${firstName}`} subtitle={t('trainer.todaysOverview')} />
+      <MobilePageHeader title={t('trainer.greeting', { name: firstName })} subtitle={t('trainer.todaysOverview')} />
 
       <Section className="mb-4">
         <div className="grid grid-cols-2 gap-3">

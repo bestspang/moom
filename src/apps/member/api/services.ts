@@ -248,7 +248,7 @@ export async function cancelBooking(bookingId: string, memberId: string, reason?
       status: 'cancelled' as any,
       cancelled_at: new Date().toISOString(),
       cancellation_reason: reason ?? null,
-    })
+    }, { count: 'exact' })
     .eq('id', bookingId)
     .eq('member_id', memberId);
 
@@ -353,11 +353,11 @@ export async function uploadTransferSlip(data: {
     .insert({
       amount: data.amount,
       payment_method: 'bank_transfer' as any,
-      type: 'package_purchase' as any,
       status: 'pending' as any,
       order_name: `SLIP-${Date.now()}`,
       transaction_id: `TXN-${Date.now()}`,
-      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}${slipUrl ? `, Slip: ${slipUrl}` : ''}`,
+      transfer_slip_url: slipUrl,
+      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}`,
     });
 
   if (error) throw error;

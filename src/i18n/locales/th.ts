@@ -2676,6 +2676,7 @@ export default {
       workouts: 'เวิร์กเอาท์',
       profile: 'โปรไฟล์',
     },
+    greeting: 'สวัสดี {{name}}',
     todaysOverview: 'ภาพรวมวันนี้',
     todaysClasses: 'คลาสวันนี้',
     totalBookings: 'การจองทั้งหมด',

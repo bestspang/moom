@@ -1,177 +1,106 @@
 
 
-# Full System QC Audit — Post-Fix Re-Audit
+# Cross-System Consistency Audit — Findings & Fix Plan
 
-## SECTION A — Executive Summary
+## Audit Summary
 
-The system is in significantly better shape after the B1-B4 critical fixes. The check-in, booking, cancellation, and slip upload flows are now server-validated. However, several new issues remain that need attention before production launch.
-
-**Overall Health:** Good — 85% production-ready. Architecture is clean, gamification engine is robust, auth flows are solid.
-
-**Biggest Remaining Risks:**
-1. Slip image bucket is private but code uses `getPublicUrl()` — admin cannot view uploaded slips
-2. "Join Waitlist" button calls booking RPC which rejects full classes — broken UX
-3. `cancelBooking` count check uses default Supabase behavior (no `count` option) — always returns null
-4. `transactions.type` receives `'package_purchase'` which may not match the DB enum
-
-**Biggest Strengths:** Server-side validation for all critical writes, clean surface architecture, comprehensive i18n coverage, strong gamification engine with guardrails
+After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
 
 ---
 
-## SECTION B — Critical Bugs
+## CONFIRMED BUGS (Ranked by Impact)
 
-### B1. Slip Image Unreachable — Private Bucket + `getPublicUrl()`
-**Severity:** HIGH  
-**File:** `src/apps/member/api/services.ts` lines 345-348  
-**Problem:** The `slip-images` bucket is created with `public: false`, but the code calls `getPublicUrl()` which generates a URL that returns 400/403 for private buckets. The slip URL stored in `transactions.notes` is unusable — admin staff cannot view the uploaded slip image.
+### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
 
-**Fix:** Either:
-- (A) Make the bucket public (`public: true` in migration) — simpler, slips aren't sensitive
-- (B) Use `createSignedUrl()` when admin needs to view the slip — more secure but requires changes on the admin viewing side too
+These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
 
-Recommended: Option A — change bucket to public. Slips are already shared with admin staff.
-
-### B2. "Join Waitlist" Button Calls Booking RPC That Rejects Full Classes
-**Severity:** MEDIUM  
-**File:** `src/apps/member/pages/MemberClassDetailPage.tsx` line 136  
-**Problem:** When `isFull` is true, the button text changes to "Join Waitlist" and the confirm dialog says "join waitlist", but `createBooking()` → `create_booking_safe` RPC returns `{ error: 'class_full' }`. The member sees a generic error toast instead of actually joining a waitlist.
-
-**Fix:** Either:
-- (A) Hide the book button when full (show "Class Full" instead)
-- (B) Implement actual waitlist logic in the RPC (insert with `status: 'waitlisted'`)
-
-Recommended: Option A for now — disable booking when full, show informational text.
-
-### B3. `cancelBooking` Count Always Null — Auth Guard Silently Fails
-**Severity:** MEDIUM  
-**File:** `src/apps/member/api/services.ts` line 256  
-**Problem:** `if (count === 0)` is intended to catch unauthorized cancellations, but Supabase `update()` doesn't return `count` unless you pass `{ count: 'exact' }` option. Currently `count` is always `undefined`, so the auth guard never triggers.
-
-**Fix:** Add `{ count: 'exact' }` to the update call, or switch to checking `data` length.
-
-### B4. `transactions.type` Enum Mismatch Risk
-**Severity:** MEDIUM  
-**File:** `src/apps/member/api/services.ts` line 357  
-**Problem:** `type: 'package_purchase' as any` — this string is cast with `as any` to bypass type checking. If the DB enum for `transactions.type` doesn't include `package_purchase`, the insert silently fails or throws. The existing memory notes say the type field must map to package_type enum (`unlimited`, `session`, `pt`).
-
-**Fix:** Verify the DB enum. If it doesn't include `package_purchase`, change to a valid value or use a generic `'purchase'` if that exists. Remove `as any`.
-
----
-
-## SECTION C — High-Priority Functional Issues
-
-### C1. GamificationStudio Uses `useLanguage()` Instead of `useTranslation()`
-**File:** `src/pages/gamification/GamificationStudio.tsx` line 18  
-**Problem:** Uses `useLanguage()` wrapper which works but is the legacy pattern. Memory explicitly says "Custom hooks like useLanguage are prohibited in favor of the standard i18next hook." All member/staff/trainer surfaces have been migrated. Admin pages still use `useLanguage()` across 162 files.
-
-**Severity:** LOW — Functionally identical since `useLanguage().t` wraps `useTranslation().t`. Not a bug, just inconsistency.
-
-**Fix:** No immediate action needed. Can be migrated gradually.
-
-### C2. Trainer HomePage Still Has Hardcoded `Hi, ${firstName}`
-**File:** `src/apps/trainer/pages/TrainerHomePage.tsx` line 81  
-**Problem:** Uses template literal instead of i18n key like the staff page does.
-
-**Fix:** Change to `t('trainer.greeting', { name: firstName })` and add key.
-
----
-
-## SECTION D — UX/UI Problems
-
-### D1. Class Full But Book Button Still Active
-**Page:** `/member/schedule/:id`  
-**Problem:** When class is at capacity, the CTA still appears active with "Join Waitlist" text. Member taps it, confirms, gets error. Confusing and trust-breaking.  
-**Severity:** MEDIUM  
-**Fix:** When `isFull`, disable the button and show "Class Full — No waitlist available" text.
-
-### D2. Slip Upload Success Redirects to Packages, Not Confirmation
-**Page:** `/member/upload-slip`  
-**Problem:** After successful upload, user is redirected to `/member/packages` with a toast. There's no confirmation screen showing the submitted slip details or a reference number. User has no proof of submission.  
-**Severity:** LOW  
-**Fix:** Show a success screen with the SLIP reference number before navigating away.
-
----
-
-## SECTION E — Code / Architecture Problems
-
-### E1. `as any` Casts in services.ts Bypass Type Safety
-**File:** `src/apps/member/api/services.ts` lines 248, 355-357  
-**Problem:** 4 `as any` casts hide potential enum mismatches that could cause runtime failures.  
-**Fix:** Import proper types from the generated Supabase types file.
-
-### E2. Dual i18n Patterns (`useLanguage` vs `useTranslation`)
-**Area:** Admin surface (162 files) uses `useLanguage()`, member/staff/trainer surfaces use `useTranslation()`  
-**Problem:** Two patterns for the same thing. New contributors won't know which to use.  
-**Fix:** Document that `useLanguage` is the admin-side wrapper and both work. Migrate gradually.
-
----
-
-## SECTION F — Gamification Readiness
-
-**Fully Working:** XP/Coin earning, level progression, quest assignment/claiming, badge earning, reward redemption (server-side), economy guardrails, prestige gating, streak tracking/freeze, squad system, trainer scoring, anti-abuse (daily caps, cooldowns, idempotency), Bangkok timezone for daily limits.
-
-**Weak:** Frontend XP thresholds hardcoded (still not DB-driven).
-
-**Missing:** Shop purchase producer, open_gym_45min timer, streak milestone auto-events.
-
-**Risky:** Nothing critical remaining after the pipeline fix.
-
----
-
-## SECTION G — End-to-End Flow Matrix
-
-| Flow | Status | Notes |
+| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
 |---|---|---|
-| Member signup | Works | Trigger creates member + identity_map |
-| Member login (password) | Works | |
-| Member login (Google) | Works | Managed OAuth |
-| Check-in | Works | Server-side RPC with validation |
-| Book class | Works | Server-side RPC with capacity check |
-| Book full class ("waitlist") | Broken | RPC rejects, no waitlist logic |
-| Cancel booking | Works but weak | Count guard doesn't trigger (B3) |
-| Upload slip | Works but weak | Image unreachable (B1) |
-| Redeem reward | Works | Server-side validation |
-| Trainer login + schedule | Works | Staff ID resolved from staff table |
-| Staff surface | Works | i18n migrated |
-| Admin gamification studio | Works | 14 tabs, all localized |
-| Admin transfer slip review | Broken (viewing) | Cannot view slip image (B1) |
+| `gamification-process-event` | Yes | Yes |
+| `gamification-admin-ops` | Yes | Yes |
+| `streak-freeze` | Yes | No (exact match only) |
+| `gamification-redeem-reward` | **No** | **No** |
+| `gamification-claim-quest` | **No** | **No** |
+| `gamification-issue-coupon` | **No** | **No** |
+| `gamification-assign-quests` | **No** | **No** |
+| `sync-gamification-config` | **No** | **No** |
+
+**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+
+**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+
+### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+
+Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+
+**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+
+### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+
+`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
+
+These tabs work fine in English but won't localize for Thai users.
+
+**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
 
 ---
 
-## SECTION H — Priority Fix Plan
+## VERIFIED WORKING (No Changes Needed)
 
-### 1. Must Fix Before Launch
-1. **B1** — Make `slip-images` bucket public OR use signed URLs
-2. **B2** — Disable booking button when class is full (remove fake waitlist)
-3. **B3** — Add `{ count: 'exact' }` to cancel booking update
-4. **B4** — Verify `transactions.type` enum values, remove `as any`
-
-### 2. Should Fix Soon After Launch
-5. **C2** — Trainer greeting i18n
-6. **D2** — Slip upload confirmation screen
-
-### 3. Nice to Improve Later
-7. **E2** — Gradually migrate admin `useLanguage` to `useTranslation`
-8. Fetch XP thresholds from DB instead of hardcoded array
-
----
-
-## SECTION I — Exact Fix Recommendations
-
-| Issue | Root Cause | Fix | Layer |
-|---|---|---|---|
-| B1 Slip unreachable | Private bucket + `getPublicUrl()` | Change migration to `public: true` OR use `createSignedUrl()` | Backend + Frontend |
-| B2 Fake waitlist | No waitlist logic in RPC | Disable button when full, show "Class Full" | Frontend |
-| B3 Cancel guard | Missing `count: 'exact'` option | Add option to `.update()` call | Frontend |
-| B4 Type mismatch | `as any` cast hides enum error | Check DB enum, use correct value | Frontend |
+| Area | Status | Evidence |
+|---|---|---|
+| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
+| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
+| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
+| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
+| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
+| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
+| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
+| Routes in App.tsx | Correct | All 3 new pages registered |
+| GamificationStudio tabs | Correct | All 14 tabs present and routed |
+| Prestige criteria admin page | Correct | CRUD with audit trail |
+| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
+| Challenge progress tracking | Correct | Both challenges and quests tracked |
+| Referral reward flow | Correct | Reads from guardrails table |
+| Badge auto-unlock | Correct | Condition-based checking works |
 
 ---
 
-## SECTION J — Final Launch Recommendation
+## Implementation Plan
 
-**Launch only after B1-B4 fixes.**
+### Fix 1 — Standardize CORS across all 6 gamification edge functions
 
-B1 is the most impactful — slip images are completely unreachable by admin staff, making the payment verification flow broken. B2 creates a confusing UX that erodes trust. B3 means the auth guard on cancellation is a no-op. B4 could cause silent insert failures.
+For each of these files, apply the same proven pattern from `gamification-process-event`:
 
-All 4 fixes are small, localized changes (under 10 lines each). After these, the platform is ready for controlled launch.
+1. Add `isAllowedOrigin()` with `*.lovable.app` regex
+2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
+3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+
+Files:
+- `supabase/functions/gamification-redeem-reward/index.ts`
+- `supabase/functions/gamification-claim-quest/index.ts`
+- `supabase/functions/gamification-issue-coupon/index.ts`
+- `supabase/functions/gamification-assign-quests/index.ts`
+- `supabase/functions/sync-gamification-config/index.ts`
+- `supabase/functions/streak-freeze/index.ts`
+
+**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
+
+### Fix 2 — Add i18n keys for new gamification tabs
+
+Files:
+- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
+- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
+- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
+
+**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
+
+---
+
+## What Still Needs Manual Testing After Fix
+
+1. Call reward redemption from member app in preview → verify no CORS error
+2. Claim a quest from member app → verify no CORS error
+3. Use streak freeze from member app → verify no CORS error
+4. Switch app language to Thai → verify new tab names appear correctly
 
