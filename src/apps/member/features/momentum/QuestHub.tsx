@@ -6,8 +6,9 @@ import { fetchMyQuests, assignQuests, claimQuest, type QuestInstance } from './a
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Zap, Coins, Target, Clock, Check, Sparkles } from 'lucide-react';
+import { Zap, Coins, Target, Clock, Check, Sparkles, Info } from 'lucide-react';
 import { useEffect } from 'react';
 import type { TFunction } from 'i18next';
 
