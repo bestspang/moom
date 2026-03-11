@@ -87,8 +87,17 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
     </div>
   );
 }
+function CompactEmptyState({ t }: { t: TFunction }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
+      <Target className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
+      <p className="text-xs font-medium text-foreground">{t('member.noQuestsYet')}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{t('member.questsCheckBackSoon')}</p>
+    </div>
+  );
+}
 
-interface QuestHubProps {
+
   filterPeriod?: 'daily' | 'weekly' | 'monthly';
 }
 
