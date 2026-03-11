@@ -213,4 +213,52 @@ Cap: 18 coin/order
 
 ---
 
+## 9. Status Tier System (Bronze → Black)
+
+The MOOM Momentum Club uses a **dual-track** model:
+- **Level (1–20)**: Lifetime XP progression. Never goes down.
+- **Status Tier (Bronze–Black)**: Rolling 90-day performance tier based on **Status Points (SP)**. Goes up AND down.
+
+### 9.1 Status Points (SP) Earning
+
+| Action | SP | Daily Cap |
+|--------|-----|-----------|
+| `open_gym_45min` | 1 | 10 |
+| `class_attended` | 2 | 10 |
+| `pt_session` | 3 | 5 |
+| `daily_quest_done` | 1 | 3 |
+| `weekly_quest_done` | 3 | 4 |
+| `monthly_challenge` | 6 | 4 |
+| `seasonal_challenge` | 15 | 2 |
+| `community_event` | 5 | 3 |
+| `referral_purchase` | 20 | 5 |
+| Package 1m/3m/6m/12m | 8/20/35/55 | 3 |
+| Shop order | floor(net_paid/400), cap 5 | 5 |
+
+### 9.2 Tier Qualification Rules
+
+| Tier | Min Level | Min SP (90d) | Active Days | Window | Req. Package | Extra |
+|------|-----------|-------------|-------------|--------|--------------|-------|
+| Bronze | — | — | — | — | No | Default tier |
+| Silver | 4 | 20 | 4 | 30d | Yes/Grace | — |
+| Gold | 8 | 55 | 8 | 60d | Yes | — |
+| Platinum | 12 | 110 | 12 | 60d | Yes | 1 monthly quest in 60d |
+| Diamond | 15 | 190 | 18 | 90d | Yes | 1 monthly/seasonal in 90d |
+| Black | 18 | 280 | 24 | 90d | Yes | 2 of 4: seasonal badge, referral, 2 monthly quests, 2 community events |
+
+### 9.3 Downgrade Rules
+
+1. Package expired → 14-day grace period (tier holds with warning)
+2. Monthly review: SP < 85% of requirement → drop 1 tier
+3. Max 1 tier drop per 30-day cycle
+4. 90 days inactive → reset to Bronze (Level untouched)
+
+### 9.4 Comeback Mechanics
+
+- Renew package + 2 visits in 7 days → restore paused perks
+- Reach 60% of previous tier's SP in 14 days → recover 1 tier
+- Special comeback quests available for returning members
+
+---
+
 *This document is the single source of truth for the MOOM Momentum Club economy v2.*
