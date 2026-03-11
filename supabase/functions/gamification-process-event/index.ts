@@ -68,6 +68,57 @@ async function resolveMemberId(
   return null;
 }
 
+// ---------- Economy Guardrails ----------
+
+interface GuardrailMap {
+  [key: string]: string;
+}
+
+const GUARDRAIL_DEFAULTS: GuardrailMap = {
+  PACKAGE_XP_PER_THB_DIVISOR: "300",
+  PACKAGE_COIN_PER_THB_DIVISOR: "180",
+  PACKAGE_COIN_CAP: "100",
+  PACKAGE_TERM_BONUS_XP_1: "8",
+  PACKAGE_TERM_BONUS_XP_3: "18",
+  PACKAGE_TERM_BONUS_XP_6: "35",
+  PACKAGE_TERM_BONUS_XP_12: "55",
+  PACKAGE_TERM_BONUS_COIN_1: "1",
+  PACKAGE_TERM_BONUS_COIN_3: "5",
+  PACKAGE_TERM_BONUS_COIN_6: "12",
+  PACKAGE_TERM_BONUS_COIN_12: "25",
+  SHOP_XP_BASE: "6",
+  SHOP_XP_PER_THB_DIVISOR: "180",
+  SHOP_XP_CAP: "16",
+  SHOP_COIN_PER_THB_DIVISOR: "120",
+  SHOP_COIN_CAP: "18",
+  REFERRAL_REWARD_POINTS_DEFAULT: "200",
+};
+
+async function getGuardrails(db: ReturnType<typeof createClient>): Promise<GuardrailMap> {
+  try {
+    const { data } = await db
+      .from("economy_guardrails")
+      .select("rule_code, rule_value, is_active")
+      .eq("is_active", true);
+
+    if (!data || data.length === 0) return { ...GUARDRAIL_DEFAULTS };
+
+    const map: GuardrailMap = { ...GUARDRAIL_DEFAULTS };
+    for (const row of data) {
+      map[row.rule_code] = row.rule_value;
+    }
+    return map;
+  } catch (e) {
+    console.warn("Failed to load guardrails, using defaults:", e);
+    return { ...GUARDRAIL_DEFAULTS };
+  }
+}
+
+function g(guardrails: GuardrailMap, key: string): number {
+  const val = Number(guardrails[key] ?? GUARDRAIL_DEFAULTS[key] ?? "0");
+  return isNaN(val) || val === 0 ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
+}
+
 // ---------- Core Logic Helpers ----------
 
 async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: string) {
