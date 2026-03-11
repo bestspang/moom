@@ -1,32 +1,47 @@
 
 
-# Fix TierBadge to be Clickable at All Levels + Enrich LevelPerksCard
+# Fix: Promotions export missing columns in Settings
 
 ## Problem
-Currently `TierBadge` only opens the perks dialog when `level > 1`, so Starter 1 users can't see level details. The user wants it clickable at **all** levels, and the dialog should show richer info: current level status, XP requirements to next level, and what each level unlocks.
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Changes
+## Fix (surgical, 1 file)
 
-### 1. `TierBadge.tsx` — Remove `level > 1` restriction
-- Line 77: Change `level > 1` to `level !== undefined` so all levels (including 1) are clickable.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 2. `LevelPerksCard.tsx` — Enrich with XP requirements and current-level highlight
-- Import `xpForLevel`, `tierFromLevel`, `TIER_CONFIG` from `./types`.
-- Show **current level summary** at the top: tier badge, current XP threshold, XP needed for next level.
-- For each level row, show the XP requirement (e.g. "120 XP") alongside the perks.
-- Highlight the current level row visually (border or background accent).
-- Show ALL levels (not just ones with perks), so users can see the full progression path even if some levels have no special perks configured yet.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 3. i18n keys (`en.ts`, `th.ts`)
-- `member.xpRequired` → "{{xp}} XP required" / "ต้องการ {{xp}} XP"
-- `member.currentLevel` → "Your Level" / "เลเวลของคุณ"
-- `member.nextLevelIn` → "{{xp}} XP to Level {{level}}" / "อีก {{xp}} XP ถึงเลเวล {{level}}"
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### Files
-
-| File | Change |
-|------|--------|
-| `TierBadge.tsx` | Change `level > 1` → `level !== undefined` |
-| `LevelPerksCard.tsx` | Add current-level summary, XP thresholds per level, highlight current, show all 20 levels |
-| `en.ts` / `th.ts` | Add 3 i18n keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

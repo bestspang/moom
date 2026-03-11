@@ -74,7 +74,7 @@ function BadgeContent({ tier, level, size, className }: { tier: MomentumTier; le
 export function TierBadge({ tier, level, size = 'sm', interactive = true, className }: TierBadgeProps) {
   const { t } = useTranslation();
   const [perksOpen, setPerksOpen] = useState(false);
-  const canOpen = interactive && level !== undefined && level > 1;
+  const canOpen = interactive && level !== undefined;
 
   if (!canOpen) {
     return <BadgeContent tier={tier} level={level} size={size} className={className} />;

@@ -2108,6 +2108,11 @@ export default {
     perksUnlocked: 'ปลดล็อกแล้ว',
     perksComingNext: 'กำลังจะมา',
     levelPerksLabel: 'Lv.{{level}} — {{name}}',
+    xpRequired: '{{xp}} XP',
+    yourLevel: 'เลเวลของคุณ',
+    nextLevelIn: 'อีก {{xp}} XP ถึงเลเวล {{level}}',
+    maxLevelReached: 'เลเวลสูงสุดแล้ว! 🏆',
+    noPerksYet: 'ยังไม่มีสิทธิพิเศษ',
     // LevelRequirementsCard
     levelRequirements: 'ข้อกำหนดเลเวล {{level}}',
     totalXpLabel: 'XP รวม',
