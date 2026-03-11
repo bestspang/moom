@@ -62,7 +62,7 @@ export default function MemberBadgeGalleryPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('gamification_badges')
-        .select('id, name_en, description_en, tier, badge_type, icon_url, effect_type, effect_value, duration_days')
+        .select('id, name_en, description_en, tier, badge_type, icon_url, effect_type, effect_value, duration_days, unlock_condition')
         .eq('is_active', true)
         .order('display_priority', { ascending: true });
       return data ?? [];

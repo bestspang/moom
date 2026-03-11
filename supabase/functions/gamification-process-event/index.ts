@@ -456,6 +456,68 @@ Deno.serve(async (req) => {
       last_activity_at: new Date().toISOString(),
     }).eq("member_id", member_id);
 
+    // 10.5) CHECK BADGE UNLOCKS (condition-based)
+    let newBadgeIds: string[] = [];
+    try {
+      const { data: allBadges } = await db
+        .from("gamification_badges")
+        .select("id, unlock_condition")
+        .eq("is_active", true);
+
+      if (allBadges && allBadges.length > 0) {
+        const { data: earnedRows } = await db
+          .from("badge_earnings")
+          .select("badge_id")
+          .eq("member_id", member_id);
+
+        const earnedSet = new Set((earnedRows ?? []).map((r: any) => r.badge_id));
+        const unearnedBadges = allBadges.filter((b: any) => !earnedSet.has(b.id));
+
+        // Get total checkin count from xp_ledger
+        const { count: checkinCount } = await db
+          .from("xp_ledger")
+          .select("id", { count: "exact", head: true })
+          .eq("member_id", member_id)
+          .eq("event_type", "check_in");
+
+        const { count: classCount } = await db
+          .from("xp_ledger")
+          .select("id", { count: "exact", head: true })
+          .eq("member_id", member_id)
+          .eq("event_type", "class_attended");
+
+        const stats: Record<string, number> = {
+          checkin_count: checkinCount ?? 0,
+          class_attend_count: classCount ?? 0,
+          streak: newStreak,
+          consecutive_weeks: newStreak >= 7 ? Math.floor(newStreak / 7) : 0,
+          xp_total: newTotalXp,
+          level: newLevel,
+        };
+
+        for (const badge of unearnedBadges) {
+          const cond = badge.unlock_condition as Record<string, any> | null;
+          if (!cond || !cond.type || !cond.value) continue;
+
+          const statValue = stats[cond.type];
+          if (statValue === undefined) continue;
+
+          if (statValue >= Number(cond.value)) {
+            const { error: insertErr } = await db.from("badge_earnings").insert({
+              member_id,
+              badge_id: badge.id,
+              event_ref: `auto_unlock:${cond.type}:${idempotency_key}`,
+            });
+            if (!insertErr) {
+              newBadgeIds.push(badge.id);
+            }
+          }
+        }
+      }
+    } catch (badgeErr) {
+      console.warn("Badge unlock check failed (non-blocking):", badgeErr);
+    }
+
     // 11) CHECK CHALLENGE PROGRESS
     const challengeResults = await processChallenges(
       db, member_id, event_type, xpDelta, newStreak, newTotalXp, newAvailablePoints
