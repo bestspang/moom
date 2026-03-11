@@ -1680,6 +1680,7 @@ export default {
     onboardingStep1: 'Browse classes in the schedule',
     onboardingStep2: 'Book your first session',
     onboardingStep3: 'Check in to earn XP',
+    readMore: 'Read more',
     checkIn: 'Check In',
     bookClass: 'Book Class',
     nextUp: 'Next Up',

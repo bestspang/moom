@@ -73,7 +73,12 @@ export default function MemberHomePage() {
       : t('member.bookingsToday').replace('{{count}}', String(todayBookings.length)))
     : t('member.readyToTrain');
 
-  const isNewUser = upcomingBookings.length === 0 && activePackages.length === 0;
+  // Onboarding step completion
+  const step1Done = true; // they've opened the app
+  const step2Done = (bookings?.length ?? 0) > 0;
+  const step3Done = (momentumProfile?.totalXp ?? 0) > 0;
+  const allOnboardingDone = step1Done && step2Done && step3Done;
+
   const nextTodayBooking = todayBookings[0];
 
   return (
