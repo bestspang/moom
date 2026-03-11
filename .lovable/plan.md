@@ -1,64 +1,106 @@
 
 
-# Post-Fix Re-Audit — Round 4
+# Cross-System Consistency Audit — Findings & Fix Plan
 
-## Executive Summary
+## Audit Summary
 
-After three rounds of critical fixes, the system is now **~95% launch-ready**. All critical security issues (check-in validation, booking guards, cancellation auth, slip upload) are resolved via SECURITY DEFINER RPCs. The remaining issues are **DOM validity warnings** visible in console logs and minor code quality items. No security or data integrity issues remain.
+After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
 
-## Remaining Issues
+---
 
-### B1. Nested `<button>` in ReferralCard — DOM Violation (LOW)
-**File:** `src/apps/member/features/referral/ReferralCard.tsx` lines 60-92  
-**Console Error:** `validateDOMNesting(...): <button> cannot appear as a descendant of <button>`  
-**Problem:** The outer element (line 60) is a `<button>` wrapping the entire card. Inside it, the "Share" copy button (line 80) is also a `<button>`. This is invalid HTML and causes accessibility issues.  
-**Fix:** Change the outer `<button>` to a `<div>` with `role="button"` and `onClick`, or restructure so the share button is outside the clickable area.
+## CONFIRMED BUGS (Ranked by Impact)
 
-### B2. `SuggestedClassCard` Passes Ref to Function Component (LOW)
-**File:** `src/apps/member/features/suggestions/SuggestedClassCard.tsx` line 90  
-**Console Error:** `Function components cannot be given refs`  
-**Problem:** `<Skeleton className="h-20 rounded-xl" />` is returned directly, and the parent tries to pass a ref to it. The Skeleton component doesn't use `forwardRef`.  
-**Fix:** Wrap the Skeleton return in a `<div>`: `return <div><Skeleton className="h-20 rounded-xl" /></div>;`
+### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
 
-### B3. `as any` Cast on `member_attendance` Table (LOW)
-**File:** `src/apps/member/features/suggestions/SuggestedClassCard.tsx` line 23  
-**Problem:** `.from('member_attendance' as any)` — bypasses type checking.  
-**Fix:** Remove the `as any` cast; `member_attendance` should be in the generated types.
+These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
 
-## What's Confirmed Working
+| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
+|---|---|---|
+| `gamification-process-event` | Yes | Yes |
+| `gamification-admin-ops` | Yes | Yes |
+| `streak-freeze` | Yes | No (exact match only) |
+| `gamification-redeem-reward` | **No** | **No** |
+| `gamification-claim-quest` | **No** | **No** |
+| `gamification-issue-coupon` | **No** | **No** |
+| `gamification-assign-quests` | **No** | **No** |
+| `sync-gamification-config` | **No** | **No** |
 
-| Area | Status |
-|---|---|
-| Check-in (member_self_checkin RPC) | ✅ Server-validated |
-| Booking (create_booking_safe RPC) | ✅ Atomic with capacity check |
-| Cancel booking (cancel_booking_safe RPC) | ✅ Ownership + state validated |
-| Slip upload (member_upload_slip RPC) | ✅ Storage upload + RPC insert |
-| Slip images bucket | ✅ Public |
-| Class full state | ✅ Shows disabled message |
-| Reward redemption | ✅ Server-side edge function |
-| Staff i18n | ✅ Migrated |
-| Trainer i18n greeting | ✅ Migrated |
-| Bangkok timezone for daily limits | ✅ Fixed |
-| Gamification event pipeline | ✅ Consistent |
+**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
 
-## Fix Plan
+**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
 
-### Should fix before launch
-1. **B1** — Fix nested button in ReferralCard (change outer to `<div>`)
+### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
 
-### Nice to fix
-2. **B2** — Wrap Skeleton in div in SuggestedClassCard
-3. **B3** — Remove `as any` cast
+Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
 
-### Implementation Details
+**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
 
-**B1 fix (ReferralCard.tsx):**  
-Change line 60 from `<button onClick={...}>` to `<div role="button" tabIndex={0} onClick={...} onKeyDown={...}>` and keep the inner share `<button>` as-is. This eliminates the DOM nesting violation while preserving both click targets.
+### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
 
-**B2 fix (SuggestedClassCard.tsx line 90):**  
-Change `return <Skeleton className="h-20 rounded-xl" />;` to `return <div><Skeleton className="h-20 rounded-xl" /></div>;`
+`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
 
-## Final Launch Recommendation
+These tabs work fine in English but won't localize for Thai users.
 
-**Ready to launch.** All critical security, data integrity, and RLS issues have been resolved across 3 prior audit rounds. The remaining items are cosmetic DOM warnings that don't affect functionality. The platform is safe for a controlled production launch.
+**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+
+---
+
+## VERIFIED WORKING (No Changes Needed)
+
+| Area | Status | Evidence |
+|---|---|---|
+| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
+| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
+| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
+| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
+| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
+| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
+| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
+| Routes in App.tsx | Correct | All 3 new pages registered |
+| GamificationStudio tabs | Correct | All 14 tabs present and routed |
+| Prestige criteria admin page | Correct | CRUD with audit trail |
+| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
+| Challenge progress tracking | Correct | Both challenges and quests tracked |
+| Referral reward flow | Correct | Reads from guardrails table |
+| Badge auto-unlock | Correct | Condition-based checking works |
+
+---
+
+## Implementation Plan
+
+### Fix 1 — Standardize CORS across all 6 gamification edge functions
+
+For each of these files, apply the same proven pattern from `gamification-process-event`:
+
+1. Add `isAllowedOrigin()` with `*.lovable.app` regex
+2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
+3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+
+Files:
+- `supabase/functions/gamification-redeem-reward/index.ts`
+- `supabase/functions/gamification-claim-quest/index.ts`
+- `supabase/functions/gamification-issue-coupon/index.ts`
+- `supabase/functions/gamification-assign-quests/index.ts`
+- `supabase/functions/sync-gamification-config/index.ts`
+- `supabase/functions/streak-freeze/index.ts`
+
+**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
+
+### Fix 2 — Add i18n keys for new gamification tabs
+
+Files:
+- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
+- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
+- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
+
+**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
+
+---
+
+## What Still Needs Manual Testing After Fix
+
+1. Call reward redemption from member app in preview → verify no CORS error
+2. Claim a quest from member app → verify no CORS error
+3. Use streak freeze from member app → verify no CORS error
+4. Switch app language to Thai → verify new tab names appear correctly
 
