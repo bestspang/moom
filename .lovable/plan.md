@@ -1,47 +1,106 @@
 
 
-# Fix: Promotions export missing columns in Settings
+# Cross-System Consistency Audit — Findings & Fix Plan
 
-## Problem
-The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
-- **Type** should show "Discount" / "Promo code" (not raw enum)
-- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
-- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
-- **Date modified** column is completely missing
-- **Status** is present but headers should match the screenshot format
+## Audit Summary
 
-## Fix (surgical, 1 file)
+After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
 
-**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+---
 
-Replace the promotions export `cols` array to match the Promotions page export format:
+## CONFIRMED BUGS (Ranked by Impact)
 
-```typescript
-case 'promotions': {
-  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
-  const getExportDiscount = (r: any): string => {
-    if (!r.same_discount_all_packages) return 'Varies';
-    const mode = r.discount_mode || r.discount_type;
-    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
-    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
-  };
-  const cols: CsvColumn<any>[] = [
-    { key: 'name', header: 'Name', accessor: r => r.name },
-    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
-    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
-    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
-    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
-    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
-    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
-    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
-  ];
-  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
-  break;
-}
-```
+### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
 
-## Risk
-- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
+These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
+
+| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
+|---|---|---|
+| `gamification-process-event` | Yes | Yes |
+| `gamification-admin-ops` | Yes | Yes |
+| `streak-freeze` | Yes | No (exact match only) |
+| `gamification-redeem-reward` | **No** | **No** |
+| `gamification-claim-quest` | **No** | **No** |
+| `gamification-issue-coupon` | **No** | **No** |
+| `gamification-assign-quests` | **No** | **No** |
+| `sync-gamification-config` | **No** | **No** |
+
+**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+
+**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+
+### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+
+Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+
+**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+
+### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+
+`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
+
+These tabs work fine in English but won't localize for Thai users.
+
+**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+
+---
+
+## VERIFIED WORKING (No Changes Needed)
+
+| Area | Status | Evidence |
+|---|---|---|
+| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
+| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
+| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
+| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
+| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
+| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
+| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
+| Routes in App.tsx | Correct | All 3 new pages registered |
+| GamificationStudio tabs | Correct | All 14 tabs present and routed |
+| Prestige criteria admin page | Correct | CRUD with audit trail |
+| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
+| Challenge progress tracking | Correct | Both challenges and quests tracked |
+| Referral reward flow | Correct | Reads from guardrails table |
+| Badge auto-unlock | Correct | Condition-based checking works |
+
+---
+
+## Implementation Plan
+
+### Fix 1 — Standardize CORS across all 6 gamification edge functions
+
+For each of these files, apply the same proven pattern from `gamification-process-event`:
+
+1. Add `isAllowedOrigin()` with `*.lovable.app` regex
+2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
+3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+
+Files:
+- `supabase/functions/gamification-redeem-reward/index.ts`
+- `supabase/functions/gamification-claim-quest/index.ts`
+- `supabase/functions/gamification-issue-coupon/index.ts`
+- `supabase/functions/gamification-assign-quests/index.ts`
+- `supabase/functions/sync-gamification-config/index.ts`
+- `supabase/functions/streak-freeze/index.ts`
+
+**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
+
+### Fix 2 — Add i18n keys for new gamification tabs
+
+Files:
+- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
+- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
+- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
+
+**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
+
+---
+
+## What Still Needs Manual Testing After Fix
+
+1. Call reward redemption from member app in preview → verify no CORS error
+2. Claim a quest from member app → verify no CORS error
+3. Use streak freeze from member app → verify no CORS error
+4. Switch app language to Thai → verify new tab names appear correctly
 
