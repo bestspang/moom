@@ -23,23 +23,32 @@ export function XPProgressBar({ totalXP, level, className, onHeroBg }: XPProgres
   return (
     <div className={cn('space-y-1', className)}>
       <div className="flex items-center justify-between text-[10px] font-medium">
-        <span className="text-muted-foreground">
+        <span className={onHeroBg ? 'text-primary-foreground/80' : 'text-muted-foreground'}>
           {totalXP.toLocaleString()} / {displayTarget.toLocaleString()} XP to Lv{level + 1}
         </span>
       </div>
 
-      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+      <div className={cn(
+        'relative h-2.5 w-full overflow-hidden rounded-full',
+        onHeroBg ? 'bg-white/20' : 'bg-secondary',
+      )}>
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700 ease-out',
-            isClose && 'shadow-[0_0_12px_hsl(var(--xp-bar-glow)/0.6)]',
+            isClose && !onHeroBg && 'shadow-[0_0_12px_hsl(var(--xp-bar-glow)/0.6)]',
           )}
-          style={{ width: `${progress}%`, backgroundColor: 'hsl(var(--xp-bar))' }}
+          style={{
+            width: `${progress}%`,
+            backgroundColor: onHeroBg ? 'rgba(255,255,255,0.9)' : 'hsl(var(--xp-bar))',
+          }}
         />
         {isClose && (
           <div
             className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full animate-pulse"
-            style={{ left: `calc(${progress}% - 7px)`, backgroundColor: 'hsl(var(--xp-bar-glow) / 0.8)' }}
+            style={{
+              left: `calc(${progress}% - 7px)`,
+              backgroundColor: onHeroBg ? 'rgba(255,255,255,0.6)' : 'hsl(var(--xp-bar-glow) / 0.8)',
+            }}
           />
         )}
       </div>
