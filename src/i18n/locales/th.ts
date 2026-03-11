@@ -2041,6 +2041,9 @@ export default {
     monthlySeasonal: 'รายเดือน / ซีซัน',
     questClaimSuccess: '+{{xp}} XP, +{{coin}} Coin รับแล้ว! 🎉',
     questClaimFailed: 'รับรางวัลเควสไม่สำเร็จ',
+    questAlmostDone: 'อีก {{remaining}} จะเสร็จ "{{quest}}" → +{{xp}} XP',
+    canRedeemNow: 'แลก "{{reward}}" ได้แล้ว!',
+    coinsToReward: 'อีก {{coins}} Coin จะแลก "{{reward}}" ได้',
     // Momentum card
     startEarningXp: '✨ เช็คอินเพื่อเริ่มรับ XP!',
     todaysQuests: 'เควสวันนี้',
