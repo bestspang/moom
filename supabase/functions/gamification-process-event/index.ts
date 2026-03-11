@@ -661,8 +661,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (pendingReferral) {
-        const referrerPoints = pendingReferral.referrer_reward_points ?? 200;
-        const referredPoints = pendingReferral.referred_reward_points ?? 200;
+        const defaultRefPoints = g(guardrails, "REFERRAL_REWARD_POINTS_DEFAULT");
+        const referrerPoints = pendingReferral.referrer_reward_points ?? defaultRefPoints;
+        const referredPoints = pendingReferral.referred_reward_points ?? defaultRefPoints;
         const refIdemKey = `referral_reward:${pendingReferral.id}`;
 
         // Grant points to referrer
