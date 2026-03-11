@@ -9,6 +9,7 @@ import { StreakFlame } from './StreakFlame';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users, Coins } from 'lucide-react';
 import type { MomentumProfile } from './types';
+import { getBadgeEmoji } from './badgeEmoji';
 
 interface MomentumCardProps {
   memberId: string | null;
@@ -190,11 +191,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
                 className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary flex items-center justify-center border-2 border-primary/20"
                 title={b.badge?.nameEn}
               >
-                {b.badge?.iconUrl ? (
-                  <img src={b.badge.iconUrl} alt={b.badge.nameEn} className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <span className="text-sm">🏅</span>
-                )}
+<span className="text-sm leading-none" role="img">{getBadgeEmoji(null, b.badge?.nameEn)}</span>
               </div>
             ))}
           </div>
