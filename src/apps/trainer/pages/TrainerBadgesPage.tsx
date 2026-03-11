@@ -4,6 +4,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Lock } from 'lucide-react';
+import { getBadgeEmoji } from '@/apps/member/features/momentum/badgeEmoji';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
@@ -82,11 +83,7 @@ export default function TrainerBadgesPage() {
                     {style.label}
                   </span>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg}`}>
-                    {mb.badge?.iconUrl ? (
-                      <img src={mb.badge.iconUrl} alt={mb.badge.nameEn} className="h-8 w-8 drop-shadow-sm" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
+                    <span className="text-2xl leading-none" role="img">{getBadgeEmoji(null, mb.badge?.nameEn)}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground leading-tight">
                     {mb.badge?.nameEn ?? 'Badge'}
@@ -124,11 +121,7 @@ export default function TrainerBadgesPage() {
                     {style.label}
                   </span>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg} grayscale`}>
-                    {badge.iconUrl ? (
-                      <img src={badge.iconUrl} alt={badge.nameEn} className="h-8 w-8 drop-shadow-sm grayscale" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
+                    <span className="text-2xl leading-none grayscale" role="img">{getBadgeEmoji(null, badge.nameEn)}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground leading-tight">{badge.nameEn}</p>
                   {badge.descriptionEn && (
