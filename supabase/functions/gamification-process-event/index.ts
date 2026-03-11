@@ -497,8 +497,8 @@ Deno.serve(async (req) => {
       const termKey = termMonths <= 1 ? "1M" : termMonths <= 3 ? "3M" : termMonths <= 6 ? "6M" : "12M";
       const termBonusXp = g(guardrails, `PACKAGE_XP_TERM_BONUS_${termKey}`);
       const termBonusCoin = g(guardrails, `PACKAGE_COIN_TERM_BONUS_${termKey}`);
-      xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
-      pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
+      xpDelta = Math.floor(netPaid / Math.max(xpDivisor, 1)) + termBonusXp;
+      pointsDelta = Math.min(Math.floor(netPaid / Math.max(coinDivisor, 1)) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const shopXpBase = g(guardrails, "SHOP_XP_BASE_PER_ORDER");
