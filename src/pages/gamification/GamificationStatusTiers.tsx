@@ -34,7 +34,7 @@ export default function GamificationStatusTiers() {
   const { data: benefits } = useQuery({
     queryKey: ['status-tier-benefits'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('status_tier_benefits')
+      const { data, error } = await supabase.from('status_tier_benefits')
         .select('*')
         .order('tier_code, sort_order');
       if (error) throw error;
