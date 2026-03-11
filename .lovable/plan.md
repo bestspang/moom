@@ -1,118 +1,101 @@
 
 
-# Full System QC Audit — Round 5
+# Cross-System Consistency Audit — Round 6
 
-## SECTION A — Executive Summary
+## What was checked
 
-The system is **~95% production-ready**. All critical security fixes from Rounds 1-4 are confirmed in place. The core member flows (check-in, booking, cancellation, slip upload) are server-validated via SECURITY DEFINER RPCs. RLS policies are correctly configured. The remaining issues are exclusively **code quality** (`as any` casts) and **minor UX polish** items. No security, data integrity, or broken-flow issues remain.
+I audited all member-facing API services, hooks, pages, edge functions, gamification API, referral system, suggestions, types, and CORS headers for consistency with recent RPC changes and generated types.
 
-**Verdict: Ready to launch.**
+## Verified Working (No Changes Needed)
 
----
-
-## SECTION B — Critical Bugs
-
-**None.** All previously identified critical issues (B1-B4 across Rounds 1-4) have been resolved.
-
----
-
-## SECTION C — High-Priority Functional Issues
-
-### C1. `class_ratings` Upsert Uses `as any` — May Fail if Table Not in Generated Types
-**File:** `src/apps/member/features/momentum/ClassRatingSheet.tsx` line 31, `MemberBookingDetailPage.tsx` line 49  
-**Severity:** LOW — Table exists, RLS policies are correct (INSERT/UPDATE for own member_id). The `as any` cast works at runtime but bypasses type safety.  
-**Status:** Works but weak. Needs manual test to confirm upsert succeeds with the `onConflict` clause.
-
-### C2. `member_referrals` Table Accessed via `as any` Throughout
-**File:** `src/apps/member/features/referral/api.ts` (7 occurrences)  
-**Severity:** LOW — Same pattern. Table exists but isn't in generated types.  
-**Fix:** Regenerate types or add manual type definition.
-
----
-
-## SECTION D — UX/UI Problems
-
-### D1. Slip Upload — No Confirmation Screen
-**Page:** `/member/upload-slip`  
-**Problem:** After successful upload, user gets a toast and is redirected to `/member/packages`. No receipt/reference number shown.  
-**Severity:** LOW  
-**Fix:** Show a success screen with the transaction reference before navigating away.
-
----
-
-## SECTION E — Code / Architecture Problems
-
-### E1. 129 `as any` Casts Across Member Surface
-**Area:** `src/apps/member/` (7 files)  
-**Problem:** RPC results (`json` return type) are cast with `as any` to check `.error`. Tables not in generated types use `from('table' as any)`.  
-**Why it matters:** Compile-time safety is lost. Won't cause runtime issues but reduces maintainability.  
-**Fix:** For RPC results, create a typed helper. For missing tables, regenerate Supabase types.
-
----
-
-## SECTION F — Gamification Readiness
-
-**Fully Working:** XP/Coin earning, level progression, quest assignment/claiming, badge earning, reward redemption, streak tracking/freeze, squad system, trainer scoring, anti-abuse (daily caps, cooldowns, idempotency), economy guardrails (DB-driven), prestige gating, class ratings, referral program.
-
-**Weak:** Frontend XP thresholds still hardcoded (not DB-driven).
-
-**Missing:** Shop purchase event producer, open_gym_45min timer, streak milestone auto-events.
-
----
-
-## SECTION G — End-to-End Flow Matrix
-
-| Flow | Status | Manual Test Needed |
+| Area | Status | Evidence |
 |---|---|---|
-| Member signup | Works | No |
-| Member login (password) | Works | No |
-| Member login (Google) | Works | Yes — OAuth redirect |
-| Member login (Phone OTP) | Works | Yes — SMS delivery |
-| Check-in | Works | No |
-| Book class | Works | No |
-| Cancel booking | Works | No |
-| Upload slip | Works | Yes — file upload to storage |
-| View bookings | Works | No |
-| View schedule | Works | No |
-| View rewards / redeem | Works | Yes — coin deduction |
-| View quests | Works | No |
-| View badges | Works | No |
-| View momentum | Works | No |
-| Edit profile | Works | No |
-| Referral share | Works | Yes — share API |
-| Class rating | Works but weak | Yes — upsert via `as any` |
-| Streak freeze | Works | Yes — edge function |
-| Admin login | Works | No |
-| Admin blocked for members | Works | No |
-| Admin gamification studio | Works | No |
-| Admin transfer slip review | Works | No |
-| Trainer surface | Works | No |
-| Staff surface | Works | No |
+| `cancel_booking_safe` RPC | Correct | Used in `services.ts` line 245 |
+| `create_booking_safe` RPC | Correct | Used in `services.ts` line 296 |
+| `member_self_checkin` RPC | Correct | Used in `services.ts` line 385 |
+| `member_upload_slip` RPC | Correct | Used in `services.ts` line 367, with file upload |
+| CORS headers (all 15 edge functions) | Correct | All include `x-supabase-client-*` headers |
+| `isAllowedOrigin` wildcard | Correct | All gamification functions use it |
+| ReferralCard nested button fix | Correct | Now uses `<div role="button">` |
+| SuggestedClassCard skeleton wrapper | Correct | Now wrapped in `<div>` |
+| Gamification event fire-and-forget | Correct | `fireGamificationEvent` is non-blocking |
+| `handle_new_user` trigger | Correct | Provisions member + identity_map + referral |
+
+## Confirmed Issues
+
+### Issue 1 — UNNECESSARY `as any` on `class_ratings` and `member_referrals`
+
+Both tables exist in `src/integrations/supabase/types.ts`:
+- `class_ratings` — lines 560-598
+- `member_referrals` — lines 2222-2270
+
+But code still casts them as `as any`:
+- `ClassRatingSheet.tsx` line 31: `.from('class_ratings' as any)`
+- `MemberBookingDetailPage.tsx` line 49: `(supabase as any).from('class_ratings')`
+- `referral/api.ts` lines 33, 46, 58, 74, 105: `.from('member_referrals' as any)`
+
+**Root cause:** These casts were added before the types were generated. Now that types exist, the casts hide compile-time errors and prevent IDE autocompletion.
+
+**Fix:** Remove `as any` from these 7 call sites. The generated types already match the column names used.
+
+### Issue 2 — UNNECESSARY `as any` on `check_prestige_eligibility` RPC
+
+`check_prestige_eligibility` IS in the generated types (line 4338). But `api.ts` line 952 does `(supabase.rpc as any)('check_prestige_eligibility', ...)`.
+
+**Fix:** Change to `supabase.rpc('check_prestige_eligibility', ...)` — works because it returns `Json`.
+
+### Issue 3 — LEGITIMATE `as any` on squad RPCs (no changes needed)
+
+`get_squad_feed_reactions` and `toggle_squad_feed_reaction` are NOT in the generated types. These `as any` casts are **required** until those DB functions are regenerated. No change.
+
+### Issue 4 — RPC result `as any` pattern in `services.ts`
+
+Lines 253, 304, 377, 392 all do:
+```ts
+const result = data as any;
+if (result?.error) throw new Error(result.message || result.error);
+```
+
+All 4 RPCs return `Json` type. The `as any` cast is necessary because `Json` doesn't have `.error` typed. This pattern is correct and safe — **no change needed**, but a typed helper could improve it later.
+
+### Issue 5 — `useLanguage()` vs `useTranslation()` inconsistency
+
+5 member files use `useLanguage()` while 15+ use `useTranslation()`. Both produce identical `t()` since `LanguageContext` wraps `useTranslation()`. Not a bug — but inconsistent.
+
+**Only `MemberHeader.tsx` actually needs `useLanguage()`** (for the `language` and `setLanguage` properties). The other 4 files (`MemberPackagesPage`, `MemberBadgeGalleryPage`, `DailyBonusCard`, `CheckInCelebration`) only use `t()` and could switch to `useTranslation()`.
+
+**Fix:** Leave as-is — functionally equivalent, no risk. Mark as tech debt.
 
 ---
 
-## SECTION H — Priority Fix Plan
+## Implementation Plan
 
-### 1. Nice to improve (no launch blockers)
-1. Regenerate Supabase types to eliminate `as any` casts on `class_ratings`, `member_referrals`
-2. Add slip upload confirmation screen with reference number
-3. Create typed RPC result helper to replace `data as any` pattern
+### Files to change
+
+| File | Change |
+|---|---|
+| `src/apps/member/features/momentum/ClassRatingSheet.tsx` | Remove `as any` on `.from('class_ratings')` |
+| `src/apps/member/pages/MemberBookingDetailPage.tsx` | Remove `(supabase as any)`, use `supabase` directly |
+| `src/apps/member/features/referral/api.ts` | Remove all 5 `as any` casts on `member_referrals` + 2 `as any` casts on insert objects |
+| `src/apps/member/features/momentum/api.ts` | Remove `as any` on `check_prestige_eligibility` RPC call |
+
+**Safety:** Pure type-refinement changes. Zero logic changes. Runtime behavior is identical — we're only removing unnecessary casts that the generated types already support.
+
+### What NOT to change (regression prevention)
+
+- `services.ts` RPC result casts — needed because `Json` return type
+- `get_squad_feed_reactions` / `toggle_squad_feed_reaction` casts — RPCs not in types
+- `useLanguage()` usage — functionally identical to `useTranslation()`
+- Edge functions — CORS is already correct and consistent
+- Any existing RPC logic — all 4 security RPCs verified working
 
 ---
 
-## SECTION I — Key Observations
+## Suggested Features (verified safe to add)
 
-All 4 critical RPCs are correctly implemented:
-- `member_self_checkin` — validates member status, duplicate check, package status
-- `create_booking_safe` — atomic capacity check, duplicate prevention
-- `cancel_booking_safe` — ownership + state validation
-- `member_upload_slip` — member verification, transaction creation
+1. **Slip upload confirmation screen** — After successful upload, show transaction reference + "Pending review" status before navigating away. Only touches `MemberUploadSlipPage.tsx`, no backend change.
 
-RLS is correct across all member-facing tables. Storage bucket is public. Auth context handles cross-surface sessions properly.
+2. **`useMemberSession` could use `get_my_member_id` RPC** — Currently does manual `identity_map` + `line_users` lookup (2 queries). The RPC does the same thing in 1 call. Would simplify the hook but current approach works identically. Low priority.
 
----
-
-## SECTION J — Final Launch Recommendation
-
-**Ready to launch.** No security, data integrity, or flow-breaking issues remain. The `as any` casts are a code quality concern, not a functional risk. All core member, trainer, staff, and admin flows are functional with proper server-side validation.
+3. **Typed RPC result helper** — Create a `function parseRpcResult<T>(data: Json): T` utility to replace the repeated `as any` + `.error` check pattern in `services.ts`. Would prevent future regression if someone changes the pattern inconsistently.
 
