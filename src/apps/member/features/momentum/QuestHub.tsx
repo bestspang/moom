@@ -6,8 +6,9 @@ import { fetchMyQuests, assignQuests, claimQuest, type QuestInstance } from './a
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Zap, Coins, Target, Clock, Check, Sparkles } from 'lucide-react';
+import { Zap, Coins, Target, Clock, Check, Sparkles, Info } from 'lucide-react';
 import { useEffect } from 'react';
 import type { TFunction } from 'i18next';
 
@@ -33,7 +34,28 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
           <Target className="h-4 w-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground leading-tight">{tmpl.nameEn}</p>
+          <div className="flex items-center gap-1">
+            <p className="text-sm font-bold text-foreground leading-tight">{tmpl.nameEn}</p>
+            {tmpl.descriptionEn && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-xs space-y-2">
+                  <p className="font-bold text-foreground">{t('member.questDetails')}</p>
+                  <p className="text-muted-foreground leading-relaxed">{tmpl.descriptionEn}</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                    <span><span className="font-semibold text-foreground">{t('member.goal')}:</span> {tmpl.goalValue}</span>
+                    <span><span className="font-semibold text-foreground">{t('member.period')}:</span> {tmpl.questPeriod}</span>
+                    {tmpl.xpReward > 0 && <span className="text-primary font-bold">+{tmpl.xpReward} XP</span>}
+                    {tmpl.coinReward > 0 && <span className="text-amber-600 font-bold">+{tmpl.coinReward} Coins</span>}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
           {tmpl.descriptionEn && (
             <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{tmpl.descriptionEn}</p>
           )}

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Gift, ChevronRight, Lock, Coins } from 'lucide-react';
+import { Gift, ChevronRight, Lock, Coins, Info } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import type { RewardItem } from './types';
 import { useTranslation } from 'react-i18next';
 
@@ -52,9 +53,25 @@ export function RewardPreview({ rewards, userLevel, userPoints }: RewardPreviewP
                     <Gift className="h-4 w-4 text-primary" />
                   )}
                 </div>
-                <p className="text-xs font-bold text-foreground line-clamp-2 leading-tight">
-                  {reward.nameEn}
-                </p>
+                <div className="flex items-start gap-1">
+                  <p className="text-xs font-bold text-foreground line-clamp-2 leading-tight flex-1">
+                    {reward.nameEn}
+                  </p>
+                  {reward.descriptionEn && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+                          <Info className="h-3 w-3" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 text-xs space-y-1.5">
+                        <p className="font-bold text-foreground">{reward.nameEn}</p>
+                        <p className="text-muted-foreground leading-relaxed">{reward.descriptionEn}</p>
+                        <p className="text-muted-foreground"><span className="font-semibold text-foreground">Cost:</span> {reward.pointsCost} pts</p>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
                 <div className="flex items-center gap-1 text-[10px] font-bold">
                   <Coins className="h-2.5 w-2.5" />
                   <span className={canAfford ? 'text-primary' : 'text-muted-foreground'}>

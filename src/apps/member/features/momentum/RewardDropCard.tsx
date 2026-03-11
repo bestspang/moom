@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { redeemReward } from './api';
 import { TIER_CONFIG, type MomentumTier, type RewardItem } from './types';
-import { Gift, Lock, Check, Sparkles } from 'lucide-react';
+import { Gift, Lock, Check, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -91,7 +92,29 @@ export function RewardDropCard({ reward, memberId, userLevel, userPoints, alread
             {reward.rewardType === 'hybrid' ? t('member.coinPlusCash') : reward.rewardType}
           </span>
         )}
-        <h3 className="text-sm font-bold text-foreground line-clamp-1">{reward.nameEn}</h3>
+        <div className="flex items-center gap-1">
+          <h3 className="text-sm font-bold text-foreground line-clamp-1">{reward.nameEn}</h3>
+          {reward.descriptionEn && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 text-xs space-y-2">
+                <p className="font-bold text-foreground">{t('member.rewardDetails')}</p>
+                <p className="text-muted-foreground leading-relaxed">{reward.descriptionEn}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                  <span><span className="font-semibold text-foreground">Cost:</span> {reward.pointsCost} pts</span>
+                  {(reward.cashPrice ?? 0) > 0 && <span>+ ฿{Number(reward.cashPrice).toLocaleString()}</span>}
+                  <span><span className="font-semibold text-foreground">Level:</span> {reward.levelRequired}</span>
+                  {reward.rewardType && <span><span className="font-semibold text-foreground">Type:</span> {reward.rewardType}</span>}
+                  {remaining !== null && <span>{remaining} left</span>}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
         {reward.descriptionEn && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{reward.descriptionEn}</p>
         )}

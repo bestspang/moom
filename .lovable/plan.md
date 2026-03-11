@@ -1,36 +1,47 @@
 
 
-# Add Info Button for Quest & Reward Details
+# Fix: Promotions export missing columns in Settings
 
-## Overview
-Add a small `ⓘ` button on quest cards and reward cards that opens a popover/sheet showing the full description, goal details, and reward breakdown.
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Changes
+## Fix (surgical, 1 file)
 
-### 1. QuestInstanceCard — add info popover (`QuestHub.tsx`)
-- Import `Popover, PopoverTrigger, PopoverContent` from `@/components/ui/popover` and `Info` from lucide.
-- Add a small `Info` icon button (h-4 w-4, muted) next to the quest name.
-- Popover content shows: full `descriptionEn` (no truncation), goal type/value, XP reward, coin reward, and period label.
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 2. RewardDropCard — add info popover (`RewardDropCard.tsx`)
-- Same pattern: `Info` icon next to `reward.nameEn`.
-- Popover shows: full `descriptionEn`, points cost, cash price, level required, stock info, reward type, and badge requirement if any.
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 3. RewardPreview cards — add info popover (`RewardPreview.tsx`)
-- Add small `Info` icon on each compact reward card.
-- Popover shows full name + description + cost details.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### 4. i18n keys (`en.ts`, `th.ts`)
-- `member.questDetails` → "Quest Details" / "รายละเอียดเควส"
-- `member.rewardDetails` → "Reward Details" / "รายละเอียดรางวัล"
-- `member.goal` → "Goal" / "เป้าหมาย"
-- `member.period` → "Period" / "ระยะเวลา"
-
-### Files
-| File | Change |
-|------|--------|
-| `QuestHub.tsx` | Add `Info` icon + `Popover` to `QuestInstanceCard` |
-| `RewardDropCard.tsx` | Add `Info` icon + `Popover` next to reward name |
-| `RewardPreview.tsx` | Add `Info` icon + `Popover` on compact cards |
-| `en.ts` / `th.ts` | Add 4 i18n keys |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
