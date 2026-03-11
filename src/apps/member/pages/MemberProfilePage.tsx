@@ -40,6 +40,12 @@ export default function MemberProfilePage() {
     enabled: !!memberId,
   });
 
+  const { data: statusTier } = useQuery({
+    queryKey: ['member-status-tier', memberId],
+    queryFn: () => fetchMemberStatusTier(memberId!),
+    enabled: !!memberId,
+  });
+
   const menuItems = [
     { label: t('member.editProfile'), icon: User, path: '/member/profile/edit' },
     { label: t('member.inviteFriends'), icon: Gift, path: '/member/referral' },
