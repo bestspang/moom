@@ -2033,6 +2033,7 @@ export default {
     questExpired: 'หมดเวลา',
     questInProgress: 'กำลังทำ',
     noQuestsYet: 'ยังไม่มีเควส',
+    questsRefreshing: 'กำลังเตรียมเควสให้คุณ…',
     questsCheckBackSoon: 'เควสจะรีเซ็ตทุกวัน — กลับมาดูเร็วๆ นี้!',
     dailyQuests: 'เควสรายวัน',
     resetsDaily: 'รีเซ็ตทุกวัน',

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMemberSession } from '../../hooks/useMemberSession';
 import { fetchMyQuests, assignQuests, claimQuest, type QuestInstance } from './api';
@@ -26,73 +27,63 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
     : 'bg-amber-500/10 text-amber-600';
 
   return (
-    <div className={`rounded-xl border bg-card p-4 space-y-3 ${isClaimed ? 'opacity-60' : ''} ${isExpired ? 'opacity-40' : ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-3 flex-1">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <Target className="h-4.5 w-4.5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground leading-tight">{tmpl.nameEn}</p>
-            {tmpl.descriptionEn && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tmpl.descriptionEn}</p>
-            )}
-          </div>
+    <div className={`rounded-xl border bg-card p-3 space-y-2 ${isClaimed ? 'opacity-60' : ''} ${isExpired ? 'opacity-40' : ''}`}>
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <Target className="h-4 w-4 text-primary" />
         </div>
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${periodColor}`}>
-          {tmpl.questPeriod}
-        </span>
-      </div>
-
-      {/* Progress */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{quest.progressValue} / {tmpl.goalValue}</span>
-          <span>{Math.round(progress * 100)}%</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground leading-tight">{tmpl.nameEn}</p>
+          {tmpl.descriptionEn && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{tmpl.descriptionEn}</p>
+          )}
         </div>
-        <Progress value={progress * 100} className="h-2" />
-      </div>
-
-      {/* Rewards + action */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        {/* Rewards inline */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {tmpl.xpReward > 0 && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-              <Zap className="h-2.5 w-2.5" /> +{tmpl.xpReward} XP
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary">
+              <Zap className="h-2.5 w-2.5" />+{tmpl.xpReward}
             </span>
           )}
           {tmpl.coinReward > 0 && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-              <Coins className="h-2.5 w-2.5" /> +{tmpl.coinReward}
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
+              <Coins className="h-2.5 w-2.5" />+{tmpl.coinReward}
             </span>
           )}
         </div>
+      </div>
 
+      {/* Progress + action */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <Progress value={progress * 100} className="h-1.5" />
+        </div>
+        <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0 w-10 text-right">
+          {quest.progressValue}/{tmpl.goalValue}
+        </span>
         {isClaimed ? (
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
-            <Check className="h-3.5 w-3.5" /> {t('member.questClaimed')}
-          </span>
+          <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
         ) : isCompleted ? (
-          <Button size="sm" className="h-7 text-xs font-bold px-3" onClick={() => onClaim(quest.id)}>
-            <Sparkles className="h-3 w-3 mr-1" /> {t('member.questClaim')}
+          <Button size="sm" className="h-6 text-[10px] font-bold px-2" onClick={() => onClaim(quest.id)}>
+            {t('member.questClaim')}
           </Button>
-        ) : isExpired ? (
-          <span className="text-xs font-medium text-muted-foreground">{t('member.questExpired')}</span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" /> {t('member.questInProgress')}
-          </span>
-        )}
+        ) : null}
       </div>
     </div>
   );
 }
 function CompactEmptyState({ t }: { t: TFunction }) {
+  const navigate = useNavigate();
   return (
-    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
-      <Target className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
-      <p className="text-xs font-medium text-foreground">{t('member.noQuestsYet')}</p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">{t('member.questsCheckBackSoon')}</p>
+    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 flex items-center gap-3">
+      <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-foreground">{t('member.questsRefreshing')}</p>
+        <p className="text-[10px] text-muted-foreground">{t('member.questsCheckBackSoon')}</p>
+      </div>
+      <Button size="sm" variant="outline" className="h-7 text-[10px] flex-shrink-0" onClick={() => navigate('/member/check-in')}>
+        {t('member.checkIn')}
+      </Button>
     </div>
   );
 }
