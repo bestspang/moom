@@ -35,11 +35,11 @@ export function XPProgressBar({ totalXP, level, className, onHeroBg }: XPProgres
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700 ease-out',
-            isClose && !onHeroBg && 'shadow-[0_0_12px_hsl(var(--xp-bar-glow)/0.6)]',
+            isClose && !onHeroBg && 'shadow-[0_0_12px_hsl(0_0%_15%/0.4)]',
           )}
           style={{
             width: `${progress}%`,
-            backgroundColor: onHeroBg ? 'rgba(255,255,255,0.9)' : 'hsl(var(--xp-bar))',
+            backgroundColor: onHeroBg ? 'rgba(255,255,255,0.9)' : 'hsl(0 0% 15%)',
           }}
         />
         {isClose && (
@@ -47,7 +47,7 @@ export function XPProgressBar({ totalXP, level, className, onHeroBg }: XPProgres
             className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full animate-pulse"
             style={{
               left: `calc(${progress}% - 7px)`,
-              backgroundColor: onHeroBg ? 'rgba(255,255,255,0.6)' : 'hsl(var(--xp-bar-glow) / 0.8)',
+              backgroundColor: onHeroBg ? 'rgba(255,255,255,0.6)' : 'hsl(0 0% 15% / 0.6)',
             }}
           />
         )}
