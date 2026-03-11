@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Gift, ChevronRight, Lock, Coins } from 'lucide-react';
+import { Gift, ChevronRight, Lock, Coins, Info } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import type { RewardItem } from './types';
 import { useTranslation } from 'react-i18next';
 
