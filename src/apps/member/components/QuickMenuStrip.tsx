@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import {
   PersonStanding,
-  Trophy,
-  Users,
   Ticket,
   Package,
   ClipboardList,
@@ -39,8 +37,6 @@ export function QuickMenuStrip() {
 
   const quickItems: QuickItem[] = [
     { icon: <PersonStanding className={iconClass} />, label: t('member.runClub'), to: '/member/run-club' },
-    { icon: <Trophy className={iconClass} />, label: t('member.leaderboard'), to: '/member/leaderboard' },
-    { icon: <Users className={iconClass} />, label: t('member.mySquad'), to: '/member/squad' },
     { icon: <Ticket className={iconClass} />, label: t('member.couponsTitle'), to: '/member/coupons' },
     { icon: <Package className={iconClass} />, label: t('member.packages'), to: '/member/packages' },
     { icon: <ClipboardList className={iconClass} />, label: t('member.attendanceTitle'), to: '/member/attendance' },
