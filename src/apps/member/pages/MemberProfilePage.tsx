@@ -71,8 +71,11 @@ export default function MemberProfilePage() {
             <h2 className="text-lg font-bold text-foreground">{firstName} {lastName}</h2>
             <p className="text-sm text-muted-foreground">{email}</p>
             {momentum && (
-              <div className="mt-1">
+              <div className="mt-1 flex items-center gap-1.5">
                 <TierBadge tier={momentum.tier} level={momentum.level} />
+                {statusTier && (
+                  <StatusTierBadge tier={statusTier.currentTier as any} />
+                )}
               </div>
             )}
           </div>

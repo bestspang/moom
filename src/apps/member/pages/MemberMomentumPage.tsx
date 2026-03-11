@@ -153,6 +153,9 @@ export default function MemberMomentumPage() {
       {/* ── Dashboard Content ── */}
       <div className="px-4 space-y-6 mt-5">
 
+        {/* ── STATUS TIER ── */}
+        {memberId && <StatusTierCard memberId={memberId} />}
+
         {/* ── SECTION 2: Today's Quests ── */}
         <div className="space-y-3">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">

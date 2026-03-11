@@ -2044,6 +2044,13 @@ export default {
     nextLevelAt: 'Next level at {{xp}} XP',
     xpToGo: '{{xp}} XP to go',
     streak: 'Streak',
+    // Status Tier
+    yourStatus: 'Your Status',
+    statusPoints90d: 'Status Points (90 days)',
+    spToNextTier: '{{sp}} SP to {{tier}}',
+    activeDays: 'Active days',
+    graceWarning: 'Renew your package to keep your status tier!',
+    statusTierExplanation: 'Your status is based on your activity over the last 90 days. Stay active to maintain or upgrade your tier!',
     weekStreak: '{{n}}w streak',
     longestStreak: 'Longest: {{n}}w',
     badges: 'Badges',
