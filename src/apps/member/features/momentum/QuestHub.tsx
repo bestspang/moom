@@ -87,8 +87,21 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
     </div>
   );
 }
+function CompactEmptyState({ t }: { t: TFunction }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
+      <Target className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
+      <p className="text-xs font-medium text-foreground">{t('member.noQuestsYet')}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{t('member.questsCheckBackSoon')}</p>
+    </div>
+  );
+}
 
-export function QuestHub() {
+interface QuestHubProps {
+  filterPeriod?: 'daily' | 'weekly' | 'monthly';
+}
+
+export function QuestHub({ filterPeriod }: QuestHubProps = {}) {
   const queryClient = useQueryClient();
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
@@ -142,18 +155,32 @@ export function QuestHub() {
   const weeklyQuests = (quests ?? []).filter(q => q.template?.questPeriod === 'weekly' && q.status !== 'expired');
   const monthlyQuests = (quests ?? []).filter(q => q.template?.questPeriod === 'monthly' || q.template?.questPeriod === 'seasonal');
 
+  // If filtering by period, show only that period
+  if (filterPeriod === 'daily') {
+    if (dailyQuests.length === 0) return <CompactEmptyState t={t} />;
+    return (
+      <div className="space-y-2.5">
+        {dailyQuests.map(q => (
+          <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} t={t} />
+        ))}
+      </div>
+    );
+  }
+  if (filterPeriod === 'weekly') {
+    if (weeklyQuests.length === 0) return <CompactEmptyState t={t} />;
+    return (
+      <div className="space-y-2.5">
+        {weeklyQuests.map(q => (
+          <QuestInstanceCard key={q.id} quest={q} onClaim={(id) => claim.mutate(id)} t={t} />
+        ))}
+      </div>
+    );
+  }
+
   const allEmpty = dailyQuests.length === 0 && weeklyQuests.length === 0 && monthlyQuests.length === 0;
 
   if (allEmpty) {
-    return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
-        <Target className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-sm font-medium text-foreground">{t('member.noQuestsYet')}</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {t('member.questsCheckBackSoon')}
-        </p>
-      </div>
-    );
+    return <CompactEmptyState t={t} />;
   }
 
   return (

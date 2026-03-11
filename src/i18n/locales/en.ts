@@ -2041,6 +2041,9 @@ export default {
     monthlySeasonal: 'Monthly / Seasonal',
     questClaimSuccess: '+{{xp}} XP, +{{coin}} Coin claimed! 🎉',
     questClaimFailed: 'Failed to claim quest reward',
+    questAlmostDone: '{{remaining}} more to finish "{{quest}}" → +{{xp}} XP',
+    canRedeemNow: 'You can redeem "{{reward}}" now!',
+    coinsToReward: '{{coins}} more Coin to unlock "{{reward}}"',
     // Momentum card
     startEarningXp: '✨ Check in to start earning XP!',
     todaysQuests: "Today's Quests",

@@ -1,100 +1,47 @@
 
 
-# Redesign Momentum Page — Premium Daily Dashboard
+# Fix: Promotions export missing columns in Settings
 
-## Summary of Issues
-The current page has 7 major UX problems: oversized hero, cramped card stacking, broken XP display ("24/0 XP"), unclear streak visualization, overly prominent Freeze button, dead "No quests" zone, and duplicated navigation (tabs + bottom nav both have Rewards).
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-## Architecture Decision
-- **Remove the 3-tab layout** (Level/Quests/Rewards). Instead, present a single scrollable dashboard with clear sections. Bottom nav already provides access to Rewards page.
-- **Quest templates already exist in DB** (8 daily, 8 weekly, 4 monthly, 2 seasonal) — no DB changes needed.
-- **XP bug**: `xpForLevel(0)=0` and `xpForLevel(1)=0`, so for level 1 user: `xpNeeded = 0-0 = 0` → division by zero → "24/0". Fix: ensure minimum denominator or show absolute progress to level 2.
+## Fix (surgical, 1 file)
 
-## Files to Change
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-### 1. `src/apps/member/features/momentum/XPProgressBar.tsx`
-**Fix the 0/0 XP bug**
-- When `xpNeeded <= 0` (level 1 edge case), use `xpForLevel(level+1)` as fallback
-- Show label: "24 / 120 XP to Level 2"
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-### 2. `src/apps/member/pages/MemberMomentumPage.tsx` — **Full Redesign**
-Replace the entire page with a single-scroll dashboard:
-
-```text
-┌─────────────────────────┐
-│ COMPACT HERO            │  ~120px instead of ~250px
-│ [Tier] Lv1 Starter      │
-│ ████████░░ 24/120 XP    │
-│ 🔥 1w  M·T·W·T·F·S·S   │
-│ 3 Coin    [Freeze ❄ 50] │  ← freeze is small text link
-└─────────────────────────┘
-          ↕ 16px gap
-┌─────────────────────────┐
-│ ☀️ TODAY'S QUESTS        │
-│ ┌─────────────────────┐ │
-│ │ Check In Today  +12XP│ │
-│ │ ████░░░░  0/1       │ │
-│ └─────────────────────┘ │
-│ (2 more quest cards)    │
-│ ─── or fallback ───     │
-│ "Quests refreshing soon"│
-│ [Check In Now]          │
-└─────────────────────────┘
-          ↕ 16px gap
-┌─────────────────────────┐
-│ 📅 WEEKLY PROGRESS      │
-│ Two-Day Momentum  0/2   │
-│ Mix It Up         0/2   │
-└─────────────────────────┘
-          ↕ 16px gap
-┌─────────────────────────┐
-│ ⚡ ALMOST THERE          │
-│ • 96 XP to Level 2      │
-│ • 1 check-in → +12 XP   │
-└─────────────────────────┘
-          ↕ 16px gap
-┌─────────────────────────┐
-│ 🎁 REWARDS              │
-│ [horizontal scroll]     │
-│ [View All →]            │
-└─────────────────────────┘
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
 
-**Key changes:**
-- Hero: remove giant XP number, use compact horizontal layout with tier badge + XP bar + coin + streak all in ~120px
-- Remove `DailyBonusCard` as a separate block — merge check-in CTA into quest area
-- Remove `<Tabs>` entirely — single scroll
-- Add "Almost There" motivational section (computed from profile data)
-- Add compact reward preview (horizontal scroll, top 4 rewards)
-- Streak: keep `StreakFlame` but in the hero, make Freeze a small text button not a full `<Button>`
-- More `gap-4` / `gap-5` spacing between sections
-
-### 3. `src/apps/member/features/momentum/StreakFlame.tsx`
-- Make day dots use today-aware highlighting (filled = checked, ring = today, empty = future)
-- Show "day" streak label if `streak_type=daily` instead of always "w"
-
-### 4. `src/apps/member/features/momentum/QuestHub.tsx`
-- Improve empty state: instead of big dead zone, show compact "Quests refreshing..." with actionable CTA
-- Add monthly quests section
-- Tighter card design with less vertical space per quest
-
-### 5. New component: `src/apps/member/features/momentum/AlmostThereCard.tsx`
-- Compute motivational nudges from profile data:
-  - XP remaining to next level
-  - Active quest closest to completion
-  - Coin balance vs cheapest reward
-
-### 6. New component: `src/apps/member/features/momentum/RewardPreview.tsx`
-- Horizontal scroll of top 3-4 affordable/near-affordable rewards
-- "View All →" link to `/member/rewards`
-
-## Spacing & Design Tokens
-- Section gap: `space-y-5` (20px)
-- Hero padding: `px-5 pt-12 pb-4` (reduced from `pt-14 pb-5`)
-- Card padding: `p-4` consistent
-- Section headers: `text-xs font-bold uppercase tracking-wider text-muted-foreground`
-- All cards: `rounded-xl border bg-card`
-
-## No Database Changes Required
-Quest templates are already seeded. The page just needs UI restructuring.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

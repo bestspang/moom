@@ -8,11 +8,12 @@ interface XPProgressBarProps {
 }
 
 export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps) {
-  const currentLevelXP = xpForLevel(level - 1);
-  const nextLevelXP = xpForLevel(level);
+  const currentLevelXP = xpForLevel(level);
+  const nextLevelXP = xpForLevel(level + 1);
+  // Fix: for level 1, currentLevelXP=0 and nextLevelXP=120
   const xpInLevel = totalXP - currentLevelXP;
   const xpNeeded = nextLevelXP - currentLevelXP;
-  const progress = xpNeeded > 0 ? Math.min((xpInLevel / xpNeeded) * 100, 100) : 0;
+  const progress = xpNeeded > 0 ? Math.min((xpInLevel / xpNeeded) * 100, 100) : 100;
   const isClose = progress >= 85;
 
   return (
@@ -25,7 +26,7 @@ export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps)
           {level}
         </span>
         <span className="text-muted-foreground">
-          {xpInLevel.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+          {totalXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
         </span>
         <span
           className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black"
