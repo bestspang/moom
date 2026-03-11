@@ -478,7 +478,7 @@ Deno.serve(async (req) => {
     }
 
     // 8) CHECK LEVEL UP
-    const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1);
+    const { newLevel, leveledUp } = await checkLevelUp(db, newTotalXp, profile.current_level || 1, member_id);
 
     // 9) UPDATE STREAK
     const { newStreak, newLongest } = await updateStreak(db, member_id, profile.longest_streak || 0);
