@@ -1,38 +1,47 @@
 
 
-# Critical & High-Priority Bug Fixes
+# Fix: Promotions export missing columns in Settings
 
-## Bugs Found
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-### Bug 1 — CRITICAL: Both edge functions missing required Supabase CORS headers
+## Fix (surgical, 1 file)
 
-Both `gamification-process-event` and `gamification-admin-ops` only allow:
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
+
+Replace the promotions export `cols` array to match the Promotions page export format:
+
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
 ```
-authorization, x-client-info, apikey, content-type
-```
 
-But `supabase.functions.invoke()` sends additional headers: `x-supabase-client-platform`, `x-supabase-client-platform-version`, `x-supabase-client-runtime`, `x-supabase-client-runtime-version`. Missing these causes CORS preflight failures when calling from the browser.
-
-**Fix:** Update `Access-Control-Allow-Headers` in both functions to include all required Supabase client headers.
-
-### Bug 2 — CRITICAL: `gamification-process-event` blocks Lovable preview origins
-
-Unlike `gamification-admin-ops` (which has `isAllowedOrigin` with wildcard regex), `gamification-process-event` only does `ALLOWED_ORIGINS.includes(origin)` — an exact match. Any call from a Lovable preview URL (e.g., `id-preview--xxx.lovable.app`) falls back to `admin.moom.fit`, causing CORS failures for the member app during development.
-
-**Fix:** Add the same `isAllowedOrigin()` wildcard function from `gamification-admin-ops`.
-
----
-
-## Files to Edit
-
-| File | Change |
-|---|---|
-| `supabase/functions/gamification-process-event/index.ts` | Add wildcard origin support + full CORS headers |
-| `supabase/functions/gamification-admin-ops/index.ts` | Add full CORS headers |
-
-## Implementation Order
-1. Fix `gamification-process-event` CORS (critical — member app calls this)
-2. Fix `gamification-admin-ops` CORS (critical — admin ops calls this)
-
-Both are safe, additive changes — no logic is altered.
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 
