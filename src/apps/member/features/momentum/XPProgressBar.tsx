@@ -5,6 +5,8 @@ interface XPProgressBarProps {
   totalXP: number;
   level: number;
   className?: string;
+  /** Use white-on-orange styling when rendered on the primary hero background */
+  onHeroBg?: boolean;
 }
 
 export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps) {
