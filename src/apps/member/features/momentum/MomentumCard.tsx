@@ -9,6 +9,7 @@ import { StreakFlame } from './StreakFlame';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users, Coins } from 'lucide-react';
 import type { MomentumProfile } from './types';
+import { getBadgeEmoji } from './badgeEmoji';
 
 interface MomentumCardProps {
   memberId: string | null;
