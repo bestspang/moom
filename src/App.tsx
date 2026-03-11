@@ -90,6 +90,7 @@ import GamificationShopRules from "./pages/gamification/GamificationShopRules";
 import GamificationGuardrails from "./pages/gamification/GamificationGuardrails";
 import GamificationOperations from "./pages/gamification/GamificationOperations";
 import GamificationPrestige from "./pages/gamification/GamificationPrestige";
+import GamificationStatusTiers from "./pages/gamification/GamificationStatusTiers";
 
 // Experience Surface Layouts
 import { MemberLayout } from "@/apps/member";
