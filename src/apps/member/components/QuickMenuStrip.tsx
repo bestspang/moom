@@ -37,14 +37,14 @@ export function QuickMenuStrip() {
 
   const quickItems: QuickItem[] = [
     { icon: <PersonStanding className={iconClass} />, label: t('member.runClub'), to: '/member/run-club' },
-    { icon: <Ticket className={iconClass} />, label: t('member.couponsTitle'), to: '/member/coupons' },
+    { icon: <Ticket className={iconClass} />, label: t('member.myCoupons'), to: '/member/coupons' },
     { icon: <Package className={iconClass} />, label: t('member.packages'), to: '/member/packages' },
-    { icon: <ClipboardList className={iconClass} />, label: t('member.attendanceTitle'), to: '/member/attendance' },
-    { icon: <Share2 className={iconClass} />, label: t('member.inviteFriendsTitle'), to: '/member/referral' },
   ];
 
   const allPages: QuickItem[] = [
     ...quickItems,
+    { icon: <ClipboardList className={iconClass} />, label: t('member.attendanceHistory'), to: '/member/attendance' },
+    { icon: <Share2 className={iconClass} />, label: t('member.inviteFriendsTitle'), to: '/member/referral' },
     { icon: <Gift className={iconClass} />, label: t('member.rewardWalletMenu'), to: '/member/rewards' },
     { icon: <Star className={iconClass} />, label: t('member.badgeCollectionMenu'), to: '/member/badges' },
     { icon: <ScanLine className={iconClass} />, label: t('member.checkIn'), to: '/member/check-in' },
