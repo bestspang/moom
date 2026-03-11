@@ -240,18 +240,20 @@ export async function fetchBookingById(bookingId: string): Promise<BookingDetail
   };
 }
 
-// ─── Cancel Booking ───
-export async function cancelBooking(bookingId: string, reason?: string): Promise<void> {
-  const { error } = await supabase
+// ─── Cancel Booking (B3 fix: requires memberId for auth guard) ───
+export async function cancelBooking(bookingId: string, memberId: string, reason?: string): Promise<void> {
+  const { error, count } = await supabase
     .from('class_bookings')
     .update({
       status: 'cancelled' as any,
       cancelled_at: new Date().toISOString(),
       cancellation_reason: reason ?? null,
     })
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('member_id', memberId);
 
   if (error) throw error;
+  if (count === 0) throw new Error('Booking not found or not authorized');
 }
 
 // ─── Schedule Detail (single) ───
@@ -289,18 +291,20 @@ export async function fetchScheduleById(scheduleId: string): Promise<ScheduleIte
   };
 }
 
-// ─── Create Booking ───
+// ─── Create Booking (B2 fix: uses server-side RPC for atomic validation) ───
 export async function createBooking(scheduleId: string, memberId: string): Promise<void> {
-  const { error } = await supabase
-    .from('class_bookings')
-    .insert({
-      schedule_id: scheduleId,
-      member_id: memberId,
-      status: 'booked' as any,
-      booked_at: new Date().toISOString(),
-    });
+  const { data, error } = await supabase.rpc('create_booking_safe', {
+    p_schedule_id: scheduleId,
+    p_member_id: memberId,
+  });
 
   if (error) throw error;
+
+  // RPC returns json — check for error field
+  const result = data as any;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
+  }
 }
 
 // ─── Update Profile ───
@@ -317,9 +321,33 @@ export async function updateMyProfile(data: { first_name: string; last_name: str
   if (error) throw error;
 }
 
-// ─── Upload Transfer Slip ───
-export async function uploadTransferSlip(data: { amount: number; bank_name: string; transfer_date: string }): Promise<void> {
-  // For now, create a pending transaction record. Real file upload TBD.
+// ─── Upload Transfer Slip (B4 fix: uploads image to storage) ───
+export async function uploadTransferSlip(data: {
+  amount: number;
+  bank_name: string;
+  transfer_date: string;
+  file?: File;
+}): Promise<void> {
+  let slipUrl: string | null = null;
+
+  // Upload file to storage if provided
+  if (data.file) {
+    const fileExt = data.file.name.split('.').pop() ?? 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `slips/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('slip-images')
+      .upload(filePath, data.file, { contentType: data.file.type });
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from('slip-images')
+      .getPublicUrl(filePath);
+    slipUrl = urlData?.publicUrl ?? null;
+  }
+
   const { error } = await supabase
     .from('transactions')
     .insert({
@@ -329,10 +357,30 @@ export async function uploadTransferSlip(data: { amount: number; bank_name: stri
       status: 'pending' as any,
       order_name: `SLIP-${Date.now()}`,
       transaction_id: `TXN-${Date.now()}`,
-      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}`,
+      notes: `Bank: ${data.bank_name}, Date: ${data.transfer_date}${slipUrl ? `, Slip: ${slipUrl}` : ''}`,
     });
 
   if (error) throw error;
+}
+
+// ─── Self Check-in (B1 fix: uses server-side RPC for validation) ───
+export async function memberSelfCheckin(memberId: string): Promise<{ hasActivePackage: boolean; checkInType: string }> {
+  const { data, error } = await supabase.rpc('member_self_checkin', {
+    p_member_id: memberId,
+    p_checkin_method: 'self_service',
+  });
+
+  if (error) throw error;
+
+  const result = data as any;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
+  }
+
+  return {
+    hasActivePackage: result.has_active_package ?? false,
+    checkInType: result.check_in_type ?? 'walk_in',
+  };
 }
 
 // ─── My Attendance ───

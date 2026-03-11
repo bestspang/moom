@@ -163,14 +163,17 @@ async function checkDailyLimit(
   eventType: string,
   maxPerDay: number
 ): Promise<{ exceeded: boolean; count: number }> {
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
+  // C4 fix: Use Asia/Bangkok midnight (UTC+7) instead of UTC midnight
+  const now = Date.now();
+  const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+  const bangkokNow = now + BANGKOK_OFFSET_MS;
+  const bangkokMidnight = new Date(bangkokNow - (bangkokNow % 86400000) - BANGKOK_OFFSET_MS);
   const { count } = await db
     .from("xp_ledger")
     .select("id", { count: "exact", head: true })
     .eq("member_id", memberId)
     .eq("event_type", eventType)
-    .gte("created_at", todayStart.toISOString());
+    .gte("created_at", bangkokMidnight.toISOString());
   const c = count ?? 0;
   return { exceeded: c >= maxPerDay, count: c };
 }

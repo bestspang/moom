@@ -1,32 +1,23 @@
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
-import { ScanLine, Hash, Camera, CameraOff, Zap } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMomentumProfile } from '../features/momentum/api';
 import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useTranslation } from 'react-i18next';
-import jsQR from 'jsqr';
+import { memberSelfCheckin } from '../api/services';
 
 export default function MemberCheckInPage() {
   const { t } = useTranslation();
   const { memberId } = useMemberSession();
-  const [memberCode, setMemberCode] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number>(0);
 
   const { data: profile } = useQuery({
     queryKey: ['momentum-profile', memberId],
@@ -34,99 +25,36 @@ export default function MemberCheckInPage() {
     enabled: !!memberId,
   });
 
-  const handleCheckIn = useCallback(async (code: string) => {
-    if (!code.trim() || !memberId) return;
+  const handleCheckIn = useCallback(async () => {
+    if (!memberId) return;
     setIsChecking(true);
     try {
-      const { error } = await supabase
-        .from('member_attendance')
-        .insert({
-          member_id: memberId,
-          checkin_method: 'qr',
-          check_in_type: 'walk_in',
-          check_in_time: new Date().toISOString(),
-        });
-
-      if (error) throw error;
+      // B1 fix: Uses server-side RPC with duplicate check + package verification
+      await memberSelfCheckin(memberId);
 
       fireGamificationEvent({
         event_type: 'check_in',
         member_id: memberId,
         idempotency_key: `checkin:${memberId}:${new Date().toISOString().split('T')[0]}:${Date.now()}`,
-        metadata: { method: 'self_service_qr' },
+        metadata: { method: 'self_service' },
       });
 
       await queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
       await queryClient.invalidateQueries({ queryKey: ['my-quests'] });
-      setMemberCode('');
-      stopScanning();
       setShowCelebration(true);
-    } catch {
-      toast.error(t('member.checkinFailed'));
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('already_checked_in') || msg.includes('already checked in')) {
+        toast.error(t('member.alreadyCheckedIn'));
+      } else if (msg.includes('member_inactive') || msg.includes('not active')) {
+        toast.error(t('member.membershipInactive'));
+      } else {
+        toast.error(t('member.checkinFailed'));
+      }
     } finally {
       setIsChecking(false);
     }
   }, [memberId, queryClient, t]);
-
-  const stopScanning = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setScanning(false);
-  }, []);
-
-  const scanFrame = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      rafRef.current = requestAnimationFrame(scanFrame);
-      return;
-    }
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const qr = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-    if (qr?.data) {
-      setMemberCode(qr.data);
-      handleCheckIn(qr.data);
-      return;
-    }
-    rafRef.current = requestAnimationFrame(scanFrame);
-  }, [handleCheckIn]);
-
-  const startScanning = useCallback(async () => {
-    setCameraError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      streamRef.current = stream;
-      setScanning(true);
-    } catch {
-      setCameraError(t('member.cameraAccessDenied'));
-    }
-  }, [t]);
-
-  // Attach stream to video element AFTER it's rendered
-  useEffect(() => {
-    if (!scanning || !streamRef.current) return;
-    const video = videoRef.current;
-    if (!video) return;
-    video.srcObject = streamRef.current;
-    video.play().then(() => {
-      rafRef.current = requestAnimationFrame(scanFrame);
-    }).catch(() => {
-      setCameraError(t('member.cameraAccessDenied'));
-      stopScanning();
-    });
-  }, [scanning, scanFrame, t, stopScanning]);
-
-  useEffect(() => () => stopScanning(), [stopScanning]);
 
   return (
     <div className="animate-in fade-in-0 duration-200">
@@ -135,90 +63,28 @@ export default function MemberCheckInPage() {
         subtitle={
           profile?.currentStreak
             ? t('member.streakDay', { n: profile.currentStreak })
-            : t('member.scanQrHint')
+            : t('member.readyToCheckIn')
         }
       />
 
       <Section className="mb-6">
-        <div className="flex flex-col items-center gap-5 rounded-2xl bg-card p-6 shadow-sm border border-border overflow-hidden relative">
-          {scanning ? (
-            <div className="relative w-full max-w-xs aspect-square rounded-xl overflow-hidden border-2 border-primary bg-foreground/5">
-              <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
-              <div className="absolute left-2 right-2 h-0.5 bg-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.5)] animate-scan-line pointer-events-none" />
-              {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((pos, i) => (
-                <div
-                  key={i}
-                  className={`absolute ${pos} w-6 h-6 pointer-events-none border-primary`}
-                  style={{
-                    borderWidth: '3px',
-                    borderStyle: 'solid',
-                    borderColor: 'hsl(var(--primary))',
-                    ...(pos.includes('top') ? {} : { borderTop: 'none' }),
-                    ...(pos.includes('bottom') ? {} : { borderBottom: 'none' }),
-                    ...(pos.includes('left') ? {} : { borderLeft: 'none' }),
-                    ...(pos.includes('right') ? {} : { borderRight: 'none' }),
-                    borderRadius: pos.includes('top') && pos.includes('left') ? '8px 0 0 0'
-                      : pos.includes('top') && pos.includes('right') ? '0 8px 0 0'
-                      : pos.includes('bottom') && pos.includes('left') ? '0 0 0 8px'
-                      : '0 0 8px 0',
-                  }}
-                />
-              ))}
-              <canvas ref={canvasRef} className="hidden" />
-              <Button
-                variant="destructive"
-                size="sm"
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 shadow-lg"
-                onClick={stopScanning}
-              >
-                <CameraOff className="h-4 w-4 mr-1.5" />
-                {t('member.stopCamera')}
-              </Button>
+        <div className="flex flex-col items-center gap-5 rounded-2xl bg-card p-8 shadow-sm border border-border overflow-hidden relative">
+          <button
+            onClick={handleCheckIn}
+            disabled={isChecking}
+            className="group flex h-32 w-32 items-center justify-center rounded-full bg-primary transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex flex-col items-center gap-2 text-primary-foreground">
+              <Zap className="h-12 w-12 group-hover:animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {isChecking ? t('member.checkingIn') : t('member.checkIn')}
+              </span>
             </div>
-          ) : (
-            <>
-              <button
-                onClick={startScanning}
-                className="group flex h-28 w-28 items-center justify-center rounded-2xl bg-primary transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
-              >
-                <div className="flex flex-col items-center gap-1.5 text-primary-foreground">
-                  <Camera className="h-10 w-10 group-hover:animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">{t('member.scanQr')}</span>
-                </div>
-              </button>
-              {cameraError && (
-                <p className="text-xs text-destructive text-center max-w-xs">{cameraError}</p>
-              )}
-            </>
-          )}
+          </button>
 
-          <div className="flex items-center gap-3 w-full max-w-xs">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('member.orTypeCode')}</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="w-full max-w-xs space-y-3">
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={t('member.memberCodePlaceholder')}
-                value={memberCode}
-                onChange={e => setMemberCode(e.target.value)}
-                className="pl-9 text-center font-mono text-lg tracking-wider"
-                onKeyDown={e => e.key === 'Enter' && handleCheckIn(memberCode)}
-              />
-            </div>
-            <Button
-              className="w-full font-bold text-base gap-2"
-              size="lg"
-              onClick={() => handleCheckIn(memberCode)}
-              disabled={isChecking || !memberCode.trim()}
-            >
-              <Zap className="h-5 w-5" />
-              {isChecking ? t('member.checkingIn') : t('member.checkInEarnXp')}
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground text-center max-w-xs">
+            {t('member.tapToCheckIn')}
+          </p>
         </div>
       </Section>
 

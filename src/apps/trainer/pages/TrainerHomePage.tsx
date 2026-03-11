@@ -28,16 +28,16 @@ export default function TrainerHomePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // C3 fix: Resolve staffId from staff table directly via user_id (not identity_map)
   const { data: staffId } = useQuery({
     queryKey: ['trainer-staff-id', user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('identity_map')
-        .select('admin_entity_id')
-        .eq('experience_user_id', user!.id)
-        .eq('entity_type', 'staff')
+        .from('staff')
+        .select('id')
+        .eq('user_id', user!.id)
         .maybeSingle();
-      return data?.admin_entity_id ?? null;
+      return data?.id ?? null;
     },
     enabled: !!user,
     staleTime: Infinity,
