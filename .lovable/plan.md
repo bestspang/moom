@@ -1,106 +1,67 @@
 
 
-# Cross-System Consistency Audit — Findings & Fix Plan
+# Status Tier System — Consistency Audit & Development Plan
 
-## Audit Summary
+## Current State Assessment
 
-After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
+The Status Tier system (Bronze → Black) is **95% implemented**. Database tables, seed data, edge function SP writing, evaluation function, frontend components, and i18n are all in place and functional.
 
----
+## Issues Found
 
-## CONFIRMED BUGS (Ranked by Impact)
+### 1. Unnecessary `as any` casts on status tier tables (Code Quality)
+All 5 status tier tables (`member_status_tiers`, `sp_ledger`, `status_tier_rules`, `status_tier_benefits`, `status_tier_sp_rules`) exist in generated types, but code still uses `as any`:
 
-### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
+- `src/apps/member/features/momentum/api.ts` lines 1017, 1026, 1027 — `(supabase as any).from('member_status_tiers')` and `(supabase.rpc as any)('evaluate_member_tier')`
+- `src/pages/gamification/GamificationStatusTiers.tsx` lines 15, 26, 37, 48 — all 4 queries use `(supabase as any)`
 
-These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
+**Fix:** Remove `as any` casts. Note: `evaluate_member_tier` RPC IS in generated types (returns `Json`), so the cast is unnecessary.
 
-| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
-|---|---|---|
-| `gamification-process-event` | Yes | Yes |
-| `gamification-admin-ops` | Yes | Yes |
-| `streak-freeze` | Yes | No (exact match only) |
-| `gamification-redeem-reward` | **No** | **No** |
-| `gamification-claim-quest` | **No** | **No** |
-| `gamification-issue-coupon` | **No** | **No** |
-| `gamification-assign-quests` | **No** | **No** |
-| `sync-gamification-config` | **No** | **No** |
+### 2. MomentumCard missing StatusTierBadge (Feature Gap)
+The plan specified showing StatusTierBadge in MomentumCard below TierBadge. Currently MomentumCard only shows Level-based TierBadge. Since MomentumCard is the primary gamification touchpoint on the home page, this is where members should first see their status tier.
 
-**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+**Fix:** Add StatusTierBadge to MomentumCard, fetching status tier data alongside existing profile data.
 
-**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+### 3. MemberHomePage missing StatusTierBadge (Feature Gap)
+The plan specified showing StatusTierBadge next to the member's name on the home page. Currently not implemented.
 
-### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+**Fix:** Add a small StatusTierBadge in the greeting area of MemberHomePage.
 
-Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+### 4. Economy docs not updated with Status Tier system (Documentation Gap)
+`docs/ECONOMY_V2.md` and `docs/gamification-event-map.md` have no mention of Status Tiers, SP, or the dual-track model. This is the project SSOT and must reflect the current system.
 
-**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+**Fix:** Add a Status Tier section to ECONOMY_V2.md covering SP earning rules, tier qualification, downgrade rules, and benefits. Add SP column to the event map.
 
-### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+### 5. `StatusTierBadge` tier prop uses `as any` in ProfilePage (Type Safety)
+`MemberProfilePage.tsx` line 77: `<StatusTierBadge tier={statusTier.currentTier as any} />` — should cast to `StatusTier` type instead.
 
-`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
-
-These tabs work fine in English but won't localize for Thai users.
-
-**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
-
----
-
-## VERIFIED WORKING (No Changes Needed)
-
-| Area | Status | Evidence |
-|---|---|---|
-| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
-| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
-| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
-| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
-| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
-| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
-| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
-| Routes in App.tsx | Correct | All 3 new pages registered |
-| GamificationStudio tabs | Correct | All 14 tabs present and routed |
-| Prestige criteria admin page | Correct | CRUD with audit trail |
-| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
-| Challenge progress tracking | Correct | Both challenges and quests tracked |
-| Referral reward flow | Correct | Reads from guardrails table |
-| Badge auto-unlock | Correct | Condition-based checking works |
-
----
+**Fix:** Import and use proper `StatusTier` type.
 
 ## Implementation Plan
 
-### Fix 1 — Standardize CORS across all 6 gamification edge functions
+### Files to change:
 
-For each of these files, apply the same proven pattern from `gamification-process-event`:
+| # | File | Change |
+|---|------|--------|
+| 1 | `src/apps/member/features/momentum/api.ts` | Remove `as any` on `member_status_tiers` table and `evaluate_member_tier` RPC |
+| 2 | `src/pages/gamification/GamificationStatusTiers.tsx` | Remove `as any` on all 4 status tier table queries |
+| 3 | `src/apps/member/features/momentum/MomentumCard.tsx` | Add StatusTierBadge below TierBadge, fetch status tier |
+| 4 | `src/apps/member/pages/MemberProfilePage.tsx` | Fix `as any` → proper `StatusTier` type cast |
+| 5 | `docs/ECONOMY_V2.md` | Add Section: Status Tiers (SP system, qualification, downgrade, benefits) |
+| 6 | `docs/gamification-event-map.md` | Add SP column to event tables |
 
-1. Add `isAllowedOrigin()` with `*.lovable.app` regex
-2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
-3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+### What NOT to change:
+- Edge function SP logic — verified working correctly
+- `evaluate_member_tier` DB function — verified correct
+- Seed data — verified matches user's spec exactly
+- StatusTierCard component — already correct
+- StatusTierBadge component — already correct
+- i18n translations — already complete (en + th)
+- CSS variables — already in place
+- RLS policies — already correct
+- Existing XP/Coin/Level logic — untouched
 
-Files:
-- `supabase/functions/gamification-redeem-reward/index.ts`
-- `supabase/functions/gamification-claim-quest/index.ts`
-- `supabase/functions/gamification-issue-coupon/index.ts`
-- `supabase/functions/gamification-assign-quests/index.ts`
-- `supabase/functions/sync-gamification-config/index.ts`
-- `supabase/functions/streak-freeze/index.ts`
-
-**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
-
-### Fix 2 — Add i18n keys for new gamification tabs
-
-Files:
-- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
-- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
-- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
-
-**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
-
----
-
-## What Still Needs Manual Testing After Fix
-
-1. Call reward redemption from member app in preview → verify no CORS error
-2. Claim a quest from member app → verify no CORS error
-3. Use streak freeze from member app → verify no CORS error
-4. Switch app language to Thai → verify new tab names appear correctly
+### Safety:
+- Type-refinement changes only for items 1-2, 4
+- MomentumCard addition (item 3) is purely additive — adds a small badge, no logic change
+- Doc updates (items 5-6) are documentation only
 
