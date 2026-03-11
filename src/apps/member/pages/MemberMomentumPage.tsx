@@ -12,6 +12,7 @@ import { StreakFlame } from '../features/momentum/StreakFlame';
 import { QuestHub } from '../features/momentum/QuestHub';
 import { AlmostThereCard } from '../features/momentum/AlmostThereCard';
 import { RewardPreview } from '../features/momentum/RewardPreview';
+import { StatusTierCard } from '../features/momentum/StatusTierCard';
 import {
   fetchMomentumProfile,
   fetchMyBadges,
