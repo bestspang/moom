@@ -10,12 +10,12 @@
 
 ### Core Activity Events
 
-| # | Event Name | action_key | Who Triggers | XP | Coin | Cooldown | Daily Cap |
-|---|-----------|-----------|-------------|-----|------|----------|-----------|
-| 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | 720 min | 1 |
-| 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 720 min | 1 |
-| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 60 min | 5 |
-| 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 60 min | 3 |
+| # | Event Name | action_key | Who Triggers | XP | Coin | SP | Cooldown | Daily Cap |
+|---|-----------|-----------|-------------|-----|------|-----|----------|-----------|
+| 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | — | 720 min | 1 |
+| 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 1 | 720 min | 1 |
+| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
+| 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 3 | 60 min | 3 |
 
 ### Commerce Events
 
