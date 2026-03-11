@@ -248,7 +248,7 @@ export async function cancelBooking(bookingId: string, memberId: string, reason?
       status: 'cancelled' as any,
       cancelled_at: new Date().toISOString(),
       cancellation_reason: reason ?? null,
-    })
+    }, { count: 'exact' })
     .eq('id', bookingId)
     .eq('member_id', memberId);
 
