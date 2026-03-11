@@ -499,11 +499,11 @@ Deno.serve(async (req) => {
       pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
-      const shopXpBase = g(guardrails, "SHOP_XP_BASE");
-      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_THB_DIVISOR");
-      const shopXpCap = g(guardrails, "SHOP_XP_CAP");
-      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_THB_DIVISOR");
-      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP");
+      const shopXpBase = g(guardrails, "SHOP_XP_BASE_PER_ORDER");
+      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_180_THB");
+      const shopXpCap = g(guardrails, "SHOP_XP_CAP_PER_ORDER");
+      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_120_THB");
+      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP_PER_ORDER");
       xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
       pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
     }
