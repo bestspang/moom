@@ -4,6 +4,11 @@ import Stripe from 'https://esm.sh/stripe@18.5.0'
 // Stripe webhook doesn't need browser CORS, but keep headers for consistency
 const ALLOWED_ORIGINS = ['https://admin.moom.fit', 'https://member.moom.fit', 'https://moom.lovable.app']
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  return /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://admin.moom.fit',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
