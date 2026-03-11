@@ -146,18 +146,15 @@ export default function MemberClassDetailPage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{isFull ? t('member.confirmJoinWaitlist') : t('member.confirmBooking')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('member.confirmBooking')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {isFull
-                ? t('member.waitlistDescription', { className: cls.className })
-                : t('member.bookingConfirmDescription', { className: cls.className, date: format(parseISO(cls.scheduledDate), 'EEE, d MMM'), time: cls.startTime.slice(0, 5) })
-              }
+              {t('member.bookingConfirmDescription', { className: cls.className, date: format(parseISO(cls.scheduledDate), 'EEE, d MMM'), time: cls.startTime.slice(0, 5) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => bookMutation.mutate()}>
-              {isFull ? t('member.joinWaitlist') : t('member.bookNow')}
+              {t('member.bookNow')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
