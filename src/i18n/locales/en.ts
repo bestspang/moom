@@ -2033,6 +2033,7 @@ export default {
     questExpired: 'Expired',
     questInProgress: 'In progress',
     noQuestsYet: 'No quests yet',
+    questsRefreshing: 'Quests are being prepared…',
     questsCheckBackSoon: 'Quests refresh daily — check back soon!',
     dailyQuests: 'Daily Quests',
     resetsDaily: 'resets daily',
