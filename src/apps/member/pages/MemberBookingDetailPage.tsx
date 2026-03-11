@@ -58,7 +58,7 @@ export default function MemberBookingDetailPage() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => cancelBooking(id!, cancelReason || undefined),
+    mutationFn: () => cancelBooking(id!, memberId!, cancelReason || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
