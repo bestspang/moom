@@ -4331,6 +4331,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_booking_safe: {
+        Args: { p_booking_id: string; p_member_id: string; p_reason?: string }
+        Returns: Json
+      }
       check_prestige_eligibility: {
         Args: { p_member_id: string; p_target_level: number }
         Returns: Json
@@ -4434,6 +4438,16 @@ export type Database = {
       }
       member_self_checkin: {
         Args: { p_checkin_method?: string; p_member_id: string }
+        Returns: Json
+      }
+      member_upload_slip: {
+        Args: {
+          p_amount: number
+          p_bank_name: string
+          p_member_id: string
+          p_slip_url?: string
+          p_transfer_date: string
+        }
         Returns: Json
       }
       next_transaction_number: { Args: never; Returns: string }
