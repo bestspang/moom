@@ -230,6 +230,16 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
           {t('member.mySquad')}
         </button>
       </div>
+
+      {/* Level Perks Dialog */}
+      <Dialog open={perksOpen} onOpenChange={setPerksOpen}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{t('member.levelPerks')}</DialogTitle>
+          </DialogHeader>
+          <LevelPerksCard currentLevel={p.level} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

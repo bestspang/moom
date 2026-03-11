@@ -200,6 +200,11 @@ export default function MemberHomePage() {
         );
       })()}
 
+      {/* Quick Menu Strip */}
+      <Section className="mb-4">
+        <QuickMenuStrip />
+      </Section>
+
       {/* Next Up bookings */}
       <Section
         title={t('member.nextUp')}

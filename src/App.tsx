@@ -183,6 +183,7 @@ const App = () => (
                   <Route path="referral" element={<MemberReferralPage />} />
                   <Route path="momentum" element={<MemberMomentumPage />} />
                   <Route path="coupons" element={<MemberCouponsPage />} />
+                  <Route path="run-club" element={<MemberRunClubPage />} />
                 </Route>
 
                 {/* ===== Trainer Surface (mobile-first) ===== */}
