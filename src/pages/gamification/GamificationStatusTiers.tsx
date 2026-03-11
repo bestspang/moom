@@ -105,6 +105,7 @@ export default function GamificationStatusTiers() {
       <div>
         <h3 className="text-sm font-bold mb-3">Status Point Earning Rules</h3>
         <DataTable
+          rowKey={(row: any) => row.id ?? row.action_key}
           columns={[
             { key: 'action_key', header: 'Action Key', cell: (row: any) => row.action_key },
             { key: 'sp_value', header: 'SP Value', cell: (row: any) => row.sp_value },
