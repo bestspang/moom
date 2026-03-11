@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMyBadges } from './api';
-import { Award, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
+import { getBadgeEmoji } from './badgeEmoji';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
 
