@@ -291,6 +291,7 @@ const App = () => (
                     <Route path="guardrails" element={<GamificationGuardrails />} />
                     <Route path="operations" element={<GamificationOperations />} />
                     <Route path="prestige" element={<GamificationPrestige />} />
+                    <Route path="status-tiers" element={<GamificationStatusTiers />} />
                   </Route>
                   <Route path="diagnostics/data-audit" element={<ProtectedRoute minAccessLevel="level_4_master"><DiagnosticsDataAudit /></ProtectedRoute>} />
                 </Route>

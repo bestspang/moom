@@ -2699,6 +2699,7 @@ export default {
       guardrails: 'Guardrails',
       operations: 'Operations',
       prestige: 'Prestige',
+      statusTiers: 'Status Tiers',
     },
     overview: {
       activeRules: 'Active Rules',
