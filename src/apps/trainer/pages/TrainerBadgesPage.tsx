@@ -83,11 +83,7 @@ export default function TrainerBadgesPage() {
                     {style.label}
                   </span>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg}`}>
-                    {mb.badge?.iconUrl ? (
-                      <img src={mb.badge.iconUrl} alt={mb.badge.nameEn} className="h-8 w-8 drop-shadow-sm" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
+                    <span className="text-2xl leading-none" role="img">{getBadgeEmoji(null, mb.badge?.nameEn)}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground leading-tight">
                     {mb.badge?.nameEn ?? 'Badge'}
