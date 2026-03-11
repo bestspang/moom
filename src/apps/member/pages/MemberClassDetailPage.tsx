@@ -127,14 +127,20 @@ export default function MemberClassDetailPage() {
       </Section>
 
       <div className="px-4 pb-8">
-        <Button
-          className="w-full"
-          size="lg"
-          disabled={!memberId || bookMutation.isPending}
-          onClick={() => setConfirmOpen(true)}
-        >
-          {bookMutation.isPending ? t('member.bookingInProgress') : isFull ? t('member.joinWaitlist') : t('member.bookThisClass')}
-        </Button>
+        {isFull ? (
+          <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+            <p className="text-sm font-medium text-muted-foreground">{t('member.classFull')}</p>
+          </div>
+        ) : (
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={!memberId || bookMutation.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            {bookMutation.isPending ? t('member.bookingInProgress') : t('member.bookThisClass')}
+          </Button>
+        )}
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
