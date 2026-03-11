@@ -9,25 +9,28 @@ import { Button } from '@/components/ui/button';
 import { TierBadge } from '../features/momentum/TierBadge';
 import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
-import { StreakFreezeButton } from '../features/momentum/StreakFreezeButton';
 import { QuestHub } from '../features/momentum/QuestHub';
 import { AlmostThereCard } from '../features/momentum/AlmostThereCard';
 import { RewardPreview } from '../features/momentum/RewardPreview';
-import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import {
   fetchMomentumProfile,
   fetchMyBadges,
   fetchRewards,
-  fetchMyRedemptions,
   fetchMyQuests,
 } from '../features/momentum/api';
 import { Coins, Snowflake, Award, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function MemberMomentumPage() {
   const navigate = useNavigate();
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [freezing, setFreezing] = useState(false);
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],
@@ -52,12 +55,32 @@ export default function MemberMomentumPage() {
     enabled: !!memberId,
   });
 
+  const handleFreeze = async () => {
+    if (!profile || profile.availablePoints < 50) {
+      toast.error(t('member.needCoinToFreeze', { cost: 50, balance: profile?.availablePoints ?? 0 }));
+      return;
+    }
+    setFreezing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('streak-freeze');
+      if (error) throw error;
+      const result = data as { ok?: boolean; error?: string; freeze_until?: string };
+      if (result.error) { toast.error(result.error); return; }
+      toast.success(t('member.streakFrozenUntil', { date: result.freeze_until }));
+      queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });
+    } catch {
+      toast.error(t('member.freezeFailed'));
+    } finally {
+      setFreezing(false);
+    }
+  };
+
   if (loadingProfile) {
     return (
       <div className="animate-in fade-in-0 duration-200">
         <MobilePageHeader title={t('member.momentum')} />
         <div className="px-4 space-y-4">
-          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
           <Skeleton className="h-20 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
         </div>
@@ -85,81 +108,65 @@ export default function MemberMomentumPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200 pb-6">
-      {/* ── SECTION 1: Compact Hero ── */}
+      {/* ── SECTION 1: Compact Hero (~120px) ── */}
       <div className="relative overflow-hidden" style={{ backgroundColor: 'hsl(var(--primary))' }}>
-        <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full opacity-10" style={{ backgroundColor: 'hsl(var(--primary-foreground))' }} />
-
-        <div className="relative px-5 pt-12 pb-4 space-y-3">
-          {/* Row 1: Tier + Coin */}
-          <div className="flex items-center justify-between">
-            <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
-              <TierBadge tier={profile.tier} level={profile.level} size="md" />
+        <div className="relative px-5 pt-10 pb-3 space-y-2">
+          {/* Row 1: Tier + XP bar + Coin */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex-shrink-0 [&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
+              <TierBadge tier={profile.tier} level={profile.level} size="sm" />
+            </div>
+            <div className="flex-1 min-w-0 [&_span]:text-primary-foreground/80 [&_.inline-flex]:!bg-white/20">
+              <XPProgressBar totalXP={profile.totalXp} level={profile.level} />
             </div>
             <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black"
+              className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black flex-shrink-0"
               style={{ backgroundColor: 'hsl(var(--primary-foreground) / 0.2)', color: 'hsl(var(--primary-foreground))' }}
             >
-              <Coins className="h-3.5 w-3.5" />
-              {profile.availablePoints.toLocaleString()} Coin
+              <Coins className="h-3 w-3" />
+              {profile.availablePoints.toLocaleString()}
             </div>
           </div>
 
-          {/* Row 2: XP Progress */}
-          <div className="[&_span]:text-primary-foreground/80 [&_.inline-flex]:!bg-white/20">
-            <XPProgressBar totalXP={profile.totalXp} level={profile.level} />
-          </div>
-
-          {/* Row 3: Streak + Freeze (small) */}
+          {/* Row 2: Streak + Freeze */}
           <div className="flex items-center justify-between">
             <StreakFlame
               weeklyCheckinDays={profile.weeklyCheckinDays}
               currentStreakWeeks={profile.currentStreak}
+              onHeroBg
             />
             <button
               className="flex items-center gap-1 text-[10px] font-medium opacity-70 hover:opacity-100 transition-opacity"
               style={{ color: 'hsl(var(--primary-foreground))' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                // Trigger freeze via the StreakFreezeButton logic
-              }}
+              onClick={handleFreeze}
+              disabled={freezing}
               title={t('member.freezeStreak', { cost: 50 })}
             >
               <Snowflake className="h-3 w-3" />
-              {t('member.freezeStreak', { cost: 50 })}
+              {freezing ? '...' : t('member.freezeStreak', { cost: 50 })}
             </button>
           </div>
         </div>
       </div>
 
       {/* ── Dashboard Content ── */}
-      <div className="px-4 space-y-5 mt-4">
+      <div className="px-4 space-y-6 mt-5">
 
-        {/* ── SECTION 2: Check-in CTA + Today's Quests ── */}
-        <DailyBonusCard />
-
-        {dailyQuests.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              ☀️ {t('member.dailyQuests')}
-            </p>
-            <QuestHub filterPeriod="daily" />
-          </div>
-        )}
+        {/* ── SECTION 2: Today's Quests ── */}
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            ☀️ {t('member.dailyQuests')}
+          </p>
+          <QuestHub filterPeriod="daily" />
+        </div>
 
         {/* ── SECTION 3: Weekly Progress ── */}
-        {weeklyQuests.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              📅 {t('member.weeklyQuests')}
-            </p>
-            <QuestHub filterPeriod="weekly" />
-          </div>
-        )}
-
-        {/* Show full QuestHub if no quests separated yet */}
-        {dailyQuests.length === 0 && weeklyQuests.length === 0 && (
-          <QuestHub />
-        )}
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            📅 {t('member.weeklyQuests')}
+          </p>
+          <QuestHub filterPeriod="weekly" />
+        </div>
 
         {/* ── SECTION 4: Almost There ── */}
         <AlmostThereCard

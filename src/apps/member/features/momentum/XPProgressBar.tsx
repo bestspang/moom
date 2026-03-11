@@ -10,33 +10,23 @@ interface XPProgressBarProps {
 export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps) {
   const currentLevelXP = xpForLevel(level);
   const nextLevelXP = xpForLevel(level + 1);
-  // Fix: for level 1, currentLevelXP=0 and nextLevelXP=120
   const xpInLevel = totalXP - currentLevelXP;
   const xpNeeded = nextLevelXP - currentLevelXP;
-  const progress = xpNeeded > 0 ? Math.min((xpInLevel / xpNeeded) * 100, 100) : 100;
+  // Guard against 0 denominator (level 1 edge case where both are 0)
+  const safeDenominator = xpNeeded > 0 ? xpNeeded : nextLevelXP > 0 ? nextLevelXP : 120;
+  const progress = Math.min((Math.max(xpInLevel, 0) / safeDenominator) * 100, 100);
   const isClose = progress >= 85;
+  const displayTarget = nextLevelXP > 0 ? nextLevelXP : 120;
 
   return (
-    <div className={cn('space-y-1.5', className)}>
+    <div className={cn('space-y-1', className)}>
       <div className="flex items-center justify-between text-[10px] font-medium">
-        <span
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black"
-          style={{ backgroundColor: 'hsl(var(--xp-bar) / 0.15)', color: 'hsl(var(--xp-bar))' }}
-        >
-          {level}
-        </span>
         <span className="text-muted-foreground">
-          {totalXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
-        </span>
-        <span
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black"
-          style={{ backgroundColor: 'hsl(var(--xp-bar-glow) / 0.15)', color: 'hsl(var(--xp-bar-glow))' }}
-        >
-          {level + 1}
+          {totalXP.toLocaleString()} / {displayTarget.toLocaleString()} XP to Lv{level + 1}
         </span>
       </div>
 
-      <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700 ease-out',
@@ -46,8 +36,8 @@ export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps)
         />
         {isClose && (
           <div
-            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full animate-pulse"
-            style={{ left: `calc(${progress}% - 8px)`, backgroundColor: 'hsl(var(--xp-bar-glow) / 0.8)' }}
+            className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full animate-pulse"
+            style={{ left: `calc(${progress}% - 7px)`, backgroundColor: 'hsl(var(--xp-bar-glow) / 0.8)' }}
           />
         )}
       </div>

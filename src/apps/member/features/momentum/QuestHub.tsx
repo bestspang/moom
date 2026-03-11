@@ -72,11 +72,17 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
   );
 }
 function CompactEmptyState({ t }: { t: TFunction }) {
+  const navigate = useNavigate();
   return (
-    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
-      <Target className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
-      <p className="text-xs font-medium text-foreground">{t('member.noQuestsYet')}</p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">{t('member.questsCheckBackSoon')}</p>
+    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 flex items-center gap-3">
+      <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-foreground">{t('member.questsRefreshing')}</p>
+        <p className="text-[10px] text-muted-foreground">{t('member.questsCheckBackSoon')}</p>
+      </div>
+      <Button size="sm" variant="outline" className="h-7 text-[10px] flex-shrink-0" onClick={() => navigate('/member/check-in')}>
+        {t('member.checkIn')}
+      </Button>
     </div>
   );
 }
