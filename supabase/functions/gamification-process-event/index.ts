@@ -116,8 +116,10 @@ async function getGuardrails(db: ReturnType<typeof createClient>): Promise<Guard
 }
 
 function g(guardrails: GuardrailMap, key: string): number {
-  const val = Number(guardrails[key] ?? GUARDRAIL_DEFAULTS[key] ?? "0");
-  return isNaN(val) || val === 0 ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
+  const raw = guardrails[key] ?? GUARDRAIL_DEFAULTS[key];
+  if (raw === undefined) return 0;
+  const val = Number(raw);
+  return isNaN(val) ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
 }
 
 // ---------- Core Logic Helpers ----------
@@ -495,8 +497,8 @@ Deno.serve(async (req) => {
       const termKey = termMonths <= 1 ? "1M" : termMonths <= 3 ? "3M" : termMonths <= 6 ? "6M" : "12M";
       const termBonusXp = g(guardrails, `PACKAGE_XP_TERM_BONUS_${termKey}`);
       const termBonusCoin = g(guardrails, `PACKAGE_COIN_TERM_BONUS_${termKey}`);
-      xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
-      pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
+      xpDelta = Math.floor(netPaid / Math.max(xpDivisor, 1)) + termBonusXp;
+      pointsDelta = Math.min(Math.floor(netPaid / Math.max(coinDivisor, 1)) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const shopXpBase = g(guardrails, "SHOP_XP_BASE_PER_ORDER");
@@ -504,8 +506,8 @@ Deno.serve(async (req) => {
       const shopXpCap = g(guardrails, "SHOP_XP_CAP_PER_ORDER");
       const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_120_THB");
       const shopCoinCap = g(guardrails, "SHOP_COIN_CAP_PER_ORDER");
-      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
-      pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
+      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / Math.max(shopXpDivisor, 1)), shopXpCap);
+      pointsDelta = Math.min(Math.floor(netPaid / Math.max(shopCoinDivisor, 1)), shopCoinCap);
     }
 
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
