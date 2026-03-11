@@ -34,6 +34,7 @@ const DEFAULT_PROFILE: MomentumProfile = {
 export function MomentumCard({ memberId, className }: MomentumCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [perksOpen, setPerksOpen] = useState(false);
   const { data: profile, isLoading } = useQuery({
     queryKey: ['momentum-profile', memberId],
     queryFn: () => fetchMomentumProfile(memberId!),
