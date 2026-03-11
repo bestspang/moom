@@ -26,7 +26,7 @@ interface BriefingResponse {
 
 Deno.serve(async (req) => {
   const reqOrigin = req.headers.get('origin') || '';
-  const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0];
+  const responseOrigin = isAllowedOrigin(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0];
   const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin };
 
   if (req.method === "OPTIONS") return new Response(null, { headers: dynamicCors });

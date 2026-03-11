@@ -156,6 +156,8 @@ Deno.serve(async (req) => {
                 package_id: tx.package_id,
                 package_name: tx.package_name_snapshot,
                 amount: tx.amount,
+                net_paid: tx.amount,
+                term_months: pkg ? Math.ceil((pkg.term_days || 30) / 30) : 1,
                 source: 'stripe',
               },
             }),

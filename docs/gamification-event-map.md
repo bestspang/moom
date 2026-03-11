@@ -14,15 +14,15 @@
 |---|-----------|-----------|-------------|-----|------|----------|-----------|
 | 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | 720 min | 1 |
 | 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 720 min | 1 |
-| 3 | Class Attendance | `class_attend` | Staff marks attended | 22 | 4 | 60 min | 5 |
+| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 60 min | 5 |
 | 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 60 min | 3 |
 
 ### Commerce Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 5 | Package Purchase | `package_purchase` | floor(net_paid/300)+term_bonus | floor(net_paid/180)+term_bonus, cap 100 | 3 |
-| 6 | Shop Purchase | `shop_purchase` | 6+floor(net_paid/180), cap 16 | floor(net_paid/120), cap 18 | 5 |
+| # | Event Name | action_key | XP | Coin | Daily Cap | Required Metadata |
+|---|-----------|-----------|-----|------|-----------|-------------------|
+| 5 | Package Purchase | `package_purchased` | floor(net_paid/300)+term_bonus | floor(net_paid/180)+term_bonus, cap 100 | 3 | `net_paid` (number), `term_months` (number) |
+| 6 | Shop Purchase | `shop_purchase` | 6+floor(net_paid/180), cap 16 | floor(net_paid/120), cap 18 | 5 | `net_paid` (number) |
 
 ### Social & Engagement Events
 
@@ -102,14 +102,15 @@ Coin = floor(net_paid / 120), cap 18
 
 ## Section 4 — Integration Points
 
-| Producer | File | Event |
-|----------|------|-------|
-| Check-in | `src/hooks/useLobby.ts` | `check_in` |
-| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attend` |
-| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchased` |
-| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchased` |
-| Event Processor | `supabase/functions/gamification-process-event/index.ts` | All events |
-| Reward Redeem | `supabase/functions/gamification-redeem-reward/index.ts` | Redemption + void |
+| Producer | File | Event | Required Metadata |
+|----------|------|-------|-------------------|
+| Check-in | `src/hooks/useLobby.ts` | `check_in` | — |
+| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attended` | — |
+| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchased` | `net_paid`, `term_months` |
+| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchased` | `net_paid`, `term_months` |
+| Manual Purchase | `src/hooks/useMemberDetails.ts` | `package_purchased` | `net_paid`, `term_months` |
+| Event Processor | `supabase/functions/gamification-process-event/index.ts` | All events | — |
+| Reward Redeem | `supabase/functions/gamification-redeem-reward/index.ts` | Redemption + void | — |
 
 ---
 
