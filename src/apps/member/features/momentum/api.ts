@@ -17,7 +17,50 @@ export async function fetchMomentumProfile(memberId: string): Promise<MomentumPr
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) return null;
+
+  // Auto-provision a starter profile if none exists yet
+  if (!data) {
+    const { data: upserted, error: upsertErr } = await supabase
+      .from('member_gamification_profiles')
+      .upsert({
+        member_id: memberId,
+        total_xp: 0,
+        current_level: 1,
+        current_streak: 0,
+        longest_streak: 0,
+        available_points: 0,
+        total_points: 0,
+      }, { onConflict: 'member_id' })
+      .select()
+      .maybeSingle();
+
+    if (upsertErr || !upserted) {
+      // Fallback: return in-memory starter profile
+      return {
+        memberId,
+        totalXp: 0,
+        level: 1,
+        tier: tierFromLevel(1),
+        currentStreak: 0,
+        longestStreak: 0,
+        availablePoints: 0,
+        totalPoints: 0,
+        weeklyCheckinDays: [],
+      };
+    }
+
+    return {
+      memberId: upserted.member_id,
+      totalXp: upserted.total_xp,
+      level: upserted.current_level,
+      tier: tierFromLevel(upserted.current_level),
+      currentStreak: upserted.current_streak,
+      longestStreak: upserted.longest_streak,
+      availablePoints: upserted.available_points,
+      totalPoints: upserted.total_points,
+      weeklyCheckinDays: [],
+    };
+  }
 
   const { data: streakData } = await supabase
     .from('streak_snapshots')
