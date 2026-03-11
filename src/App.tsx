@@ -115,6 +115,7 @@ import MemberSecurityPage from "@/apps/member/pages/MemberSecurityPage";
 import MemberNotificationsPage from "@/apps/member/pages/MemberNotificationsPage";
 import MemberReferralPage from "@/apps/member/pages/MemberReferralPage";
 import MemberMomentumPage from "@/apps/member/pages/MemberMomentumPage";
+import MemberRunClubPage from "@/apps/member/pages/MemberRunClubPage";
 import TrainerHomePage from "@/apps/trainer/pages/TrainerHomePage";
 import TrainerImpactPage from "@/apps/trainer/pages/TrainerImpactPage";
 import TrainerSchedulePage from "@/apps/trainer/pages/TrainerSchedulePage";
