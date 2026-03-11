@@ -34,10 +34,10 @@
 
 ### Streak Events (Auto-triggered)
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 10 | 7-Day Streak | `streak_7day` | 30 | 10 | 1 |
-| 11 | 30-Day Streak | `streak_30day` | 100 | 30 | 1 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 10 | 7-Day Streak | `streak_7day` | 30 | 10 | — | 1 |
+| 11 | 30-Day Streak | `streak_30day` | 100 | 30 | — | 1 |
 
 ### Quest Completion Events
 
