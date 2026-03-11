@@ -1,9 +1,11 @@
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, Shield } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import type { MomentumProfile } from './types';
 import { xpForLevel } from './types';
 import { useTranslation } from 'react-i18next';
+import { fetchPrestigeEligibility } from './api';
 
 interface LevelRequirementsCardProps {
   profile: MomentumProfile;
@@ -14,24 +16,9 @@ interface LevelRequirementsCardProps {
 
 interface Requirement {
   labelKey: string;
+  label?: string;
   current: number;
   target: number;
-}
-
-function deriveRequirements(
-  profile: MomentumProfile,
-  completedQuests: number,
-  totalBadges: number,
-): Requirement[] {
-  const nextLevel = profile.level + 1;
-  const nextXp = xpForLevel(nextLevel);
-
-  return [
-    { labelKey: 'totalXpLabel', current: profile.totalXp, target: nextXp },
-    { labelKey: 'weeklyStreakLabel', current: profile.currentStreak, target: Math.max(profile.currentStreak + 1, profile.level + 2) },
-    { labelKey: 'questsCompletedLabel', current: completedQuests, target: Math.max(completedQuests + 1, Math.ceil(nextLevel / 3)) },
-    { labelKey: 'badgesEarnedLabel', current: totalBadges, target: Math.max(totalBadges + 1, Math.ceil(nextLevel / 5)) },
-  ];
 }
 
 export function LevelRequirementsCard({
@@ -41,17 +28,55 @@ export function LevelRequirementsCard({
   className,
 }: LevelRequirementsCardProps) {
   const { t } = useTranslation();
-  const reqs = deriveRequirements(profile, completedQuests, totalBadges);
+  const nextLevel = profile.level + 1;
+  const isPrestigeNext = nextLevel >= 18 && nextLevel <= 20;
+
+  const { data: prestige } = useQuery({
+    queryKey: ['prestige-eligibility', profile.memberId, nextLevel],
+    queryFn: () => fetchPrestigeEligibility(profile.memberId, nextLevel),
+    enabled: isPrestigeNext && !!profile.memberId,
+  });
+
+  // Base XP requirement
+  const nextXp = xpForLevel(nextLevel);
+  const reqs: Requirement[] = [
+    { labelKey: 'totalXpLabel', current: profile.totalXp, target: nextXp },
+  ];
+
+  if (isPrestigeNext && prestige?.criteria) {
+    // Use real prestige criteria from DB
+    for (const c of prestige.criteria) {
+      if (c.code === 'min_xp') continue; // already shown as XP bar
+      reqs.push({
+        labelKey: c.code,
+        label: c.descriptionEn,
+        current: c.current,
+        target: c.target,
+      });
+    }
+  } else if (!isPrestigeNext) {
+    // Standard non-prestige derived targets
+    reqs.push(
+      { labelKey: 'weeklyStreakLabel', current: profile.currentStreak, target: Math.max(profile.currentStreak + 1, profile.level + 2) },
+      { labelKey: 'questsCompletedLabel', current: completedQuests, target: Math.max(completedQuests + 1, Math.ceil(nextLevel / 3)) },
+      { labelKey: 'badgesEarnedLabel', current: totalBadges, target: Math.max(totalBadges + 1, Math.ceil(nextLevel / 5)) },
+    );
+  }
+
+  if (nextLevel > 20) return null;
 
   return (
     <div className={cn('rounded-xl border bg-card p-4 space-y-3', className)}>
-      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-        {t('member.levelRequirements', { level: profile.level + 1 })}
-      </p>
+      <div className="flex items-center gap-1.5">
+        {isPrestigeNext && <Shield className="h-3.5 w-3.5 text-amber-500" />}
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          {t('member.levelRequirements', { level: nextLevel })}
+        </p>
+      </div>
 
       <div className="space-y-3">
         {reqs.map((r) => {
-          const pct = Math.min((r.current / r.target) * 100, 100);
+          const pct = Math.min((r.current / Math.max(r.target, 1)) * 100, 100);
           const done = r.current >= r.target;
 
           return (
@@ -64,7 +89,7 @@ export function LevelRequirementsCard({
                     <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />
                   )}
                   <span className={cn('text-xs font-medium', done ? 'text-foreground' : 'text-muted-foreground')}>
-                    {t(`member.${r.labelKey}`)}
+                    {r.label ?? t(`member.${r.labelKey}`)}
                   </span>
                 </div>
                 <span className="text-[10px] font-bold tabular-nums text-muted-foreground">

@@ -1,36 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, Lock, Star, ChevronRight } from 'lucide-react';
+import { Check, Lock, Star, ChevronRight, Shield, Crown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { xpForLevel, tierFromLevel, TIER_CONFIG } from './types';
-
-interface LevelPerk {
-  levelNumber: number;
-  nameEn: string;
-  perks: Array<{ code: string; description: string }>;
-}
-
-async function fetchLevelPerks(): Promise<LevelPerk[]> {
-  const { data, error } = await supabase
-    .from('gamification_levels')
-    .select('level_number, name_en, perks')
-    .eq('is_active', true)
-    .order('level_number', { ascending: true });
-
-  if (error) throw error;
-
-  return (data ?? []).map((l: any) => ({
-    levelNumber: l.level_number,
-    nameEn: l.name_en,
-    perks: Array.isArray(l.perks)
-      ? (l.perks as any[]).map((p: any) => ({
-          code: p.code ?? p.perk_code ?? '',
-          description: p.description ?? p.perk_description ?? '',
-        }))
-      : [],
-  }));
-}
+import { fetchLevelBenefits, fetchPrestigeCriteria, type LevelBenefit, type PrestigeCriteriaRow } from './api';
 
 interface LevelPerksCardProps {
   currentLevel: number;
@@ -39,27 +12,45 @@ interface LevelPerksCardProps {
 
 export function LevelPerksCard({ currentLevel, totalXp }: LevelPerksCardProps) {
   const { t } = useTranslation();
-  const { data: levels, isLoading } = useQuery({
-    queryKey: ['level-perks'],
-    queryFn: fetchLevelPerks,
+
+  const { data: benefits, isLoading: benefitsLoading } = useQuery({
+    queryKey: ['level-benefits'],
+    queryFn: fetchLevelBenefits,
   });
 
-  if (isLoading) return <Skeleton className="h-40 rounded-xl" />;
+  const { data: prestigeCriteria, isLoading: prestigeLoading } = useQuery({
+    queryKey: ['prestige-criteria'],
+    queryFn: fetchPrestigeCriteria,
+  });
 
-  // Build a map from DB levels
-  const levelMap = new Map<number, LevelPerk>();
-  (levels ?? []).forEach(l => levelMap.set(l.levelNumber, l));
+  if (benefitsLoading || prestigeLoading) return <Skeleton className="h-40 rounded-xl" />;
+
+  // Group benefits by level
+  const benefitsByLevel = new Map<number, LevelBenefit[]>();
+  (benefits ?? []).forEach(b => {
+    const arr = benefitsByLevel.get(b.levelNumber) ?? [];
+    arr.push(b);
+    benefitsByLevel.set(b.levelNumber, arr);
+  });
+
+  // Group prestige criteria by level
+  const criteriaByLevel = new Map<number, PrestigeCriteriaRow[]>();
+  (prestigeCriteria ?? []).forEach(c => {
+    const arr = criteriaByLevel.get(c.levelNumber) ?? [];
+    arr.push(c);
+    criteriaByLevel.set(c.levelNumber, arr);
+  });
 
   // Generate all 20 levels
   const allLevels = Array.from({ length: 20 }, (_, i) => {
     const num = i + 1;
-    const dbLevel = levelMap.get(num);
     return {
       levelNumber: num,
-      nameEn: dbLevel?.nameEn ?? `Level ${num}`,
-      perks: dbLevel?.perks ?? [],
       xpRequired: xpForLevel(num),
       tier: tierFromLevel(num),
+      benefits: benefitsByLevel.get(num) ?? [],
+      prestigeCriteria: criteriaByLevel.get(num) ?? [],
+      isPrestige: num >= 18,
     };
   });
 
@@ -111,7 +102,7 @@ export function LevelPerksCard({ currentLevel, totalXp }: LevelPerksCardProps) {
           const isCurrent = l.levelNumber === currentLevel;
           const isUnlocked = l.levelNumber <= currentLevel;
           const tierConfig = TIER_CONFIG[l.tier];
-          const hasPerks = l.perks.length > 0;
+          const hasBenefits = l.benefits.length > 0;
 
           return (
             <div
@@ -135,6 +126,8 @@ export function LevelPerksCard({ currentLevel, totalXp }: LevelPerksCardProps) {
               >
                 {isUnlocked ? (
                   <Check className="h-3 w-3" style={{ color: `hsl(var(${tierConfig.colorVar}))` }} />
+                ) : l.isPrestige ? (
+                  <Crown className="h-3 w-3 text-amber-500" />
                 ) : isCurrent ? (
                   <ChevronRight className="h-3 w-3 text-primary" />
                 ) : (
@@ -145,19 +138,43 @@ export function LevelPerksCard({ currentLevel, totalXp }: LevelPerksCardProps) {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-bold text-foreground">
-                    {t('member.levelPerksLabel', { level: l.levelNumber, name: l.nameEn })}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-foreground">
+                      Lv.{l.levelNumber}
+                    </p>
+                    {l.isPrestige && (
+                      <Shield className="h-3 w-3 text-amber-500" />
+                    )}
+                  </div>
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                     {t('member.xpRequired', { xp: l.xpRequired.toLocaleString() })}
                   </span>
                 </div>
-                {hasPerks ? (
-                  l.perks.map((p, i) => (
-                    <p key={i} className="text-[11px] text-muted-foreground">{p.description}</p>
+
+                {/* Benefits */}
+                {hasBenefits ? (
+                  l.benefits.map((b) => (
+                    <p key={b.id} className="text-[11px] text-muted-foreground">
+                      {b.frequency === 'monthly' ? '📅 ' : b.frequency === 'ongoing' ? '♾️ ' : '🔓 '}
+                      {b.descriptionEn}
+                    </p>
                   ))
                 ) : (
                   <p className="text-[11px] text-muted-foreground/50">{t('member.noPerksYet')}</p>
+                )}
+
+                {/* Prestige criteria for 18-20 */}
+                {l.isPrestige && l.prestigeCriteria.length > 0 && (
+                  <div className="mt-1 space-y-0.5 border-t border-border/30 pt-1">
+                    <p className="text-[10px] font-semibold text-amber-600">
+                      {t('member.prestigeRequirements', 'Prestige Requirements')}
+                    </p>
+                    {l.prestigeCriteria.map(c => (
+                      <p key={c.criterionCode} className="text-[10px] text-muted-foreground">
+                        🏆 {c.descriptionEn}
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
