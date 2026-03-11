@@ -87,7 +87,13 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
         {/* Top row: tier + stats */}
         <div className="relative flex items-center justify-between mb-4">
           <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
-            <TierBadge tier={p.tier} level={p.level} size="md" />
+            {p.level > 1 ? (
+              <button onClick={(e) => { e.stopPropagation(); setPerksOpen(true); }}>
+                <TierBadge tier={p.tier} level={p.level} size="md" />
+              </button>
+            ) : (
+              <TierBadge tier={p.tier} level={p.level} size="md" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div
