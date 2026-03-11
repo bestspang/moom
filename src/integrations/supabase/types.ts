@@ -4592,6 +4592,7 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: undefined
       }
+      evaluate_member_tier: { Args: { p_member_id: string }; Returns: Json }
       get_my_member_id: { Args: { _user_id: string }; Returns: string }
       get_squad_activity_feed: {
         Args: { p_limit?: number; p_squad_id: string }
