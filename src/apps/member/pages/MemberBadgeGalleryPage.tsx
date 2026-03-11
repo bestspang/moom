@@ -179,11 +179,7 @@ export default function MemberBadgeGalleryPage() {
                     </span>
                   </div>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg} grayscale`}>
-                    {badge.icon_url ? (
-                      <img src={badge.icon_url} alt={badge.name_en} className="h-8 w-8 drop-shadow-sm grayscale" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
+                    <span className="text-2xl leading-none grayscale" role="img">{getBadgeEmoji(badge.unlock_condition as Record<string, unknown>, badge.name_en)}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground leading-tight">
                     {badge.name_en}

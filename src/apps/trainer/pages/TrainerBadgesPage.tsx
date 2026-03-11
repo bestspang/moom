@@ -121,11 +121,7 @@ export default function TrainerBadgesPage() {
                     {style.label}
                   </span>
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full ${style.bg} grayscale`}>
-                    {badge.iconUrl ? (
-                      <img src={badge.iconUrl} alt={badge.nameEn} className="h-8 w-8 drop-shadow-sm grayscale" />
-                    ) : (
-                      <Trophy className={`h-7 w-7 ${style.text}`} />
-                    )}
+                    <span className="text-2xl leading-none grayscale" role="img">{getBadgeEmoji(null, badge.nameEn)}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground leading-tight">{badge.nameEn}</p>
                   {badge.descriptionEn && (

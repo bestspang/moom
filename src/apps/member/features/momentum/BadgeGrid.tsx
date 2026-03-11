@@ -76,16 +76,12 @@ export function BadgeGrid({ memberId, className, max }: BadgeGridProps) {
               borderColor: `hsl(var(${rarityVar}) / 0.2)`,
             }}
           >
-            {mb.badge?.iconUrl ? (
-              <img src={mb.badge.iconUrl} alt={mb.badge.nameEn} className="h-9 w-9 drop-shadow-sm" />
-            ) : (
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-full"
-                style={{ backgroundColor: `hsl(var(${rarityVar}) / 0.15)` }}
-              >
-                <Award className="h-5 w-5" style={{ color: `hsl(var(${rarityVar}))` }} />
-              </div>
-            )}
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ backgroundColor: `hsl(var(${rarityVar}) / 0.15)` }}
+            >
+              <span className="text-xl leading-none" role="img">{getBadgeEmoji(null, mb.badge?.nameEn)}</span>
+            </div>
             <span className="text-[10px] font-semibold text-foreground leading-tight">
               {mb.badge?.nameEn ?? t('member.badgeLabel')}
             </span>
