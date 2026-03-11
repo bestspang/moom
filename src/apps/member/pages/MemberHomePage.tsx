@@ -73,15 +73,20 @@ export default function MemberHomePage() {
       : t('member.bookingsToday').replace('{{count}}', String(todayBookings.length)))
     : t('member.readyToTrain');
 
-  const isNewUser = upcomingBookings.length === 0 && activePackages.length === 0;
+  // Onboarding step completion
+  const step1Done = true; // they've opened the app
+  const step2Done = (bookings?.length ?? 0) > 0;
+  const step3Done = (momentumProfile?.totalXp ?? 0) > 0;
+  const allOnboardingDone = step1Done && step2Done && step3Done;
+
   const nextTodayBooking = todayBookings[0];
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader title={title} subtitle={subtitle} />
 
-      {/* Onboarding for new users */}
-      {isNewUser && !onboardingDismissed && (
+      {/* Onboarding for incomplete users / Announcement for completed */}
+      {!allOnboardingDone && !onboardingDismissed && (
         <Section className="mb-4">
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
             <div className="flex items-start justify-between mb-3">
@@ -94,19 +99,38 @@ export default function MemberHomePage() {
               </button>
             </div>
             <ol className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-                {t('member.onboardingStep1')}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-                {t('member.onboardingStep2')}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-                {t('member.onboardingStep3')}
-              </li>
+              {[
+                { done: step1Done, label: t('member.onboardingStep1') },
+                { done: step2Done, label: t('member.onboardingStep2') },
+                { done: step3Done, label: t('member.onboardingStep3') },
+              ].map((step, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  {step.done ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white text-xs">✓</span>
+                  ) : (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{i + 1}</span>
+                  )}
+                  <span className={step.done ? 'line-through text-muted-foreground/60' : ''}>{step.label}</span>
+                </li>
+              ))}
             </ol>
+          </div>
+        </Section>
+      )}
+
+      {/* Compact announcement (shows when onboarding is done or dismissed) */}
+      {(allOnboardingDone || onboardingDismissed) && latestAnnouncement && (
+        <Section className="mb-4">
+          <div className="rounded-lg bg-accent/50 border border-border p-3">
+            <div className="flex items-start gap-2">
+              <Megaphone className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-foreground line-clamp-2">{latestAnnouncement.message}</p>
+                <button onClick={() => navigate('/member/notifications')} className="text-xs font-medium text-primary mt-1">
+                  {t('member.readMore')}
+                </button>
+              </div>
+            </div>
           </div>
         </Section>
       )}
@@ -210,17 +234,6 @@ export default function MemberHomePage() {
         )}
       </Section>
 
-      {/* Pinned announcement */}
-      {latestAnnouncement && (
-        <Section className="mb-4">
-          <div className="rounded-lg bg-accent/50 border border-border p-3">
-            <div className="flex items-start gap-2">
-              <Megaphone className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-foreground">{latestAnnouncement.message}</p>
-            </div>
-          </div>
-        </Section>
-      )}
 
       {/* Referral Program */}
       {memberId && (

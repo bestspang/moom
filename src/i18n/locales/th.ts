@@ -1680,6 +1680,7 @@ export default {
     onboardingStep1: 'ดูคลาสในตารางเรียน',
     onboardingStep2: 'จองเซสชันแรกของคุณ',
     onboardingStep3: 'เช็คอินเพื่อรับ XP',
+    readMore: 'อ่านเพิ่ม',
     checkIn: 'เช็คอิน',
     bookClass: 'จองคลาส',
     nextUp: 'กำลังจะถึง',
