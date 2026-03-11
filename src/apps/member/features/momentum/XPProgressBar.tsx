@@ -9,7 +9,7 @@ interface XPProgressBarProps {
   onHeroBg?: boolean;
 }
 
-export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps) {
+export function XPProgressBar({ totalXP, level, className, onHeroBg }: XPProgressBarProps) {
   const currentLevelXP = xpForLevel(level);
   const nextLevelXP = xpForLevel(level + 1);
   const xpInLevel = totalXP - currentLevelXP;
