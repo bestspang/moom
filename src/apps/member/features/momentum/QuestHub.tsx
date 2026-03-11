@@ -97,7 +97,7 @@ function CompactEmptyState({ t }: { t: TFunction }) {
   );
 }
 
-
+interface QuestHubProps {
   filterPeriod?: 'daily' | 'weekly' | 'monthly';
 }
 
