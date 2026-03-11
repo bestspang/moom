@@ -87,7 +87,7 @@ export function SuggestedClassCard({ memberId }: SuggestedClassCardProps) {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (isLoading) return <Skeleton className="h-20 rounded-xl" />;
+  if (isLoading) return <div><Skeleton className="h-20 rounded-xl" /></div>;
   if (!suggestions?.length) return null;
 
   return (
