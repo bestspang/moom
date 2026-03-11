@@ -1819,7 +1819,6 @@ export default {
     orTypeCode: 'or type code',
     memberCodePlaceholder: 'Member code...',
     checkInEarnXp: 'Check In & Earn XP',
-    checkIn: 'Check In',
     checkingIn: 'Checking in...',
     stopCamera: 'Stop',
     checkinFailed: 'Failed to check in. Please try again.',
