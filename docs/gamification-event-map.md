@@ -41,12 +41,12 @@
 
 ### Quest Completion Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 12 | Daily Quest Done | `daily_quest_done` | 13 | 2 | 3 |
-| 13 | Weekly Quest Done | `weekly_quest_done` | 45 | 8 | 4 |
-| 14 | Monthly Challenge | `monthly_challenge` | 180 | 25 | 4 |
-| 15 | Seasonal Challenge | `seasonal_challenge` | 350 | 80 | 2 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 12 | Daily Quest Done | `daily_quest_done` | 13 | 2 | 1 | 3 |
+| 13 | Weekly Quest Done | `weekly_quest_done` | 45 | 8 | 3 | 4 |
+| 14 | Monthly Challenge | `monthly_challenge` | 180 | 25 | 6 | 4 |
+| 15 | Seasonal Challenge | `seasonal_challenge` | 350 | 80 | 15 | 2 |
 
 ---
 
