@@ -57,9 +57,12 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
   }
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => navigate('/member/referral')}
-      className="flex w-full items-center gap-3 rounded-xl bg-card p-4 shadow-sm border border-border hover:bg-accent/50 transition-colors text-left"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/member/referral'); }}
+      className="flex w-full items-center gap-3 rounded-xl bg-card p-4 shadow-sm border border-border hover:bg-accent/50 transition-colors text-left cursor-pointer"
     >
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
         <Gift className="h-5 w-5 text-primary" />
