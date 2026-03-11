@@ -2673,6 +2673,12 @@ export default {
       rewards: 'Rewards',
       trainers: 'Trainer Tiers',
       risk: 'Risk & Audit',
+      quests: 'Quests',
+      coupons: 'Coupons',
+      shopRules: 'Shop Rules',
+      guardrails: 'Guardrails',
+      operations: 'Operations',
+      prestige: 'Prestige',
     },
     overview: {
       activeRules: 'Active Rules',

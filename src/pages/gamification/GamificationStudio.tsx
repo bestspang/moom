@@ -25,16 +25,16 @@ const GamificationStudio = () => {
     { value: 'rules', label: t('gamification.tabs.rules'), path: '/gamification/rules' },
     { value: 'levels', label: t('gamification.tabs.levels'), path: '/gamification/levels' },
     { value: 'challenges', label: t('gamification.tabs.challenges'), path: '/gamification/challenges' },
-    { value: 'quests', label: 'Quests', path: '/gamification/quests' },
+    { value: 'quests', label: t('gamification.tabs.quests'), path: '/gamification/quests' },
     { value: 'badges', label: t('gamification.tabs.badges'), path: '/gamification/badges' },
     { value: 'rewards', label: t('gamification.tabs.rewards'), path: '/gamification/rewards' },
-    { value: 'coupons', label: 'Coupons', path: '/gamification/coupons' },
-    { value: 'shop-rules', label: 'Shop Rules', path: '/gamification/shop-rules' },
+    { value: 'coupons', label: t('gamification.tabs.coupons'), path: '/gamification/coupons' },
+    { value: 'shop-rules', label: t('gamification.tabs.shopRules'), path: '/gamification/shop-rules' },
     { value: 'trainers', label: t('gamification.tabs.trainers'), path: '/gamification/trainers' },
     { value: 'risk', label: t('gamification.tabs.risk'), path: '/gamification/risk' },
-    { value: 'guardrails', label: 'Guardrails', path: '/gamification/guardrails' },
-    { value: 'operations', label: 'Operations', path: '/gamification/operations' },
-    { value: 'prestige', label: 'Prestige', path: '/gamification/prestige' },
+    { value: 'guardrails', label: t('gamification.tabs.guardrails'), path: '/gamification/guardrails' },
+    { value: 'operations', label: t('gamification.tabs.operations'), path: '/gamification/operations' },
+    { value: 'prestige', label: t('gamification.tabs.prestige'), path: '/gamification/prestige' },
   ];
 
   const currentTab = tabs.find(tab => location.pathname === tab.path)?.value || 'overview';

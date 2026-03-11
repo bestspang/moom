@@ -2639,7 +2639,7 @@ export default {
 
   gamification: {
     title: 'Gamification Studio',
-    tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ' },
+    tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ', quests: 'เควส', coupons: 'คูปอง', shopRules: 'กฎร้านค้า', guardrails: 'การ์ดเรล', operations: 'ปฏิบัติการ', prestige: 'เพรสทีจ' },
     overview: { activeRules: 'กฎที่ใช้งาน', activeChallenges: 'ชาเลนจ์ที่ใช้งาน', totalBadges: 'แบดจ์ทั้งหมด', activeRewards: 'รางวัลที่ใช้งาน', xpDistributed: 'XP ที่แจก', flaggedEvents: 'เหตุการณ์ต้องสงสัย', recentActivity: 'กิจกรรมล่าสุด', quickActions: 'ทางลัด' },
     rules: { description: 'กำหนด XP และคะแนนสำหรับแต่ละ action', addRule: 'เพิ่มกฎ', editRule: 'แก้ไขกฎ', noRules: 'ยังไม่มีกฎ', noRulesDesc: 'เพิ่มกฎแรกของคุณ', action: 'Action Key', label: 'ชื่อ', points: 'คะแนน', cooldown: 'Cooldown', maxDay: 'สูงสุด/วัน', deleteConfirm: 'กฎนี้จะถูกลบถาวร' },
     levels: { description: 'กำหนดระดับ XP สำหรับสมาชิก', addLevel: 'เพิ่มระดับ', editLevel: 'แก้ไขระดับ', noLevels: 'ยังไม่มีระดับ', noLevelsDesc: 'สร้างระดับสำหรับสมาชิก', color: 'สีแบดจ์', deleteConfirm: 'ระดับนี้จะถูกลบถาวร', levelNumber: 'ระดับ #', xpRequired: 'XP ที่ต้องการ' },
