@@ -77,6 +77,7 @@ export default function GamificationStatusTiers() {
       <div>
         <h3 className="text-sm font-bold mb-3">Tier Qualification Rules</h3>
         <DataTable
+          rowKey={(row: any) => row.id ?? row.tier_code}
           columns={[
             { key: 'tier_code', header: 'Tier', cell: (row: any) => (
               <span className="flex items-center gap-2 font-bold capitalize">
