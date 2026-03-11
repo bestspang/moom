@@ -506,8 +506,8 @@ Deno.serve(async (req) => {
       const shopXpCap = g(guardrails, "SHOP_XP_CAP_PER_ORDER");
       const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_120_THB");
       const shopCoinCap = g(guardrails, "SHOP_COIN_CAP_PER_ORDER");
-      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
-      pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
+      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / Math.max(shopXpDivisor, 1)), shopXpCap);
+      pointsDelta = Math.min(Math.floor(netPaid / Math.max(shopCoinDivisor, 1)), shopCoinCap);
     }
 
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
