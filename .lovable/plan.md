@@ -1,52 +1,47 @@
 
 
-# Fix: Economy Guardrails Key Mismatch + Validation Bug
+# Fix: Promotions export missing columns in Settings
 
-## Critical Bug Found
+## Problem
+The promotions export in Settings > Import/Export (`SettingsImportExport.tsx` lines 190-200) uses raw DB column names and is missing key columns that the Promotions page export (`Promotions.tsx` lines 90-98) already has:
+- **Type** should show "Discount" / "Promo code" (not raw enum)
+- **Discount** should show "Varies" / "1290฿" / "10%" (not raw `discount_value`)
+- **Started on** / **Ending on** should be formatted dates (not raw timestamps)
+- **Date modified** column is completely missing
+- **Status** is present but headers should match the screenshot format
 
-The edge function `getGuardrails()` fetches from `economy_guardrails` correctly, but the **lookup keys don't match the DB rule_codes**. Every single lookup falls back to `GUARDRAIL_DEFAULTS`, making the admin-editable guardrails table completely non-functional.
+## Fix (surgical, 1 file)
 
-### Mismatch Table
+**File:** `src/pages/settings/SettingsImportExport.tsx` lines 187-201
 
-| Edge Function Key | DB rule_code | Match? |
-|---|---|---|
-| `PACKAGE_XP_PER_THB_DIVISOR` | `PACKAGE_XP_PER_300_THB` | No |
-| `PACKAGE_COIN_PER_THB_DIVISOR` | `PACKAGE_COIN_PER_180_THB` | No |
-| `PACKAGE_COIN_CAP` | `PACKAGE_COIN_CAP_PER_ORDER` | No |
-| `PACKAGE_TERM_BONUS_XP_1` | `PACKAGE_XP_TERM_BONUS_1M` | No |
-| `PACKAGE_TERM_BONUS_XP_3` | `PACKAGE_XP_TERM_BONUS_3M` | No |
-| `PACKAGE_TERM_BONUS_XP_6` | `PACKAGE_XP_TERM_BONUS_6M` | No |
-| `PACKAGE_TERM_BONUS_XP_12` | `PACKAGE_XP_TERM_BONUS_12M` | No |
-| `PACKAGE_TERM_BONUS_COIN_1` | `PACKAGE_COIN_TERM_BONUS_1M` | No |
-| `PACKAGE_TERM_BONUS_COIN_3` | `PACKAGE_COIN_TERM_BONUS_3M` | No |
-| `PACKAGE_TERM_BONUS_COIN_6` | `PACKAGE_COIN_TERM_BONUS_6M` | No |
-| `PACKAGE_TERM_BONUS_COIN_12` | `PACKAGE_COIN_TERM_BONUS_12M` | No |
-| `SHOP_XP_BASE` | `SHOP_XP_BASE_PER_ORDER` | No |
-| `SHOP_XP_PER_THB_DIVISOR` | `SHOP_XP_PER_180_THB` | No |
-| `SHOP_XP_CAP` | `SHOP_XP_CAP_PER_ORDER` | No |
-| `SHOP_COIN_PER_THB_DIVISOR` | `SHOP_COIN_PER_120_THB` | No |
-| `SHOP_COIN_CAP` | `SHOP_COIN_CAP_PER_ORDER` | No |
+Replace the promotions export `cols` array to match the Promotions page export format:
 
-**None match.** The guardrails table is 100% ignored at runtime.
+```typescript
+case 'promotions': {
+  const { data, error } = await supabase.from('promotions').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const getExportDiscount = (r: any): string => {
+    if (!r.same_discount_all_packages) return 'Varies';
+    const mode = r.discount_mode || r.discount_type;
+    if (mode === 'percentage') return `${r.percentage_discount ?? r.discount_value}%`;
+    return `${Number(r.flat_rate_discount ?? r.discount_value)}฿`;
+  };
+  const cols: CsvColumn<any>[] = [
+    { key: 'name', header: 'Name', accessor: r => r.name },
+    { key: 'type', header: 'Type', accessor: r => r.type === 'promo_code' ? 'Promo code' : 'Discount' },
+    { key: 'promo_code', header: 'Promo code', accessor: r => r.promo_code || '-' },
+    { key: 'discount', header: 'Discount', accessor: r => getExportDiscount(r) },
+    { key: 'start_date', header: 'Started on', accessor: r => fmtDate(r.start_date) },
+    { key: 'end_date', header: 'Ending on', accessor: r => fmtDate(r.end_date) },
+    { key: 'date_modified', header: 'Date modified', accessor: r => fmtDate(r.updated_at) },
+    { key: 'status', header: 'Status', accessor: r => r.status ?? 'drafts' },
+  ];
+  exportToCsv(data || [], cols, `promotions-export-${new Date().toISOString().split('T')[0]}`);
+  break;
+}
+```
 
-### Second Bug: Validation in `useEconomyGuardrails.ts`
-
-Line 34: `if (rule_value.includes('DIVISOR'))` — this checks `rule_value` (e.g. "300") for the word "DIVISOR" instead of checking `rule_code`. Will never trigger.
-
-## Fix Plan
-
-### 1. Update Edge Function `GUARDRAIL_DEFAULTS` keys to match DB rule_codes
-
-Change every key in the defaults map and every `g()` call to use the actual DB rule_codes. This is the correct approach since the DB already has seeded data with these codes.
-
-### 2. Fix `useEconomyGuardrails.ts` validation
-
-Check `rule_code` field (passed as a parameter or matched separately) instead of `rule_value` for DIVISOR/CAP validation.
-
-## Files to Edit
-
-| File | Change |
-|---|---|
-| `supabase/functions/gamification-process-event/index.ts` | Rename all `GUARDRAIL_DEFAULTS` keys + all `g()` calls to match DB codes |
-| `src/hooks/useEconomyGuardrails.ts` | Fix validation to check rule_code not rule_value |
+## Risk
+- **Low**: Only changes CSV output columns for promotions export. No other behavior affected. Matches exactly what the Promotions page already exports.
 

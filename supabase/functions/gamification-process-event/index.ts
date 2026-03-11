@@ -75,22 +75,23 @@ interface GuardrailMap {
 }
 
 const GUARDRAIL_DEFAULTS: GuardrailMap = {
-  PACKAGE_XP_PER_THB_DIVISOR: "300",
-  PACKAGE_COIN_PER_THB_DIVISOR: "180",
-  PACKAGE_COIN_CAP: "100",
-  PACKAGE_TERM_BONUS_XP_1: "8",
-  PACKAGE_TERM_BONUS_XP_3: "18",
-  PACKAGE_TERM_BONUS_XP_6: "35",
-  PACKAGE_TERM_BONUS_XP_12: "55",
-  PACKAGE_TERM_BONUS_COIN_1: "1",
-  PACKAGE_TERM_BONUS_COIN_3: "5",
-  PACKAGE_TERM_BONUS_COIN_6: "12",
-  PACKAGE_TERM_BONUS_COIN_12: "25",
-  SHOP_XP_BASE: "6",
-  SHOP_XP_PER_THB_DIVISOR: "180",
-  SHOP_XP_CAP: "16",
-  SHOP_COIN_PER_THB_DIVISOR: "120",
-  SHOP_COIN_CAP: "18",
+  // Keys match DB economy_guardrails.rule_code exactly
+  PACKAGE_XP_PER_300_THB: "300",
+  PACKAGE_COIN_PER_180_THB: "180",
+  PACKAGE_COIN_CAP_PER_ORDER: "100",
+  PACKAGE_XP_TERM_BONUS_1M: "8",
+  PACKAGE_XP_TERM_BONUS_3M: "18",
+  PACKAGE_XP_TERM_BONUS_6M: "35",
+  PACKAGE_XP_TERM_BONUS_12M: "55",
+  PACKAGE_COIN_TERM_BONUS_1M: "1",
+  PACKAGE_COIN_TERM_BONUS_3M: "5",
+  PACKAGE_COIN_TERM_BONUS_6M: "12",
+  PACKAGE_COIN_TERM_BONUS_12M: "25",
+  SHOP_XP_BASE_PER_ORDER: "6",
+  SHOP_XP_PER_180_THB: "180",
+  SHOP_XP_CAP_PER_ORDER: "16",
+  SHOP_COIN_PER_120_THB: "120",
+  SHOP_COIN_CAP_PER_ORDER: "18",
   REFERRAL_REWARD_POINTS_DEFAULT: "200",
 };
 
@@ -488,20 +489,21 @@ Deno.serve(async (req) => {
     if (event_type === "package_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const termMonths = Number(metadata.term_months) || 1;
-      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_THB_DIVISOR");
-      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_THB_DIVISOR");
-      const coinCap = g(guardrails, "PACKAGE_COIN_CAP");
-      const termBonusXp = g(guardrails, `PACKAGE_TERM_BONUS_XP_${termMonths}`);
-      const termBonusCoin = g(guardrails, `PACKAGE_TERM_BONUS_COIN_${termMonths}`);
+      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_300_THB");
+      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_180_THB");
+      const coinCap = g(guardrails, "PACKAGE_COIN_CAP_PER_ORDER");
+      const termKey = termMonths <= 1 ? "1M" : termMonths <= 3 ? "3M" : termMonths <= 6 ? "6M" : "12M";
+      const termBonusXp = g(guardrails, `PACKAGE_XP_TERM_BONUS_${termKey}`);
+      const termBonusCoin = g(guardrails, `PACKAGE_COIN_TERM_BONUS_${termKey}`);
       xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
       pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
-      const shopXpBase = g(guardrails, "SHOP_XP_BASE");
-      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_THB_DIVISOR");
-      const shopXpCap = g(guardrails, "SHOP_XP_CAP");
-      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_THB_DIVISOR");
-      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP");
+      const shopXpBase = g(guardrails, "SHOP_XP_BASE_PER_ORDER");
+      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_180_THB");
+      const shopXpCap = g(guardrails, "SHOP_XP_CAP_PER_ORDER");
+      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_120_THB");
+      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP_PER_ORDER");
       xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
       pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
     }
