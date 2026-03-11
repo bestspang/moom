@@ -4,6 +4,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Lock } from 'lucide-react';
+import { getBadgeEmoji } from '@/apps/member/features/momentum/badgeEmoji';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
