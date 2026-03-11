@@ -927,6 +927,22 @@ export default {
 
   // Staff
   staff: {
+    nav: {
+      home: 'Home',
+      checkin: 'Check-in',
+      members: 'Members',
+      payments: 'Payments',
+      profile: 'Profile',
+    },
+    greeting: 'Hi, {{name}}',
+    operationsOverview: 'Operations overview',
+    searchMembers: 'Search members...',
+    classes: 'Classes',
+    today: 'today',
+    pending: 'Pending',
+    slips: 'slips',
+    leads: 'Leads',
+    hot: 'hot',
     title: 'Staff',
     searchPlaceholder: 'Search name or contact number',
     createStaff: 'Create staff',
@@ -1812,6 +1828,8 @@ export default {
     // Check-in page
     checkinTitle: 'Check-in',
     streakDay: 'Day {{n}} streak! Keep it going 🔥',
+    readyToCheckIn: 'Tap the button to check in and earn XP',
+    tapToCheckIn: 'Tap the button above to check in for today',
     scanQrHint: 'Scan QR or enter code to earn XP',
     scanQr: 'Scan QR',
     orTypeCode: 'or type code',
@@ -1820,6 +1838,8 @@ export default {
     checkingIn: 'Checking in...',
     stopCamera: 'Stop',
     checkinFailed: 'Failed to check in. Please try again.',
+    alreadyCheckedIn: 'You have already checked in today! 🎉',
+    membershipInactive: 'Your membership is not currently active.',
     cameraAccessDenied: 'Camera access denied. Use the manual input below.',
     // Bookings page
     myBookings: 'My Bookings',
@@ -2895,5 +2915,4 @@ export default {
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
   },
-
 };

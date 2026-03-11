@@ -2,18 +2,20 @@ import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Home, ScanLine, Users, CreditCard, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-
-const STAFF_NAV = [
-  { label: 'Home', path: '/staff', icon: Home },
-  { label: 'Check-in', path: '/staff/checkin', icon: ScanLine },
-  { label: 'Members', path: '/staff/members', icon: Users },
-  { label: 'Payments', path: '/staff/payments', icon: CreditCard },
-  { label: 'Profile', path: '/staff/profile', icon: User },
-];
+import { useTranslation } from 'react-i18next';
 
 export function StaffLayout() {
   const location = useLocation();
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
+
+  const STAFF_NAV = [
+    { label: t('staff.nav.home'), path: '/staff', icon: Home },
+    { label: t('staff.nav.checkin'), path: '/staff/checkin', icon: ScanLine },
+    { label: t('staff.nav.members'), path: '/staff/members', icon: Users },
+    { label: t('staff.nav.payments'), path: '/staff/payments', icon: CreditCard },
+    { label: t('staff.nav.profile'), path: '/staff/profile', icon: User },
+  ];
 
   if (loading) {
     return (

@@ -4335,6 +4335,10 @@ export type Database = {
         Args: { p_member_id: string; p_target_level: number }
         Returns: Json
       }
+      create_booking_safe: {
+        Args: { p_member_id: string; p_schedule_id: string }
+        Returns: Json
+      }
       create_schedule_with_validation: {
         Args: {
           p_capacity?: number
@@ -4427,6 +4431,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      member_self_checkin: {
+        Args: { p_checkin_method?: string; p_member_id: string }
+        Returns: Json
       }
       next_transaction_number: { Args: never; Returns: string }
     }

@@ -2,20 +2,20 @@ import { useQuery } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { SummaryCard } from '@/apps/shared/components/SummaryCard';
-import { ListCard } from '@/apps/shared/components/ListCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ScanLine, Users, Calendar, FileText, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 export default function StaffHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const firstName = user?.user_metadata?.first_name ?? 'Staff';
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -66,13 +66,13 @@ export default function StaffHomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-      <MobilePageHeader title={`Hi, ${firstName}`} subtitle="Operations overview" />
+      <MobilePageHeader title={t('staff.greeting', { name: firstName })} subtitle={t('staff.operationsOverview')} />
 
       <Section className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search members..."
+            placeholder={t('staff.searchMembers')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -84,19 +84,19 @@ export default function StaffHomePage() {
       <Section className="mb-4">
         <div className="flex gap-2">
           <Button onClick={() => navigate('/staff/checkin')} className="flex-1" size="sm">
-            <ScanLine className="h-4 w-4 mr-1.5" />Check-in
+            <ScanLine className="h-4 w-4 mr-1.5" />{t('staff.nav.checkin')}
           </Button>
           <Button onClick={() => navigate('/staff/members')} variant="outline" className="flex-1" size="sm">
-            <Users className="h-4 w-4 mr-1.5" />Members
+            <Users className="h-4 w-4 mr-1.5" />{t('staff.nav.members')}
           </Button>
         </div>
       </Section>
 
       <Section className="mb-4">
         <div className="grid grid-cols-3 gap-3">
-          <SummaryCard label="Classes" value={String(todayCount ?? 0)} subtitle="today" icon={<Calendar className="h-4 w-4" />} />
-          <SummaryCard label="Pending" value={String(pendingSlips ?? 0)} subtitle="slips" icon={<FileText className="h-4 w-4" />} />
-          <SummaryCard label="Leads" value={String(hotLeads ?? 0)} subtitle="hot" icon={<Users className="h-4 w-4" />} />
+          <SummaryCard label={t('staff.classes')} value={String(todayCount ?? 0)} subtitle={t('staff.today')} icon={<Calendar className="h-4 w-4" />} />
+          <SummaryCard label={t('staff.pending')} value={String(pendingSlips ?? 0)} subtitle={t('staff.slips')} icon={<FileText className="h-4 w-4" />} />
+          <SummaryCard label={t('staff.leads')} value={String(hotLeads ?? 0)} subtitle={t('staff.hot')} icon={<Users className="h-4 w-4" />} />
         </div>
       </Section>
     </div>

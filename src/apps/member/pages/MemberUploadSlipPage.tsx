@@ -58,8 +58,14 @@ export default function MemberUploadSlipPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // B4 fix: Now passes the file to uploadTransferSlip for actual storage upload
   const mutation = useMutation({
-    mutationFn: (data: UploadSlipForm) => uploadTransferSlip({ amount: data.amount, bank_name: data.bank_name, transfer_date: data.transfer_date }),
+    mutationFn: (data: UploadSlipForm) => uploadTransferSlip({
+      amount: data.amount,
+      bank_name: data.bank_name,
+      transfer_date: data.transfer_date,
+      file: selectedFile ?? undefined,
+    }),
     onSuccess: () => {
       toast.success(t('member.slipUploaded'));
       navigate('/member/packages');
