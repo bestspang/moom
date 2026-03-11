@@ -49,8 +49,9 @@ export default function GamificationStatusTiers() {
         .select('current_tier');
       if (error) return {};
       const counts: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => {
-        counts[r.current_tier] = (counts[r.current_tier] || 0) + 1;
+      (data ?? []).forEach((r) => {
+        const tier = (r as { current_tier: string }).current_tier;
+        counts[tier] = (counts[tier] || 0) + 1;
       });
       return counts;
     },

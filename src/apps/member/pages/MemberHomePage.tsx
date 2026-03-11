@@ -15,6 +15,8 @@ import { xpForLevel } from '../features/momentum/types';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
+import { StatusTierBadge, type StatusTier } from '../features/momentum/StatusTierBadge';
+import { fetchMemberStatusTier } from '../features/momentum/api';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { QuickMenuStrip } from '../components/QuickMenuStrip';
@@ -59,6 +61,12 @@ export default function MemberHomePage() {
     enabled: !!memberId,
   });
 
+  const { data: statusTier } = useQuery({
+    queryKey: ['member-status-tier', memberId],
+    queryFn: () => fetchMemberStatusTier(memberId!),
+    enabled: !!memberId,
+  });
+
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
   const latestAnnouncement = announcements?.[0];
@@ -86,6 +94,12 @@ export default function MemberHomePage() {
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader title={title} subtitle={subtitle} />
 
+      {/* Status Tier Badge */}
+      {statusTier && statusTier.currentTier !== 'bronze' && (
+        <div className="px-4 -mt-2 mb-2">
+          <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
+        </div>
+      )}
       {/* Onboarding for incomplete users / Announcement for completed */}
       {!allOnboardingDone && !onboardingDismissed && (
         <Section className="mb-4">
