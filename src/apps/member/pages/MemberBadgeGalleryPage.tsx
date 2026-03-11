@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trophy, Lock } from 'lucide-react';
+import { getBadgeEmoji } from '../features/momentum/badgeEmoji';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
