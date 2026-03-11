@@ -106,7 +106,7 @@ export default function MemberHomePage() {
               ].map((step, i) => (
                 <li key={i} className="flex items-center gap-2">
                   {step.done ? (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white text-xs">✓</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white text-xs">✓</span>
                   ) : (
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{i + 1}</span>
                   )}
