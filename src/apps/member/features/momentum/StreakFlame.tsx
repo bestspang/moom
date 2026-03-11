@@ -52,16 +52,29 @@ export function StreakFlame({ weeklyCheckinDays, currentStreakWeeks, className }
           const isChecked = weeklyCheckinDays.includes(dayNum);
           return (
             <div key={i} className="flex flex-col items-center gap-0.5" style={{ animationDelay: `${i * 50}ms` }}>
-              <div
-                className={cn(
-                  'h-2.5 w-2.5 rounded-full transition-all duration-300 animate-bounce-in',
-                  isChecked ? 'shadow-[0_0_6px_rgba(255,255,255,0.5)]' : '',
-                )}
-                style={{
-                  backgroundColor: isChecked ? 'white' : 'hsl(var(--border))',
-                  animationDelay: `${i * 60}ms`,
-                }}
-              />
+              {(() => {
+                const today = new Date().getDay(); // 0=Sun
+                const todayMapped = today === 0 ? 7 : today; // 1=Mon..7=Sun
+                const isToday = dayNum === todayMapped;
+                const isPast = dayNum < todayMapped;
+                return (
+                  <div
+                    className={cn(
+                      'h-2.5 w-2.5 rounded-full transition-all duration-300 animate-bounce-in',
+                      isChecked && 'shadow-[0_0_6px_rgba(255,255,255,0.5)]',
+                      isToday && !isChecked && 'ring-1 ring-primary ring-offset-1 ring-offset-transparent',
+                    )}
+                    style={{
+                      backgroundColor: isChecked
+                        ? 'hsl(var(--primary))'
+                        : isPast
+                          ? 'hsl(var(--muted-foreground) / 0.2)'
+                          : 'hsl(var(--border))',
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  />
+                );
+              })()}
               <span className="text-[8px] font-medium text-muted-foreground leading-none">{label}</span>
             </div>
           );

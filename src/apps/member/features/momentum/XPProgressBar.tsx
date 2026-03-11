@@ -26,7 +26,7 @@ export function XPProgressBar({ totalXP, level, className }: XPProgressBarProps)
           {level}
         </span>
         <span className="text-muted-foreground">
-          {xpInLevel.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+          {totalXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
         </span>
         <span
           className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black"
