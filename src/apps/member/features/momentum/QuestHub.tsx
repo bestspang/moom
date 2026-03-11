@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMemberSession } from '../../hooks/useMemberSession';
 import { fetchMyQuests, assignQuests, claimQuest, type QuestInstance } from './api';
