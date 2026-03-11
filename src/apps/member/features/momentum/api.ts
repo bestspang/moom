@@ -1014,7 +1014,7 @@ export interface MemberStatusTierData {
 export async function fetchMemberStatusTier(memberId: string): Promise<MemberStatusTierData | null> {
   if (!memberId) return null;
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('member_status_tiers')
     .select('*')
     .eq('member_id', memberId)
@@ -1023,8 +1023,8 @@ export async function fetchMemberStatusTier(memberId: string): Promise<MemberSta
   if (error || !data) {
     // Auto-evaluate if no record exists
     try {
-      await (supabase.rpc as any)('evaluate_member_tier', { p_member_id: memberId });
-      const { data: retryData } = await (supabase as any)
+      await supabase.rpc('evaluate_member_tier', { p_member_id: memberId });
+      const { data: retryData } = await supabase
         .from('member_status_tiers')
         .select('*')
         .eq('member_id', memberId)

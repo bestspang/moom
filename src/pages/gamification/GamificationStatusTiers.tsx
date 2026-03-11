@@ -12,7 +12,7 @@ export default function GamificationStatusTiers() {
   const { data: rules, isLoading: loadingRules } = useQuery({
     queryKey: ['status-tier-rules'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('status_tier_rules')
+      const { data, error } = await supabase.from('status_tier_rules')
         .select('*')
         .order('tier_order', { ascending: true });
       if (error) throw error;
@@ -23,7 +23,7 @@ export default function GamificationStatusTiers() {
   const { data: spRules, isLoading: loadingSp } = useQuery({
     queryKey: ['status-tier-sp-rules'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('status_tier_sp_rules')
+      const { data, error } = await supabase.from('status_tier_sp_rules')
         .select('*')
         .order('action_key');
       if (error) throw error;
@@ -34,7 +34,7 @@ export default function GamificationStatusTiers() {
   const { data: benefits } = useQuery({
     queryKey: ['status-tier-benefits'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('status_tier_benefits')
+      const { data, error } = await supabase.from('status_tier_benefits')
         .select('*')
         .order('tier_code, sort_order');
       if (error) throw error;
@@ -45,7 +45,7 @@ export default function GamificationStatusTiers() {
   const { data: distribution } = useQuery({
     queryKey: ['status-tier-distribution'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('member_status_tiers')
+      const { data, error } = await supabase.from('member_status_tiers')
         .select('current_tier');
       if (error) return {};
       const counts: Record<string, number> = {};

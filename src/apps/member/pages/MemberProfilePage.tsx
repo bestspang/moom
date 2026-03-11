@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
-import { StatusTierBadge } from '../features/momentum/StatusTierBadge';
+import { StatusTierBadge, type StatusTier } from '../features/momentum/StatusTierBadge';
 import { fetchMemberStatusTier } from '../features/momentum/api';
 import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
@@ -74,7 +74,7 @@ export default function MemberProfilePage() {
               <div className="mt-1 flex items-center gap-1.5">
                 <TierBadge tier={momentum.tier} level={momentum.level} />
                 {statusTier && (
-                  <StatusTierBadge tier={statusTier.currentTier as any} />
+                  <StatusTierBadge tier={statusTier.currentTier as StatusTier} />
                 )}
               </div>
             )}

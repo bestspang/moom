@@ -10,43 +10,43 @@
 
 ### Core Activity Events
 
-| # | Event Name | action_key | Who Triggers | XP | Coin | Cooldown | Daily Cap |
-|---|-----------|-----------|-------------|-----|------|----------|-----------|
-| 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | 720 min | 1 |
-| 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 720 min | 1 |
-| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 60 min | 5 |
-| 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 60 min | 3 |
+| # | Event Name | action_key | Who Triggers | XP | Coin | SP | Cooldown | Daily Cap |
+|---|-----------|-----------|-------------|-----|------|-----|----------|-----------|
+| 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | — | 720 min | 1 |
+| 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 1 | 720 min | 1 |
+| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
+| 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 3 | 60 min | 3 |
 
 ### Commerce Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap | Required Metadata |
-|---|-----------|-----------|-----|------|-----------|-------------------|
-| 5 | Package Purchase | `package_purchased` | floor(net_paid/300)+term_bonus | floor(net_paid/180)+term_bonus, cap 100 | 3 | `net_paid` (number), `term_months` (number) |
-| 6 | Shop Purchase | `shop_purchase` | 6+floor(net_paid/180), cap 16 | floor(net_paid/120), cap 18 | 5 | `net_paid` (number) |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap | Required Metadata |
+|---|-----------|-----------|-----|------|-----|-----------|-------------------|
+| 5 | Package Purchase | `package_purchased` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
+| 6 | Shop Purchase | `shop_purchase` | formula | formula | floor(net_paid/400) cap 5 | 5 | `net_paid` |
 
 ### Social & Engagement Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 7 | Referral Trial | `referral_trial` | 25 | 15 | 5 |
-| 8 | Referral Purchase | `referral_purchase` | 80 | 80 | 5 |
-| 9 | Monthly Review | `review_monthly` | 15 | 5 | 1 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 7 | Referral Trial | `referral_trial` | 25 | 15 | — | 5 |
+| 8 | Referral Purchase | `referral_purchase` | 80 | 80 | 20 | 5 |
+| 9 | Monthly Review | `review_monthly` | 15 | 5 | — | 1 |
 
 ### Streak Events (Auto-triggered)
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 10 | 7-Day Streak | `streak_7day` | 30 | 10 | 1 |
-| 11 | 30-Day Streak | `streak_30day` | 100 | 30 | 1 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 10 | 7-Day Streak | `streak_7day` | 30 | 10 | — | 1 |
+| 11 | 30-Day Streak | `streak_30day` | 100 | 30 | — | 1 |
 
 ### Quest Completion Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap |
-|---|-----------|-----------|-----|------|-----------|
-| 12 | Daily Quest Done | `daily_quest_done` | 13 | 2 | 3 |
-| 13 | Weekly Quest Done | `weekly_quest_done` | 45 | 8 | 4 |
-| 14 | Monthly Challenge | `monthly_challenge` | 180 | 25 | 4 |
-| 15 | Seasonal Challenge | `seasonal_challenge` | 350 | 80 | 2 |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap |
+|---|-----------|-----------|-----|------|-----|-----------|
+| 12 | Daily Quest Done | `daily_quest_done` | 13 | 2 | 1 | 3 |
+| 13 | Weekly Quest Done | `weekly_quest_done` | 45 | 8 | 3 | 4 |
+| 14 | Monthly Challenge | `monthly_challenge` | 180 | 25 | 6 | 4 |
+| 15 | Seasonal Challenge | `seasonal_challenge` | 350 | 80 | 15 | 2 |
 
 ---
 
