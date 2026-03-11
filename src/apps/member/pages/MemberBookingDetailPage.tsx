@@ -46,7 +46,7 @@ export default function MemberBookingDetailPage() {
     queryKey: ['class-rating', scheduleId, memberId],
     queryFn: async () => {
       if (!memberId || !scheduleId) return null;
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('class_ratings')
         .select('rating, comment')
         .eq('schedule_id', scheduleId)

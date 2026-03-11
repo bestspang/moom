@@ -30,7 +30,7 @@ function generateReferralCode(): string {
 export async function fetchOrCreateReferralCode(memberId: string): Promise<string> {
   // Check existing
   const { data: existing } = await supabase
-    .from('member_referrals' as any)
+    .from('member_referrals')
     .select('referral_code')
     .eq('referrer_member_id', memberId)
     .limit(1);
@@ -43,24 +43,24 @@ export async function fetchOrCreateReferralCode(memberId: string): Promise<strin
   // Create new
   const code = generateReferralCode();
   const { error } = await supabase
-    .from('member_referrals' as any)
+    .from('member_referrals')
     .insert({
       referrer_member_id: memberId,
       referral_code: code,
       status: 'pending',
-    } as any);
+    });
 
   if (error) {
     // Retry with different code if unique violation
     if (error.code === '23505') {
       const retryCode = generateReferralCode();
       await supabase
-        .from('member_referrals' as any)
+        .from('member_referrals')
         .insert({
           referrer_member_id: memberId,
           referral_code: retryCode,
           status: 'pending',
-        } as any);
+        });
       return retryCode;
     }
     throw error;
@@ -71,7 +71,7 @@ export async function fetchOrCreateReferralCode(memberId: string): Promise<strin
 
 export async function fetchReferralStats(memberId: string): Promise<ReferralStats> {
   const { data, error } = await supabase
-    .from('member_referrals' as any)
+    .from('member_referrals')
     .select('*')
     .eq('referrer_member_id', memberId)
     .order('created_at', { ascending: false });
@@ -102,7 +102,7 @@ export async function fetchReferralStats(memberId: string): Promise<ReferralStat
 
 export async function lookupReferralByCode(code: string): Promise<{ referrerMemberId: string } | null> {
   const { data, error } = await supabase
-    .from('member_referrals' as any)
+    .from('member_referrals')
     .select('referrer_member_id')
     .eq('referral_code', code.toUpperCase().trim())
     .limit(1);

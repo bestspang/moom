@@ -1,101 +1,106 @@
 
 
-# Cross-System Consistency Audit — Round 6
+# Cross-System Consistency Audit — Findings & Fix Plan
 
-## What was checked
+## Audit Summary
 
-I audited all member-facing API services, hooks, pages, edge functions, gamification API, referral system, suggestions, types, and CORS headers for consistency with recent RPC changes and generated types.
+After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
 
-## Verified Working (No Changes Needed)
+---
+
+## CONFIRMED BUGS (Ranked by Impact)
+
+### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
+
+These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
+
+| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
+|---|---|---|
+| `gamification-process-event` | Yes | Yes |
+| `gamification-admin-ops` | Yes | Yes |
+| `streak-freeze` | Yes | No (exact match only) |
+| `gamification-redeem-reward` | **No** | **No** |
+| `gamification-claim-quest` | **No** | **No** |
+| `gamification-issue-coupon` | **No** | **No** |
+| `gamification-assign-quests` | **No** | **No** |
+| `sync-gamification-config` | **No** | **No** |
+
+**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+
+**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+
+### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+
+Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+
+**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+
+### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+
+`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
+
+These tabs work fine in English but won't localize for Thai users.
+
+**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+
+---
+
+## VERIFIED WORKING (No Changes Needed)
 
 | Area | Status | Evidence |
 |---|---|---|
-| `cancel_booking_safe` RPC | Correct | Used in `services.ts` line 245 |
-| `create_booking_safe` RPC | Correct | Used in `services.ts` line 296 |
-| `member_self_checkin` RPC | Correct | Used in `services.ts` line 385 |
-| `member_upload_slip` RPC | Correct | Used in `services.ts` line 367, with file upload |
-| CORS headers (all 15 edge functions) | Correct | All include `x-supabase-client-*` headers |
-| `isAllowedOrigin` wildcard | Correct | All gamification functions use it |
-| ReferralCard nested button fix | Correct | Now uses `<div role="button">` |
-| SuggestedClassCard skeleton wrapper | Correct | Now wrapped in `<div>` |
-| Gamification event fire-and-forget | Correct | `fireGamificationEvent` is non-blocking |
-| `handle_new_user` trigger | Correct | Provisions member + identity_map + referral |
-
-## Confirmed Issues
-
-### Issue 1 — UNNECESSARY `as any` on `class_ratings` and `member_referrals`
-
-Both tables exist in `src/integrations/supabase/types.ts`:
-- `class_ratings` — lines 560-598
-- `member_referrals` — lines 2222-2270
-
-But code still casts them as `as any`:
-- `ClassRatingSheet.tsx` line 31: `.from('class_ratings' as any)`
-- `MemberBookingDetailPage.tsx` line 49: `(supabase as any).from('class_ratings')`
-- `referral/api.ts` lines 33, 46, 58, 74, 105: `.from('member_referrals' as any)`
-
-**Root cause:** These casts were added before the types were generated. Now that types exist, the casts hide compile-time errors and prevent IDE autocompletion.
-
-**Fix:** Remove `as any` from these 7 call sites. The generated types already match the column names used.
-
-### Issue 2 — UNNECESSARY `as any` on `check_prestige_eligibility` RPC
-
-`check_prestige_eligibility` IS in the generated types (line 4338). But `api.ts` line 952 does `(supabase.rpc as any)('check_prestige_eligibility', ...)`.
-
-**Fix:** Change to `supabase.rpc('check_prestige_eligibility', ...)` — works because it returns `Json`.
-
-### Issue 3 — LEGITIMATE `as any` on squad RPCs (no changes needed)
-
-`get_squad_feed_reactions` and `toggle_squad_feed_reaction` are NOT in the generated types. These `as any` casts are **required** until those DB functions are regenerated. No change.
-
-### Issue 4 — RPC result `as any` pattern in `services.ts`
-
-Lines 253, 304, 377, 392 all do:
-```ts
-const result = data as any;
-if (result?.error) throw new Error(result.message || result.error);
-```
-
-All 4 RPCs return `Json` type. The `as any` cast is necessary because `Json` doesn't have `.error` typed. This pattern is correct and safe — **no change needed**, but a typed helper could improve it later.
-
-### Issue 5 — `useLanguage()` vs `useTranslation()` inconsistency
-
-5 member files use `useLanguage()` while 15+ use `useTranslation()`. Both produce identical `t()` since `LanguageContext` wraps `useTranslation()`. Not a bug — but inconsistent.
-
-**Only `MemberHeader.tsx` actually needs `useLanguage()`** (for the `language` and `setLanguage` properties). The other 4 files (`MemberPackagesPage`, `MemberBadgeGalleryPage`, `DailyBonusCard`, `CheckInCelebration`) only use `t()` and could switch to `useTranslation()`.
-
-**Fix:** Leave as-is — functionally equivalent, no risk. Mark as tech debt.
+| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
+| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
+| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
+| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
+| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
+| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
+| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
+| Routes in App.tsx | Correct | All 3 new pages registered |
+| GamificationStudio tabs | Correct | All 14 tabs present and routed |
+| Prestige criteria admin page | Correct | CRUD with audit trail |
+| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
+| Challenge progress tracking | Correct | Both challenges and quests tracked |
+| Referral reward flow | Correct | Reads from guardrails table |
+| Badge auto-unlock | Correct | Condition-based checking works |
 
 ---
 
 ## Implementation Plan
 
-### Files to change
+### Fix 1 — Standardize CORS across all 6 gamification edge functions
 
-| File | Change |
-|---|---|
-| `src/apps/member/features/momentum/ClassRatingSheet.tsx` | Remove `as any` on `.from('class_ratings')` |
-| `src/apps/member/pages/MemberBookingDetailPage.tsx` | Remove `(supabase as any)`, use `supabase` directly |
-| `src/apps/member/features/referral/api.ts` | Remove all 5 `as any` casts on `member_referrals` + 2 `as any` casts on insert objects |
-| `src/apps/member/features/momentum/api.ts` | Remove `as any` on `check_prestige_eligibility` RPC call |
+For each of these files, apply the same proven pattern from `gamification-process-event`:
 
-**Safety:** Pure type-refinement changes. Zero logic changes. Runtime behavior is identical — we're only removing unnecessary casts that the generated types already support.
+1. Add `isAllowedOrigin()` with `*.lovable.app` regex
+2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
+3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
 
-### What NOT to change (regression prevention)
+Files:
+- `supabase/functions/gamification-redeem-reward/index.ts`
+- `supabase/functions/gamification-claim-quest/index.ts`
+- `supabase/functions/gamification-issue-coupon/index.ts`
+- `supabase/functions/gamification-assign-quests/index.ts`
+- `supabase/functions/sync-gamification-config/index.ts`
+- `supabase/functions/streak-freeze/index.ts`
 
-- `services.ts` RPC result casts — needed because `Json` return type
-- `get_squad_feed_reactions` / `toggle_squad_feed_reaction` casts — RPCs not in types
-- `useLanguage()` usage — functionally identical to `useTranslation()`
-- Edge functions — CORS is already correct and consistent
-- Any existing RPC logic — all 4 security RPCs verified working
+**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
+
+### Fix 2 — Add i18n keys for new gamification tabs
+
+Files:
+- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
+- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
+- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
+
+**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
 
 ---
 
-## Suggested Features (verified safe to add)
+## What Still Needs Manual Testing After Fix
 
-1. **Slip upload confirmation screen** — After successful upload, show transaction reference + "Pending review" status before navigating away. Only touches `MemberUploadSlipPage.tsx`, no backend change.
-
-2. **`useMemberSession` could use `get_my_member_id` RPC** — Currently does manual `identity_map` + `line_users` lookup (2 queries). The RPC does the same thing in 1 call. Would simplify the hook but current approach works identically. Low priority.
-
-3. **Typed RPC result helper** — Create a `function parseRpcResult<T>(data: Json): T` utility to replace the repeated `as any` + `.error` check pattern in `services.ts`. Would prevent future regression if someone changes the pattern inconsistently.
+1. Call reward redemption from member app in preview → verify no CORS error
+2. Claim a quest from member app → verify no CORS error
+3. Use streak freeze from member app → verify no CORS error
+4. Switch app language to Thai → verify new tab names appear correctly
 
