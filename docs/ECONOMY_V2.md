@@ -223,14 +223,14 @@ The MOOM Momentum Club uses a **dual-track** model:
 
 | Action | SP | Daily Cap |
 |--------|-----|-----------|
-| `open_gym_45min` | 1 | 10 |
-| `class_attended` | 2 | 10 |
-| `pt_session` | 3 | 5 |
+| `open_gym_45min` | 1 | 1 |
+| `class_attended` | 2 | 5 |
+| `pt_session` | 3 | 3 |
 | `daily_quest_done` | 1 | 3 |
 | `weekly_quest_done` | 3 | 4 |
 | `monthly_challenge` | 6 | 4 |
 | `seasonal_challenge` | 15 | 2 |
-| `community_event` | 5 | 3 |
+| `community_event` | 5 | 2 |
 | `referral_purchase` | 20 | 5 |
 | Package 1m/3m/6m/12m | 8/20/35/55 | 3 |
 | Shop order | floor(net_paid/400), cap 5 | 5 |

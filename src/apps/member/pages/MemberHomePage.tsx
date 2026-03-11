@@ -15,6 +15,8 @@ import { xpForLevel } from '../features/momentum/types';
 import { MomentumCard } from '../features/momentum/MomentumCard';
 import { DailyBonusCard } from '../features/momentum/DailyBonusCard';
 import { TodayCard } from '../features/momentum/TodayCard';
+import { StatusTierBadge, type StatusTier } from '../features/momentum/StatusTierBadge';
+import { fetchMemberStatusTier } from '../features/momentum/api';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { QuickMenuStrip } from '../components/QuickMenuStrip';
