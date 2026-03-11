@@ -2901,4 +2901,24 @@ export default {
     earnedOn: 'Earned',
   },
 
+  // Staff surface
+  staff: {
+    nav: {
+      home: 'Home',
+      checkin: 'Check-in',
+      members: 'Members',
+      payments: 'Payments',
+      profile: 'Profile',
+    },
+    greeting: 'Hi, {{name}}',
+    operationsOverview: 'Operations overview',
+    searchMembers: 'Search members...',
+    classes: 'Classes',
+    today: 'today',
+    pending: 'Pending',
+    slips: 'slips',
+    leads: 'Leads',
+    hot: 'hot',
+  },
+
 };

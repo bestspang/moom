@@ -2741,4 +2741,25 @@ export default {
     viewAllBadges: 'ดูเหรียญตราทั้งหมด',
     earnedOn: 'ได้รับเมื่อ',
   },
+
+  // Staff surface
+  staff: {
+    nav: {
+      home: 'หน้าแรก',
+      checkin: 'เช็คอิน',
+      members: 'สมาชิก',
+      payments: 'ชำระเงิน',
+      profile: 'โปรไฟล์',
+    },
+    greeting: 'สวัสดี, {{name}}',
+    operationsOverview: 'ภาพรวมการดำเนินงาน',
+    searchMembers: 'ค้นหาสมาชิก...',
+    classes: 'คลาส',
+    today: 'วันนี้',
+    pending: 'รอดำเนินการ',
+    slips: 'สลิป',
+    leads: 'ลีด',
+    hot: 'ร้อน',
+  },
+
 };
