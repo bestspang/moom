@@ -88,7 +88,11 @@ function QuestInstanceCard({ quest, onClaim, t }: { quest: QuestInstance; onClai
   );
 }
 
-export function QuestHub() {
+interface QuestHubProps {
+  filterPeriod?: 'daily' | 'weekly' | 'monthly';
+}
+
+export function QuestHub({ filterPeriod }: QuestHubProps = {}) {
   const queryClient = useQueryClient();
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
