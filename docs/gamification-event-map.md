@@ -19,10 +19,10 @@
 
 ### Commerce Events
 
-| # | Event Name | action_key | XP | Coin | Daily Cap | Required Metadata |
-|---|-----------|-----------|-----|------|-----------|-------------------|
-| 5 | Package Purchase | `package_purchased` | floor(net_paid/300)+term_bonus | floor(net_paid/180)+term_bonus, cap 100 | 3 | `net_paid` (number), `term_months` (number) |
-| 6 | Shop Purchase | `shop_purchase` | 6+floor(net_paid/180), cap 16 | floor(net_paid/120), cap 18 | 5 | `net_paid` (number) |
+| # | Event Name | action_key | XP | Coin | SP | Daily Cap | Required Metadata |
+|---|-----------|-----------|-----|------|-----|-----------|-------------------|
+| 5 | Package Purchase | `package_purchased` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
+| 6 | Shop Purchase | `shop_purchase` | formula | formula | floor(net_paid/400) cap 5 | 5 | `net_paid` |
 
 ### Social & Engagement Events
 
