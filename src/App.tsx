@@ -87,6 +87,9 @@ import GamificationRisk from "./pages/gamification/GamificationRisk";
 import GamificationQuests from "./pages/gamification/GamificationQuests";
 import GamificationCoupons from "./pages/gamification/GamificationCoupons";
 import GamificationShopRules from "./pages/gamification/GamificationShopRules";
+import GamificationGuardrails from "./pages/gamification/GamificationGuardrails";
+import GamificationOperations from "./pages/gamification/GamificationOperations";
+import GamificationPrestige from "./pages/gamification/GamificationPrestige";
 
 // Experience Surface Layouts
 import { MemberLayout } from "@/apps/member";
