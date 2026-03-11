@@ -2108,6 +2108,11 @@ export default {
     perksUnlocked: 'Unlocked',
     perksComingNext: 'Coming Next',
     levelPerksLabel: 'Lv.{{level}} — {{name}}',
+    xpRequired: '{{xp}} XP',
+    currentLevel: 'Your Level',
+    nextLevelIn: '{{xp}} XP to Level {{level}}',
+    maxLevelReached: 'Max level reached! 🏆',
+    noPerksYet: 'No special perks yet',
     // LevelRequirementsCard
     levelRequirements: 'Level {{level}} Requirements',
     totalXpLabel: 'Total XP',
