@@ -2,14 +2,11 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 import { fetchMomentumProfile, fetchMyBadges, fetchMyQuests, type QuestInstance } from './api';
 import { TierBadge } from './TierBadge';
 import { XPProgressBar } from './XPProgressBar';
 import { StreakFlame } from './StreakFlame';
-import { LevelPerksCard } from './LevelPerksCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Gift, Zap, Target, ChevronRight, Lock, Trophy, Users, Coins } from 'lucide-react';
 import type { MomentumProfile } from './types';
 import { getBadgeEmoji } from './badgeEmoji';
@@ -34,7 +31,6 @@ const DEFAULT_PROFILE: MomentumProfile = {
 export function MomentumCard({ memberId, className }: MomentumCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [perksOpen, setPerksOpen] = useState(false);
   const { data: profile, isLoading } = useQuery({
     queryKey: ['momentum-profile', memberId],
     queryFn: () => fetchMomentumProfile(memberId!),
@@ -87,13 +83,7 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
         {/* Top row: tier + stats */}
         <div className="relative flex items-center justify-between mb-4">
           <div className="[&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
-            {p.level > 1 ? (
-              <button onClick={(e) => { e.stopPropagation(); setPerksOpen(true); }}>
-                <TierBadge tier={p.tier} level={p.level} size="md" />
-              </button>
-            ) : (
-              <TierBadge tier={p.tier} level={p.level} size="md" />
-            )}
+            <TierBadge tier={p.tier} level={p.level} size="md" />
           </div>
           <div className="flex items-center gap-2">
             <div
@@ -231,15 +221,6 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
         </button>
       </div>
 
-      {/* Level Perks Dialog */}
-      <Dialog open={perksOpen} onOpenChange={setPerksOpen}>
-        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
-            <DialogTitle>{t('member.levelPerks')}</DialogTitle>
-          </DialogHeader>
-          <LevelPerksCard currentLevel={p.level} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

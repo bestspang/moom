@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { TIER_CONFIG, type MomentumTier } from './types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LevelPerksCard } from './LevelPerksCard';
 
 interface TierBadgeProps {
   tier: MomentumTier;
   level?: number;
   size?: 'sm' | 'md' | 'lg';
+  interactive?: boolean;
   className?: string;
 }
 
@@ -29,7 +34,7 @@ function TierEmblem({ tier, size }: { tier: MomentumTier; size: 'sm' | 'md' | 'l
   );
 }
 
-export function TierBadge({ tier, level, size = 'sm', className }: TierBadgeProps) {
+function BadgeContent({ tier, level, size, className }: { tier: MomentumTier; level?: number; size: 'sm' | 'md' | 'lg'; className?: string }) {
   const config = TIER_CONFIG[tier];
 
   return (
@@ -63,5 +68,35 @@ export function TierBadge({ tier, level, size = 'sm', className }: TierBadgeProp
         </span>
       )}
     </span>
+  );
+}
+
+export function TierBadge({ tier, level, size = 'sm', interactive = true, className }: TierBadgeProps) {
+  const { t } = useTranslation();
+  const [perksOpen, setPerksOpen] = useState(false);
+  const canOpen = interactive && level !== undefined && level > 1;
+
+  if (!canOpen) {
+    return <BadgeContent tier={tier} level={level} size={size} className={className} />;
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setPerksOpen(true); }}
+        className="appearance-none"
+      >
+        <BadgeContent tier={tier} level={level} size={size} className={className} />
+      </button>
+      <Dialog open={perksOpen} onOpenChange={setPerksOpen}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{t('member.levelPerks')}</DialogTitle>
+          </DialogHeader>
+          <LevelPerksCard currentLevel={level} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
