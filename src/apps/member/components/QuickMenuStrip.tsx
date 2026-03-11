@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import {
   PersonStanding,
-  Trophy,
-  Users,
   Ticket,
   Package,
   ClipboardList,
