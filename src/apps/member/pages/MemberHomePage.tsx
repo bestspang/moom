@@ -234,17 +234,6 @@ export default function MemberHomePage() {
         )}
       </Section>
 
-      {/* Pinned announcement */}
-      {latestAnnouncement && (
-        <Section className="mb-4">
-          <div className="rounded-lg bg-accent/50 border border-border p-3">
-            <div className="flex items-start gap-2">
-              <Megaphone className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-foreground">{latestAnnouncement.message}</p>
-            </div>
-          </div>
-        </Section>
-      )}
 
       {/* Referral Program */}
       {memberId && (
