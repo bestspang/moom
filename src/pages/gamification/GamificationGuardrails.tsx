@@ -24,7 +24,7 @@ const GamificationGuardrails = () => {
 
   const handleSave = (g: EconomyGuardrail) => {
     const e = getEdit(g);
-    updateGuardrail.mutate({ id: g.id, rule_value: e.rule_value, is_active: e.is_active });
+    updateGuardrail.mutate({ id: g.id, rule_code: g.rule_code, rule_value: e.rule_value, is_active: e.is_active });
     setEdits((prev) => { const n = { ...prev }; delete n[g.id]; return n; });
   };
 
