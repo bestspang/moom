@@ -2834,6 +2834,7 @@ export default {
       workouts: 'Workouts',
       profile: 'Profile',
     },
+    greeting: 'Hi, {{name}}',
     todaysOverview: "Today's overview",
     todaysClasses: "Today's Classes",
     totalBookings: 'Total Bookings',
