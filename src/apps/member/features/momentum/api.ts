@@ -957,9 +957,11 @@ export async function fetchPrestigeEligibility(memberId: string, targetLevel: nu
   if (error) throw error;
   if (!data) return null;
 
+  const result = data as { eligible: boolean; criteria: any[] };
+
   return {
-    eligible: data.eligible,
-    criteria: (data.criteria ?? []).map((c: any) => ({
+    eligible: result.eligible,
+    criteria: (result.criteria ?? []).map((c: any) => ({
       code: c.code,
       met: c.met,
       current: c.current,
