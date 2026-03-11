@@ -12,6 +12,7 @@ import { StreakFlame } from '../features/momentum/StreakFlame';
 import { QuestHub } from '../features/momentum/QuestHub';
 import { AlmostThereCard } from '../features/momentum/AlmostThereCard';
 import { RewardPreview } from '../features/momentum/RewardPreview';
+import { StatusTierCard } from '../features/momentum/StatusTierCard';
 import {
   fetchMomentumProfile,
   fetchMyBadges,
@@ -151,6 +152,9 @@ export default function MemberMomentumPage() {
 
       {/* ── Dashboard Content ── */}
       <div className="px-4 space-y-6 mt-5">
+
+        {/* ── STATUS TIER ── */}
+        {memberId && <StatusTierCard memberId={memberId} />}
 
         {/* ── SECTION 2: Today's Quests ── */}
         <div className="space-y-3">

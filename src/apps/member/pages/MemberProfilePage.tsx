@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
+import { StatusTierBadge } from '../features/momentum/StatusTierBadge';
+import { fetchMemberStatusTier } from '../features/momentum/api';
 import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { BadgeGrid } from '../features/momentum/BadgeGrid';
@@ -38,6 +40,12 @@ export default function MemberProfilePage() {
     enabled: !!memberId,
   });
 
+  const { data: statusTier } = useQuery({
+    queryKey: ['member-status-tier', memberId],
+    queryFn: () => fetchMemberStatusTier(memberId!),
+    enabled: !!memberId,
+  });
+
   const menuItems = [
     { label: t('member.editProfile'), icon: User, path: '/member/profile/edit' },
     { label: t('member.inviteFriends'), icon: Gift, path: '/member/referral' },
@@ -63,8 +71,11 @@ export default function MemberProfilePage() {
             <h2 className="text-lg font-bold text-foreground">{firstName} {lastName}</h2>
             <p className="text-sm text-muted-foreground">{email}</p>
             {momentum && (
-              <div className="mt-1">
+              <div className="mt-1 flex items-center gap-1.5">
                 <TierBadge tier={momentum.tier} level={momentum.level} />
+                {statusTier && (
+                  <StatusTierBadge tier={statusTier.currentTier as any} />
+                )}
               </div>
             )}
           </div>

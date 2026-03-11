@@ -998,3 +998,59 @@ export async function fetchPrestigeCriteria(): Promise<PrestigeCriteriaRow[]> {
     descriptionTh: r.description_th,
   }));
 }
+
+// ─── Status Tier ────────────────────────────────────────────
+
+export interface MemberStatusTierData {
+  currentTier: string;
+  sp90d: number;
+  activeDays30d: number;
+  activeDays60d: number;
+  activeDays90d: number;
+  graceUntil: string | null;
+  nextTierSp90d: number | null;
+}
+
+export async function fetchMemberStatusTier(memberId: string): Promise<MemberStatusTierData | null> {
+  if (!memberId) return null;
+
+  const { data, error } = await (supabase as any)
+    .from('member_status_tiers')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle();
+
+  if (error || !data) {
+    // Auto-evaluate if no record exists
+    try {
+      await (supabase.rpc as any)('evaluate_member_tier', { p_member_id: memberId });
+      const { data: retryData } = await (supabase as any)
+        .from('member_status_tiers')
+        .select('*')
+        .eq('member_id', memberId)
+        .maybeSingle();
+      if (!retryData) return { currentTier: 'bronze', sp90d: 0, activeDays30d: 0, activeDays60d: 0, activeDays90d: 0, graceUntil: null, nextTierSp90d: 20 };
+      return mapTierRow(retryData);
+    } catch {
+      return { currentTier: 'bronze', sp90d: 0, activeDays30d: 0, activeDays60d: 0, activeDays90d: 0, graceUntil: null, nextTierSp90d: 20 };
+    }
+  }
+
+  return mapTierRow(data);
+}
+
+function mapTierRow(data: any): MemberStatusTierData {
+  // Determine next tier SP requirement
+  const tierSpMap: Record<string, number> = { bronze: 20, silver: 55, gold: 110, platinum: 190, diamond: 280 };
+  const nextSp = tierSpMap[data.current_tier] ?? null;
+
+  return {
+    currentTier: data.current_tier,
+    sp90d: data.sp_90d,
+    activeDays30d: data.active_days_30d,
+    activeDays60d: data.active_days_60d,
+    activeDays90d: data.active_days_90d,
+    graceUntil: data.grace_until,
+    nextTierSp90d: nextSp,
+  };
+}

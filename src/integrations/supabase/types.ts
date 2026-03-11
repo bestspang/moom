@@ -2273,6 +2273,69 @@ export type Database = {
           },
         ]
       }
+      member_status_tiers: {
+        Row: {
+          active_days_30d: number
+          active_days_60d: number
+          active_days_90d: number
+          created_at: string | null
+          current_tier: string
+          grace_until: string | null
+          id: string
+          last_evaluated_at: string | null
+          member_id: string
+          previous_tier: string | null
+          sp_90d: number
+          tier_changed_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_days_30d?: number
+          active_days_60d?: number
+          active_days_90d?: number
+          created_at?: string | null
+          current_tier?: string
+          grace_until?: string | null
+          id?: string
+          last_evaluated_at?: string | null
+          member_id: string
+          previous_tier?: string | null
+          sp_90d?: number
+          tier_changed_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_days_30d?: number
+          active_days_60d?: number
+          active_days_90d?: number
+          created_at?: string | null
+          current_tier?: string
+          grace_until?: string | null
+          id?: string
+          last_evaluated_at?: string | null
+          member_id?: string
+          previous_tier?: string | null
+          sp_90d?: number
+          tier_changed_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_status_tiers_current_tier_fkey"
+            columns: ["current_tier"]
+            isOneToOne: false
+            referencedRelation: "status_tier_rules"
+            referencedColumns: ["tier_code"]
+          },
+          {
+            foreignKeyName: "member_status_tiers_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_suspensions: {
         Row: {
           created_at: string | null
@@ -3470,6 +3533,41 @@ export type Database = {
           },
         ]
       }
+      sp_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          event_type: string
+          id: string
+          member_id: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          event_type: string
+          id?: string
+          member_id: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          event_type?: string
+          id?: string
+          member_id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_ledger_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squad_memberships: {
         Row: {
           id: string
@@ -3719,6 +3817,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      status_tier_benefits: {
+        Row: {
+          benefit_code: string
+          created_at: string | null
+          description_en: string
+          description_th: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          max_per_month: number | null
+          sort_order: number
+          tier_code: string
+        }
+        Insert: {
+          benefit_code: string
+          created_at?: string | null
+          description_en: string
+          description_th?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          max_per_month?: number | null
+          sort_order?: number
+          tier_code: string
+        }
+        Update: {
+          benefit_code?: string
+          created_at?: string | null
+          description_en?: string
+          description_th?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          max_per_month?: number | null
+          sort_order?: number
+          tier_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_tier_benefits_tier_code_fkey"
+            columns: ["tier_code"]
+            isOneToOne: false
+            referencedRelation: "status_tier_rules"
+            referencedColumns: ["tier_code"]
+          },
+        ]
+      }
+      status_tier_rules: {
+        Row: {
+          active_days_window: number
+          color_hsl: string
+          created_at: string | null
+          display_name_en: string
+          display_name_th: string | null
+          extra_criteria: Json | null
+          icon_emoji: string
+          id: string
+          is_active: boolean
+          min_active_days_period: number
+          min_level: number
+          min_sp_90d: number
+          requires_active_package: boolean
+          tier_code: string
+          tier_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          active_days_window?: number
+          color_hsl?: string
+          created_at?: string | null
+          display_name_en: string
+          display_name_th?: string | null
+          extra_criteria?: Json | null
+          icon_emoji?: string
+          id?: string
+          is_active?: boolean
+          min_active_days_period?: number
+          min_level?: number
+          min_sp_90d?: number
+          requires_active_package?: boolean
+          tier_code: string
+          tier_order: number
+          updated_at?: string | null
+        }
+        Update: {
+          active_days_window?: number
+          color_hsl?: string
+          created_at?: string | null
+          display_name_en?: string
+          display_name_th?: string | null
+          extra_criteria?: Json | null
+          icon_emoji?: string
+          id?: string
+          is_active?: boolean
+          min_active_days_period?: number
+          min_level?: number
+          min_sp_90d?: number
+          requires_active_package?: boolean
+          tier_code?: string
+          tier_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      status_tier_sp_rules: {
+        Row: {
+          action_key: string
+          created_at: string | null
+          daily_cap: number | null
+          id: string
+          is_active: boolean
+          sp_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          action_key: string
+          created_at?: string | null
+          daily_cap?: number | null
+          id?: string
+          is_active?: boolean
+          sp_value?: number
+          updated_at?: string | null
+        }
+        Update: {
+          action_key?: string
+          created_at?: string | null
+          daily_cap?: number | null
+          id?: string
+          is_active?: boolean
+          sp_value?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       streak_snapshots: {
         Row: {
@@ -4360,6 +4592,7 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: undefined
       }
+      evaluate_member_tier: { Args: { p_member_id: string }; Returns: Json }
       get_my_member_id: { Args: { _user_id: string }; Returns: string }
       get_squad_activity_feed: {
         Args: { p_limit?: number; p_squad_id: string }

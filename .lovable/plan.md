@@ -1,261 +1,106 @@
 
 
-# Hybrid Level + Status Tier System — Implementation Plan
+# Cross-System Consistency Audit — Findings & Fix Plan
 
-## What We're Building
+## Audit Summary
 
-Adding a second progression axis — **Status Tiers (Bronze → Black)** — alongside the existing 20-level system. This creates a dual-track model:
-
-- **Level (1–20)**: Lifetime XP progression. Never goes down.
-- **Status Tier (Bronze–Black)**: Rolling 90-day performance tier. Goes up AND down based on recent activity.
-
-Status Tiers use a new metric: **Status Points (SP)**, earned from real activity (gym visits, classes, quests, purchases) and evaluated every 30 days.
+After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
 
 ---
 
-## Current State vs Target
+## CONFIRMED BUGS (Ranked by Impact)
 
-```text
-CURRENT:                          TARGET:
-┌──────────────┐                 ┌──────────────┐  ┌──────────────┐
-│  Level 1–20  │                 │  Level 1–20  │  │ Status Tier  │
-│  (XP-based)  │                 │  (XP-based)  │  │ Bronze–Black │
-│              │       →         │  permanent   │  │ 90-day SP    │
-│  tier =      │                 │              │  │ goes up/down │
-│  f(level)    │                 └──────────────┘  └──────────────┘
-└──────────────┘                        ↕ independent systems ↕
-```
+### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
 
-The existing `MomentumTier` (starter/mover/strong/elite/legend) becomes a **level grouping label** only, while the new Status Tier (Bronze–Black) drives perks and benefits.
+These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
 
----
+| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
+|---|---|---|
+| `gamification-process-event` | Yes | Yes |
+| `gamification-admin-ops` | Yes | Yes |
+| `streak-freeze` | Yes | No (exact match only) |
+| `gamification-redeem-reward` | **No** | **No** |
+| `gamification-claim-quest` | **No** | **No** |
+| `gamification-issue-coupon` | **No** | **No** |
+| `gamification-assign-quests` | **No** | **No** |
+| `sync-gamification-config` | **No** | **No** |
 
-## Phase 1: Database Schema (Migration)
+**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
 
-### New Tables
+**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
 
-**`status_tier_rules`** — Admin-configurable tier qualification rules
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid PK | |
-| tier_code | text | bronze/silver/gold/platinum/diamond/black |
-| tier_order | int | 1–6 for sorting |
-| display_name_en | text | "Bronze" |
-| display_name_th | text | "บรอนซ์" |
-| color_hsl | text | CSS color variable |
-| icon_emoji | text | 🥉🥈🥇💎👑🖤 |
-| min_level | int | Minimum Level required |
-| min_sp_90d | int | Min Status Points in 90 days |
-| min_active_days_period | int | Min active days in period |
-| active_days_window | int | Window for active days (30/60/90) |
-| requires_active_package | boolean | |
-| extra_criteria | jsonb | For Black: seasonal badge, referral, etc. |
-| is_active | boolean | |
+### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
 
-**`status_tier_benefits`** — Benefits per tier
-| Column | Type |
-|--------|------|
-| id | uuid PK |
-| tier_code | text |
-| benefit_code | text |
-| description_en | text |
-| description_th | text |
-| frequency | text | monthly/ongoing/one_time |
-| max_per_month | int |
-| sort_order | int |
-| is_active | boolean |
+Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
 
-**`sp_ledger`** — Status Points ledger (append-only, like xp_ledger)
-| Column | Type |
-|--------|------|
-| id | uuid PK |
-| member_id | uuid FK |
-| event_type | text |
-| delta | int |
-| created_at | timestamptz |
-| metadata | jsonb |
+**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
 
-**`member_status_tiers`** — Current tier state per member
-| Column | Type |
-|--------|------|
-| id | uuid PK |
-| member_id | uuid FK (unique) |
-| current_tier | text | bronze/silver/gold/platinum/diamond/black |
-| sp_90d | int | Cached rolling 90-day SP |
-| active_days_30d | int | Cached |
-| active_days_60d | int | Cached |
-| active_days_90d | int | Cached |
-| last_evaluated_at | timestamptz |
-| grace_until | timestamptz | Grace period end |
-| tier_changed_at | timestamptz |
-| previous_tier | text |
+### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
 
-**`status_tier_sp_rules`** — SP earning rules (admin-configurable)
-| Column | Type |
-|--------|------|
-| id | uuid PK |
-| action_key | text | open_gym_45min, class_attend, etc. |
-| sp_value | int |
-| daily_cap | int |
-| is_active | boolean |
+`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
 
-### Alter Existing Tables
+These tabs work fine in English but won't localize for Thai users.
 
-Add to `member_gamification_profiles`:
-- No changes needed — tier state lives in `member_status_tiers`
-
-### RLS Policies
-- Members: SELECT own rows from `member_status_tiers`, `sp_ledger`
-- Staff: SELECT all
-- Admin: Full CRUD on `status_tier_rules`, `status_tier_benefits`, `status_tier_sp_rules`
+**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
 
 ---
 
-## Phase 2: SP Earning Logic (Edge Function Update)
+## VERIFIED WORKING (No Changes Needed)
 
-Update `gamification-process-event` to **also write SP** alongside XP/Coin:
-
-```text
-After XP/Coin insert → lookup sp_rules for action_key → insert into sp_ledger
-```
-
-SP values from the user's spec:
-| Action | SP |
-|--------|-----|
-| open_gym_45min | 1 |
-| class_attend | 2 |
-| pt_session | 3 |
-| daily_quest_done | 1 |
-| weekly_quest_done | 3 |
-| monthly_challenge | 6 |
-| seasonal_challenge | 15 |
-| community_event | 5 |
-| referral_conversion | 20 |
-| package_purchase | 8/20/35/55 by term |
-| shop_purchase | floor(net_paid/400), cap 5 |
+| Area | Status | Evidence |
+|---|---|---|
+| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
+| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
+| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
+| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
+| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
+| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
+| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
+| Routes in App.tsx | Correct | All 3 new pages registered |
+| GamificationStudio tabs | Correct | All 14 tabs present and routed |
+| Prestige criteria admin page | Correct | CRUD with audit trail |
+| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
+| Challenge progress tracking | Correct | Both challenges and quests tracked |
+| Referral reward flow | Correct | Reads from guardrails table |
+| Badge auto-unlock | Correct | Condition-based checking works |
 
 ---
 
-## Phase 3: Tier Evaluation (New Edge Function or DB Function)
+## Implementation Plan
 
-**`evaluate-member-tier`** — Called periodically (cron or after events):
+### Fix 1 — Standardize CORS across all 6 gamification edge functions
 
-1. Calculate `sp_90d` = SUM(sp_ledger.delta) WHERE created_at >= now() - 90 days
-2. Calculate `active_days_30d/60d/90d` from `member_attendance`
-3. Check `member_packages` for active package
-4. Check `member_gamification_profiles.current_level` for min level
-5. Match against `status_tier_rules` ordered by tier_order DESC
-6. Apply grace period rules (14 days after package expiry, 1-tier-per-cycle max drop)
-7. Write result to `member_status_tiers`
+For each of these files, apply the same proven pattern from `gamification-process-event`:
 
----
+1. Add `isAllowedOrigin()` with `*.lovable.app` regex
+2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
+3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
 
-## Phase 4: Frontend Changes
+Files:
+- `supabase/functions/gamification-redeem-reward/index.ts`
+- `supabase/functions/gamification-claim-quest/index.ts`
+- `supabase/functions/gamification-issue-coupon/index.ts`
+- `supabase/functions/gamification-assign-quests/index.ts`
+- `supabase/functions/sync-gamification-config/index.ts`
+- `supabase/functions/streak-freeze/index.ts`
 
-### New Type: `StatusTier`
-```typescript
-export type StatusTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'black';
-```
+**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
 
-### New Component: `StatusTierBadge`
-Metallic-styled badge (distinct from the existing `TierBadge` which shows Level group). Shows tier name + icon with tier-specific colors.
+### Fix 2 — Add i18n keys for new gamification tabs
 
-### Updated `MomentumProfile` interface
-```typescript
-export interface MomentumProfile {
-  // ... existing fields
-  statusTier: StatusTier;    // NEW
-  sp90d: number;             // NEW
-  spToNextTier: number;      // NEW (derived)
-}
-```
+Files:
+- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
+- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
+- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
 
-### Pages Updated
-
-1. **MemberHomePage** — Show StatusTierBadge next to name, SP progress indicator
-2. **MemberMomentumPage** — Add "Your Status" section showing current tier, SP progress, next tier requirements, grace warnings
-3. **MemberProfilePage** — Show both Level badge and Status Tier badge
-4. **MomentumCard** — Add small StatusTierBadge below existing TierBadge
-5. **LevelPerksCard** — Add a "Status Tier Benefits" tab/section explaining tier perks vs level perks
-
-### New CSS Variables
-```css
---tier-bronze: 30 50% 45%;
---tier-silver: 210 10% 65%;
---tier-gold: 45 85% 50%;
---tier-platinum: 200 15% 75%;
---tier-diamond: 195 80% 65%;
---tier-black: 0 0% 15%;
-```
-
-### i18n Keys (en + th)
-Add translations for tier names, SP explanations, grace period messages, comeback prompts.
+**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
 
 ---
 
-## Phase 5: Admin Studio
+## What Still Needs Manual Testing After Fix
 
-### New Admin Page: "Status Tiers" under Gamification Studio
-- View/edit tier qualification rules
-- View/edit tier benefits
-- View/edit SP earning rules
-- Preview tier distribution across members
-
----
-
-## Phase 6: Tier Downgrade & Comeback
-
-### Downgrade Rules (implemented in evaluation function)
-1. Package expired → 14-day grace period (tier holds, warning shown)
-2. Monthly review: if SP < 85% of requirement → drop 1 tier
-3. Max 1 tier drop per 30-day cycle
-4. 90 days inactive → reset to Bronze (Level untouched)
-
-### Comeback Mechanics
-- Renew package + 2 visits in 7 days → restore paused perks
-- Reach 60% of previous tier's SP in 14 days → recover 1 tier
-- Special "comeback quest" templates (admin-configurable)
-
----
-
-## Safety Analysis
-
-### What stays exactly the same (no regression risk)
-- XP earning logic — unchanged
-- Coin earning logic — unchanged  
-- Level 1–20 progression — unchanged
-- Quest system — unchanged
-- Badge system — unchanged
-- Reward shop — unchanged
-- Prestige criteria for Level 18–20 — unchanged
-- All existing RPCs — unchanged
-- Existing `MomentumTier` (starter/mover/strong/elite/legend) — still derived from level, still used as level grouping label
-
-### What changes
-- `gamification-process-event` gets an **additive** SP write (new code path, doesn't touch existing XP/Coin logic)
-- New tables only — no ALTER on existing tables
-- New components — existing components get minor additions (StatusTierBadge rendered alongside existing elements)
-- `MomentumProfile` type gets new optional fields — backward compatible
-
-### Migration Safety
-- All new tables with defaults
-- SP ledger starts empty — first evaluation gives everyone Bronze
-- Tier evaluation is a separate function — can be enabled independently
-- Grace periods prevent sudden drops on launch
-
----
-
-## Implementation Order
-
-1. **Database migration** — Create all 5 new tables + seed tier rules + SP rules + benefits
-2. **Update edge function** — Add SP writing to gamification-process-event
-3. **Create tier evaluation function** — DB function `evaluate_member_tier()`
-4. **Frontend types + API** — StatusTier type, fetchMemberTier(), SP data
-5. **StatusTierBadge component** — New visual component
-6. **Update member pages** — MomentumPage, ProfilePage, HomePage
-7. **Admin tier management page** — Under Gamification Studio
-8. **Economy v3 doc** — Update docs/ECONOMY_V2.md → V3 with tier system
-9. **i18n** — Add en + th translations
-
-This is a large feature. Shall I proceed with the full implementation?
+1. Call reward redemption from member app in preview → verify no CORS error
+2. Claim a quest from member app → verify no CORS error
+3. Use streak freeze from member app → verify no CORS error
+4. Switch app language to Thai → verify new tab names appear correctly
 

@@ -2040,6 +2040,13 @@ export default {
     nextLevelAt: 'เลเวลถัดไปที่ {{xp}} XP',
     xpToGo: 'อีก {{xp}} XP',
     streak: 'สตรีค',
+    // Status Tier
+    yourStatus: 'สถานะของคุณ',
+    statusPoints90d: 'คะแนนสถานะ (90 วัน)',
+    spToNextTier: 'อีก {{sp}} SP ถึง {{tier}}',
+    activeDays: 'วันที่ใช้งาน',
+    graceWarning: 'ต่ออายุแพ็กเกจเพื่อรักษาสถานะ!',
+    statusTierExplanation: 'สถานะของคุณขึ้นอยู่กับกิจกรรมใน 90 วันที่ผ่านมา ใช้งานสม่ำเสมอเพื่อรักษาหรืออัพเกรดสถานะ!',
     weekStreak: 'สตรีค {{n}} สัปดาห์',
     longestStreak: 'ยาวสุด: {{n}} สัปดาห์',
     badges: 'แบดจ์',
