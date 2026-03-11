@@ -656,7 +656,12 @@ export const useAssignPackageToMember = () => {
         event_type: 'package_purchased',
         member_id: variables.memberId,
         idempotency_key: `purchase:${result.transactionNo}`,
-        metadata: { package_id: variables.pkg.id, package_name: variables.pkg.name_en },
+        metadata: {
+          package_id: variables.pkg.id,
+          package_name: variables.pkg.name_en,
+          net_paid: variables.pkg.price,
+          term_months: Math.ceil((variables.pkg.term_days || 30) / 30),
+        },
       });
       toast.success(t('toast.packageAssigned'));
     },
