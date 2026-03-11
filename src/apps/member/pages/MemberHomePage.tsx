@@ -61,6 +61,12 @@ export default function MemberHomePage() {
     enabled: !!memberId,
   });
 
+  const { data: statusTier } = useQuery({
+    queryKey: ['member-status-tier', memberId],
+    queryFn: () => fetchMemberStatusTier(memberId!),
+    enabled: !!memberId,
+  });
+
   const upcomingBookings = bookings?.filter(b => b.status === 'booked') ?? [];
   const activePackages = packages?.filter(p => p.status === 'active') ?? [];
   const latestAnnouncement = announcements?.[0];
