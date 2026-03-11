@@ -47,7 +47,7 @@ function BadgeContent({ tier, level, size, className }: { tier: MomentumTier; le
         className,
       )}
       style={{
-        backgroundColor: 'white',
+        backgroundColor: 'hsl(0 0% 100% / 0.6)',
         color: `hsl(var(${config.colorVar}))`,
         boxShadow: `0 0 12px hsl(var(${config.colorVar}) / 0.15), inset 0 1px 0 hsl(var(${config.colorVar}) / 0.1)`,
       }}
