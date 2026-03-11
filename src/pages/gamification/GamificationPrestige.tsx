@@ -45,13 +45,25 @@ const GamificationPrestige = () => {
   });
 
   const updateCriterion = useMutation({
-    mutationFn: async ({ id, target_value, is_active }: { id: string; target_value: number; is_active: boolean }) => {
+    mutationFn: async ({ id, target_value, is_active, old_target_value, old_is_active, criterion_code }: { id: string; target_value: number; is_active: boolean; old_target_value: number; old_is_active: boolean; criterion_code: string }) => {
       if (target_value < 0) throw new Error('Target value must be ≥ 0');
       const { error } = await supabase
         .from('prestige_criteria')
         .update({ target_value, is_active })
         .eq('id', id);
       if (error) throw error;
+
+      // Audit log — fire-and-forget
+      const { data: { user } } = await supabase.auth.getUser();
+      supabase.from('gamification_audit_log').insert({
+        event_type: 'admin_update_prestige_criterion',
+        action_key: criterion_code,
+        staff_id: user?.id ?? null,
+        metadata: { criterion_id: id, criterion_code, old_target_value, new_target_value: target_value, old_is_active, new_is_active: is_active },
+        flagged: false,
+      }).then(({ error: auditErr }) => {
+        if (auditErr) console.warn('[audit] prestige log failed:', auditErr.message);
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prestige-criteria'] });
