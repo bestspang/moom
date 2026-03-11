@@ -949,7 +949,7 @@ export interface PrestigeEligibility {
 export async function fetchPrestigeEligibility(memberId: string, targetLevel: number): Promise<PrestigeEligibility | null> {
   if (targetLevel < 18 || targetLevel > 20) return null;
 
-  const { data, error } = await (supabase.rpc as any)('check_prestige_eligibility', {
+  const { data, error } = await supabase.rpc('check_prestige_eligibility', {
     p_member_id: memberId,
     p_target_level: targetLevel,
   });

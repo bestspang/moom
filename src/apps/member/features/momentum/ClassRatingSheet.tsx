@@ -28,7 +28,7 @@ export function ClassRatingSheet({ open, onClose, scheduleId, memberId, classNam
     setSubmitting(true);
     try {
       const { error } = await supabase
-        .from('class_ratings' as any)
+        .from('class_ratings')
         .upsert({
           schedule_id: scheduleId,
           member_id: memberId,
