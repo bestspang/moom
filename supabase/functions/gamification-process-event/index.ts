@@ -479,23 +479,31 @@ Deno.serve(async (req) => {
     // 5) GET OR CREATE MEMBER PROFILE
     const profile = await getOrCreateProfile(db, member_id);
 
-    // Dynamic XP/Coin calculation for package_purchase and shop_purchase (v2 economy)
+    // Dynamic XP/Coin calculation — reads from economy_guardrails table
+    const guardrails = await getGuardrails(db);
+
     let xpDelta = rule.xp_value || 0;
     let pointsDelta = rule.points_value || 0;
 
     if (event_type === "package_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const termMonths = Number(metadata.term_months) || 1;
-      const termBonusXp: Record<number, number> = { 1: 8, 3: 18, 6: 35, 12: 55 };
-      const termBonusCoin: Record<number, number> = { 1: 1, 3: 5, 6: 12, 12: 25 };
-      xpDelta = Math.floor(netPaid / 300) + (termBonusXp[termMonths] ?? 8);
-      pointsDelta = Math.floor(netPaid / 180) + (termBonusCoin[termMonths] ?? 1);
-      // Cap coin at 100
-      if (pointsDelta > 100) pointsDelta = 100;
+      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_THB_DIVISOR");
+      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_THB_DIVISOR");
+      const coinCap = g(guardrails, "PACKAGE_COIN_CAP");
+      const termBonusXp = g(guardrails, `PACKAGE_TERM_BONUS_XP_${termMonths}`);
+      const termBonusCoin = g(guardrails, `PACKAGE_TERM_BONUS_COIN_${termMonths}`);
+      xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
+      pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
-      xpDelta = Math.min(6 + Math.floor(netPaid / 180), 16);
-      pointsDelta = Math.min(Math.floor(netPaid / 120), 18);
+      const shopXpBase = g(guardrails, "SHOP_XP_BASE");
+      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_THB_DIVISOR");
+      const shopXpCap = g(guardrails, "SHOP_XP_CAP");
+      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_THB_DIVISOR");
+      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP");
+      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
+      pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
     }
 
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
