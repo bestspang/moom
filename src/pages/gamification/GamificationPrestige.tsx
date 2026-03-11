@@ -84,7 +84,7 @@ const GamificationPrestige = () => {
 
   const handleSave = (c: PrestigeCriterion) => {
     const e = getEdit(c);
-    updateCriterion.mutate({ id: c.id, target_value: e.target_value, is_active: e.is_active });
+    updateCriterion.mutate({ id: c.id, target_value: e.target_value, is_active: e.is_active, old_target_value: c.target_value, old_is_active: c.is_active, criterion_code: c.criterion_code });
     setEdits((prev) => { const n = { ...prev }; delete n[c.id]; return n; });
   };
 
