@@ -117,27 +117,27 @@ export const TIER_CONFIG: Record<MomentumTier, { label: string; colorVar: string
  * Index = level number (0 = not yet level 1, 1..20 = actual levels).
  */
 const XP_THRESHOLDS: number[] = [
-  0,     // level 0 (placeholder)
-  0,     // level 1: 0 XP
-  120,   // level 2
-  260,   // level 3
-  440,   // level 4
-  660,   // level 5
-  920,   // level 6
-  1220,  // level 7
-  1560,  // level 8
-  1940,  // level 9
-  2360,  // level 10
-  2820,  // level 11
-  3320,  // level 12
-  3860,  // level 13
-  4440,  // level 14
-  5060,  // level 15
-  5720,  // level 16
-  6420,  // level 17
-  7160,  // level 18
-  7940,  // level 19
-  8760,  // level 20
+  0,      // level 0 (placeholder)
+  0,      // level 1: Starter I
+  100,    // level 2: Starter II
+  240,    // level 3: Starter III
+  420,    // level 4: Mover I
+  650,    // level 5: Mover II
+  930,    // level 6: Mover III
+  1260,   // level 7: Strong I
+  1650,   // level 8: Strong II
+  2100,   // level 9: Strong III
+  2620,   // level 10: Strong IV
+  3210,   // level 11: Elite I
+  3870,   // level 12: Elite II
+  4600,   // level 13: Elite III
+  5400,   // level 14: Elite IV
+  6280,   // level 15: Legend I
+  7240,   // level 16: Legend II
+  8280,   // level 17: Legend III
+  9400,   // level 18: Apex Access (prestige)
+  10900,  // level 19: Inner Circle (prestige)
+  12600,  // level 20: Legend Circle (prestige)
 ];
 
 /** XP needed to reach a given level (from DB lookup table) */

@@ -407,8 +407,25 @@ Deno.serve(async (req) => {
     // 5) GET OR CREATE MEMBER PROFILE
     const profile = await getOrCreateProfile(db, member_id);
 
-    const xpDelta = rule.xp_value || 0;
-    const pointsDelta = rule.points_value || 0;
+    // Dynamic XP/Coin calculation for package_purchase and shop_purchase (v2 economy)
+    let xpDelta = rule.xp_value || 0;
+    let pointsDelta = rule.points_value || 0;
+
+    if (event_type === "package_purchase" && metadata) {
+      const netPaid = Number(metadata.net_paid) || 0;
+      const termMonths = Number(metadata.term_months) || 1;
+      const termBonusXp: Record<number, number> = { 1: 8, 3: 18, 6: 35, 12: 55 };
+      const termBonusCoin: Record<number, number> = { 1: 1, 3: 5, 6: 12, 12: 25 };
+      xpDelta = Math.floor(netPaid / 300) + (termBonusXp[termMonths] ?? 8);
+      pointsDelta = Math.floor(netPaid / 180) + (termBonusCoin[termMonths] ?? 1);
+      // Cap coin at 100
+      if (pointsDelta > 100) pointsDelta = 100;
+    } else if (event_type === "shop_purchase" && metadata) {
+      const netPaid = Number(metadata.net_paid) || 0;
+      xpDelta = Math.min(6 + Math.floor(netPaid / 180), 16);
+      pointsDelta = Math.min(Math.floor(netPaid / 120), 18);
+    }
+
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
     const newTotalPoints = (profile.total_points || 0) + pointsDelta;
     const newAvailablePoints = (profile.available_points || 0) + pointsDelta;
