@@ -116,8 +116,8 @@ export default function MemberMomentumPage() {
             <div className="flex-shrink-0 [&>span]:!bg-white/90 [&>span]:!text-primary [&>span]:![box-shadow:none] [&>span>span]:!bg-primary/15">
               <TierBadge tier={profile.tier} level={profile.level} size="sm" />
             </div>
-            <div className="flex-1 min-w-0 [&_span]:text-primary-foreground/80 [&_.inline-flex]:!bg-white/20">
-              <XPProgressBar totalXP={profile.totalXp} level={profile.level} />
+            <div className="flex-1 min-w-0">
+              <XPProgressBar totalXP={profile.totalXp} level={profile.level} onHeroBg />
             </div>
             <div
               className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black flex-shrink-0"

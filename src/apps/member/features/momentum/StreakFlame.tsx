@@ -49,7 +49,7 @@ export function StreakFlame({ weeklyCheckinDays, currentStreakWeeks, className, 
           className="text-sm font-black tabular-nums"
           style={{ color: onHeroBg ? 'hsl(var(--primary-foreground))' : undefined }}
         >
-          {currentStreakWeeks}w
+          {currentStreakWeeks} wk
         </span>
       </div>
 
