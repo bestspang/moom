@@ -20,7 +20,7 @@ interface Suggestion {
 async function fetchSuggestions(memberId: string): Promise<Suggestion[]> {
   // Fetch recent attendance to derive preferences
   const { data: attendance } = await supabase
-    .from('member_attendance' as any)
+    .from('member_attendance')
     .select('schedule:schedule(class:classes(name, category_id))')
     .eq('member_id', memberId)
     .order('check_in_time', { ascending: false })

@@ -92,6 +92,6 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
         </button>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </div>
-    </button>
+    </div>
   );
 }
