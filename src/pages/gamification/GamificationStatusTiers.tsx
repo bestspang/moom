@@ -12,7 +12,7 @@ export default function GamificationStatusTiers() {
   const { data: rules, isLoading: loadingRules } = useQuery({
     queryKey: ['status-tier-rules'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('status_tier_rules')
+      const { data, error } = await supabase.from('status_tier_rules')
         .select('*')
         .order('tier_order', { ascending: true });
       if (error) throw error;
