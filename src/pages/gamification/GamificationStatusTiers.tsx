@@ -45,7 +45,7 @@ export default function GamificationStatusTiers() {
   const { data: distribution } = useQuery({
     queryKey: ['status-tier-distribution'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from('member_status_tiers')
+      const { data, error } = await supabase.from('member_status_tiers')
         .select('current_tier');
       if (error) return {};
       const counts: Record<string, number> = {};
