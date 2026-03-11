@@ -489,11 +489,12 @@ Deno.serve(async (req) => {
     if (event_type === "package_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const termMonths = Number(metadata.term_months) || 1;
-      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_THB_DIVISOR");
-      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_THB_DIVISOR");
-      const coinCap = g(guardrails, "PACKAGE_COIN_CAP");
-      const termBonusXp = g(guardrails, `PACKAGE_TERM_BONUS_XP_${termMonths}`);
-      const termBonusCoin = g(guardrails, `PACKAGE_TERM_BONUS_COIN_${termMonths}`);
+      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_300_THB");
+      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_180_THB");
+      const coinCap = g(guardrails, "PACKAGE_COIN_CAP_PER_ORDER");
+      const termKey = termMonths <= 1 ? "1M" : termMonths <= 3 ? "3M" : termMonths <= 6 ? "6M" : "12M";
+      const termBonusXp = g(guardrails, `PACKAGE_XP_TERM_BONUS_${termKey}`);
+      const termBonusCoin = g(guardrails, `PACKAGE_COIN_TERM_BONUS_${termKey}`);
       xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
       pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
