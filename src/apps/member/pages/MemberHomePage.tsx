@@ -94,6 +94,12 @@ export default function MemberHomePage() {
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <MobilePageHeader title={title} subtitle={subtitle} />
 
+      {/* Status Tier Badge */}
+      {statusTier && statusTier.currentTier !== 'bronze' && (
+        <div className="px-4 -mt-2 mb-2">
+          <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
+        </div>
+      )}
       {/* Onboarding for incomplete users / Announcement for completed */}
       {!allOnboardingDone && !onboardingDismissed && (
         <Section className="mb-4">
