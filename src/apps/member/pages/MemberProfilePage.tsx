@@ -74,7 +74,7 @@ export default function MemberProfilePage() {
               <div className="mt-1 flex items-center gap-1.5">
                 <TierBadge tier={momentum.tier} level={momentum.level} />
                 {statusTier && (
-                  <StatusTierBadge tier={statusTier.currentTier as any} />
+                  <StatusTierBadge tier={statusTier.currentTier as StatusTier} />
                 )}
               </div>
             )}
