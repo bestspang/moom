@@ -116,8 +116,10 @@ async function getGuardrails(db: ReturnType<typeof createClient>): Promise<Guard
 }
 
 function g(guardrails: GuardrailMap, key: string): number {
-  const val = Number(guardrails[key] ?? GUARDRAIL_DEFAULTS[key] ?? "0");
-  return isNaN(val) || val === 0 ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
+  const raw = guardrails[key] ?? GUARDRAIL_DEFAULTS[key];
+  if (raw === undefined) return 0;
+  const val = Number(raw);
+  return isNaN(val) ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
 }
 
 // ---------- Core Logic Helpers ----------
