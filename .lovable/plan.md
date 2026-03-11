@@ -1,106 +1,78 @@
 
 
-# Cross-System Consistency Audit — Findings & Fix Plan
+# Status Tier System — Audit & Remaining Work
 
-## Audit Summary
+## Audit Results
 
-After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
+### Verified Working
+- Database tables: all 5 tables created and seeded correctly
+- Seed data: tier rules, SP rules, and benefits all match the user's spec
+- Edge function: SP writing works correctly with package term lookup and shop formula
+- Frontend: StatusTierBadge, StatusTierCard, MomentumCard (with tier badge), MemberProfilePage, MemberMomentumPage — all rendering correctly
+- Admin: GamificationStatusTiers page shows rules, SP rules, benefits, and member distribution
+- i18n: EN + TH translations complete for all status tier UI strings
+- Docs: ECONOMY_V2.md Section 9 and gamification-event-map.md both include SP data
 
----
+### Issues Found
 
-## CONFIRMED BUGS (Ranked by Impact)
+#### 1. `evaluate_member_tier` DOES NOT check `extra_criteria` (Critical Logic Gap)
 
-### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
+The DB function checks `min_level`, `min_sp_90d`, `active_days`, and `requires_active_package` — but **ignores** `extra_criteria` entirely. This means:
+- **Platinum** should require 1 monthly quest in 60d — not checked
+- **Diamond** should require 1 monthly/seasonal challenge in 90d — not checked  
+- **Black** should require 2-of-4 criteria — not checked
 
-These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
+Members could qualify for Platinum/Diamond/Black without meeting quest/challenge/community requirements.
 
-| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
-|---|---|---|
-| `gamification-process-event` | Yes | Yes |
-| `gamification-admin-ops` | Yes | Yes |
-| `streak-freeze` | Yes | No (exact match only) |
-| `gamification-redeem-reward` | **No** | **No** |
-| `gamification-claim-quest` | **No** | **No** |
-| `gamification-issue-coupon` | **No** | **No** |
-| `gamification-assign-quests` | **No** | **No** |
-| `sync-gamification-config` | **No** | **No** |
+**Fix:** Update `evaluate_member_tier` to query `challenge_progress`, `badge_earnings`, `member_referrals` and validate `extra_criteria` for each tier.
 
-**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+#### 2. Doc SP daily caps mismatch (Minor Doc Error)
 
-**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+`docs/ECONOMY_V2.md` Section 9.1 shows `open_gym_45min` daily cap = 10, `community_event` daily cap = 3. But DB has correct values: `open_gym_45min` = 1, `community_event` = 2. The doc copied the wrong caps from somewhere.
 
-### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+**Fix:** Correct the doc to match DB values (which match user's original spec).
 
-Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+#### 3. `community_event` daily cap: spec says 3, DB has 2
 
-**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+User's spec table says `community_event` SP daily cap is unspecified in the original table (the "5" is the SP value). But the SP rules seed used daily_cap = 2. The user's full spec says "community event 2 ครั้งขึ้นไป" as a Black requirement. DB value of 2 seems conservative and safe. I'll align doc to DB.
 
-### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+#### 4. `GamificationStatusTiers.tsx` still uses `as any` for distribution query row
 
-`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
+Line 52: `(data ?? []).forEach((r: any) => {` — minor, the row is typed but the forEach callback uses `any`.
 
-These tabs work fine in English but won't localize for Thai users.
+**Fix:** Remove `as any` on the row parameter.
 
-**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+#### 5. MemberHomePage missing StatusTierBadge in greeting (Planned but not done)
 
----
+The greeting area shows name but no status tier badge. This was in the original plan.
 
-## VERIFIED WORKING (No Changes Needed)
-
-| Area | Status | Evidence |
-|---|---|---|
-| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
-| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
-| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
-| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
-| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
-| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
-| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
-| Routes in App.tsx | Correct | All 3 new pages registered |
-| GamificationStudio tabs | Correct | All 14 tabs present and routed |
-| Prestige criteria admin page | Correct | CRUD with audit trail |
-| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
-| Challenge progress tracking | Correct | Both challenges and quests tracked |
-| Referral reward flow | Correct | Reads from guardrails table |
-| Badge auto-unlock | Correct | Condition-based checking works |
+**Fix:** Add small StatusTierBadge next to the member's name greeting.
 
 ---
 
 ## Implementation Plan
 
-### Fix 1 — Standardize CORS across all 6 gamification edge functions
+| # | File | Change |
+|---|------|--------|
+| 1 | DB migration | Update `evaluate_member_tier` to check `extra_criteria` for Platinum/Diamond/Black tiers |
+| 2 | `docs/ECONOMY_V2.md` | Fix SP daily cap values in Section 9.1 to match DB |
+| 3 | `src/pages/gamification/GamificationStatusTiers.tsx` | Remove `as any` on distribution row |
+| 4 | `src/apps/member/pages/MemberHomePage.tsx` | Add StatusTierBadge in greeting area |
 
-For each of these files, apply the same proven pattern from `gamification-process-event`:
+### What stays exactly the same
+- All seed data — verified correct
+- SP writing in edge function — verified correct
+- StatusTierBadge, StatusTierCard components — verified correct
+- MomentumCard — already has StatusTierBadge
+- MemberProfilePage — already has StatusTierBadge
+- MemberMomentumPage — already has StatusTierCard
+- i18n — complete
+- CSS variables — in place
 
-1. Add `isAllowedOrigin()` with `*.lovable.app` regex
-2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
-3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
+### Migration detail: `evaluate_member_tier` extra_criteria logic
 
-Files:
-- `supabase/functions/gamification-redeem-reward/index.ts`
-- `supabase/functions/gamification-claim-quest/index.ts`
-- `supabase/functions/gamification-issue-coupon/index.ts`
-- `supabase/functions/gamification-assign-quests/index.ts`
-- `supabase/functions/sync-gamification-config/index.ts`
-- `supabase/functions/streak-freeze/index.ts`
-
-**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
-
-### Fix 2 — Add i18n keys for new gamification tabs
-
-Files:
-- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
-- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
-- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
-
-**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
-
----
-
-## What Still Needs Manual Testing After Fix
-
-1. Call reward redemption from member app in preview → verify no CORS error
-2. Claim a quest from member app → verify no CORS error
-3. Use streak freeze from member app → verify no CORS error
-4. Switch app language to Thai → verify new tab names appear correctly
+After the basic checks pass for a tier, if `extra_criteria` is not empty:
+- **Platinum**: Query `challenge_progress` for `status='completed'` with monthly type in last 60 days, require count >= `monthly_quest_min`
+- **Diamond**: Query `challenge_progress` for completed monthly OR seasonal in last 90 days, require count >= `challenge_min`
+- **Black**: Query 4 dimensions (seasonal badges, referral conversions, monthly quests completed, community events attended), count how many meet threshold, require >= 2
 
