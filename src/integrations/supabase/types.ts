@@ -1632,6 +1632,51 @@ export type Database = {
           },
         ]
       }
+      level_benefits: {
+        Row: {
+          benefit_code: string
+          benefit_type: string
+          business_cost: string
+          created_at: string
+          description_en: string
+          description_th: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          level_number: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          benefit_code: string
+          benefit_type?: string
+          business_cost?: string
+          created_at?: string
+          description_en?: string
+          description_th?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          level_number: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          benefit_code?: string
+          benefit_type?: string
+          business_cost?: string
+          created_at?: string
+          description_en?: string
+          description_th?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          level_number?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       line_message_log: {
         Row: {
           created_at: string | null
@@ -2695,6 +2740,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prestige_criteria: {
+        Row: {
+          created_at: string
+          criterion_code: string
+          criterion_type: string
+          description_en: string
+          description_th: string | null
+          id: string
+          is_active: boolean
+          level_number: number
+          target_value: number
+        }
+        Insert: {
+          created_at?: string
+          criterion_code: string
+          criterion_type?: string
+          description_en?: string
+          description_th?: string | null
+          id?: string
+          is_active?: boolean
+          level_number: number
+          target_value?: number
+        }
+        Update: {
+          created_at?: string
+          criterion_code?: string
+          criterion_type?: string
+          description_en?: string
+          description_th?: string | null
+          id?: string
+          is_active?: boolean
+          level_number?: number
+          target_value?: number
+        }
+        Relationships: []
       }
       promotion_packages: {
         Row: {
@@ -4250,6 +4331,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_prestige_eligibility: {
+        Args: { p_member_id: string; p_target_level: number }
+        Returns: Json
+      }
       create_schedule_with_validation: {
         Args: {
           p_capacity?: number
