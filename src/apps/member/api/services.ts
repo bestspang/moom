@@ -240,20 +240,20 @@ export async function fetchBookingById(bookingId: string): Promise<BookingDetail
   };
 }
 
-// ─── Cancel Booking (B3 fix: requires memberId for auth guard) ───
+// ─── Cancel Booking (uses SECURITY DEFINER RPC to bypass RLS) ───
 export async function cancelBooking(bookingId: string, memberId: string, reason?: string): Promise<void> {
-  const { error, count } = await supabase
-    .from('class_bookings')
-    .update({
-      status: 'cancelled' as any,
-      cancelled_at: new Date().toISOString(),
-      cancellation_reason: reason ?? null,
-    }, { count: 'exact' })
-    .eq('id', bookingId)
-    .eq('member_id', memberId);
+  const { data, error } = await supabase.rpc('cancel_booking_safe', {
+    p_booking_id: bookingId,
+    p_member_id: memberId,
+    p_reason: reason ?? null,
+  });
 
   if (error) throw error;
-  if (count === 0) throw new Error('Booking not found or not authorized');
+
+  const result = data as any;
+  if (result?.error) {
+    throw new Error(result.message || result.error);
+  }
 }
 
 // ─── Schedule Detail (single) ───
