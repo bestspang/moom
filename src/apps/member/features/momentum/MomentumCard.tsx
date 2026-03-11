@@ -50,6 +50,12 @@ export function MomentumCard({ memberId, className }: MomentumCardProps) {
     enabled: !!memberId,
   });
 
+  const { data: statusTier } = useQuery({
+    queryKey: ['member-status-tier', memberId],
+    queryFn: () => fetchMemberStatusTier(memberId!),
+    enabled: !!memberId,
+  });
+
   if (isLoading) {
     return (
       <div className={cn('rounded-2xl border bg-card p-5 shadow-lg', className)}>
