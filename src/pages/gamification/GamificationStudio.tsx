@@ -32,6 +32,9 @@ const GamificationStudio = () => {
     { value: 'shop-rules', label: 'Shop Rules', path: '/gamification/shop-rules' },
     { value: 'trainers', label: t('gamification.tabs.trainers'), path: '/gamification/trainers' },
     { value: 'risk', label: t('gamification.tabs.risk'), path: '/gamification/risk' },
+    { value: 'guardrails', label: 'Guardrails', path: '/gamification/guardrails' },
+    { value: 'operations', label: 'Operations', path: '/gamification/operations' },
+    { value: 'prestige', label: 'Prestige', path: '/gamification/prestige' },
   ];
 
   const currentTab = tabs.find(tab => location.pathname === tab.path)?.value || 'overview';

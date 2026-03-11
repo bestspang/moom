@@ -68,6 +68,57 @@ async function resolveMemberId(
   return null;
 }
 
+// ---------- Economy Guardrails ----------
+
+interface GuardrailMap {
+  [key: string]: string;
+}
+
+const GUARDRAIL_DEFAULTS: GuardrailMap = {
+  PACKAGE_XP_PER_THB_DIVISOR: "300",
+  PACKAGE_COIN_PER_THB_DIVISOR: "180",
+  PACKAGE_COIN_CAP: "100",
+  PACKAGE_TERM_BONUS_XP_1: "8",
+  PACKAGE_TERM_BONUS_XP_3: "18",
+  PACKAGE_TERM_BONUS_XP_6: "35",
+  PACKAGE_TERM_BONUS_XP_12: "55",
+  PACKAGE_TERM_BONUS_COIN_1: "1",
+  PACKAGE_TERM_BONUS_COIN_3: "5",
+  PACKAGE_TERM_BONUS_COIN_6: "12",
+  PACKAGE_TERM_BONUS_COIN_12: "25",
+  SHOP_XP_BASE: "6",
+  SHOP_XP_PER_THB_DIVISOR: "180",
+  SHOP_XP_CAP: "16",
+  SHOP_COIN_PER_THB_DIVISOR: "120",
+  SHOP_COIN_CAP: "18",
+  REFERRAL_REWARD_POINTS_DEFAULT: "200",
+};
+
+async function getGuardrails(db: ReturnType<typeof createClient>): Promise<GuardrailMap> {
+  try {
+    const { data } = await db
+      .from("economy_guardrails")
+      .select("rule_code, rule_value, is_active")
+      .eq("is_active", true);
+
+    if (!data || data.length === 0) return { ...GUARDRAIL_DEFAULTS };
+
+    const map: GuardrailMap = { ...GUARDRAIL_DEFAULTS };
+    for (const row of data) {
+      map[row.rule_code] = row.rule_value;
+    }
+    return map;
+  } catch (e) {
+    console.warn("Failed to load guardrails, using defaults:", e);
+    return { ...GUARDRAIL_DEFAULTS };
+  }
+}
+
+function g(guardrails: GuardrailMap, key: string): number {
+  const val = Number(guardrails[key] ?? GUARDRAIL_DEFAULTS[key] ?? "0");
+  return isNaN(val) || val === 0 ? Number(GUARDRAIL_DEFAULTS[key] ?? "0") : val;
+}
+
 // ---------- Core Logic Helpers ----------
 
 async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: string) {
@@ -428,23 +479,31 @@ Deno.serve(async (req) => {
     // 5) GET OR CREATE MEMBER PROFILE
     const profile = await getOrCreateProfile(db, member_id);
 
-    // Dynamic XP/Coin calculation for package_purchase and shop_purchase (v2 economy)
+    // Dynamic XP/Coin calculation — reads from economy_guardrails table
+    const guardrails = await getGuardrails(db);
+
     let xpDelta = rule.xp_value || 0;
     let pointsDelta = rule.points_value || 0;
 
     if (event_type === "package_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const termMonths = Number(metadata.term_months) || 1;
-      const termBonusXp: Record<number, number> = { 1: 8, 3: 18, 6: 35, 12: 55 };
-      const termBonusCoin: Record<number, number> = { 1: 1, 3: 5, 6: 12, 12: 25 };
-      xpDelta = Math.floor(netPaid / 300) + (termBonusXp[termMonths] ?? 8);
-      pointsDelta = Math.floor(netPaid / 180) + (termBonusCoin[termMonths] ?? 1);
-      // Cap coin at 100
-      if (pointsDelta > 100) pointsDelta = 100;
+      const xpDivisor = g(guardrails, "PACKAGE_XP_PER_THB_DIVISOR");
+      const coinDivisor = g(guardrails, "PACKAGE_COIN_PER_THB_DIVISOR");
+      const coinCap = g(guardrails, "PACKAGE_COIN_CAP");
+      const termBonusXp = g(guardrails, `PACKAGE_TERM_BONUS_XP_${termMonths}`);
+      const termBonusCoin = g(guardrails, `PACKAGE_TERM_BONUS_COIN_${termMonths}`);
+      xpDelta = Math.floor(netPaid / xpDivisor) + termBonusXp;
+      pointsDelta = Math.min(Math.floor(netPaid / coinDivisor) + termBonusCoin, coinCap);
     } else if (event_type === "shop_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
-      xpDelta = Math.min(6 + Math.floor(netPaid / 180), 16);
-      pointsDelta = Math.min(Math.floor(netPaid / 120), 18);
+      const shopXpBase = g(guardrails, "SHOP_XP_BASE");
+      const shopXpDivisor = g(guardrails, "SHOP_XP_PER_THB_DIVISOR");
+      const shopXpCap = g(guardrails, "SHOP_XP_CAP");
+      const shopCoinDivisor = g(guardrails, "SHOP_COIN_PER_THB_DIVISOR");
+      const shopCoinCap = g(guardrails, "SHOP_COIN_CAP");
+      xpDelta = Math.min(shopXpBase + Math.floor(netPaid / shopXpDivisor), shopXpCap);
+      pointsDelta = Math.min(Math.floor(netPaid / shopCoinDivisor), shopCoinCap);
     }
 
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
@@ -602,8 +661,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (pendingReferral) {
-        const referrerPoints = pendingReferral.referrer_reward_points ?? 200;
-        const referredPoints = pendingReferral.referred_reward_points ?? 200;
+        const defaultRefPoints = g(guardrails, "REFERRAL_REWARD_POINTS_DEFAULT");
+        const referrerPoints = pendingReferral.referrer_reward_points ?? defaultRefPoints;
+        const referredPoints = pendingReferral.referred_reward_points ?? defaultRefPoints;
         const refIdemKey = `referral_reward:${pendingReferral.id}`;
 
         // Grant points to referrer

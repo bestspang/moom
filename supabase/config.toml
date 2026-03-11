@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.gamification-issue-coupon]
 verify_jwt = false
+
+[functions.gamification-admin-ops]
+verify_jwt = false
