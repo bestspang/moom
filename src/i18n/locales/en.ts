@@ -2109,7 +2109,7 @@ export default {
     perksComingNext: 'Coming Next',
     levelPerksLabel: 'Lv.{{level}} — {{name}}',
     xpRequired: '{{xp}} XP',
-    currentLevel: 'Your Level',
+    yourLevel: 'Your Level',
     nextLevelIn: '{{xp}} XP to Level {{level}}',
     maxLevelReached: 'Max level reached! 🏆',
     noPerksYet: 'No special perks yet',

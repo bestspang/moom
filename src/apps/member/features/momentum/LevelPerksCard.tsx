@@ -84,7 +84,7 @@ export function LevelPerksCard({ currentLevel, totalXp }: LevelPerksCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4" style={{ color: `hsl(var(${currentConfig.colorVar}))` }} />
-            <p className="text-xs font-bold text-muted-foreground">{t('member.currentLevel')}</p>
+            <p className="text-xs font-bold text-muted-foreground">{t('member.yourLevel')}</p>
           </div>
           <span
             className="rounded-full px-2.5 py-1 text-xs font-black"
