@@ -1,127 +1,115 @@
 
 
-# Implementation Plan
+# QC Audit — Critical Bugs Found in Status Points Pipeline
 
-## Summary
-Four items: (1-3) already completed in previous rounds. Two new features to implement:
-- **A.** Tier change notifications — auto-insert notification when `evaluate_member_tier` detects a tier change
-- **B.** Daily tier evaluation cron — new edge function that evaluates all active members daily
+## Executive Summary
+
+The Status Tier system's **SP earning logic is broken for 4 of the most important activity types**. The `sp_ledger` table has **zero rows** — meaning no member has ever earned any Status Points. The UI components, DB functions, and admin pages all look correct, but the core data pipeline has naming mismatches that silently prevent SP from being written.
 
 ---
 
-## A. Tier Change Notifications
+## BUG 1 — `class_attended` vs `class_attend` (Critical)
 
-### A1. Database Migration
-Add `tier_change` to the `notification_type` enum and update the `evaluate_member_tier` function to insert a notification when tier changes.
+**SP rule action_key:** `class_attended`
+**Gamification rule action_key:** `class_attend` (no trailing 'd')
 
-**Enum addition:**
+When a class attendance event fires, the edge function receives `event_type: "class_attend"`. The SP lookup at line 557 does `.eq("action_key", event_type)` → searches for `class_attend` → no match in SP rules (which has `class_attended`).
+
+**Result:** Class attendance (2 SP each — the most frequent member action) is NEVER recorded.
+
+**Fix:** Rename SP rule `class_attended` → `class_attend` in the database.
+
+---
+
+## BUG 2 — `package_purchased` check vs `package_purchase` event (Critical)
+
+**Edge function line 564:** `if (event_type === "package_purchased" && metadata)`
+**Gamification rule action_key:** `package_purchase` (no trailing 'd')
+
+The condition never matches because the incoming event is `package_purchase` but code checks for `package_purchased`.
+
+**Result:** Package purchase SP (8/20/35/55 by term — the largest single SP sources) is NEVER recorded.
+
+**Fix:** Change line 564 from `"package_purchased"` to `"package_purchase"`.
+
+---
+
+## BUG 3 — `community_event` has no gamification rule (Medium)
+
+**SP rule exists:** `community_event` (5 SP, daily cap 2)
+**Gamification rule:** Does not exist.
+
+No caller ever sends `event_type: "community_event"` because there's no matching gamification rule to process it.
+
+**Result:** Community event SP never earned. Also affects Black tier `extra_2of4` evaluation — the community_event dimension is permanently zero.
+
+**Fix:** Create a gamification rule for `community_event` (XP/coin can be 0 if desired — the rule just needs to exist so the SP pipeline fires).
+
+---
+
+## BUG 4 — `referral_purchase` SP never triggered independently (Medium)
+
+**SP rule exists:** `referral_purchase` (20 SP)
+**Gamification rule exists:** `referral_purchase`
+
+However, referral completion in the edge function (lines 710-815) happens **inside** `check_in` processing — not as a separate event. The referrer is never processed through the gamification pipeline with `event_type: "referral_purchase"`. So the SP is never written.
+
+**Fix:** After referral completion (line 770), add an explicit SP ledger insert for the referrer with `event_type: 'referral_purchase'`.
+
+---
+
+## Impact Analysis
+
+These 4 bugs combined mean:
+- **0 SP has ever been earned by any member** (confirmed: `SELECT COUNT(*) FROM sp_ledger` = 0)
+- All members are permanently Bronze tier
+- The StatusTierBadge, StatusTierCard, and daily evaluation cron all work but evaluate against zero data
+- The tier change notification system works but never fires (no tier changes can happen)
+
+The working SP rules (open_gym_45min, pt_session, daily/weekly quest, monthly/seasonal challenge, shop_purchase) DO match their gamification rule names, but they may also have zero entries if most events come through check_in/class_attend/package_purchase.
+
+---
+
+## Implementation Plan
+
+### 1. Database Migration — Fix SP rule action_key mismatch
+
 ```sql
-ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'tier_change';
+UPDATE status_tier_sp_rules SET action_key = 'class_attend' WHERE action_key = 'class_attended';
 ```
 
-**Function modification** — after the `ON CONFLICT ... DO UPDATE SET` block in `evaluate_member_tier`, add:
-```sql
--- If tier changed, insert notification
-IF v_current_row IS NOT NULL AND v_current_row.current_tier != v_best_tier THEN
-  DECLARE
-    v_user_id uuid;
-    v_direction text;
-    v_title text;
-    v_message text;
-  BEGIN
-    SELECT experience_user_id INTO v_user_id
-    FROM identity_map
-    WHERE admin_entity_id = p_member_id AND entity_type = 'member' AND is_verified = true
-    LIMIT 1;
+### 2. Edge Function Fix — `gamification-process-event/index.ts`
 
-    IF v_user_id IS NOT NULL THEN
-      v_direction := CASE WHEN v_best_order > (SELECT tier_order FROM status_tier_rules WHERE tier_code = v_current_row.current_tier)
-        THEN 'upgraded' ELSE 'downgraded' END;
+**Line 564:** Change `"package_purchased"` → `"package_purchase"`
 
-      v_title := CASE WHEN v_direction = 'upgraded'
-        THEN 'Status Tier Upgraded!'
-        ELSE 'Status Tier Changed' END;
-
-      v_message := 'Your status tier has changed from ' || initcap(v_current_row.current_tier) || ' to ' || initcap(v_best_tier) || '.';
-
-      INSERT INTO notifications (user_id, type, title, message, related_entity_type, related_entity_id)
-      VALUES (v_user_id, 'tier_change', v_title, v_message, 'member_status_tier', p_member_id);
-    END IF;
-  END;
-END IF;
-```
-
-This is safe — it only fires when tier actually changes, uses the existing `identity_map` to find the auth user_id, and silently skips if no user mapping found.
-
-### A2. Frontend — Add `tier_change` to notification UI maps
-
-**`src/hooks/useNotifications.ts`** — add to `getNotificationTypeConfig`:
+**After line 770 (referral completion):** Add SP ledger insert for referrer:
 ```typescript
-tier_change: { icon: 'ShieldCheck', color: 'text-indigo-500' },
+await db.from("sp_ledger").insert({
+  member_id: pendingReferral.referrer_member_id,
+  event_type: 'referral_purchase',
+  delta: 20,
+  metadata: { referral_id: pendingReferral.id },
+});
 ```
 
-**`src/pages/Notifications.tsx`** — add to:
-- `notificationTypes` array: `'tier_change'`
-- `getNotificationIcon`: `tier_change: <ShieldCheck className="h-5 w-5 text-indigo-500" />`
-- `getTypeLabel`: `tier_change: 'Tier Change'`
+### 3. Database Migration — Create `community_event` gamification rule
 
-**`src/apps/member/pages/MemberNotificationsPage.tsx`** — add to `NOTIFICATION_ICON_MAP`:
-```typescript
-tier_change: ShieldCheck,
-```
-
-### A3. i18n — Add tier_change label
-Add `notifications.types.tier_change` key to EN and TH locale files.
-
----
-
-## B. Daily Tier Evaluation Cron
-
-### B1. New Edge Function: `supabase/functions/evaluate-tiers-daily/index.ts`
-
-A simple function that:
-1. Fetches all active members (`members.status = 'active'`)
-2. Calls `evaluate_member_tier` RPC for each in batches of 50
-3. Returns summary `{ ok, total_members, evaluated, errors }`
-
-Uses standard CORS pattern + Lovable preview wildcard. Uses `SUPABASE_SERVICE_ROLE_KEY` (already set).
-
-### B2. Config: `supabase/config.toml`
-Add:
-```toml
-[functions.evaluate-tiers-daily]
-verify_jwt = false
-```
-
-### B3. Cron Job Setup
-After deploying, set up a daily cron job at 3:00 AM Bangkok time (20:00 UTC) using `pg_cron` + `pg_net`:
 ```sql
-SELECT cron.schedule(
-  'evaluate-tiers-daily',
-  '0 20 * * *',
-  $$
-  SELECT net.http_post(
-    url:='https://qedxqilmnkbjncpnopty.supabase.co/functions/v1/evaluate-tiers-daily',
-    headers:='{"Content-Type":"application/json","Authorization":"Bearer <anon_key>"}'::jsonb,
-    body:='{}'::jsonb
-  ) AS request_id;
-  $$
-);
+INSERT INTO gamification_rules (action_key, xp_value, coin_value, cooldown_minutes, daily_limit, is_active)
+VALUES ('community_event', 10, 5, 0, 2, true);
 ```
 
----
+### 4. No changes to:
+- `evaluate_member_tier` — correct, it reads from `sp_ledger` and `member_referrals`
+- StatusTierBadge/StatusTierCard — correct
+- MomentumCard/HomePage/ProfilePage — correct
+- useRealtimeSync — correct
+- evaluate-tiers-daily cron — correct
+- All i18n, CSS variables, documentation — correct
 
-## Files Changed
-
-| File | Change | Risk |
-|------|--------|------|
-| Migration SQL | Add `tier_change` enum + update `evaluate_member_tier` with notification insert | Low — additive; notification is fire-and-forget inside function |
-| `supabase/functions/evaluate-tiers-daily/index.ts` | New file — daily cron edge function | Zero — new file |
-| `supabase/config.toml` | Add `evaluate-tiers-daily` entry | Zero — additive |
-| `src/hooks/useNotifications.ts` | Add `tier_change` to config map | Zero — additive fallback already exists |
-| `src/pages/Notifications.tsx` | Add `tier_change` to types array, icon map, label map | Zero — additive |
-| `src/apps/member/pages/MemberNotificationsPage.tsx` | Add `tier_change` to icon map | Zero — additive |
-| `src/i18n/locales/en.ts` | Add `tier_change` label | Zero — additive |
-| `src/i18n/locales/th.ts` | Add `tier_change` label | Zero — additive |
-| `docs/PLATFORM_CONTRACT.md` | Add `evaluate-tiers-daily` to edge functions list | Zero — doc only |
+### Safety
+- The DB rename is a single UPDATE on a config table
+- The edge function fix is a 1-character change (`"package_purchased"` → `"package_purchase"`)
+- The referral SP insert is additive (new insert, no existing logic modified)
+- The community_event rule is a new row — enables a previously dead code path
 
