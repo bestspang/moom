@@ -35,7 +35,9 @@ export default function MemberHomePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => localStorage.getItem('moom-onboarding-dismissed') === 'true'
+  );
 
   const { data: bookings, isLoading: loadingBookings } = useQuery({
     queryKey: ['member-bookings', memberId],

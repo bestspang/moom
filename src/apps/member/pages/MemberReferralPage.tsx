@@ -30,7 +30,7 @@ export default function MemberReferralPage() {
     enabled: !!memberId,
   });
 
-  const shareUrl = code ? `${window.location.origin}/member/signup?ref=${code}` : '';
+  const shareUrl = code ? `${window.location.origin}/signup?ref=${code}` : '';
 
   const handleCopy = async () => {
     if (!shareUrl) return;
