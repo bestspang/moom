@@ -561,7 +561,7 @@ Deno.serve(async (req) => {
       let spValue = spRule?.sp_value ?? 0;
 
       // Handle package_purchased SP by term
-      if (event_type === "package_purchased" && metadata) {
+      if (event_type === "package_purchase" && metadata) {
         const termMonths = Number(metadata.term_months) || 1;
         const termKey = termMonths <= 1 ? "1m" : termMonths <= 3 ? "3m" : termMonths <= 6 ? "6m" : "12m";
         const { data: pkgSpRule } = await db
