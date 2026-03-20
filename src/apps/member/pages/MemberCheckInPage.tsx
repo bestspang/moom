@@ -14,7 +14,7 @@ import { useValidateQRToken } from '@/hooks/useCheckinQR';
 import { memberSelfCheckin } from '../api/services';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
-type PageState = 'scanning' | 'processing' | 'fallback';
+type PageState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
 export default function MemberCheckInPage() {
   const { t } = useTranslation();
@@ -22,7 +22,7 @@ export default function MemberCheckInPage() {
   const queryClient = useQueryClient();
   const validateQR = useValidateQRToken();
 
-  const [state, setState] = useState<PageState>('scanning');
+  const [state, setState] = useState<PageState>('ready');
   const [isChecking, setIsChecking] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -138,11 +138,9 @@ export default function MemberCheckInPage() {
     }
   }, [handleQrScan]);
 
-  // Auto-start camera on mount
+  // Cleanup camera on unmount
   useEffect(() => {
-    const timer = setTimeout(() => startScanner(), 300);
     return () => {
-      clearTimeout(timer);
       if (scannerRef.current) {
         try {
           if (scannerRef.current.isScanning) {
@@ -152,6 +150,11 @@ export default function MemberCheckInPage() {
         } catch { /* ignore cleanup errors */ }
       }
     };
+  }, []);
+
+  // Start camera from user gesture (required by mobile browsers)
+  const handleStartCamera = useCallback(() => {
+    startScanner();
   }, [startScanner]);
 
   // Self-service fallback handler
@@ -179,7 +182,19 @@ export default function MemberCheckInPage() {
     <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
       {/* Camera Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pt-4 pb-2">
-        {state === 'scanning' || state === 'processing' ? (
+        {state === 'ready' ? (
+          /* Ready: tap to activate camera */
+          <button
+            onClick={handleStartCamera}
+            className="flex flex-col items-center gap-4 text-center px-4 active:scale-[0.97] transition-transform"
+          >
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20">
+              <Camera className="h-12 w-12 text-primary" />
+            </div>
+            <p className="text-base font-semibold text-foreground">{t('member.tapToScan')}</p>
+            <p className="text-sm text-muted-foreground max-w-xs">{t('member.scanQrAtGym')}</p>
+          </button>
+        ) : state === 'scanning' || state === 'processing' ? (
           <>
             <div className="relative w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden border-2 border-primary/30 shadow-lg bg-black/5">
               <div id="qr-reader" ref={containerRef} className="w-full h-full" />
