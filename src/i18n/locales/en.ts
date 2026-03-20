@@ -1852,6 +1852,7 @@ export default {
     scanQrAtGym: 'Point your camera at the QR code at the gym',
     orQuickCheckin: 'or quick check-in',
     qrCheckInSuccess: 'QR scanned! Checking you in…',
+    tapToScan: 'Tap to scan QR',
     quickCheckIn: 'Quick Check-In',
     startingCamera: 'Starting camera…',
     // Bookings page

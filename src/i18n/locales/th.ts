@@ -1848,6 +1848,7 @@ export default {
     scanQrAtGym: 'ส่องกล้องไปที่ QR Code ที่ยิม',
     orQuickCheckin: 'หรือเช็คอินด่วน',
     qrCheckInSuccess: 'สแกนสำเร็จ! กำลังเช็คอิน…',
+    tapToScan: 'แตะเพื่อสแกน QR',
     quickCheckIn: 'เช็คอินด่วน',
     startingCamera: 'กำลังเปิดกล้อง…',
     // Bookings page
