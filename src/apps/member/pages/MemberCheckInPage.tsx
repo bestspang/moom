@@ -14,6 +14,16 @@ import { useValidateQRToken } from '@/hooks/useCheckinQR';
 import { memberSelfCheckin } from '../api/services';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
+/*
+ * STATE MACHINE:
+ *   ready      → user taps "Tap to scan" → scanning
+ *   scanning   → useEffect starts camera once DOM exists → scanning (camera live)
+ *   processing → QR decoded, validating → celebration or back to scanning
+ *   fallback   → camera unavailable, show quick-checkin only
+ *
+ * RULE: Never call startScanner() directly from a click handler.
+ *       Always go through state transition so the #qr-reader container renders first.
+ */
 type PageState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
 export default function MemberCheckInPage() {
@@ -29,6 +39,7 @@ export default function MemberCheckInPage() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const processingRef = useRef(false);
+  const startingRef = useRef(false);
 
   const { data: profile } = useQuery({
     queryKey: ['momentum-profile', memberId],
@@ -42,7 +53,6 @@ export default function MemberCheckInPage() {
       const url = new URL(text);
       return url.searchParams.get('token');
     } catch {
-      // If not a URL, treat the raw text as a token
       return text.length > 20 ? text : null;
     }
   }, []);
@@ -71,12 +81,11 @@ export default function MemberCheckInPage() {
     if (!token) {
       toast.error(t('member.checkinFailed'));
       processingRef.current = false;
-      setState('scanning');
+      setState('scanning'); // effect will re-start scanner
       return;
     }
 
     try {
-      // Stop scanner before processing
       if (scannerRef.current?.isScanning) {
         await scannerRef.current.stop();
       }
@@ -89,32 +98,29 @@ export default function MemberCheckInPage() {
       const msg = err?.message || '';
       if (msg.includes('already') || msg.includes('used')) {
         toast.error(t('member.alreadyCheckedIn'));
-      } else if (msg.includes('expired')) {
-        toast.error(t('member.checkinFailed'));
       } else {
         toast.error(t('member.checkinFailed'));
       }
-      setState('scanning');
-      startScanner();
+      setState('scanning'); // effect will re-start scanner
     } finally {
       processingRef.current = false;
     }
   }, [memberId, extractToken, validateQR, onCheckInSuccess, t]);
 
-  // Start camera scanner
+  // Start camera scanner — only called from useEffect, never from click
   const startScanner = useCallback(async () => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container || startingRef.current) return;
+    if (scannerRef.current?.isScanning) return; // already running
+
+    startingRef.current = true;
     const containerId = 'qr-reader';
 
     try {
-      // Clean up existing
+      // Clean up any prior instance
       if (scannerRef.current) {
-        try {
-          if (scannerRef.current.isScanning) {
-            await scannerRef.current.stop();
-          }
-          await scannerRef.current.clear();
-        } catch { /* ignore */ }
+        try { await scannerRef.current.clear(); } catch { /* ignore */ }
+        scannerRef.current = null;
       }
 
       const scanner = new Html5Qrcode(containerId);
@@ -122,40 +128,43 @@ export default function MemberCheckInPage() {
 
       await scanner.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 220, height: 220 },
-          aspectRatio: 1,
-        },
+        { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1 },
         (decodedText) => handleQrScan(decodedText),
-        () => { /* ignore scan errors (no QR in frame) */ }
+        () => { /* no QR in frame — ignore */ }
       );
-
-      setState('scanning');
     } catch (err) {
       console.warn('[check-in] Camera failed:', err);
+      scannerRef.current = null;
       setState('fallback');
+    } finally {
+      startingRef.current = false;
     }
   }, [handleQrScan]);
+
+  // KEY FIX: Start scanner via effect AFTER the #qr-reader container has rendered
+  useEffect(() => {
+    if (state === 'scanning' && !scannerRef.current?.isScanning && !startingRef.current) {
+      startScanner();
+    }
+  }, [state, startScanner]);
 
   // Cleanup camera on unmount
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
+      const s = scannerRef.current;
+      if (s) {
         try {
-          if (scannerRef.current.isScanning) {
-            scannerRef.current.stop();
-          }
-          scannerRef.current.clear();
+          if (s.isScanning) s.stop();
+          s.clear();
         } catch { /* ignore cleanup errors */ }
       }
     };
   }, []);
 
-  // Start camera from user gesture (required by mobile browsers)
+  // User taps "Tap to scan" — just change state, effect handles the rest
   const handleStartCamera = useCallback(() => {
-    startScanner();
-  }, [startScanner]);
+    setState('scanning');
+  }, []);
 
   // Self-service fallback handler
   const handleSelfCheckin = useCallback(async () => {
@@ -183,7 +192,6 @@ export default function MemberCheckInPage() {
       {/* Camera Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pt-4 pb-2">
         {state === 'ready' ? (
-          /* Ready: tap to activate camera */
           <button
             onClick={handleStartCamera}
             className="flex flex-col items-center gap-4 text-center px-4 active:scale-[0.97] transition-transform"
@@ -197,6 +205,7 @@ export default function MemberCheckInPage() {
         ) : state === 'scanning' || state === 'processing' ? (
           <>
             <div className="relative w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden border-2 border-primary/30 shadow-lg bg-black/5">
+              {/* This div MUST exist for html5-qrcode to attach to */}
               <div id="qr-reader" ref={containerRef} className="w-full h-full" />
 
               {state === 'processing' && (
