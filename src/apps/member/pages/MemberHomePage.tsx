@@ -35,7 +35,9 @@ export default function MemberHomePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => localStorage.getItem('moom-onboarding-dismissed') === 'true'
+  );
 
   const { data: bookings, isLoading: loadingBookings } = useQuery({
     queryKey: ['member-bookings', memberId],
@@ -109,7 +111,7 @@ export default function MemberHomePage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <p className="text-sm font-semibold text-foreground">{t('member.welcomeToMoom')}</p>
               </div>
-              <button onClick={() => setOnboardingDismissed(true)} className="text-xs text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setOnboardingDismissed(true); localStorage.setItem('moom-onboarding-dismissed', 'true'); }} className="text-xs text-muted-foreground hover:text-foreground">
                 {t('member.dismiss')}
               </button>
             </div>

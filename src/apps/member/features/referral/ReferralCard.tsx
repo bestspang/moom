@@ -30,7 +30,7 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
 
   const handleCopy = async () => {
     if (!code) return;
-    const shareUrl = `${window.location.origin}/member/signup?ref=${code}`;
+    const shareUrl = `${window.location.origin}/signup?ref=${code}`;
     try {
       if (navigator.share) {
         await navigator.share({
