@@ -20,7 +20,7 @@
 |---|-----------|-----------|-------------|-----|------|-----|----------|-----------|
 | 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | — | 720 min | 1 |
 | 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 1 | 720 min | 1 |
-| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
+| 3 | Class Attendance | `class_attend` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
 | 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 3 | 60 min | 3 |
 
 ### Commerce Events
