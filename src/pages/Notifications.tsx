@@ -16,6 +16,7 @@ import {
   Gift,
   Flame,
   Zap,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
