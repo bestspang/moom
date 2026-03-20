@@ -769,6 +769,27 @@ Deno.serve(async (req) => {
 
         referralCompleted = true;
 
+        // Write SP for referrer (referral_purchase = 20 SP)
+        try {
+          const { data: refSpRule } = await db
+            .from("status_tier_sp_rules")
+            .select("sp_value")
+            .eq("action_key", "referral_purchase")
+            .eq("is_active", true)
+            .maybeSingle();
+          const refSpValue = refSpRule?.sp_value ?? 20;
+          if (refSpValue > 0) {
+            await db.from("sp_ledger").insert({
+              member_id: pendingReferral.referrer_member_id,
+              event_type: "referral_purchase",
+              delta: refSpValue,
+              metadata: { referral_id: pendingReferral.id },
+            });
+          }
+        } catch (spErr) {
+          console.warn("Referral SP write failed (non-blocking):", spErr);
+        }
+
         // Audit log for referral
         await db.from("gamification_audit_log").insert({
           member_id,
