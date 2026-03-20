@@ -497,7 +497,7 @@ Deno.serve(async (req) => {
     let xpDelta = rule.xp_value || 0;
     let pointsDelta = rule.points_value || 0;
 
-    if (event_type === "package_purchased" && metadata) {
+    if (event_type === "package_purchase" && metadata) {
       const netPaid = Number(metadata.net_paid) || 0;
       const termMonths = Number(metadata.term_months) || 1;
       const xpDivisor = g(guardrails, "PACKAGE_XP_PER_300_THB");

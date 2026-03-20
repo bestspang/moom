@@ -7,8 +7,10 @@
 > ⚠️ **AI SAFETY NOTE — DO NOT CHANGE THESE KEYS:**  
 > - Class attendance key = `class_attend` (NOT `class_attended`)  
 > - Package purchase key = `package_purchase` (NOT `package_purchased`)  
-> - These match `gamification_rules.action_key` and `status_tier_sp_rules.action_key` in the DB.  
-> - Changing them will silently break the SP pipeline. Verified 2026-03-20.
+> - These match `gamification_rules.action_key` AND `status_tier_sp_rules.action_key` in the DB.  
+> - The edge function uses these keys in TWO places: line ~500 (XP/Coin formula) AND line ~564 (SP formula).  
+> - ⚠️ **Stale project memory says `package_purchased` — THAT IS WRONG. Ignore it.**  
+> - Changing them will silently break XP, Coin, AND SP pipelines. Verified 2026-03-20.
 
 ---
 
