@@ -41,6 +41,13 @@ const notificationTypes: NotificationType[] = [
   'member_registration',
   'package_expiring',
   'tier_change',
+  'badge_earned',
+  'level_up',
+  'challenge_completed',
+  'reward_fulfilled',
+  'streak_milestone',
+  'xp_earned',
+  'referral_completed',
 ];
 
 const Notifications = () => {
