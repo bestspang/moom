@@ -1,81 +1,91 @@
 
 
-# Fix: Member Page Refresh Redirects to Admin
+# Redesign: Member Check-In Page — 3-Zone Layout
 
-## Root Cause
+## Current Problem
+The page has a "Tap to Scan" button that opens a camera, plus a self-service button below. But the user wants:
+1. **Camera scanner** always visible at top (scan gym's QR to check in)
+2. **Member's own dynamic QR** below (gym scans this, or for collecting points)
+3. **Code input field** at bottom (manual code entry for redemption/check-in fallback)
 
-Race condition in `AuthContext.tsx` auth initialization:
+## New Layout (Mobile-First)
 
-1. User is on `/member/...`, refreshes the page
-2. `AuthProvider` mounts with `loading=true`, `user=null`
-3. `onAuthStateChange` is set up + `consumeSessionFromUrl()` starts
-4. `consumeSessionFromUrl()` returns `false` → `getSession()` called
-5. **Race:** `getSession()` can resolve with `null` before `onAuthStateChange` fires `INITIAL_SESSION` with the actual session
-6. Lines 152-154: `setLoading(false)` with no user set
-7. `MemberLayout` sees `loading=false` + `!user` → `<Navigate to="/login">`
-8. Auth then resolves → Login page redirect fires → `detectSurface()` returns `'admin'` (dev/preview env) → user role is not `'member'` → redirects to `/` (admin dashboard)
-
-The bug is on **line 153** of `AuthContext.tsx`: when `getSession()` returns null in the fallback path, it prematurely sets `loading=false` before `onAuthStateChange` has a chance to fire with the real session.
-
-A secondary issue: `onAuthStateChange` only handles `session?.user` (line 115) and `event === 'SIGNED_OUT'` (line 124). It does **not** handle `INITIAL_SESSION` with a null session, so if `onAuthStateChange` fires first with no session, `loading` stays `true` forever.
-
-## Fix (2 changes in `AuthContext.tsx`)
-
-### Change 1: Handle all no-session events in `onAuthStateChange`
-
-Line 124: Change `else if (event === 'SIGNED_OUT')` to handle any event with no session:
-
-```typescript
-} else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+```text
+┌──────────────────────────────┐
+│  📷 Camera Viewfinder        │
+│  ┌────────────────────────┐  │
+│  │  (Tap to activate)     │  │
+│  │   Live QR scanner      │  │
+│  └────────────────────────┘  │
+│  "Scan QR at the gym"        │
+│                              │
+│  ─── My QR Code ───         │
+│                              │
+│  ┌────────────────────────┐  │
+│  │  ▓▓▓ Member QR ▓▓▓    │  │ ← Dynamic, refreshes every 30s
+│  │  (gym scans this)      │  │
+│  └────────────────────────┘  │
+│  Refreshes in 0:25           │
+│                              │
+│  ─── or enter code ───      │
+│                              │
+│  [ Enter code...    ] [Go]   │
+│                              │
+│  🔥 Streak: Day 5           │
+└──────────────────────────────┘
 ```
 
-This ensures `INITIAL_SESSION` with no user (genuinely not logged in) also properly clears state and sets `loading=false`.
+## Technical Design
 
-### Change 2: Don't prematurely end loading in `getSession` null path
+### Camera Section (Top)
+- Same state machine: `ready` → `scanning` → `processing` → `fallback`
+- On `ready`: Show camera icon card with "Tap to open camera" — tapping triggers scanner
+- On `scanning`: Live camera viewfinder (existing `html5-qrcode` logic, unchanged)
+- Smaller viewfinder: `max-w-[240px]` instead of `280px` to leave room for QR below
 
-Lines 152-154: When `getSession()` returns no session, mark `initializedRef` but **don't** set `loading=false` — let `onAuthStateChange` handle it. If `onAuthStateChange` already fired (meaning `initializedRef.current` is true), this block is skipped entirely.
+### Member QR Code Section (Middle)
+- Uses `useGenerateQRToken` to create a member-specific token with `memberId` + a dummy location
+- Actually, simpler approach: generate a unique member identifier URL like `${origin}/checkin?member=${memberId}&ts=${timestamp}`
+- **Dynamic rotation**: Token refreshes every 30 seconds with a countdown ring
+- Uses `QRCodeSVG` from existing `qrcode.react` package (already installed)
+- The QR encodes: `${origin}/checkin?member=${memberId}&nonce=${random}` — staff kiosk or app scans this
 
-```typescript
-// Before:
-} else {
-  setLoading(false);
-}
+### Code Input Section (Bottom)
+- Simple text input + submit button
+- Accepts either a check-in code (token string) or redemption code
+- On submit: tries `useValidateQRToken({ token: inputCode, memberId })` first
+- If that fails, could be a redemption code — show appropriate error
 
-// After:
-} else {
-  initializedRef.current = true;
-  // Don't setLoading(false) here — let onAuthStateChange INITIAL_SESSION handle it
-  // Safety net: if onAuthStateChange never fires (shouldn't happen), timeout
-  setTimeout(() => {
-    if (!initializedRef.current) return; // already handled
-    setLoading((prev) => prev ? false : prev); // only if still loading
-  }, 2000);
-}
-```
+### Streak + Celebration
+- Streak flame stays at the very bottom (compact)
+- `CheckInCelebration` dialog unchanged
 
-Wait, actually that's over-engineered. The simpler approach:
+## Files Changed
 
-Since we now handle `INITIAL_SESSION` in `onAuthStateChange` (Change 1), `onAuthStateChange` will always fire and resolve loading. The `getSession` fallback is only needed if `onAuthStateChange` somehow doesn't fire. So the null path in `getSession` should just be a safety net with a timeout, not an immediate `setLoading(false)`.
+| # | File | Change |
+|---|------|--------|
+| 1 | `src/apps/member/pages/MemberCheckInPage.tsx` | Full rewrite — 3-zone layout with camera + member QR + code input |
+| 2 | `src/i18n/locales/en.ts` | Add keys: `myQrCode`, `gymScansThis`, `refreshesIn`, `enterCode`, `submitCode`, `codeSubmitting` |
+| 3 | `src/i18n/locales/th.ts` | Same keys in Thai |
 
-**Simplest correct fix:**
+## What Stays The Same
+- `MemberBottomNav.tsx` — unchanged
+- `useValidateQRToken` hook — reused for both QR scan and code input
+- `memberSelfCheckin` RPC — removed (replaced by code input which is more versatile)
+- `CheckInCelebration` component — reused as-is
+- `fireGamificationEvent` — reused
+- `html5-qrcode` + `qrcode.react` — both already installed
+- All routes in `App.tsx` — unchanged
+- Camera state machine logic — same pattern, just embedded in smaller section
 
-```typescript
-// Line 124: handle INITIAL_SESSION with no user
-} else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
-  initializedRef.current = true;
-  // ... clear state, setLoading(false)
-}
+## Member QR Token Strategy
+Rather than generating real `checkin_qr_tokens` (which need a `location_id`), the member QR will encode a simple signed payload: `memberId + timestamp`. The gym's kiosk/staff scanner reads this and processes check-in on their end. This keeps the member app stateless — no token generation needed, just a rotating identifier.
 
-// Lines 152-154: just mark initialized, no premature loading=false  
-} else {
-  initializedRef.current = true;
-  // onAuthStateChange INITIAL_SESSION will handle setLoading(false)
-}
-```
+Simple approach: `QRCodeSVG` value = `${origin}/checkin?member=${memberId}&t=${Math.floor(Date.now()/30000)}` — changes every 30s, staff kiosk validates the member ID.
 
 ## Risk Assessment
-
-- **Zero risk to existing auth flow**: `onAuthStateChange` already handles sign-out clearing. Adding `INITIAL_SESSION` to the same branch is a strict superset.
-- **No changes to**: MemberLayout, ProtectedRoute, Login page, any routes, any other components.
-- **Only file changed**: `src/contexts/AuthContext.tsx` — 2 lines modified.
+- Zero backend changes — all frontend
+- Camera scanner logic preserved (same state machine)
+- `qrcode.react` already in dependencies
+- Fallback paths intact (code input replaces self-service button with more utility)
 
