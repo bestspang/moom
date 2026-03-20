@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             setLoading(false);
           }
-        } else if (event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session?.user)) {
           initializedRef.current = true;
           setSession(null);
           setUser(null);
@@ -150,7 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(session.user);
             fetchUserRoleAndStatus(session.user.id);
           } else {
-            setLoading(false);
+            initializedRef.current = true;
+            // Let onAuthStateChange INITIAL_SESSION handle setLoading(false)
           }
         }
       });
