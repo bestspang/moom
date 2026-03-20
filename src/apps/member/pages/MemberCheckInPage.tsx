@@ -1,3 +1,4 @@
+/* 3-zone check-in: camera + member QR + code input */
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Html5Qrcode } from 'html5-qrcode';
