@@ -1,91 +1,84 @@
 
 
-# Member App QC Audit — Findings & Fix Plan
+# Redesign: Member Check-In — Camera-First QR Scanner
 
-## BUG 1 — Referral Share URL Points to Non-Existent Route (Critical)
+## Current Problem
+When a member taps the check-in button in the bottom nav, they land on a page with a **big button they have to tap again** to self-check-in. Two taps for one action = friction. The gym has QR kiosks but members can't scan them from inside the app.
 
-**Root cause:** `MemberReferralPage.tsx` line 33 and `ReferralCard.tsx` line 33 generate:
+## New Flow
+**Bottom nav tap → Camera opens instantly → Scan kiosk QR → Auto check-in → Celebration**
+
+No extra taps. The member is already authenticated, so when they scan the kiosk QR, we know who they are — no phone/ID input needed (unlike the public `/checkin` page).
+
+```text
+┌─────────────────────────────┐
+│  Tap "Check In" in nav      │
+│             ↓                │
+│  Camera opens (full area)   │
+│  ┌───────────────────────┐  │
+│  │                       │  │
+│  │    📷 Live viewfinder │  │
+│  │                       │  │
+│  └───────────────────────┘  │
+│  "Scan QR at the gym"       │
+│                              │
+│  ─── OR ───                  │
+│                              │
+│  [ ⚡ Quick Check-In ]       │
+│  (self-service fallback)     │
+│                              │
+│  Streak: 🔥 Day 5           │
+└─────────────────────────────┘
 ```
-${window.location.origin}/member/signup?ref=${code}
-```
-But the actual signup route is `/signup` (not `/member/signup`). The path `/member/signup` falls inside the `<MemberLayout>` which requires authentication — a non-logged-in referred user gets redirected to `/login` and the referral code is lost.
 
-**Impact:** The entire referral system is non-functional for new users. Every shared link leads to a login page instead of signup.
+## Technical Design
 
-**Fix:** Change both files from `/member/signup?ref=` to `/signup?ref=`. Two 1-line changes.
+### 1. Add `html5-qrcode` dependency
+The `qrcode.react` package only **generates** QR codes. We need `html5-qrcode` to **read/scan** them via camera. It's the most reliable cross-browser QR scanner library (uses both `BarcodeDetector` API and fallback canvas decoding).
 
----
+### 2. Rewrite `MemberCheckInPage.tsx`
+The page will have three states:
 
-## BUG 2 — Onboarding Dismiss Resets on Every Navigation (Minor UX)
+- **`scanning`** (default on mount): Camera viewfinder active, scanning for QR
+- **`processing`**: QR detected, validating token + checking in
+- **`fallback`**: Camera denied/failed, shows the original self-service button
 
-**Root cause:** `MemberHomePage.tsx` line 38 uses `useState(false)` for `onboardingDismissed`. Every time the user navigates to another tab and comes back, the dismissed onboarding card reappears.
+**On mount:**
+- Auto-start camera via `Html5Qrcode.start()` 
+- When QR decoded → extract `token` param from URL → call `useValidateQRToken({ token, memberId })` → fire gamification event → show CheckInCelebration
 
-**Impact:** Annoying but not broken. Users who dismiss the onboarding card will see it again every time they return to Home.
+**Camera failure fallback:**
+- If camera permission denied or device has no camera → show self-service button (current behavior)
+- i18n keys `member.cameraAccessDenied` and `member.stopCamera` already exist
 
-**Fix:** Use `localStorage` to persist the dismissed state:
-```typescript
-const [onboardingDismissed, setOnboardingDismissed] = useState(
-  () => localStorage.getItem('moom-onboarding-dismissed') === 'true'
-);
-// in dismiss handler: localStorage.setItem('moom-onboarding-dismissed', 'true');
-```
+**Layout:**
+- Camera viewfinder takes ~60% of screen (rounded corners, subtle border)
+- Below: "Scan the QR code at the gym" text
+- Divider: "— or —"
+- Self-service "Quick Check-In" button (the current big button, but smaller)
+- Streak info at bottom
 
----
+### 3. Files Changed
 
-## BUG 3 — `date-fns` Dates Always in English for Thai Users (UX Gap)
+| File | Change |
+|------|--------|
+| `package.json` | Add `html5-qrcode` dependency |
+| `src/apps/member/pages/MemberCheckInPage.tsx` | Full rewrite — camera-first with self-service fallback |
+| `src/i18n/locales/en.ts` | Add `scanQrAtGym`, `orQuickCheckin`, `qrCheckInSuccess` keys |
+| `src/i18n/locales/th.ts` | Same keys in Thai |
 
-**Root cause:** All member pages use `format()` and `formatDistanceToNow()` from `date-fns` without passing a locale. Examples:
-- `MemberSchedulePage`: `format(parseISO(date), 'EEEE, d MMM')` → always "Monday, 3 Mar"
-- `MemberNotificationsPage`: `formatDistanceToNow(...)` → always "2 hours ago"
-- `MemberBookingDetailPage`: `format(parseISO(...), 'PPp')` → English format
+### 4. What stays the same
+- `MemberBottomNav.tsx` — no changes, still links to `/member/check-in`
+- `CheckInCelebration` component — reused as-is
+- `useValidateQRToken` hook — reused for QR path
+- `memberSelfCheckin` RPC — reused for self-service fallback
+- `fireGamificationEvent` — reused for both paths
+- All routes in `App.tsx` — unchanged
 
-Thai users see English day/month names and relative time strings throughout the app.
-
-**Impact:** The app has full i18n for UI labels but dates are always English — inconsistent bilingual experience.
-
-**Fix:** This is a larger change that needs careful implementation — a shared `useDateLocale()` hook that returns `th` or `enUS` locale, then pass it to all `format()` and `formatDistanceToNow()` calls. I recommend this as a separate follow-up to avoid touching 14+ files in one shot.
-
----
-
-## Verified Working (No Issues)
-
-- All 21 member routes exist in `App.tsx` and match their page components ✅
-- `MemberBottomNav` paths match route definitions ✅
-- `QuickMenuStrip` paths all have corresponding routes ✅
-- `MemberLayout` auth guard redirects to `/login` correctly ✅
-- `useMemberSession` resolves `memberId` via `identity_map` + `line_users` fallback ✅
-- All queries use `enabled: !!memberId` guards — no premature fetches ✅
-- Check-in page uses server-side RPC with duplicate check ✅
-- Booking cancel uses `cancel_booking_safe` RPC ✅
-- Class booking uses `create_booking_safe` RPC ✅
-- Gamification events fire correctly after check-in and profile update ✅
-- Momentum hero section, XP bar, streak, coins — all render from real data ✅
-- Coupon page handles active/used/expired with correct date logic ✅
-- Upload slip page has file size validation and preview ✅
-- Purchase flow uses Stripe checkout correctly ✅
-- Squad join/leave with confirmation dialog ✅
-- Leaderboard with 5 tabs + "around me" section ✅
-- Class rating sheet on attended bookings ✅
-- Notification bell with unread count + mark all read ✅
-- StatusTierBadge shows on Home and Profile pages ✅
-
----
-
-## Implementation Plan
-
-| # | File | Change | Risk |
-|---|------|--------|------|
-| 1 | `src/apps/member/pages/MemberReferralPage.tsx` line 33 | Change `/member/signup?ref=` → `/signup?ref=` | Zero — URL string change |
-| 2 | `src/apps/member/features/referral/ReferralCard.tsx` line 33 | Same fix | Zero — URL string change |
-| 3 | `src/apps/member/pages/MemberHomePage.tsx` line 38 | Persist dismiss state to `localStorage` | Zero — additive, same behavior but persistent |
-
----
-
-## Feature Suggestions (Verified Safe — All Additive)
-
-**1. date-fns Thai Locale Support** — Create a `useDateLocale()` hook that reads the current language and returns the correct `date-fns` locale. Apply to all `format()` calls across member pages. Purely additive — no logic changes.
-
-**2. SP History Timeline** — Add a small card on MemberMomentumPage showing recent `sp_ledger` entries so members can see how they earn Status Points. New component + new query — no existing code touched.
-
-**3. Tier Benefits Display** — Show current tier's benefits (from `status_tier_benefits` table) on the StatusTierCard. Members currently see their tier but not what it unlocks. Purely additive component enhancement.
+### 5. Safety
+- The camera uses `html5-qrcode` which handles permissions gracefully and has a clear error callback
+- If camera fails → fallback to self-service button (existing proven code)
+- QR validation goes through the same `useValidateQRToken` that `/checkin` uses — battle-tested
+- The `memberSelfCheckin` RPC remains available as an alternative — no functionality removed
+- Mobile responsive: camera viewfinder uses `aspect-square` with `max-w` constraint
 
