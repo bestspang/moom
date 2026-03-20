@@ -150,7 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(session.user);
             fetchUserRoleAndStatus(session.user.id);
           } else {
-            setLoading(false);
+            initializedRef.current = true;
+            // Let onAuthStateChange INITIAL_SESSION handle setLoading(false)
           }
         }
       });
