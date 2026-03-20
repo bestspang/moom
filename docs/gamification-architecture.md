@@ -84,7 +84,7 @@ Both Admin App and Experience App connect to the **same Supabase instance**. The
 
 | Enum | Values |
 |------|--------|
-| `gamification_event_type` | `check_in`, `class_attended`, `class_booked`, `package_purchased`, `package_renewed`, `streak_maintained`, `challenge_completed`, `reward_redeemed`, `referral_converted`, `profile_completed`, `first_visit`, `merch_purchased`, `review_submitted`, `manual_adjustment`, `rollback` |
+| `gamification_event_type` | `check_in`, `class_attend`, `class_booked`, `package_purchase`, `package_renewed`, `streak_maintained`, `challenge_completed`, `reward_redeemed`, `referral_converted`, `profile_completed`, `first_visit`, `merch_purchased`, `review_submitted`, `manual_adjustment`, `rollback` |
 | `challenge_progress_status` | `in_progress`, `completed`, `failed`, `expired` |
 | `reward_redemption_status` | `pending`, `fulfilled`, `cancelled`, `rolled_back` |
 | `squad_role` | `leader`, `member` |
