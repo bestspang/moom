@@ -1,7 +1,7 @@
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications';
-import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, Megaphone } from 'lucide-react';
+import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, Megaphone, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
