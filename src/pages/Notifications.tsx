@@ -89,6 +89,7 @@ const Notifications = () => {
       streak_milestone: 'Streak Milestone',
       xp_earned: 'XP Earned',
       referral_completed: 'Referral Completed',
+      tier_change: t('notifications.types.tierChange'),
     };
     return labels[type] || type;
   };

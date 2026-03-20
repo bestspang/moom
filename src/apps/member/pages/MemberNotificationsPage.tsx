@@ -14,6 +14,7 @@ const NOTIFICATION_ICON_MAP: Record<string, React.ComponentType<{ className?: st
   booking_reminder: CalendarCheck,
   announcement: Megaphone,
   level_up: Trophy,
+  tier_change: ShieldCheck,
 };
 
 function NotificationIcon({ type }: { type?: string | null }) {
