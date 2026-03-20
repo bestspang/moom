@@ -14,7 +14,7 @@ import { useValidateQRToken } from '@/hooks/useCheckinQR';
 import { memberSelfCheckin } from '../api/services';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
-type PageState = 'scanning' | 'processing' | 'fallback';
+type PageState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
 export default function MemberCheckInPage() {
   const { t } = useTranslation();
