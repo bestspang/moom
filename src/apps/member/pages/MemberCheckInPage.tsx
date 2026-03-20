@@ -138,11 +138,9 @@ export default function MemberCheckInPage() {
     }
   }, [handleQrScan]);
 
-  // Auto-start camera on mount
+  // Cleanup camera on unmount
   useEffect(() => {
-    const timer = setTimeout(() => startScanner(), 300);
     return () => {
-      clearTimeout(timer);
       if (scannerRef.current) {
         try {
           if (scannerRef.current.isScanning) {
@@ -152,6 +150,11 @@ export default function MemberCheckInPage() {
         } catch { /* ignore cleanup errors */ }
       }
     };
+  }, []);
+
+  // Start camera from user gesture (required by mobile browsers)
+  const handleStartCamera = useCallback(() => {
+    startScanner();
   }, [startScanner]);
 
   // Self-service fallback handler
