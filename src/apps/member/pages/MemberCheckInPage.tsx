@@ -22,7 +22,7 @@ export default function MemberCheckInPage() {
   const queryClient = useQueryClient();
   const validateQR = useValidateQRToken();
 
-  const [state, setState] = useState<PageState>('scanning');
+  const [state, setState] = useState<PageState>('ready');
   const [isChecking, setIsChecking] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
