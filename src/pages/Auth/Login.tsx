@@ -17,18 +17,24 @@ const Login: React.FC = () => {
   const location = useLocation();
   const surface = detectSurface();
 
+  // Determine effective surface: prioritise the route the user came from
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname;
+  const effectiveSurface: typeof surface = (() => {
+    if (from?.startsWith('/member')) return 'member';
+    if (from?.startsWith('/trainer')) return 'trainer';
+    if (from?.startsWith('/staff')) return 'staff';
+    return surface;
+  })();
+
   // If user is already logged in, redirect to the correct surface
   useEffect(() => {
     if (loading || !user) return;
     // Wait for role to be resolved before redirecting
     if (!role) return;
 
-    // Respect the page the user was on before being redirected to login
-    const from = (location.state as { from?: { pathname?: string } })?.from?.pathname;
-
     if (from && (from.startsWith('/member') || from.startsWith('/trainer') || from.startsWith('/staff'))) {
       navigate(from, { replace: true });
-    } else if (surface === 'member' || surface === 'trainer' || surface === 'staff') {
+    } else if (effectiveSurface === 'member' || effectiveSurface === 'trainer' || effectiveSurface === 'staff') {
       navigate('/member', { replace: true });
     } else {
       if (role === 'member') {
@@ -37,7 +43,7 @@ const Login: React.FC = () => {
         navigate('/', { replace: true });
       }
     }
-  }, [user, role, loading, surface, navigate, location.state]);
+  }, [user, role, loading, effectiveSurface, navigate, from]);
 
   if (loading) return null;
 
@@ -52,7 +58,7 @@ const Login: React.FC = () => {
 
   if (user) return null; // will redirect via useEffect
 
-  if (surface === 'member' || surface === 'trainer' || surface === 'staff') {
+  if (effectiveSurface === 'member' || effectiveSurface === 'trainer' || effectiveSurface === 'staff') {
     return <MemberLogin />;
   }
 

@@ -46,8 +46,11 @@ export function detectSurface(): AppSurface {
     return 'admin';
   }
 
-  // Development / preview: default to admin (existing behavior)
-  // Use ?surface=member to test member surface locally
+  // Development / preview: infer surface from pathname so refresh stays on the same surface
+  if (pathname.startsWith('/member')) return 'member';
+  if (pathname.startsWith('/trainer')) return 'trainer';
+  if (pathname.startsWith('/staff')) return 'staff';
+
   return 'admin';
 }
 
