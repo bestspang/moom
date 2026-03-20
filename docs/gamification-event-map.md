@@ -1,8 +1,14 @@
 # Gamification Event Map — v2
 
 > **Status:** ACTIVE — matches `gamification_rules` table and Edge Function logic  
-> **Last updated:** 2026-03-11  
+> **Last updated:** 2026-03-20  
 > **Economy version:** v2
+>
+> ⚠️ **AI SAFETY NOTE — DO NOT CHANGE THESE KEYS:**  
+> - Class attendance key = `class_attend` (NOT `class_attended`)  
+> - Package purchase key = `package_purchase` (NOT `package_purchased`)  
+> - These match `gamification_rules.action_key` and `status_tier_sp_rules.action_key` in the DB.  
+> - Changing them will silently break the SP pipeline. Verified 2026-03-20.
 
 ---
 
@@ -14,14 +20,14 @@
 |---|-----------|-----------|-------------|-----|------|-----|----------|-----------|
 | 1 | Check-in | `check_in` | Member (via lobby) | 6 | 1 | — | 720 min | 1 |
 | 2 | Open Gym Session | `open_gym_45min` | System (≥45 min) | 16 | 3 | 1 | 720 min | 1 |
-| 3 | Class Attendance | `class_attended` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
+| 3 | Class Attendance | `class_attend` | Staff marks attended | 22 | 4 | 2 | 60 min | 5 |
 | 4 | PT Session | `pt_session` | Staff marks complete | 34 | 6 | 3 | 60 min | 3 |
 
 ### Commerce Events
 
 | # | Event Name | action_key | XP | Coin | SP | Daily Cap | Required Metadata |
 |---|-----------|-----------|-----|------|-----|-----------|-------------------|
-| 5 | Package Purchase | `package_purchased` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
+| 5 | Package Purchase | `package_purchase` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
 | 6 | Shop Purchase | `shop_purchase` | formula | formula | floor(net_paid/400) cap 5 | 5 | `net_paid` |
 
 ### Social & Engagement Events
@@ -105,10 +111,10 @@ Coin = floor(net_paid / 120), cap 18
 | Producer | File | Event | Required Metadata |
 |----------|------|-------|-------------------|
 | Check-in | `src/hooks/useLobby.ts` | `check_in` | — |
-| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attended` | — |
-| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchased` | `net_paid`, `term_months` |
-| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchased` | `net_paid`, `term_months` |
-| Manual Purchase | `src/hooks/useMemberDetails.ts` | `package_purchased` | `net_paid`, `term_months` |
+| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attend` | — |
+| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchase` | `net_paid`, `term_months` |
+| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchase` | `net_paid`, `term_months` |
+| Manual Purchase | `src/hooks/useMemberDetails.ts` | `package_purchase` | `net_paid`, `term_months` |
 | Event Processor | `supabase/functions/gamification-process-event/index.ts` | All events | — |
 | Reward Redeem | `supabase/functions/gamification-redeem-reward/index.ts` | Redemption + void | — |
 
