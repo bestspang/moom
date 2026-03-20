@@ -1,84 +1,30 @@
 
 
-# Redesign: Member Check-In — Camera-First QR Scanner
+# Fix: Check-In Camera Not Opening on Mobile
 
-## Current Problem
-When a member taps the check-in button in the bottom nav, they land on a page with a **big button they have to tap again** to self-check-in. Two taps for one action = friction. The gym has QR kiosks but members can't scan them from inside the app.
+## Root Cause
 
-## New Flow
-**Bottom nav tap → Camera opens instantly → Scan kiosk QR → Auto check-in → Celebration**
+Line 142-143 starts the camera inside `useEffect` + `setTimeout(300ms)`. Mobile browsers require `getUserMedia` to be triggered by a **direct user gesture** (tap/click). The `useEffect`/`setTimeout` breaks the gesture security chain, so the browser silently blocks camera access.
 
-No extra taps. The member is already authenticated, so when they scan the kiosk QR, we know who they are — no phone/ID input needed (unlike the public `/checkin` page).
+## Solution
 
-```text
-┌─────────────────────────────┐
-│  Tap "Check In" in nav      │
-│             ↓                │
-│  Camera opens (full area)   │
-│  ┌───────────────────────┐  │
-│  │                       │  │
-│  │    📷 Live viewfinder │  │
-│  │                       │  │
-│  └───────────────────────┘  │
-│  "Scan QR at the gym"       │
-│                              │
-│  ─── OR ───                  │
-│                              │
-│  [ ⚡ Quick Check-In ]       │
-│  (self-service fallback)     │
-│                              │
-│  Streak: 🔥 Day 5           │
-└─────────────────────────────┘
-```
+Add a 4th state `ready` as the default. Show a large "Tap to Scan" button. When tapped, `startScanner()` runs inside the click handler — satisfying the browser's gesture requirement. Once camera is active, switch to `scanning`.
 
-## Technical Design
+## Changes
 
-### 1. Add `html5-qrcode` dependency
-The `qrcode.react` package only **generates** QR codes. We need `html5-qrcode` to **read/scan** them via camera. It's the most reliable cross-browser QR scanner library (uses both `BarcodeDetector` API and fallback canvas decoding).
+**`src/apps/member/pages/MemberCheckInPage.tsx`**
 
-### 2. Rewrite `MemberCheckInPage.tsx`
-The page will have three states:
+1. Change `PageState` to `'ready' | 'scanning' | 'processing' | 'fallback'`
+2. Default state: `'ready'` instead of `'scanning'`
+3. Remove the `useEffect` auto-start (lines 142-155) — replace with cleanup-only effect
+4. Add `handleStartCamera` click handler that calls `startScanner()`
+5. In JSX: when `state === 'ready'`, show a camera icon button with "Tap to scan QR" text
+6. When `state === 'scanning'`/`'processing'`, show the existing viewfinder UI (unchanged)
 
-- **`scanning`** (default on mount): Camera viewfinder active, scanning for QR
-- **`processing`**: QR detected, validating token + checking in
-- **`fallback`**: Camera denied/failed, shows the original self-service button
+**`src/i18n/locales/en.ts`** — Add `tapToScan: 'Tap to scan QR'`
+**`src/i18n/locales/th.ts`** — Add `tapToScan: 'แตะเพื่อสแกน QR'`
 
-**On mount:**
-- Auto-start camera via `Html5Qrcode.start()` 
-- When QR decoded → extract `token` param from URL → call `useValidateQRToken({ token, memberId })` → fire gamification event → show CheckInCelebration
-
-**Camera failure fallback:**
-- If camera permission denied or device has no camera → show self-service button (current behavior)
-- i18n keys `member.cameraAccessDenied` and `member.stopCamera` already exist
-
-**Layout:**
-- Camera viewfinder takes ~60% of screen (rounded corners, subtle border)
-- Below: "Scan the QR code at the gym" text
-- Divider: "— or —"
-- Self-service "Quick Check-In" button (the current big button, but smaller)
-- Streak info at bottom
-
-### 3. Files Changed
-
-| File | Change |
-|------|--------|
-| `package.json` | Add `html5-qrcode` dependency |
-| `src/apps/member/pages/MemberCheckInPage.tsx` | Full rewrite — camera-first with self-service fallback |
-| `src/i18n/locales/en.ts` | Add `scanQrAtGym`, `orQuickCheckin`, `qrCheckInSuccess` keys |
-| `src/i18n/locales/th.ts` | Same keys in Thai |
-
-### 4. What stays the same
-- `MemberBottomNav.tsx` — no changes, still links to `/member/check-in`
-- `CheckInCelebration` component — reused as-is
-- `useValidateQRToken` hook — reused for QR path
-- `memberSelfCheckin` RPC — reused for self-service fallback
-- `fireGamificationEvent` — reused for both paths
-- All routes in `App.tsx` — unchanged
-
-### 5. Safety
-- The camera uses `html5-qrcode` which handles permissions gracefully and has a clear error callback
-- If camera fails → fallback to self-service button (existing proven code)
-- QR validation goes through the same `useValidateQRToken` that `/checkin` uses — battle-tested
-- The `memberSelfCheckin` RPC remains available as an alternative — no functionality removed
-- Mobile responsive: camera viewfinder uses `aspect-square` with `max-w` constraint
+## What stays the same
+- All scanning logic, QR validation, self-service fallback, celebration — unchanged
+- Only the trigger mechanism changes from auto-start to user-tap-start
 
