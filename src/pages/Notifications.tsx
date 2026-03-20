@@ -40,6 +40,7 @@ const notificationTypes: NotificationType[] = [
   'payment_received',
   'member_registration',
   'package_expiring',
+  'tier_change',
 ];
 
 const Notifications = () => {
