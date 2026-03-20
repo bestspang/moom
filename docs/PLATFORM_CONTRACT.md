@@ -102,6 +102,7 @@ All Edge Functions use dynamic CORS with a 3-origin allowlist.
 
 ## 5 — Edge Functions
 
+### Core
 | Function | Purpose | Access | Origins |
 |----------|---------|--------|---------|
 | `approve-slip` | Approve transfer slip → transaction + entitlement | level_3_manager | Admin |
@@ -112,12 +113,25 @@ All Edge Functions use dynamic CORS with a 3-origin allowlist.
 | `daily-briefing` | Generate AI daily briefing | level_2_operator | Admin |
 | `auto-notifications` | Process notification outbox | System | System |
 
-### Planned (Experience App)
-| Function | Purpose | Access |
-|----------|---------|--------|
-| `member-book-class` | Member books a class | Member |
-| `member-cancel-booking` | Member cancels booking | Member |
-| `trainer-attendance` | Trainer marks attendance | level_2_operator |
+### Gamification
+| Function | Purpose | Access | Origins |
+|----------|---------|--------|---------|
+| `gamification-process-event` | Core event pipeline: XP/coin/SP/badge/challenge/quest processing | System (service_role via triggers/other functions) | Admin, Experience |
+| `gamification-redeem-reward` | Member redeems a reward from the shop | Member (JWT) | Experience |
+| `gamification-claim-quest` | Member claims a completed quest | Member (JWT) | Experience |
+| `gamification-assign-quests` | Assign available quests to eligible members | System / level_3_manager | Admin |
+| `gamification-issue-coupon` | Issue a coupon to a member's wallet | System (called by process-event) | Internal |
+| `gamification-admin-ops` | Admin manual operations: adjust XP/coins, grant/revoke badges, season management | level_3_manager | Admin |
+| `sync-gamification-config` | Sync gamification rules/levels/rewards from DB to edge cache | level_3_manager | Admin |
+| `streak-freeze` | Member uses a streak freeze to preserve streak | Member (JWT) | Experience |
+
+### Implemented as RPCs (not Edge Functions)
+| RPC | Purpose | Access |
+|-----|---------|--------|
+| `create_booking_safe` | Member books a class with capacity/duplicate checks | Member |
+| `cancel_booking_safe` | Member cancels a booking | Member |
+| `member_self_checkin` | Member self-service check-in | Member |
+| `evaluate_member_tier` | Evaluate and update a member's status tier | System (SECURITY DEFINER) |
 
 ---
 

@@ -97,6 +97,9 @@ const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   // ── Squad tables ──
   squads: ['my-squad', 'available-squads', 'squad-rankings'],
   squad_memberships: ['my-squad', 'available-squads', 'squad-rankings'],
+  // ── Status Tier tables ──
+  member_status_tiers: ['member-status-tier', 'status-tier-distribution'],
+  sp_ledger: ['member-status-tier', 'sp-history'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
