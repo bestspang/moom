@@ -1855,6 +1855,12 @@ export default {
     tapToScan: 'Tap to scan QR',
     quickCheckIn: 'Quick Check-In',
     startingCamera: 'Starting camera…',
+    myQrCode: 'My QR Code',
+    gymScansThis: 'Show this to staff',
+    refreshesIn: 'Refreshes in',
+    enterCode: 'Enter code',
+    orEnterCode: 'or enter code',
+    codeExpired: 'This code has expired',
     // Bookings page
     myBookings: 'My Bookings',
     bookingsSubtitle: 'Your upcoming & past bookings',

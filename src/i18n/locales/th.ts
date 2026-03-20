@@ -1851,6 +1851,12 @@ export default {
     tapToScan: 'แตะเพื่อสแกน QR',
     quickCheckIn: 'เช็คอินด่วน',
     startingCamera: 'กำลังเปิดกล้อง…',
+    myQrCode: 'QR ของฉัน',
+    gymScansThis: 'แสดงให้พนักงาน',
+    refreshesIn: 'รีเฟรชใน',
+    enterCode: 'กรอกรหัส',
+    orEnterCode: 'หรือกรอกรหัส',
+    codeExpired: 'รหัสนี้หมดอายุแล้ว',
     // Bookings page
     myBookings: 'การจองของฉัน',
     bookingsSubtitle: 'การจองที่จะถึงและที่ผ่านมา',
