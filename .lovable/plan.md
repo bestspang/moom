@@ -1,106 +1,88 @@
 
 
-# Cross-System Consistency Audit — Findings & Fix Plan
+# Cross-System Consistency Audit — Findings & Plan
 
 ## Audit Summary
 
-After reading every gamification edge function, hook, page, i18n file, and CORS configuration, here are the **real issues** that exist today. Each is verified against actual code — no false positives.
+I inspected all documentation, database functions, edge functions, frontend components, i18n, and realtime sync. Here are the confirmed issues — each verified down to root cause.
 
 ---
 
-## CONFIRMED BUGS (Ranked by Impact)
+## Issues Found
 
-### Bug 1 — CRITICAL: 4 Edge Functions missing CORS headers → preflight failures
+### 1. `useRealtimeSync.ts` missing Status Tier tables (Cache Staleness)
 
-These functions are called from the browser via `supabase.functions.invoke()` but only allow `authorization, x-client-info, apikey, content-type` — missing the `x-supabase-client-*` headers that the SDK sends:
+**Root cause:** `member_status_tiers` and `sp_ledger` are not in the `TABLE_INVALIDATION_MAP`. When a tier is re-evaluated or SP is written, the React Query cache is NOT automatically refreshed.
 
-| Function | Has full headers? | Has `isAllowedOrigin` wildcard? |
-|---|---|---|
-| `gamification-process-event` | Yes | Yes |
-| `gamification-admin-ops` | Yes | Yes |
-| `streak-freeze` | Yes | No (exact match only) |
-| `gamification-redeem-reward` | **No** | **No** |
-| `gamification-claim-quest` | **No** | **No** |
-| `gamification-issue-coupon` | **No** | **No** |
-| `gamification-assign-quests` | **No** | **No** |
-| `sync-gamification-config` | **No** | **No** |
+**Impact:** After a member earns SP (e.g., checks in, attends class), the `StatusTierBadge` on HomePage/ProfilePage/MomentumCard keeps showing stale tier data until manual page refresh.
 
-**5 functions** will fail CORS preflight from any browser. The member app calls `gamification-redeem-reward`, `gamification-claim-quest`, `gamification-assign-quests`, and `streak-freeze` directly — these are broken in Lovable preview environments.
+**Fix:** Add `member_status_tiers` and `sp_ledger` to the TableName union and invalidation map:
+- `member_status_tiers` → invalidates `['member-status-tier']`
+- `sp_ledger` → invalidates `['member-status-tier']` (SP changes trigger tier re-eval)
 
-**Fix:** Add the full `x-supabase-client-*` headers and `isAllowedOrigin()` wildcard to all 6 remaining functions.
+### 2. `docs/PLATFORM_CONTRACT.md` missing all gamification Edge Functions (Doc Gap)
 
-### Bug 2 — MEDIUM: `streak-freeze` missing `isAllowedOrigin` wildcard
+**Root cause:** Section 5 only lists 7 original edge functions. The 8 gamification functions (`gamification-process-event`, `gamification-redeem-reward`, `gamification-assign-quests`, `gamification-claim-quest`, `gamification-issue-coupon`, `gamification-admin-ops`, `sync-gamification-config`, `streak-freeze`) are completely absent.
 
-Has full headers but uses exact-match origin checking. Will block Lovable preview URLs.
+**Impact:** Any developer (or AI) referencing this contract will not know these functions exist, their access levels, or their purpose.
 
-**Fix:** Add `isAllowedOrigin()` function (same pattern as `gamification-process-event`).
+**Fix:** Add all 8 gamification functions to Section 5 with their purpose and access level. Also remove the "Planned" section items that are now implemented as RPCs (`create_booking_safe`, `cancel_booking_safe`).
 
-### Bug 3 — LOW: i18n keys missing for 3 new Studio tabs
+### 3. `docs/data-contract.md` missing gamification tables (Doc Gap)
 
-`GamificationStudio.tsx` uses hardcoded English strings for Guardrails, Operations, and Prestige tabs (lines 35-37) instead of `t()` calls. The Thai locale has no gamification tabs section at all.
+**Root cause:** The data contract ends at Section 18 (Notifications). None of the gamification tables are documented — no `member_gamification_profiles`, `xp_ledger`, `points_ledger`, `sp_ledger`, `gamification_rules`, `badge_earnings`, `quest_instances`, `squads`, `member_status_tiers`, etc.
 
-These tabs work fine in English but won't localize for Thai users.
+**Impact:** The data contract is the "canonical source of truth for the entire application" (per project memory) but is incomplete. The Realtime Subscriptions list at the bottom is also missing gamification tables.
 
-**Fix:** Add i18n keys for `guardrails`, `operations`, `prestige` tabs in both `en.ts` and `th.ts`. Update `GamificationStudio.tsx` to use `t()`.
+**Fix:** Add Section 19 (Gamification) and Section 20 (Status Tiers) documenting all gamification tables, key columns, activity log events, and update the Realtime Subscriptions list.
+
+### 4. `GamificationStatusTiers.tsx` distribution query uses `as` cast (Minor Type)
+
+**Root cause:** Line 53: `(r as { current_tier: string }).current_tier` — the type from Supabase `select('current_tier')` should already be typed, but the `as` cast is used defensively.
+
+**Impact:** Negligible — cosmetic. The previous "fix" round missed this.
+
+**Fix:** Clean up the cast by extracting the typed row properly.
 
 ---
 
-## VERIFIED WORKING (No Changes Needed)
+## What Is Verified Working (No Changes Needed)
 
-| Area | Status | Evidence |
-|---|---|---|
-| `g()` function zero-value handling | Correct | Falls back on `NaN` only, not `0` (line 128) |
-| `GUARDRAIL_DEFAULTS` keys match DB | Correct | All 17 keys match `rule_code` values |
-| `getGuardrails()` DB read | Correct | Reads active rows, merges with defaults |
-| Divide-by-zero guards | Correct | `Math.max(divisor, 1)` on all 4 division sites |
-| Guardrail validation in hook | Correct | Checks `rule_code` with regex, not `rule_value` |
-| Audit logging for guardrail/prestige edits | Correct | Both fire-and-forget inserts present |
-| Admin-ops edge function | Correct | All 5 actions work, proper auth + audit |
-| Routes in App.tsx | Correct | All 3 new pages registered |
-| GamificationStudio tabs | Correct | All 14 tabs present and routed |
-| Prestige criteria admin page | Correct | CRUD with audit trail |
-| Level-up prestige gating | Correct | `checkLevelUp()` calls `check_prestige_eligibility` RPC |
-| Challenge progress tracking | Correct | Both challenges and quests tracked |
-| Referral reward flow | Correct | Reads from guardrails table |
-| Badge auto-unlock | Correct | Condition-based checking works |
+- `evaluate_member_tier` DB function: Uses correct `event_type` column on `sp_ledger` ✅
+- Extra criteria logic: Platinum (monthly quest), Diamond (challenge), Black (2-of-4) all checked ✅
+- Edge function SP writing: Correct package term lookup + shop formula ✅
+- SP rules seed data matches user spec exactly ✅
+- Tier rules seed data matches user spec exactly ✅
+- `ECONOMY_V2.md` Section 9 SP caps match DB ✅
+- `gamification-event-map.md` SP column matches DB ✅
+- StatusTierBadge, StatusTierCard, MomentumCard (with tier) — all rendering correctly ✅
+- MemberHomePage has StatusTierBadge in greeting ✅
+- MemberProfilePage has StatusTierBadge ✅
+- i18n EN + TH complete for all status tier strings ✅
+- All gamification edge functions have standardized CORS ✅
 
 ---
 
 ## Implementation Plan
 
-### Fix 1 — Standardize CORS across all 6 gamification edge functions
+| # | File | Change | Risk |
+|---|------|--------|------|
+| 1 | `src/hooks/useRealtimeSync.ts` | Add `member_status_tiers` and `sp_ledger` to table list + invalidation map | Zero — additive only |
+| 2 | `docs/PLATFORM_CONTRACT.md` | Add 8 gamification Edge Functions to Section 5, update Planned section | Zero — doc only |
+| 3 | `docs/data-contract.md` | Add Sections 19-20 for gamification + status tier tables, update Realtime list | Zero — doc only |
+| 4 | `src/pages/gamification/GamificationStatusTiers.tsx` | Remove `as` cast on distribution row | Zero — cosmetic |
 
-For each of these files, apply the same proven pattern from `gamification-process-event`:
-
-1. Add `isAllowedOrigin()` with `*.lovable.app` regex
-2. Replace `ALLOWED_ORIGINS.includes(origin)` with `isAllowedOrigin(origin)`
-3. Expand `Access-Control-Allow-Headers` to include all `x-supabase-client-*` headers
-
-Files:
-- `supabase/functions/gamification-redeem-reward/index.ts`
-- `supabase/functions/gamification-claim-quest/index.ts`
-- `supabase/functions/gamification-issue-coupon/index.ts`
-- `supabase/functions/gamification-assign-quests/index.ts`
-- `supabase/functions/sync-gamification-config/index.ts`
-- `supabase/functions/streak-freeze/index.ts`
-
-**Safety:** Pure additive change — only adds allowed headers and origins. No logic changes.
-
-### Fix 2 — Add i18n keys for new gamification tabs
-
-Files:
-- `src/i18n/locales/en.ts` — add `guardrails`, `operations`, `prestige` keys under `gamification.tabs`
-- `src/i18n/locales/th.ts` — add Thai gamification section with all tab translations
-- `src/pages/gamification/GamificationStudio.tsx` — replace hardcoded strings with `t()` calls
-
-**Safety:** Only adds new keys and replaces 3 string literals. No existing translations affected.
+### Safety: All changes are purely additive (realtime subscription) or documentation-only. No existing logic is modified.
 
 ---
 
-## What Still Needs Manual Testing After Fix
+## Feature Suggestions (Verified Safe)
 
-1. Call reward redemption from member app in preview → verify no CORS error
-2. Claim a quest from member app → verify no CORS error
-3. Use streak freeze from member app → verify no CORS error
-4. Switch app language to Thai → verify new tab names appear correctly
+After thorough analysis, here are features that would add value without touching existing working logic:
+
+**1. Scheduled Tier Evaluation Cron** — Currently tiers are only evaluated on-demand when a member views their profile. A background cron (Edge Function) running daily would keep all member tiers current. This is a new function, no existing code modified.
+
+**2. Tier Change Notification** — When `evaluate_member_tier` detects a tier change (upgrade or downgrade), insert a row into `notifications` table. Currently tier changes are silent. This would be a small addition inside the DB function's UPSERT block.
+
+**3. Admin Tier Override** — Add a "Manual Tier Set" option to `gamification-admin-ops` for edge cases (e.g., Black tier manual review). Currently the admin ops function supports XP/coin adjustments and badges but not tier overrides.
 
