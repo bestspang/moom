@@ -1,89 +1,81 @@
 
-Root cause is now clear from the current code:
 
-1. The page starts in `state === 'ready'`.
-2. In that state, the QR container `<div id="qr-reader" ref={containerRef} />` is not rendered yet.
-3. `handleStartCamera()` calls `startScanner()` immediately.
-4. `startScanner()` exits at `if (!containerRef.current) return;`
-5. Because state never changes before that call, the scanner container never mounts, so the camera never starts.
+# Fix: Member Page Refresh Redirects to Admin
 
-So this is not the old mobile permission issue anymore. It is now a render-order bug: the user tap happens, but scanner startup runs before the scanner DOM exists.
+## Root Cause
 
-Implementation plan:
+Race condition in `AuthContext.tsx` auth initialization:
 
-### 1. Fix the start flow in `MemberCheckInPage.tsx`
-Use a 2-step start sequence that preserves the user gesture intent but waits for the scanner container to exist.
+1. User is on `/member/...`, refreshes the page
+2. `AuthProvider` mounts with `loading=true`, `user=null`
+3. `onAuthStateChange` is set up + `consumeSessionFromUrl()` starts
+4. `consumeSessionFromUrl()` returns `false` → `getSession()` called
+5. **Race:** `getSession()` can resolve with `null` before `onAuthStateChange` fires `INITIAL_SESSION` with the actual session
+6. Lines 152-154: `setLoading(false)` with no user set
+7. `MemberLayout` sees `loading=false` + `!user` → `<Navigate to="/login">`
+8. Auth then resolves → Login page redirect fires → `detectSurface()` returns `'admin'` (dev/preview env) → user role is not `'member'` → redirects to `/` (admin dashboard)
 
-Safe approach:
-- In `handleStartCamera`, first set state to `'scanning'`
-- Then trigger scanner startup only after the scanning UI has rendered
-- Best implementation: add a `useEffect` that watches `state`, and when `state === 'scanning'` and `scannerRef.current` is empty, call `startScanner()`
-- Keep a guard ref like `startingRef` so scanner startup cannot run twice
+The bug is on **line 153** of `AuthContext.tsx`: when `getSession()` returns null in the fallback path, it prematurely sets `loading=false` before `onAuthStateChange` has a chance to fire with the real session.
 
-Why this is safest:
-- The QR container will exist before `Html5Qrcode` is created
-- No route changes or bottom-nav behavior need to change
-- Existing QR validation, celebration, and fallback logic remain intact
+A secondary issue: `onAuthStateChange` only handles `session?.user` (line 115) and `event === 'SIGNED_OUT'` (line 124). It does **not** handle `INITIAL_SESSION` with a null session, so if `onAuthStateChange` fires first with no session, `loading` stays `true` forever.
 
-### 2. Prevent duplicate scanner initialization
-The current flow can re-enter scanning after errors (`setState('scanning'); startScanner();` inside `handleQrScan` catch). That will be risky once startup is effect-driven.
+## Fix (2 changes in `AuthContext.tsx`)
 
-Adjust logic so:
-- Error path only sets `state` back to `'scanning'`
-- The scanning effect is solely responsible for starting the camera
-- Add guards so repeated state changes do not create overlapping scanner instances
+### Change 1: Handle all no-session events in `onAuthStateChange`
 
-### 3. Tighten scanner lifecycle
-Refine cleanup rules so the camera behaves predictably:
-- On unmount: stop + clear scanner
-- On successful scan: stop scanner before processing
-- On fallback/error: ensure failed scanner instances are cleaned before retry
-- Avoid calling `clear()` on a scanner that never successfully initialized unless wrapped in safe guards
+Line 124: Change `else if (event === 'SIGNED_OUT')` to handle any event with no session:
 
-### 4. Improve failure visibility
-Right now failures are mostly silent except for `console.warn`.
-
-Add small UX handling in the plan:
-- Show `startingCamera` text while scanner is booting
-- If startup fails, move to `fallback` with a clearer reason
-- Keep the manual “Quick Check-In” button available exactly as now
-
-This is additive and safe because it does not change backend behavior.
-
-### 5. Regression-proof the flow
-To stop AI from breaking this again, I would keep the logic structured around explicit states:
-
-```text
-ready
-  -> user taps
-scanning
-  -> effect mounts scanner
-processing
-  -> QR found, stop scanner, validate
-fallback
-  -> camera unavailable, use quick check-in
+```typescript
+} else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
 ```
 
-And document one rule in code comments:
-- Never call `startScanner()` while the component is still in `ready`
-- The scanner can only start after the `qr-reader` container is rendered
+This ensures `INITIAL_SESSION` with no user (genuinely not logged in) also properly clears state and sets `loading=false`.
 
-### 6. What I would not change
-These parts already look correct and should stay untouched:
-- `/member/check-in` route
-- bottom nav link
-- `useValidateQRToken`
-- `memberSelfCheckin`
-- `CheckInCelebration`
-- i18n keys already added for tap/scan states
+### Change 2: Don't prematurely end loading in `getSession` null path
 
-### Expected result after implementation
-After tapping the bottom check-in button:
-- user lands on check-in page
-- taps “Tap to scan QR”
-- page switches to scanning state
-- scanner container mounts
-- camera opens reliably
-- if camera fails, fallback UI appears instead of doing nothing
+Lines 152-154: When `getSession()` returns no session, mark `initializedRef` but **don't** set `loading=false` — let `onAuthStateChange` handle it. If `onAuthStateChange` already fired (meaning `initializedRef.current` is true), this block is skipped entirely.
 
-This fix is low-risk and localized to `src/apps/member/pages/MemberCheckInPage.tsx`.
+```typescript
+// Before:
+} else {
+  setLoading(false);
+}
+
+// After:
+} else {
+  initializedRef.current = true;
+  // Don't setLoading(false) here — let onAuthStateChange INITIAL_SESSION handle it
+  // Safety net: if onAuthStateChange never fires (shouldn't happen), timeout
+  setTimeout(() => {
+    if (!initializedRef.current) return; // already handled
+    setLoading((prev) => prev ? false : prev); // only if still loading
+  }, 2000);
+}
+```
+
+Wait, actually that's over-engineered. The simpler approach:
+
+Since we now handle `INITIAL_SESSION` in `onAuthStateChange` (Change 1), `onAuthStateChange` will always fire and resolve loading. The `getSession` fallback is only needed if `onAuthStateChange` somehow doesn't fire. So the null path in `getSession` should just be a safety net with a timeout, not an immediate `setLoading(false)`.
+
+**Simplest correct fix:**
+
+```typescript
+// Line 124: handle INITIAL_SESSION with no user
+} else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+  initializedRef.current = true;
+  // ... clear state, setLoading(false)
+}
+
+// Lines 152-154: just mark initialized, no premature loading=false  
+} else {
+  initializedRef.current = true;
+  // onAuthStateChange INITIAL_SESSION will handle setLoading(false)
+}
+```
+
+## Risk Assessment
+
+- **Zero risk to existing auth flow**: `onAuthStateChange` already handles sign-out clearing. Adding `INITIAL_SESSION` to the same branch is a strict superset.
+- **No changes to**: MemberLayout, ProtectedRoute, Login page, any routes, any other components.
+- **Only file changed**: `src/contexts/AuthContext.tsx` — 2 lines modified.
+
