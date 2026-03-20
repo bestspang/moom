@@ -561,7 +561,7 @@ Deno.serve(async (req) => {
       let spValue = spRule?.sp_value ?? 0;
 
       // Handle package_purchased SP by term
-      if (event_type === "package_purchased" && metadata) {
+      if (event_type === "package_purchase" && metadata) {
         const termMonths = Number(metadata.term_months) || 1;
         const termKey = termMonths <= 1 ? "1m" : termMonths <= 3 ? "3m" : termMonths <= 6 ? "6m" : "12m";
         const { data: pkgSpRule } = await db
@@ -768,6 +768,27 @@ Deno.serve(async (req) => {
         }).eq("id", pendingReferral.id);
 
         referralCompleted = true;
+
+        // Write SP for referrer (referral_purchase = 20 SP)
+        try {
+          const { data: refSpRule } = await db
+            .from("status_tier_sp_rules")
+            .select("sp_value")
+            .eq("action_key", "referral_purchase")
+            .eq("is_active", true)
+            .maybeSingle();
+          const refSpValue = refSpRule?.sp_value ?? 20;
+          if (refSpValue > 0) {
+            await db.from("sp_ledger").insert({
+              member_id: pendingReferral.referrer_member_id,
+              event_type: "referral_purchase",
+              delta: refSpValue,
+              metadata: { referral_id: pendingReferral.id },
+            });
+          }
+        } catch (spErr) {
+          console.warn("Referral SP write failed (non-blocking):", spErr);
+        }
 
         // Audit log for referral
         await db.from("gamification_audit_log").insert({
