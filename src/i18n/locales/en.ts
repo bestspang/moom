@@ -1849,6 +1849,11 @@ export default {
     alreadyCheckedIn: 'You have already checked in today! 🎉',
     membershipInactive: 'Your membership is not currently active.',
     cameraAccessDenied: 'Camera access denied. Use the manual input below.',
+    scanQrAtGym: 'Point your camera at the QR code at the gym',
+    orQuickCheckin: 'or quick check-in',
+    qrCheckInSuccess: 'QR scanned! Checking you in…',
+    quickCheckIn: 'Quick Check-In',
+    startingCamera: 'Starting camera…',
     // Bookings page
     myBookings: 'My Bookings',
     bookingsSubtitle: 'Your upcoming & past bookings',

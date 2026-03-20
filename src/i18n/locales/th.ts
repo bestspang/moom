@@ -1845,6 +1845,11 @@ export default {
     stopCamera: 'หยุด',
     checkinFailed: 'เช็คอินไม่สำเร็จ กรุณาลองอีกครั้ง',
     cameraAccessDenied: 'ไม่สามารถเข้าถึงกล้อง กรุณากรอกรหัสด้านล่าง',
+    scanQrAtGym: 'ส่องกล้องไปที่ QR Code ที่ยิม',
+    orQuickCheckin: 'หรือเช็คอินด่วน',
+    qrCheckInSuccess: 'สแกนสำเร็จ! กำลังเช็คอิน…',
+    quickCheckIn: 'เช็คอินด่วน',
+    startingCamera: 'กำลังเปิดกล้อง…',
     // Bookings page
     myBookings: 'การจองของฉัน',
     bookingsSubtitle: 'การจองที่จะถึงและที่ผ่านมา',
