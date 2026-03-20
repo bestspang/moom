@@ -27,7 +27,7 @@
 
 | # | Event Name | action_key | XP | Coin | SP | Daily Cap | Required Metadata |
 |---|-----------|-----------|-----|------|-----|-----------|-------------------|
-| 5 | Package Purchase | `package_purchased` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
+| 5 | Package Purchase | `package_purchase` | formula | formula | 8/20/35/55 by term | 3 | `net_paid`, `term_months` |
 | 6 | Shop Purchase | `shop_purchase` | formula | formula | floor(net_paid/400) cap 5 | 5 | `net_paid` |
 
 ### Social & Engagement Events
