@@ -1,8 +1,14 @@
 # Gamification Event Map — v2
 
 > **Status:** ACTIVE — matches `gamification_rules` table and Edge Function logic  
-> **Last updated:** 2026-03-11  
+> **Last updated:** 2026-03-20  
 > **Economy version:** v2
+>
+> ⚠️ **AI SAFETY NOTE — DO NOT CHANGE THESE KEYS:**  
+> - Class attendance key = `class_attend` (NOT `class_attended`)  
+> - Package purchase key = `package_purchase` (NOT `package_purchased`)  
+> - These match `gamification_rules.action_key` and `status_tier_sp_rules.action_key` in the DB.  
+> - Changing them will silently break the SP pipeline. Verified 2026-03-20.
 
 ---
 
