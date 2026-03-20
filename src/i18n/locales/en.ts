@@ -1387,6 +1387,13 @@ export default {
       registration: 'Registration',
       expiring: 'Expiring',
       tierChange: 'Tier Change',
+      badgeEarned: 'Badge Earned',
+      levelUp: 'Level Up',
+      challengeCompleted: 'Challenge Completed',
+      rewardFulfilled: 'Reward Fulfilled',
+      streakMilestone: 'Streak Milestone',
+      xpEarned: 'XP Earned',
+      referralCompleted: 'Referral Completed',
     },
   },
 

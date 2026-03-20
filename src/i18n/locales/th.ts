@@ -1387,6 +1387,13 @@ export default {
       registration: 'การสมัคร',
       expiring: 'ใกล้หมดอายุ',
       tierChange: 'เปลี่ยนระดับสมาชิก',
+      badgeEarned: 'ได้รับเหรียญตรา',
+      levelUp: 'เลเวลอัป',
+      challengeCompleted: 'ท้าทายสำเร็จ',
+      rewardFulfilled: 'แลกรางวัลสำเร็จ',
+      streakMilestone: 'สถิติเข้ายิมต่อเนื่อง',
+      xpEarned: 'ได้รับ XP',
+      referralCompleted: 'แนะนำเพื่อนสำเร็จ',
     },
   },
 
