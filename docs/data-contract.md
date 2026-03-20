@@ -332,7 +332,101 @@ User-scoped, no activity log needed.
 
 ---
 
+## 19. Gamification
+
+### Core Profile
+**Table:** `member_gamification_profiles`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `member_id` | uuid PK FK | → members |
+| `total_xp` | bigint | Lifetime XP |
+| `current_level` | integer | Current level number |
+| `available_points` | bigint | Spendable coins |
+| `lifetime_points` | bigint | Total earned coins |
+| `current_streak` | integer | Consecutive check-in days |
+| `longest_streak` | integer | All-time best streak |
+| `streak_freeze_available` | integer | Freezes remaining |
+| `last_checkin_date` | date | For streak calculation |
+
+### Ledgers
+**Tables:** `xp_ledger`, `points_ledger`, `sp_ledger`
+
+Each ledger: `id`, `member_id`, `delta`, `event_type`, `created_at`, `metadata`
+- `xp_ledger` — XP transactions
+- `points_ledger` — Coin transactions
+- `sp_ledger` — Status Point transactions (90-day rolling window)
+
+### Rules & Config
+**Tables:** `gamification_rules`, `gamification_levels`, `gamification_rewards`, `gamification_badges`, `gamification_challenges`, `gamification_seasons`, `economy_guardrails`, `coupon_templates`
+
+### Progress & Earnings
+**Tables:** `badge_earnings`, `challenge_progress`, `quest_instances`, `reward_redemptions`, `coupon_wallet`, `gamification_audit_log`
+
+### Squads
+**Tables:** `squads`, `squad_memberships`
+
+**Activity log events:** `xp_earned`, `points_earned`, `badge_earned`, `reward_redeemed`, `quest_completed`, `challenge_completed`, `streak_freeze_used`, `level_up`
+
+---
+
+## 20. Status Tiers
+
+### Member Tier State
+**Table:** `member_status_tiers`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `member_id` | uuid PK FK | → members |
+| `current_tier` | text | bronze/silver/gold/platinum/diamond/black |
+| `previous_tier` | text | For change detection |
+| `sp_90d` | integer | Cached SP sum (90 days) |
+| `active_days_30d` | integer | Cached active days |
+| `active_days_60d` | integer | Cached active days |
+| `active_days_90d` | integer | Cached active days |
+| `last_evaluated_at` | timestamptz | |
+| `tier_changed_at` | timestamptz | |
+| `grace_until` | timestamptz | Package grace period |
+
+### Tier Rules
+**Table:** `status_tier_rules`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `tier_code` | text | bronze/silver/gold/platinum/diamond/black |
+| `tier_order` | integer | 1=bronze, 6=black |
+| `min_level` | integer | Minimum gamification level |
+| `min_sp_90d` | integer | Minimum SP in 90-day window |
+| `min_active_days_period` | integer | Required active days |
+| `active_days_window` | integer | Window in days (30/60/90) |
+| `requires_active_package` | boolean | |
+| `extra_criteria` | jsonb | Platinum: monthly_quest, Diamond: challenge, Black: 2-of-4 |
+
+### SP Earning Rules
+**Table:** `status_tier_sp_rules`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `action_key` | text | e.g. `checkin`, `class_attended`, `package_purchased` |
+| `sp_value` | integer | SP awarded per action |
+| `daily_cap` | integer | Max SP per day for this action |
+| `is_active` | boolean | |
+
+### Tier Benefits
+**Table:** `status_tier_benefits`
+
+Columns: `tier_code`, `description_en`, `description_th`, `frequency`, `max_per_month`, `sort_order`
+
+### Prestige Criteria (Levels 18-20)
+**Table:** `prestige_criteria`
+
+Columns: `level_number`, `criterion_code`, `target_value`, `description_en`, `is_active`
+
+**Evaluation RPC:** `evaluate_member_tier(p_member_id)` — calculates tier from SP, active days, level, package status, and extra criteria.
+
+---
+
 ## Realtime Subscriptions
 
 All covered in `useRealtimeSync.ts`:
-members, leads, staff, staff_positions, roles, role_permissions, locations, schedule, rooms, classes, class_categories, class_bookings, member_attendance, packages, promotions, transactions, training_templates, workout_items, announcements, activity_log, notifications, settings
+members, leads, staff, staff_positions, roles, role_permissions, locations, schedule, rooms, classes, class_categories, class_bookings, class_waitlist, member_attendance, member_packages, package_usage_ledger, packages, promotions, promotion_packages, promotion_redemptions, transactions, training_templates, workout_items, announcements, activity_log, notifications, checkin_qr_tokens, transfer_slips, member_gamification_profiles, badge_earnings, quest_instances, reward_redemptions, squads, squad_memberships, member_status_tiers, sp_ledger
