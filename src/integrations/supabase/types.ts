@@ -4751,6 +4751,7 @@ export type Database = {
         | "streak_milestone"
         | "xp_earned"
         | "referral_completed"
+        | "tier_change"
       package_status: "on_sale" | "scheduled" | "drafts" | "archive"
       package_type: "unlimited" | "session" | "pt"
       payment_method:
@@ -4982,6 +4983,7 @@ export const Constants = {
         "streak_milestone",
         "xp_earned",
         "referral_completed",
+        "tier_change",
       ],
       package_status: ["on_sale", "scheduled", "drafts", "archive"],
       package_type: ["unlimited", "session", "pt"],

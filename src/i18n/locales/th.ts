@@ -1386,6 +1386,7 @@ export default {
       payment: 'การชำระเงิน',
       registration: 'การสมัคร',
       expiring: 'ใกล้หมดอายุ',
+      tierChange: 'เปลี่ยนระดับสมาชิก',
     },
   },
 

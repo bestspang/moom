@@ -1,7 +1,7 @@
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications';
-import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, Megaphone } from 'lucide-react';
+import { Bell, Check, CheckCheck, Loader2, Gift, Trophy, Flame, CalendarCheck, Megaphone, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ const NOTIFICATION_ICON_MAP: Record<string, React.ComponentType<{ className?: st
   booking_reminder: CalendarCheck,
   announcement: Megaphone,
   level_up: Trophy,
+  tier_change: ShieldCheck,
 };
 
 function NotificationIcon({ type }: { type?: string | null }) {

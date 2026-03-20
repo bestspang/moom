@@ -124,6 +124,7 @@ All Edge Functions use dynamic CORS with a 3-origin allowlist.
 | `gamification-admin-ops` | Admin manual operations: adjust XP/coins, grant/revoke badges, season management | level_3_manager | Admin |
 | `sync-gamification-config` | Sync gamification rules/levels/rewards from DB to edge cache | level_3_manager | Admin |
 | `streak-freeze` | Member uses a streak freeze to preserve streak | Member (JWT) | Experience |
+| `evaluate-tiers-daily` | Daily cron: evaluates status tier for all active members | System (service_role, cron) | Internal |
 
 ### Implemented as RPCs (not Edge Functions)
 | RPC | Purpose | Access |

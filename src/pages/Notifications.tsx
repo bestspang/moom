@@ -16,6 +16,7 @@ import {
   Gift,
   Flame,
   Zap,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -39,6 +40,7 @@ const notificationTypes: NotificationType[] = [
   'payment_received',
   'member_registration',
   'package_expiring',
+  'tier_change',
 ];
 
 const Notifications = () => {
@@ -68,6 +70,7 @@ const Notifications = () => {
       streak_milestone: <Flame className="h-5 w-5 text-orange-500" />,
       xp_earned: <Zap className="h-5 w-5 text-yellow-500" />,
       referral_completed: <UserPlus className="h-5 w-5 text-primary" />,
+      tier_change: <ShieldCheck className="h-5 w-5 text-indigo-500" />,
     };
     return icons[type] || <Bell className="h-5 w-5 text-muted-foreground" />;
   };
@@ -86,6 +89,7 @@ const Notifications = () => {
       streak_milestone: 'Streak Milestone',
       xp_earned: 'XP Earned',
       referral_completed: 'Referral Completed',
+      tier_change: t('notifications.types.tierChange'),
     };
     return labels[type] || type;
   };

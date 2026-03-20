@@ -1386,6 +1386,7 @@ export default {
       payment: 'Payment',
       registration: 'Registration',
       expiring: 'Expiring',
+      tierChange: 'Tier Change',
     },
   },
 
