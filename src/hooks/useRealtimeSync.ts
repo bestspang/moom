@@ -47,7 +47,10 @@ type TableName =
   | 'reward_redemptions'
   // ── Squad tables ──
   | 'squads'
-  | 'squad_memberships';
+  | 'squad_memberships'
+  // ── Status Tier tables ──
+  | 'member_status_tiers'
+  | 'sp_ledger';
 
 const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
