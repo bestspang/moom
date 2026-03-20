@@ -111,10 +111,10 @@ Coin = floor(net_paid / 120), cap 18
 | Producer | File | Event | Required Metadata |
 |----------|------|-------|-------------------|
 | Check-in | `src/hooks/useLobby.ts` | `check_in` | — |
-| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attended` | — |
-| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchased` | `net_paid`, `term_months` |
-| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchased` | `net_paid`, `term_months` |
-| Manual Purchase | `src/hooks/useMemberDetails.ts` | `package_purchased` | `net_paid`, `term_months` |
+| Class Attendance | `src/hooks/useClassBookings.ts` | `class_attend` | — |
+| Slip Approval | `supabase/functions/approve-slip/index.ts` | `package_purchase` | `net_paid`, `term_months` |
+| Stripe Payment | `supabase/functions/stripe-webhook/index.ts` | `package_purchase` | `net_paid`, `term_months` |
+| Manual Purchase | `src/hooks/useMemberDetails.ts` | `package_purchase` | `net_paid`, `term_months` |
 | Event Processor | `supabase/functions/gamification-process-event/index.ts` | All events | — |
 | Reward Redeem | `supabase/functions/gamification-redeem-reward/index.ts` | Redemption + void | — |
 

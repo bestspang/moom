@@ -66,8 +66,8 @@ Both Admin App and Experience App connect to the **same Supabase instance**. The
 | Flow | Event Type | Idempotency Key |
 |------|-----------|----------------|
 | Check-in | `check_in` | `checkin:{attendance_id}` |
-| Class attendance | `class_attended` | `class_attended:{booking_id}` |
-| Package purchase | `package_purchased` | `purchase:{transaction_id}` |
+| Class attendance | `class_attend` | `class_attend:{booking_id}` |
+| Package purchase | `package_purchase` | `purchase:{transaction_id}` |
 
 ### Shared Identity (Single DB)
 
