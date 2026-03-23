@@ -45,7 +45,7 @@ function MemberQRCard({ memberId, t }: { memberId: string; t: (key: string) => s
     <div className="flex flex-col items-center gap-3 px-4">
       <div className="bg-card rounded-2xl p-6 shadow-lg border border-border w-full max-w-xs flex flex-col items-center gap-4">
         <div className="bg-white p-3 rounded-xl shadow-sm">
-          <QRCodeSVG value={qrValue} size={200} level="M" />
+          <QRCodeSVG value={qrValue} size={160} level="M" />
         </div>
         <p className="text-sm font-medium text-foreground">{t('member.showToStaff')}</p>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -317,16 +317,16 @@ export default function MemberCheckInPage() {
   const showOverlay = cameraState === 'scanning' || cameraState === 'processing';
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
+    <div className="flex flex-col h-[calc(100dvh-8.5rem)] overflow-hidden animate-in fade-in-0 duration-200">
 
       {/* ── Page header ── */}
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-3 pb-1">
         <h1 className="text-lg font-bold text-foreground">{t('member.checkinTitle')}</h1>
         <p className="text-xs text-muted-foreground mt-0.5">{t('member.checkinSubtitle')}</p>
       </div>
 
       {/* ── Zone 1: Member QR (top) ── */}
-      <div className="pt-2 pb-3">
+      <div className="pt-1 pb-2">
         {memberId ? (
           <MemberQRCard memberId={memberId} t={t} />
         ) : (
@@ -338,7 +338,7 @@ export default function MemberCheckInPage() {
 
       {/* ── Zone 2: Code input ── */}
       <Divider label={t('member.orEnterCode')} />
-      <div className="py-3">
+      <div className="py-2">
         <CodeInputSection onSubmit={handleCodeSubmit} isSubmitting={isCodeSubmitting} t={t} />
       </div>
 
@@ -352,11 +352,8 @@ export default function MemberCheckInPage() {
         </div>
       )}
 
-      {/* ── Spacer ── */}
-      <div className="flex-1 min-h-4" />
-
       {/* ── Zone 3: Scan CTA (bottom, thumb zone) ── */}
-      <div className="px-4 pb-4">
+      <div className="mt-auto px-4 pb-3">
         {cameraState === 'fallback' ? (
           <div className="flex flex-col items-center gap-2 py-3 text-center">
             <Camera className="h-6 w-6 text-muted-foreground" />
