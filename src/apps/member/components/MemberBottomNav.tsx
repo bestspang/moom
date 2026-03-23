@@ -67,6 +67,7 @@ export function MemberBottomNav() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleNavClick}
               className={cn(
                 'flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs transition-colors',
                 isActive
