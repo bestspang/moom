@@ -326,7 +326,7 @@ export default function MemberCheckInPage() {
       </div>
 
       {/* ── Zone 1: Member QR (top) ── */}
-      <div className="pt-2 pb-3">
+      <div className="pt-1 pb-2">
         {memberId ? (
           <MemberQRCard memberId={memberId} t={t} />
         ) : (
