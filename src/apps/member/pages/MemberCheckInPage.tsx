@@ -332,6 +332,10 @@ export default function MemberCheckInPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
+      {/* DEBUG MARKER — remove after verification */}
+      <div className="bg-destructive text-destructive-foreground text-center text-xs font-bold py-1">
+        🔴 {CHECKIN_VERSION} — {window.location.pathname}
+      </div>
       {/* Zone 1: Camera Scanner */}
       <CameraScannerSection
         cameraState={cameraState}
