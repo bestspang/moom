@@ -1,8 +1,8 @@
-/* 3-zone check-in: camera + member QR + code input */
+/* Redesigned Check-In: QR top, scan CTA bottom (thumb zone), fullscreen camera overlay */
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, Loader2, Send } from 'lucide-react';
+import { Camera, Loader2, Send, X, CheckCircle2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,92 +16,18 @@ import { StreakFlame } from '../features/momentum/StreakFlame';
 import { useValidateQRToken } from '@/hooks/useCheckinQR';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
-/* ─── State Machine ───
- *  ready      → user taps camera card → scanning
- *  scanning   → useEffect starts camera after DOM renders → camera live
- *  processing → QR decoded, validating → celebration or back to scanning
- *  fallback   → camera unavailable, scanner section shows message
- *
- *  RULE: Never call startScanner() while state === 'ready'.
- *        The #qr-reader container only exists when state is scanning/processing.
- */
 type CameraState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
-/* ─── Camera Scanner Section ─── */
-function CameraScannerSection({
-  cameraState,
-  onTapToScan,
-  containerRef,
-  t,
-}: {
-  cameraState: CameraState;
-  onTapToScan: () => void;
-  containerRef: React.RefObject<HTMLDivElement>;
-  t: (key: string) => string;
-}) {
-  if (cameraState === 'ready') {
-    return (
-      <button
-        onClick={onTapToScan}
-        className="w-full flex flex-col items-center gap-3 py-6 active:scale-[0.97] transition-transform"
-      >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20">
-          <Camera className="h-9 w-9 text-primary" />
-        </div>
-        <p className="text-sm font-semibold text-foreground">{t('member.tapToScan')}</p>
-        <p className="text-xs text-muted-foreground">{t('member.scanQrAtGym')}</p>
-      </button>
-    );
-  }
-
-  if (cameraState === 'scanning' || cameraState === 'processing') {
-    return (
-      <div className="flex flex-col items-center gap-2 py-3">
-        <div className="relative w-full max-w-[220px] aspect-square rounded-xl overflow-hidden border-2 border-primary/30 shadow-md bg-black/5">
-          <div id="qr-reader" ref={containerRef} className="w-full h-full" />
-          {cameraState === 'processing' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10">
-              <Loader2 className="h-8 w-8 text-primary animate-spin mb-1" />
-              <p className="text-xs font-semibold text-foreground">{t('member.qrCheckInSuccess')}</p>
-            </div>
-          )}
-          {/* Corner markers */}
-          <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-primary rounded-tl-sm pointer-events-none" />
-          <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-primary rounded-tr-sm pointer-events-none" />
-          <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-primary rounded-bl-sm pointer-events-none" />
-          <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-primary rounded-br-sm pointer-events-none" />
-        </div>
-        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-          <Camera className="h-3.5 w-3.5 text-primary" />
-          {t('member.scanQrAtGym')}
-        </p>
-      </div>
-    );
-  }
-
-  // fallback
-  return (
-    <div className="flex flex-col items-center gap-2 py-4 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-        <Camera className="h-6 w-6 text-muted-foreground" />
-      </div>
-      <p className="text-xs text-muted-foreground max-w-[200px]">{t('member.cameraAccessDenied')}</p>
-    </div>
-  );
-}
-
-/* ─── Member QR Section ─── */
-function MemberQRSection({ memberId, t }: { memberId: string; t: (key: string) => string }) {
+/* ─── Member QR Card (top zone) ─── */
+function MemberQRCard({ memberId, t }: { memberId: string; t: (key: string) => string }) {
   const [tick, setTick] = useState(() => Math.floor(Date.now() / 30000));
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      const currentTick = Math.floor(now / 30000);
-      const remaining = 30 - Math.floor((now % 30000) / 1000);
-      setTick(currentTick);
-      setCountdown(remaining);
+      setTick(Math.floor(now / 30000));
+      setCountdown(30 - Math.floor((now % 30000) / 1000));
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -112,18 +38,24 @@ function MemberQRSection({ memberId, t }: { memberId: string; t: (key: string) =
   );
 
   return (
-    <div className="flex flex-col items-center gap-2 py-2">
-      <div className="bg-white p-3 rounded-xl shadow-sm border border-border">
-        <QRCodeSVG value={qrValue} size={160} level="M" />
+    <div className="flex flex-col items-center gap-3 px-4">
+      <div className="bg-card rounded-2xl p-5 shadow-md border border-border w-full max-w-xs flex flex-col items-center gap-3">
+        <div className="bg-white p-3 rounded-xl">
+          <QRCodeSVG value={qrValue} size={200} level="M" />
+        </div>
+        <p className="text-sm font-medium text-foreground">{t('member.gymScansThis')}</p>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span>{t('member.refreshesIn')}</span>
+          <span className="font-mono font-semibold text-foreground">
+            0:{countdown.toString().padStart(2, '0')}
+          </span>
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {t('member.gymScansThis')} · {t('member.refreshesIn')} 0:{countdown.toString().padStart(2, '0')}
-      </p>
     </div>
   );
 }
 
-/* ─── Code Input Section ─── */
+/* ─── Code Input ─── */
 function CodeInputSection({
   onSubmit,
   isSubmitting,
@@ -175,11 +107,63 @@ function Divider({ label }: { label: string }) {
   );
 }
 
+/* ─── Fullscreen Camera Overlay ─── */
+function CameraOverlay({
+  cameraState,
+  containerRef,
+  onClose,
+  t,
+}: {
+  cameraState: CameraState;
+  containerRef: React.RefObject<HTMLDivElement>;
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in-0 duration-200">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3 bg-black/80">
+        <p className="text-white text-sm font-medium">{t('member.scanQrAtGym')}</p>
+        <button
+          onClick={onClose}
+          className="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 active:bg-white/20 transition-colors"
+        >
+          <X className="h-5 w-5 text-white" />
+        </button>
+      </div>
+
+      {/* Camera viewfinder */}
+      <div className="flex-1 flex items-center justify-center relative">
+        <div className="relative w-[280px] h-[280px] rounded-2xl overflow-hidden">
+          <div id="qr-reader" ref={containerRef} className="w-full h-full" />
+
+          {cameraState === 'processing' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10">
+              <Loader2 className="h-10 w-10 text-white animate-spin mb-2" />
+              <p className="text-sm font-semibold text-white">{t('member.qrCheckInSuccess')}</p>
+            </div>
+          )}
+
+          {/* Corner markers */}
+          <div className="absolute top-3 left-3 w-8 h-8 border-t-3 border-l-3 border-white rounded-tl-lg pointer-events-none" />
+          <div className="absolute top-3 right-3 w-8 h-8 border-t-3 border-r-3 border-white rounded-tr-lg pointer-events-none" />
+          <div className="absolute bottom-3 left-3 w-8 h-8 border-b-3 border-l-3 border-white rounded-bl-lg pointer-events-none" />
+          <div className="absolute bottom-3 right-3 w-8 h-8 border-b-3 border-r-3 border-white rounded-br-lg pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Bottom hint */}
+      <div className="pb-safe px-4 py-6 flex justify-center">
+        <p className="text-white/60 text-xs text-center">{t('member.scanQrAtGym')}</p>
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════
- *  Main Page Component
+ *  Main Page
  * ═══════════════════════════════════════════════ */
 export default function MemberCheckInPage() {
-  
   const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const queryClient = useQueryClient();
@@ -246,6 +230,7 @@ export default function MemberCheckInPage() {
       try {
         await validateQR.mutateAsync({ token, memberId });
         await onCheckInSuccess();
+        setCameraState('ready'); // close overlay on success
       } catch (err: any) {
         const msg = err?.message || '';
         toast.error(msg.includes('already') || msg.includes('used') ? t('member.alreadyCheckedIn') : t('member.checkinFailed'));
@@ -257,7 +242,7 @@ export default function MemberCheckInPage() {
     [memberId, extractToken, validateQR, onCheckInSuccess, t],
   );
 
-  // ─── Start camera (only from useEffect when DOM exists) ───
+  // ─── Start camera ───
   const startScanner = useCallback(async () => {
     if (!containerRef.current || startingRef.current) return;
     if (scannerRef.current?.isScanning) return;
@@ -272,12 +257,11 @@ export default function MemberCheckInPage() {
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 180, height: 180 }, aspectRatio: 1 },
+        { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1 },
         (decoded) => handleQrScan(decoded),
         () => {},
       );
-    } catch (err) {
-      console.warn('[check-in] Camera failed:', err);
+    } catch {
       scannerRef.current = null;
       setCameraState('fallback');
     } finally {
@@ -303,7 +287,18 @@ export default function MemberCheckInPage() {
   }, []);
 
   // ─── Handlers ───
-  const handleTapToScan = useCallback(() => setCameraState('scanning'), []);
+  const handleOpenCamera = useCallback(() => setCameraState('scanning'), []);
+
+  const handleCloseCamera = useCallback(async () => {
+    try {
+      if (scannerRef.current?.isScanning) await scannerRef.current.stop();
+      scannerRef.current?.clear();
+    } catch { /* ignore */ }
+    scannerRef.current = null;
+    startingRef.current = false;
+    processingRef.current = false;
+    setCameraState('ready');
+  }, []);
 
   const handleCodeSubmit = useCallback(
     async (code: string) => {
@@ -317,7 +312,7 @@ export default function MemberCheckInPage() {
         if (msg.includes('already') || msg.includes('used')) {
           toast.error(t('member.alreadyCheckedIn'));
         } else if (msg.includes('expired')) {
-          toast.error(t('member.codeExpired', 'Code expired'));
+          toast.error(t('member.codeExpired'));
         } else {
           toast.error(t('member.checkinFailed'));
         }
@@ -328,35 +323,39 @@ export default function MemberCheckInPage() {
     [memberId, validateQR, onCheckInSuccess, t],
   );
 
+  const showOverlay = cameraState === 'scanning' || cameraState === 'processing';
+
   return (
     <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
-      {/* Zone 1: Camera Scanner */}
-      <CameraScannerSection
-        cameraState={cameraState}
-        onTapToScan={handleTapToScan}
-        containerRef={containerRef}
-        t={t}
-      />
 
-      <Divider label={t('member.myQrCode')} />
-
-      {/* Zone 2: Member QR Code */}
-      {memberId ? (
-        <MemberQRSection memberId={memberId} t={t} />
-      ) : (
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+      {/* ── Status header ── */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">{t('member.checkinTitle')}</span>
         </div>
-      )}
+      </div>
 
+      {/* ── Zone 1: Member QR (top, prominent) ── */}
+      <div className="pt-2 pb-3">
+        {memberId ? (
+          <MemberQRCard memberId={memberId} t={t} />
+        ) : (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* ── Zone 2: Code input ── */}
       <Divider label={t('member.orEnterCode')} />
+      <div className="py-3">
+        <CodeInputSection onSubmit={handleCodeSubmit} isSubmitting={isCodeSubmitting} t={t} />
+      </div>
 
-      {/* Zone 3: Code Input */}
-      <CodeInputSection onSubmit={handleCodeSubmit} isSubmitting={isCodeSubmitting} t={t} />
-
-      {/* Streak */}
+      {/* ── Streak (middle, motivation) ── */}
       {profile?.currentStreak != null && profile.currentStreak > 0 && (
-        <div className="flex items-center justify-center gap-2 py-3 mt-auto">
+        <div className="flex items-center justify-center gap-2 py-2 px-4">
           <StreakFlame weeklyCheckinDays={profile.weeklyCheckinDays} currentStreakWeeks={profile.currentStreak} />
           <span className="text-sm text-muted-foreground">
             {t('member.streakDay', { n: profile.currentStreak })}
@@ -364,6 +363,39 @@ export default function MemberCheckInPage() {
         </div>
       )}
 
+      {/* ── Spacer to push scan button to bottom ── */}
+      <div className="flex-1 min-h-4" />
+
+      {/* ── Zone 3: Scan CTA (bottom, thumb zone) ── */}
+      <div className="px-4 pb-4">
+        {cameraState === 'fallback' ? (
+          <div className="flex flex-col items-center gap-2 py-3 text-center">
+            <Camera className="h-6 w-6 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground max-w-[220px]">{t('member.cameraAccessDenied')}</p>
+          </div>
+        ) : (
+          <Button
+            onClick={handleOpenCamera}
+            className="w-full h-14 rounded-2xl text-base font-semibold gap-3 shadow-lg"
+            size="lg"
+          >
+            <Camera className="h-5 w-5" />
+            {t('member.scanAtGym')}
+          </Button>
+        )}
+      </div>
+
+      {/* ── Fullscreen camera overlay ── */}
+      {showOverlay && (
+        <CameraOverlay
+          cameraState={cameraState}
+          containerRef={containerRef}
+          onClose={handleCloseCamera}
+          t={t}
+        />
+      )}
+
+      {/* ── Celebration dialog ── */}
       <CheckInCelebration
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
