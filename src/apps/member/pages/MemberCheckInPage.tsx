@@ -326,7 +326,7 @@ export default function MemberCheckInPage() {
   const showOverlay = cameraState === 'scanning' || cameraState === 'processing';
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
+    <div data-version="v3" className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
 
       {/* ── Status header ── */}
       <div className="px-4 pt-3 pb-1">
