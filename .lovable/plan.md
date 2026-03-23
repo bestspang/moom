@@ -1,36 +1,27 @@
 
 
-# วิเคราะห์ปัญหาและแผนแก้ถาวร
+# สรุปสถานการณ์จริง: ไม่มีบั๊กในโค้ด
 
-## ปัญหาที่ 1: Preview ไม่แสดงหน้า Check-In ใหม่
-**สาเหตุ**: Preview อยู่ที่ route `/` (Admin Dashboard) ไม่ใช่ `/member/check-in` — เป็นเรื่อง surface detection ที่ default เป็น admin ใน preview environment เสมอ หน้า published ใช้งานได้ปกติแล้ว ดังนั้น **โค้ดถูกต้อง ไม่มีบั๊ก** แค่ preview แสดง admin route
+## ปัญหาที่เกิดขึ้น
+คุณกำลังดู **Preview** ซึ่งเปิดอยู่ที่ route `/` (Admin Dashboard) — ไม่ใช่หน้า `/member/check-in`
 
-## ปัญหาที่ 2: ปุ่ม "Scan QR" ถูกซ่อนใต้จอ ต้องเลื่อน
-**สาเหตุ**: Layout ใช้ `min-h-[calc(100dvh-4rem)]` ซึ่งคิดแค่ header 56px แต่จริงๆ มี bottom nav อีก 80px (`pb-20` ใน MemberLayout) รวมหักไป 136px แถม QR 200px + padding ทำให้เนื้อหารวมสูงเกิน viewport
+## ทำไมเป็นแบบนี้
+- Preview environment ของ Lovable ใช้ URL เดียว (`lovable.app`) → `isDevEnvironment()` return `true` → SurfaceGuard ไม่ redirect
+- Route `/` = Admin Dashboard เสมอ
+- หน้า Check-In อยู่ที่ `/member/check-in` ซึ่ง **ใช้งานได้ปกติบน published site** (คุณยืนยันเองแล้ว)
+- โค้ดใน `MemberCheckInPage.tsx` เป็นเวอร์ชันใหม่ 3 โซนถูกต้อง (QR 160px, `h-[calc(100dvh-8.5rem)]`, ปุ่ม scan ล่าง)
 
-## แผนแก้
+## ข้อสรุป
+**ไม่มีโค้ดที่ต้องแก้** — ทุกอย่างทำงานถูกต้องแล้ว ปัญหาคือ Preview แสดง Admin route ไม่ใช่ Member route
 
-### 1. `src/apps/member/pages/MemberCheckInPage.tsx`
-ทำให้หน้าพอดีจอ ไม่ต้องเลื่อน:
+## วิธีดู Check-In page ใน Preview
+เปลี่ยน URL ของ Preview เป็น:
+```
+https://id-preview--b8b9a3e3-aed2-4929-b0e8-028cf38a94e6.lovable.app/member/check-in
+```
 
-- เปลี่ยน container เป็น `h-[calc(100dvh-8.5rem)] overflow-hidden` (หัก header 56px + bottom nav 80px = 136px ≈ 8.5rem)
-- ลด QR size จาก 200px เป็น 160px
-- ลด padding รอบๆ ให้กระชับขึ้น: header `pt-3 pb-1`, QR section `pt-1 pb-2`, code input `py-2`
-- ลบ spacer `flex-1 min-h-4` เพราะไม่จำเป็นเมื่อใช้ fixed height
-- ปุ่ม Scan CTA ใช้ `mt-auto` ให้ดันลงล่างสุดของพื้นที่ที่เหลือ แต่ยังเห็นได้โดยไม่ต้องเลื่อน
+หรือตรวจสอบบน published site: `https://moom.lovable.app/member/check-in`
 
-### ไฟล์ที่แก้
-
-| # | ไฟล์ | การเปลี่ยนแปลง |
-|---|------|----------------|
-| 1 | `src/apps/member/pages/MemberCheckInPage.tsx` | ปรับ container height, ลด QR size, กระชับ spacing, ลบ spacer |
-
-### สิ่งที่ไม่เปลี่ยน
-- Logic ทั้งหมด (camera, validation, gamification)
-- MemberLayout, MemberBottomNav
-- i18n keys
-- Backend
-
-### ผลลัพธ์
-หน้า Check-In แสดงครบทั้ง 3 โซนในจอเดียว ไม่ต้องเลื่อน ปุ่ม Scan อยู่ในระยะนิ้วโป้ง
+## ไม่มีแผนแก้โค้ดเพิ่มเติม
+เพราะโค้ดถูกต้องแล้ว การแก้ไขเพิ่มจะไม่ช่วยอะไร — ปัญหาอยู่ที่ว่า Preview เปิดหน้าไหน ไม่ใช่โค้ดผิด
 
