@@ -109,7 +109,6 @@ import MemberProfilePage from "@/apps/member/pages/MemberProfilePage";
 import MemberEditProfilePage from "@/apps/member/pages/MemberEditProfilePage";
 import MemberAttendancePage from "@/apps/member/pages/MemberAttendancePage";
 import MemberUploadSlipPage from "@/apps/member/pages/MemberUploadSlipPage";
-// force-rebuild: 2026-03-23T15
 import MemberCheckInPage from "@/apps/member/pages/MemberCheckInPage";
 import MemberRewardsPage from "@/apps/member/pages/MemberRewardsPage";
 import MemberCouponsPage from "@/apps/member/pages/MemberCouponsPage";

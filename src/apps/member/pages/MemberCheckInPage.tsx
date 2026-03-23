@@ -1,8 +1,12 @@
-/* Redesigned Check-In: QR top, scan CTA bottom (thumb zone), fullscreen camera overlay */
+/* Check-In Page — 3-Zone Thumb-Friendly Layout
+   Zone 1 (top):    Member QR card — staff scans this
+   Zone 2 (middle): Code input + streak
+   Zone 3 (bottom): Scan CTA button — thumb zone
+*/
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, Loader2, Send, X, CheckCircle2 } from 'lucide-react';
+import { Camera, Loader2, Send, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +22,7 @@ import { fireGamificationEvent } from '@/lib/gamificationEvents';
 
 type CameraState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
-/* ─── Member QR Card (top zone) ─── */
+/* ─── Member QR Card ─── */
 function MemberQRCard({ memberId, t }: { memberId: string; t: (key: string) => string }) {
   const [tick, setTick] = useState(() => Math.floor(Date.now() / 30000));
   const [countdown, setCountdown] = useState(30);
@@ -39,11 +43,11 @@ function MemberQRCard({ memberId, t }: { memberId: string; t: (key: string) => s
 
   return (
     <div className="flex flex-col items-center gap-3 px-4">
-      <div className="bg-card rounded-2xl p-5 shadow-md border border-border w-full max-w-xs flex flex-col items-center gap-3">
-        <div className="bg-white p-3 rounded-xl">
+      <div className="bg-card rounded-2xl p-6 shadow-lg border border-border w-full max-w-xs flex flex-col items-center gap-4">
+        <div className="bg-white p-3 rounded-xl shadow-sm">
           <QRCodeSVG value={qrValue} size={200} level="M" />
         </div>
-        <p className="text-sm font-medium text-foreground">{t('member.gymScansThis')}</p>
+        <p className="text-sm font-medium text-foreground">{t('member.showToStaff')}</p>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>{t('member.refreshesIn')}</span>
           <span className="font-mono font-semibold text-foreground">
@@ -121,7 +125,6 @@ function CameraOverlay({
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in-0 duration-200">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80">
         <p className="text-white text-sm font-medium">{t('member.scanQrAtGym')}</p>
         <button
@@ -132,19 +135,15 @@ function CameraOverlay({
         </button>
       </div>
 
-      {/* Camera viewfinder */}
       <div className="flex-1 flex items-center justify-center relative">
         <div className="relative w-[280px] h-[280px] rounded-2xl overflow-hidden">
           <div id="qr-reader" ref={containerRef} className="w-full h-full" />
-
           {cameraState === 'processing' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10">
               <Loader2 className="h-10 w-10 text-white animate-spin mb-2" />
               <p className="text-sm font-semibold text-white">{t('member.qrCheckInSuccess')}</p>
             </div>
           )}
-
-          {/* Corner markers */}
           <div className="absolute top-3 left-3 w-8 h-8 border-t-3 border-l-3 border-white rounded-tl-lg pointer-events-none" />
           <div className="absolute top-3 right-3 w-8 h-8 border-t-3 border-r-3 border-white rounded-tr-lg pointer-events-none" />
           <div className="absolute bottom-3 left-3 w-8 h-8 border-b-3 border-l-3 border-white rounded-bl-lg pointer-events-none" />
@@ -152,7 +151,6 @@ function CameraOverlay({
         </div>
       </div>
 
-      {/* Bottom hint */}
       <div className="pb-safe px-4 py-6 flex justify-center">
         <p className="text-white/60 text-xs text-center">{t('member.scanQrAtGym')}</p>
       </div>
@@ -184,7 +182,6 @@ export default function MemberCheckInPage() {
     enabled: !!memberId,
   });
 
-  // ─── Extract token from QR URL ───
   const extractToken = useCallback((text: string): string | null => {
     try {
       const url = new URL(text);
@@ -194,7 +191,6 @@ export default function MemberCheckInPage() {
     }
   }, []);
 
-  // ─── Shared success handler ───
   const onCheckInSuccess = useCallback(async () => {
     if (!memberId) return;
     fireGamificationEvent({
@@ -208,7 +204,6 @@ export default function MemberCheckInPage() {
     setShowCelebration(true);
   }, [memberId, queryClient]);
 
-  // ─── Handle QR scan result ───
   const handleQrScan = useCallback(
     async (decodedText: string) => {
       if (processingRef.current || !memberId) return;
@@ -230,7 +225,7 @@ export default function MemberCheckInPage() {
       try {
         await validateQR.mutateAsync({ token, memberId });
         await onCheckInSuccess();
-        setCameraState('ready'); // close overlay on success
+        setCameraState('ready');
       } catch (err: any) {
         const msg = err?.message || '';
         toast.error(msg.includes('already') || msg.includes('used') ? t('member.alreadyCheckedIn') : t('member.checkinFailed'));
@@ -242,7 +237,6 @@ export default function MemberCheckInPage() {
     [memberId, extractToken, validateQR, onCheckInSuccess, t],
   );
 
-  // ─── Start camera ───
   const startScanner = useCallback(async () => {
     if (!containerRef.current || startingRef.current) return;
     if (scannerRef.current?.isScanning) return;
@@ -269,14 +263,12 @@ export default function MemberCheckInPage() {
     }
   }, [handleQrScan]);
 
-  // Start scanner when scanning state + DOM ready
   useEffect(() => {
     if (cameraState === 'scanning' && !scannerRef.current?.isScanning && !startingRef.current) {
       startScanner();
     }
   }, [cameraState, startScanner]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       const s = scannerRef.current;
@@ -286,7 +278,6 @@ export default function MemberCheckInPage() {
     };
   }, []);
 
-  // ─── Handlers ───
   const handleOpenCamera = useCallback(() => setCameraState('scanning'), []);
 
   const handleCloseCamera = useCallback(async () => {
@@ -326,17 +317,15 @@ export default function MemberCheckInPage() {
   const showOverlay = cameraState === 'scanning' || cameraState === 'processing';
 
   return (
-    <div data-version="v3" className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
+    <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
 
-      {/* ── Status header ── */}
-      <div className="px-4 pt-3 pb-1">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">{t('member.checkinTitle')}</span>
-        </div>
+      {/* ── Page header ── */}
+      <div className="px-4 pt-4 pb-2">
+        <h1 className="text-lg font-bold text-foreground">{t('member.checkinTitle')}</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">{t('member.checkinSubtitle')}</p>
       </div>
 
-      {/* ── Zone 1: Member QR (top, prominent) ── */}
+      {/* ── Zone 1: Member QR (top) ── */}
       <div className="pt-2 pb-3">
         {memberId ? (
           <MemberQRCard memberId={memberId} t={t} />
@@ -353,7 +342,7 @@ export default function MemberCheckInPage() {
         <CodeInputSection onSubmit={handleCodeSubmit} isSubmitting={isCodeSubmitting} t={t} />
       </div>
 
-      {/* ── Streak (middle, motivation) ── */}
+      {/* ── Streak (motivation) ── */}
       {profile?.currentStreak != null && profile.currentStreak > 0 && (
         <div className="flex items-center justify-center gap-2 py-2 px-4">
           <StreakFlame weeklyCheckinDays={profile.weeklyCheckinDays} currentStreakWeeks={profile.currentStreak} />
@@ -363,7 +352,7 @@ export default function MemberCheckInPage() {
         </div>
       )}
 
-      {/* ── Spacer to push scan button to bottom ── */}
+      {/* ── Spacer ── */}
       <div className="flex-1 min-h-4" />
 
       {/* ── Zone 3: Scan CTA (bottom, thumb zone) ── */}
@@ -385,7 +374,7 @@ export default function MemberCheckInPage() {
         )}
       </div>
 
-      {/* ── Fullscreen camera overlay ── */}
+      {/* ── Camera overlay ── */}
       {showOverlay && (
         <CameraOverlay
           cameraState={cameraState}
@@ -395,7 +384,7 @@ export default function MemberCheckInPage() {
         />
       )}
 
-      {/* ── Celebration dialog ── */}
+      {/* ── Celebration ── */}
       <CheckInCelebration
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
