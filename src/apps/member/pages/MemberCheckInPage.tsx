@@ -338,7 +338,7 @@ export default function MemberCheckInPage() {
 
       {/* ── Zone 2: Code input ── */}
       <Divider label={t('member.orEnterCode')} />
-      <div className="py-3">
+      <div className="py-2">
         <CodeInputSection onSubmit={handleCodeSubmit} isSubmitting={isCodeSubmitting} t={t} />
       </div>
 
