@@ -1,4 +1,6 @@
-/* 3-zone check-in: camera + member QR + code input */
+/* 3-zone check-in: camera + member QR + code input — CHECKIN_V3 */
+const CHECKIN_VERSION = 'CHECKIN_V3';
+console.info(`[MemberCheckInPage] module loaded — ${CHECKIN_VERSION}`);
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Html5Qrcode } from 'html5-qrcode';
