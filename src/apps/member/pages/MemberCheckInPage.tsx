@@ -179,7 +179,7 @@ function Divider({ label }: { label: string }) {
  *  Main Page Component
  * ═══════════════════════════════════════════════ */
 export default function MemberCheckInPage() {
-  console.info(`[MemberCheckInPage] component mounted — ${CHECKIN_VERSION}`);
+  
   const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const queryClient = useQueryClient();
