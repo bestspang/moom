@@ -1,6 +1,4 @@
-/* 3-zone check-in: camera + member QR + code input — CHECKIN_V3 */
-const CHECKIN_VERSION = 'CHECKIN_V3';
-console.info(`[MemberCheckInPage] module loaded — ${CHECKIN_VERSION}`);
+/* 3-zone check-in: camera + member QR + code input */
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -181,7 +179,7 @@ function Divider({ label }: { label: string }) {
  *  Main Page Component
  * ═══════════════════════════════════════════════ */
 export default function MemberCheckInPage() {
-  console.info(`[MemberCheckInPage] component mounted — ${CHECKIN_VERSION}`);
+  
   const { t } = useTranslation();
   const { memberId } = useMemberSession();
   const queryClient = useQueryClient();
@@ -332,10 +330,6 @@ export default function MemberCheckInPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100dvh-4rem)] animate-in fade-in-0 duration-200">
-      {/* DEBUG MARKER — remove after verification */}
-      <div className="bg-destructive text-destructive-foreground text-center text-xs font-bold py-1">
-        🔴 {CHECKIN_VERSION} — {window.location.pathname}
-      </div>
       {/* Zone 1: Camera Scanner */}
       <CameraScannerSection
         cameraState={cameraState}
