@@ -34,6 +34,10 @@ export function MemberBottomNav() {
           const Icon = item.icon;
           const label = t(item.labelKey);
 
+          const handleNavClick = () => {
+            console.info(`[MemberBottomNav] tap: ${item.path} (from: ${location.pathname})`);
+          };
+
           if (item.center) {
             return (
               <Link
