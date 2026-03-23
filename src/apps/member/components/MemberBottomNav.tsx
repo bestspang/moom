@@ -34,11 +34,16 @@ export function MemberBottomNav() {
           const Icon = item.icon;
           const label = t(item.labelKey);
 
+          const handleNavClick = () => {
+            console.info(`[MemberBottomNav] tap: ${item.path} (from: ${location.pathname})`);
+          };
+
           if (item.center) {
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleNavClick}
                 className="flex flex-col items-center gap-0.5 -mt-4"
               >
                 <div
@@ -62,6 +67,7 @@ export function MemberBottomNav() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleNavClick}
               className={cn(
                 'flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs transition-colors',
                 isActive
