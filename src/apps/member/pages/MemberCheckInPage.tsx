@@ -352,11 +352,8 @@ export default function MemberCheckInPage() {
         </div>
       )}
 
-      {/* ── Spacer ── */}
-      <div className="flex-1 min-h-4" />
-
       {/* ── Zone 3: Scan CTA (bottom, thumb zone) ── */}
-      <div className="px-4 pb-4">
+      <div className="mt-auto px-4 pb-3">
         {cameraState === 'fallback' ? (
           <div className="flex flex-col items-center gap-2 py-3 text-center">
             <Camera className="h-6 w-6 text-muted-foreground" />
