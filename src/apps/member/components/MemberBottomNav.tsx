@@ -43,6 +43,7 @@ export function MemberBottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleNavClick}
                 className="flex flex-col items-center gap-0.5 -mt-4"
               >
                 <div
