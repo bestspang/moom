@@ -45,7 +45,7 @@ function MemberQRCard({ memberId, t }: { memberId: string; t: (key: string) => s
     <div className="flex flex-col items-center gap-3 px-4">
       <div className="bg-card rounded-2xl p-6 shadow-lg border border-border w-full max-w-xs flex flex-col items-center gap-4">
         <div className="bg-white p-3 rounded-xl shadow-sm">
-          <QRCodeSVG value={qrValue} size={200} level="M" />
+          <QRCodeSVG value={qrValue} size={160} level="M" />
         </div>
         <p className="text-sm font-medium text-foreground">{t('member.showToStaff')}</p>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
