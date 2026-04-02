@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface GamificationRule {
   id: string;
@@ -18,8 +20,10 @@ export interface GamificationRule {
 }
 
 export const useGamificationRules = () => {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['gamification-rules'],
+    queryKey: queryKeys.gamificationRules(),
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_rules')

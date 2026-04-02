@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Json } from '@/integrations/supabase/types';
 import { logActivity } from '@/lib/activityLogger';
 
@@ -17,8 +18,10 @@ export interface Setting {
 }
 
 export const useSettings = (section: SettingsSection) => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: ['settings', section],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('settings')

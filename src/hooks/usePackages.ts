@@ -4,6 +4,7 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Package = Tables<'packages'>;
@@ -13,7 +14,7 @@ type PackageUpdate = TablesUpdate<'packages'>;
 export const usePackages = (status?: string, search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['packages', status, search],
+    queryKey: queryKeys.packages(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('packages').select('*');
@@ -37,7 +38,7 @@ export const usePackages = (status?: string, search?: string) => {
 export const usePackageStats = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['package-stats'],
+    queryKey: queryKeys.packageStats(),
     enabled: !!user,
     queryFn: async () => {
       const statuses = ['on_sale', 'scheduled', 'drafts', 'archive'] as const;
@@ -64,7 +65,7 @@ export const usePackageStats = () => {
 export const usePackage = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['packages', id],
+    queryKey: queryKeys.package(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase

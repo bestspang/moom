@@ -4,6 +4,7 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Promotion = Tables<'promotions'>;
@@ -13,7 +14,7 @@ type PromotionUpdate = TablesUpdate<'promotions'>;
 export const usePromotions = (status?: string, search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['promotions', status, search],
+    queryKey: queryKeys.promotions(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('promotions').select('*');
@@ -37,7 +38,7 @@ export const usePromotions = (status?: string, search?: string) => {
 export const usePromotionStats = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['promotion-stats'],
+    queryKey: queryKeys.promotionStats(),
     enabled: !!user,
     queryFn: async () => {
       const statuses = ['active', 'scheduled', 'drafts', 'archive'] as const;
@@ -63,7 +64,7 @@ export const usePromotionStats = () => {
 export const usePromotion = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['promotions', id],
+    queryKey: queryKeys.promotion(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase

@@ -63,4 +63,25 @@ export const queryKeys = {
 
   // Dashboard
   gymCheckins: (dateStr: string, search?: string) => ['gym-checkins', dateStr, search] as const,
+
+  // Transfer slips
+  transferSlips: (filters?: object) => ['transfer-slips', filters] as const,
+  transferSlipStats: () => ['transfer-slip-stats'] as const,
+  transferSlipDetail: (id: string) => ['transfer-slip-detail', id] as const,
+  slipActivityLog: (slipId: string) => ['slip-activity-log', slipId] as const,
+
+  // Gamification
+  gamificationChallenges: (status?: string) => ['gamification-challenges', status] as const,
+  gamificationRules: () => ['gamification-rules'] as const,
+
+  // Reports
+  membersAtRiskStats: () => ['members-at-risk-stats'] as const,
+  activeMembers: (params?: object) => ['active-members', params] as const,
+  classCapacityByHour: (params?: object) => ['class-capacity-by-hour', params] as const,
+  classCapacityOverTime: (params?: object) => ['class-capacity-over-time', params] as const,
+  packageSales: (params?: object) => ['package-sales', params] as const,
+  packageSalesOverTime: (params?: object) => ['package-sales-over-time', params] as const,
+
+  // Feature flags (extended)
+  featureEnabled: (key: string, locationId?: string) => ['feature-enabled', key, locationId] as const,
 };

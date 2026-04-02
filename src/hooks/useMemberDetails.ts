@@ -566,71 +566,17 @@ export const useAssignPackageToMember = () => {
 
   return useMutation({
     mutationFn: async (params: PurchasePackageParams) => {
-      const { memberId, memberName, pkg, paymentMethod, locationId, locationName, notes } = params;
+      const { memberId, pkg, locationId, notes } = params;
 
-      // 1. Generate transaction number
-      const { data: txNo, error: txNoErr } = await supabase.rpc('next_transaction_number');
-      if (txNoErr) throw txNoErr;
-
-      // 2. Calculate VAT
-      const vatRate = 0.07;
-      const amountGross = pkg.price;
-      const amountExVat = Math.round((amountGross / (1 + vatRate)) * 100) / 100;
-      const amountVat = Math.round((amountGross - amountExVat) * 100) / 100;
-
-      // 3. Insert transaction
-      const { data: txn, error: txnErr } = await supabase
-        .from('transactions')
-        .insert({
-          transaction_id: txNo,
-          order_name: `Purchase: ${pkg.name_en}`,
-          member_id: memberId,
-          package_id: pkg.id,
-          type: pkg.type as any,
-          amount: amountGross,
-          amount_gross: amountGross,
-          amount_ex_vat: amountExVat,
-          amount_vat: amountVat,
-          vat_rate: vatRate,
-          discount_amount: 0,
-          payment_method: paymentMethod as any,
-          status: 'paid' as any,
-          location_id: locationId || null,
-          source_type: 'pos',
-          package_name_snapshot: pkg.name_en,
-          sold_to_name: memberName,
-          notes: notes || null,
-          paid_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-      if (txnErr) throw txnErr;
-
-      // 4. Insert member_packages linked to transaction
-      const { error: mpErr } = await supabase
-        .from('member_packages')
-        .insert({
-          member_id: memberId,
-          package_id: pkg.id,
-          package_name_snapshot: pkg.name_en,
-          sessions_total: pkg.sessions,
-          sessions_remaining: pkg.sessions,
-          sessions_used: 0,
-          status: 'ready_to_use',
-          purchase_date: new Date().toISOString(),
-          purchase_transaction_id: txn.id,
-        });
-      if (mpErr) throw mpErr;
-
-      // 5. Insert member_billing record (same pattern as approve-slip)
-      await supabase.from('member_billing').insert({
-        member_id: memberId,
-        transaction_id: txn.id,
-        amount: amountGross,
-        description: `Purchase: ${pkg.name_en}`,
+      const { data, error } = await supabase.rpc('assign_package_to_member', {
+        p_member_id: memberId,
+        p_package_id: pkg.id,
+        p_staff_id: null,
+        p_location_id: locationId || null,
+        p_notes: notes || null,
       });
-
-      return { transactionNo: txNo, transactionId: txn.id };
+      if (error) throw error;
+      return { transactionNo: (data as any).transaction_number, transactionId: (data as any).transaction_id };
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });

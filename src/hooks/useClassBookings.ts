@@ -344,19 +344,27 @@ export const useBatchMarkAttendance = () => {
         for (const booking of data) {
           const schedule = (booking as any).schedule;
 
-          // ── IDEMPOTENCY GUARD ──
-          const alreadyRecorded = await hasExistingAttendance(booking.member_id, booking.schedule_id);
-          if (alreadyRecorded) continue;
+          // ── IDEMPOTENCY GUARD (upsert-style: try insert, catch duplicate) ──
+          try {
+            const { error: attendError } = await supabase.from('member_attendance').insert({
+              member_id: booking.member_id,
+              schedule_id: booking.schedule_id,
+              member_package_id: booking.member_package_id ?? undefined,
+              location_id: schedule?.location_id ?? undefined,
+              checkin_method: 'manual',
+              check_in_type: 'class',
+              check_in_time: new Date().toISOString(),
+            });
 
-          await supabase.from('member_attendance').insert({
-            member_id: booking.member_id,
-            schedule_id: booking.schedule_id,
-            member_package_id: booking.member_package_id ?? undefined,
-            location_id: schedule?.location_id ?? undefined,
-            checkin_method: 'manual',
-            check_in_type: 'class',
-            check_in_time: new Date().toISOString(),
-          });
+            if (attendError) {
+              // Ignore unique constraint violations (duplicate attendance)
+              if (attendError.code === '23505') continue;
+              console.error('Attendance insert error:', attendError);
+              continue;
+            }
+          } catch {
+            continue;
+          }
 
           if (booking.member_package_id) {
             const { data: mp } = await supabase

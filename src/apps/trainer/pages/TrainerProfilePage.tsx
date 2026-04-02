@@ -33,7 +33,7 @@ export default function TrainerProfilePage() {
       <Section className="mb-4">
         <div className="flex items-center gap-4 rounded-lg bg-card p-4 shadow-sm">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-            {firstName.charAt(0).toUpperCase()}
+            {(firstName || 'T').charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground truncate">{fullName}</p>

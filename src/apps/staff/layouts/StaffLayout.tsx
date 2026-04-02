@@ -3,6 +3,7 @@ import { Home, ScanLine, Users, CreditCard, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function StaffLayout() {
   const location = useLocation();
@@ -32,7 +33,7 @@ export function StaffLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="flex-1 pb-20">
-        <Outlet />
+        <ErrorBoundary><Outlet /></ErrorBoundary>
       </div>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-bottom">
         <div className="mx-auto flex max-w-lg items-center justify-around py-2">

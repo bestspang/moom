@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface GamificationChallenge {
   id: string;
@@ -26,8 +28,10 @@ export interface GamificationChallenge {
 }
 
 export const useGamificationChallenges = (statusFilter?: string) => {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['gamification-challenges', statusFilter],
+    queryKey: queryKeys.gamificationChallenges(statusFilter),
+    enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('gamification_challenges').select('*').order('created_at', { ascending: false });
       if (statusFilter && statusFilter !== 'all') query = query.eq('status', statusFilter);

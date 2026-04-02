@@ -4,6 +4,7 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Staff = Tables<'staff'>;
@@ -13,7 +14,7 @@ type StaffUpdate = TablesUpdate<'staff'>;
 export const useStaff = (status?: string, search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff', status, search],
+    queryKey: queryKeys.staff(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -43,7 +44,7 @@ export const useStaff = (status?: string, search?: string) => {
 export const useStaffStats = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff-stats'],
+    queryKey: queryKeys.staffStats(),
     enabled: !!user,
     queryFn: async () => {
       const [activeRes, pendingRes, inactiveRes, terminatedRes] = await Promise.all([
@@ -66,7 +67,7 @@ export const useStaffStats = () => {
 export const useStaffMember = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff', id],
+    queryKey: queryKeys.staffMember(id),
     enabled: !!id && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -88,7 +89,7 @@ export const useStaffMember = (id: string) => {
 export const useStaffPositions = (staffId: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff-positions', staffId],
+    queryKey: queryKeys.staffPositions(staffId),
     enabled: !!staffId && !!user,
     queryFn: async () => {
       const { data, error } = await supabase

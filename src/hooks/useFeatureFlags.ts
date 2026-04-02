@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import type { Json } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types based on database schema
 type FlagScope = 'global' | 'location' | 'user';
@@ -31,8 +32,10 @@ interface FeatureFlagAssignment {
 
 // Fetch all feature flags
 export const useFeatureFlags = () => {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.featureFlags(),
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('feature_flags')
@@ -65,8 +68,9 @@ export const useFeatureFlag = (key: string) => {
 
 // Check if a feature is enabled (considering location/user overrides)
 export const useIsFeatureEnabled = (key: string, locationId?: string) => {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['feature-enabled', key, locationId],
+    queryKey: queryKeys.featureEnabled(key, locationId),
     queryFn: async () => {
       const { data: flag, error: flagError } = await supabase
         .from('feature_flags')
@@ -92,7 +96,7 @@ export const useIsFeatureEnabled = (key: string, locationId?: string) => {
 
       return assignment ? assignment.enabled : flag.enabled;
     },
-    enabled: !!key,
+    enabled: !!key && !!user,
   });
 };
 

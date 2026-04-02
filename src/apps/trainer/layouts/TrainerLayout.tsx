@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrainerHeader } from '../components/TrainerHeader';
 import { useTranslation } from 'react-i18next';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function TrainerLayout() {
   const location = useLocation();
@@ -34,7 +35,7 @@ export function TrainerLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       <TrainerHeader />
       <div className="flex-1 pt-14 pb-20">
-        <Outlet />
+        <ErrorBoundary><Outlet /></ErrorBoundary>
       </div>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-bottom">
         <div className="mx-auto flex max-w-lg items-center justify-around py-2">
