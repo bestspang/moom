@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { getDateLocale } from '@/lib/formatters';
@@ -95,6 +96,8 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
 
       {/* Right side - Actions */}
       <div className="flex items-center gap-2 sm:gap-4">
+        {/* Theme Toggle */}
+        <ThemeToggle />
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -29,7 +29,7 @@ import { Crown, Medal, Award } from 'lucide-react';
 const RANK_ICONS = [Crown, Medal, Award] as const;
 const RANK_COLORS = [
   'text-yellow-500',
-  'text-gray-400',
+  'text-muted-foreground',
   'text-amber-600',
 ] as const;
 

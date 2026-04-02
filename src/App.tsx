@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "next-themes";
 import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
 import { detectSurface } from "@/apps/shared/hostname";
 import SurfaceGuard from "@/apps/shared/SurfaceGuard";
@@ -138,6 +139,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <AuthProvider>
       <SurfaceProvider>
         <LanguageProvider>
@@ -304,6 +306,7 @@ const App = () => (
         </LanguageProvider>
       </SurfaceProvider>
     </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

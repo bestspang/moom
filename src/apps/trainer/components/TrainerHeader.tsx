@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Globe } from 'lucide-react';
+import { LogOut, Globe, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -16,6 +17,7 @@ export function TrainerHeader() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { resolvedTheme, setTheme } = useTheme();
   const { t } = useTranslation();
 
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
@@ -42,6 +44,10 @@ export function TrainerHeader() {
           <DropdownMenuItem onClick={() => setLanguage(language === 'en' ? 'th' : 'en')} className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             {language === 'en' ? 'ไทย' : 'English'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="flex items-center gap-2">
+            {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 text-destructive">

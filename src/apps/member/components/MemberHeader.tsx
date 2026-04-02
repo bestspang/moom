@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, Monitor, Dumbbell, Globe, Bell } from 'lucide-react';
+import { User, LogOut, Monitor, Dumbbell, Globe, Bell, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useRecentNotifications, useUnreadCount, useMarkAsRead } from '@/hooks/useNotifications';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +26,7 @@ export function MemberHeader() {
   const { firstName, lastName } = useMemberSession();
   const { allRoles, signOut, user } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const initials = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase() || '?';
 
@@ -157,6 +159,11 @@ export function MemberHeader() {
             <DropdownMenuItem onClick={() => setLanguage(language === 'en' ? 'th' : 'en')} className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               {language === 'en' ? 'ไทย' : 'English'}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="flex items-center gap-2">
+              {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
