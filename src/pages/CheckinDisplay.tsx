@@ -309,7 +309,7 @@ export default function CheckinDisplay() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 select-none relative">
       {/* Celebration overlay */}
       {celebration && (
-        <div className="absolute top-0 left-0 right-0 z-50 p-4 bg-green-500 text-white text-center animate-in slide-in-from-top duration-300">
+        <div className="absolute top-0 left-0 right-0 z-50 p-4 bg-success text-success-foreground text-center animate-in slide-in-from-top duration-300">
           <div className="flex items-center justify-center gap-2">
             <CheckCircle2 className="h-6 w-6" />
             <span className="text-lg font-bold">Check-in สำเร็จ! ✨ — {celebration.memberName}</span>

@@ -162,6 +162,61 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 32 100% 50%;
 
+    /* Accent teal (dark) */
+    --accent-teal: 168 75% 48%;
+    --accent-teal-light: 168 40% 15%;
+    --accent-teal-foreground: 0 0% 100%;
+
+    /* Semantic: success (dark) */
+    --success: 168 75% 48%;
+    --success-light: 168 40% 15%;
+    --success-foreground: 0 0% 100%;
+
+    /* Semantic: warning (dark) */
+    --warning: 38 92% 55%;
+    --warning-light: 38 50% 15%;
+    --warning-foreground: 38 92% 90%;
+
+    /* Destructive light (dark) */
+    --destructive-light: 0 50% 15%;
+
+    /* Primary hover (dark) */
+    --primary-hover: 32 100% 55%;
+
+    /* Table (dark) */
+    --table-header: 220 20% 14%;
+    --table-header-foreground: 210 40% 95%;
+
+    /* Content background (dark) */
+    --content-background: 222.2 84% 4.9%;
+
+    /* Text (dark - inverted) */
+    --text-dark: 210 40% 95%;
+    --text-medium: 215 20% 70%;
+    --text-light: 215 15% 50%;
+
+    /* Border (dark) */
+    --border-light: 217.2 32.6% 20%;
+
+    /* Shadows (dark - stronger opacity) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+    /* Status (dark) */
+    --status-success: 152 55% 48%;
+    --status-warning: 38 92% 55%;
+    --status-info: 210 70% 60%;
+    --status-danger: 0 65% 55%;
+
+    /* Status Tiers (dark - brighter for dark bg) */
+    --status-tier-bronze: 30 50% 50%;
+    --status-tier-silver: 210 10% 70%;
+    --status-tier-gold: 45 85% 55%;
+    --status-tier-platinum: 200 15% 78%;
+    --status-tier-diamond: 195 80% 70%;
+    --status-tier-black: 0 0% 75%;
+
     /* Momentum / Gamification tokens (dark) */
     --momentum-flame: 32 100% 55%;
     --momentum-flame-glow: 38 92% 55%;

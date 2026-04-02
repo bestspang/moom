@@ -10,7 +10,7 @@ import CreateBadgeDialog from '@/components/gamification/CreateBadgeDialog';
 
 const tierColors: Record<string, string> = {
   bronze: 'bg-amber-700',
-  silver: 'bg-gray-400',
+  silver: 'bg-muted-foreground',
   gold: 'bg-yellow-500',
   platinum: 'bg-indigo-400',
 };
