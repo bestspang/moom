@@ -414,9 +414,9 @@ export const useBatchMarkAttendance = () => {
         for (const booking of data) {
           const schedule = (booking as any).schedule;
           fireGamificationEvent({
-            event_type: 'class_attended',
+            event_type: 'class_attend',
             member_id: booking.member_id,
-            idempotency_key: `class_attended:${booking.id}`,
+            idempotency_key: `class_attend:${booking.id}`,
             location_id: schedule?.location_id,
             metadata: { schedule_id: booking.schedule_id, booking_id: booking.id },
           });

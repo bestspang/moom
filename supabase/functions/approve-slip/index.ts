@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           },
           body: JSON.stringify({
-            event_type: 'package_purchased',
+            event_type: 'package_purchase',
             member_id: slip.member_id,
             idempotency_key: `purchase:${tx.id}`,
             location_id: slip.location_id || undefined,
