@@ -350,6 +350,9 @@ export default {
     expired: 'หมดอายุ',
     decliningAttendance: 'เข้าใช้ลดลง',
     visits: 'ครั้ง',
+    goodMorning: 'สวัสดีตอนเช้า',
+    goodAfternoon: 'สวัสดีตอนบ่าย',
+    goodEvening: 'สวัสดีตอนเย็น',
   },
 
   // Goals
@@ -2256,6 +2259,11 @@ export default {
   dashboardExtra: {
     attendees: 'ผู้เข้าร่วม',
     mainLocation: 'MOOM CLUB สาขาหลัก',
+    goodMorning: 'สวัสดีตอนเช้า',
+    goodAfternoon: 'สวัสดีตอนบ่าย',
+    goodEvening: 'สวัสดีตอนเย็น',
+    todayScheduleCompact: 'คลาสวันนี้',
+    viewAllSchedule: 'ดูตารางเรียนทั้งหมด',
   },
 
   // Error pages
