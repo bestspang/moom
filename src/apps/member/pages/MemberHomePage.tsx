@@ -19,7 +19,6 @@ import { StatusTierBadge, type StatusTier } from '../features/momentum/StatusTie
 import { fetchMemberStatusTier } from '../features/momentum/api';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
-import { QuickMenuStrip } from '../components/QuickMenuStrip';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -102,6 +101,7 @@ export default function MemberHomePage() {
           <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
         </div>
       )}
+
       {/* Onboarding for incomplete users / Announcement for completed */}
       {!allOnboardingDone && !onboardingDismissed && (
         <Section className="mb-4">
@@ -162,9 +162,9 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* Quick actions */}
+      {/* Quick actions + Daily Bonus inline */}
       <Section className="mb-4">
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-3">
           <Button onClick={() => navigate('/member/check-in')} className="flex-1" size="sm">
             <ScanLine className="h-4 w-4 mr-1.5" />
             {t('member.checkIn')}
@@ -174,10 +174,6 @@ export default function MemberHomePage() {
             {t('member.bookClass')}
           </Button>
         </div>
-      </Section>
-
-      {/* Daily Bonus Nudge */}
-      <Section className="mb-4">
         <DailyBonusCard />
       </Section>
 
@@ -216,11 +212,6 @@ export default function MemberHomePage() {
         );
       })()}
 
-      {/* Quick Menu Strip */}
-      <Section className="mb-4">
-        <QuickMenuStrip />
-      </Section>
-
       {/* Next Up bookings */}
       <Section
         title={t('member.nextUp')}
@@ -256,24 +247,9 @@ export default function MemberHomePage() {
         )}
       </Section>
 
-
-      {/* Referral Program */}
-      {memberId && (
-        <Section className="mb-4">
-          <ReferralCard memberId={memberId} />
-        </Section>
-      )}
-
-      {/* AI Suggested Classes */}
-      {memberId && (
-        <Section className="mb-4">
-          <SuggestedClassCard memberId={memberId} />
-        </Section>
-      )}
-
       {/* Active packages with expiry countdown */}
       {activePackages.length > 0 && (
-        <Section title={t('member.activePackages')} className="mb-6">
+        <Section title={t('member.activePackages')} className="mb-4">
           <div className="space-y-2">
             {activePackages.map(pkg => {
               const daysLeft = pkg.expiryDate
@@ -302,6 +278,18 @@ export default function MemberHomePage() {
               );
             })}
           </div>
+        </Section>
+      )}
+
+      {/* Referral + Suggested (secondary) */}
+      {memberId && (
+        <Section className="mb-4">
+          <ReferralCard memberId={memberId} />
+        </Section>
+      )}
+      {memberId && (
+        <Section className="mb-6">
+          <SuggestedClassCard memberId={memberId} />
         </Section>
       )}
     </div>

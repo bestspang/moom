@@ -46,16 +46,34 @@ export default function MemberProfilePage() {
     enabled: !!memberId,
   });
 
-  const menuItems = [
+  const activityItems = [
     { label: t('member.editProfile'), icon: User, path: '/member/profile/edit' },
     { label: t('member.inviteFriends'), icon: Gift, path: '/member/referral' },
     { label: t('member.attendanceHistory'), icon: CalendarCheck, path: '/member/attendance' },
     { label: t('member.rewardWalletMenu'), icon: CreditCard, path: '/member/rewards' },
     { label: t('member.badgeCollectionMenu'), icon: Award, path: '/member/badges' },
     { label: t('member.mySquad'), icon: Heart, path: '/member/squad' },
+  ];
+
+  const settingsItems = [
     { label: t('member.securityLogin'), icon: Lock, path: '/member/security' },
     { label: t('member.notifications'), icon: Bell, path: '/member/notifications' },
   ];
+
+  const renderMenuItem = (item: { label: string; icon: typeof User; path: string }) => {
+    const Icon = item.icon;
+    return (
+      <button
+        key={item.label}
+        onClick={() => navigate(item.path)}
+        className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted"
+      >
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <span className="flex-1 text-sm font-medium text-foreground">{item.label}</span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </button>
+    );
+  };
 
   return (
     <div className="animate-in fade-in-0 duration-200">
@@ -115,29 +133,17 @@ export default function MemberProfilePage() {
         </Section>
       )}
 
-      {/* Menu items */}
-      <Section className="mb-6">
+      {/* Activity */}
+      <Section title={t('member.activityGroup')} className="mb-4">
         <div className="space-y-1">
-          {menuItems.map(item => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.label}
-                onClick={() => {
-                  if (item.path) {
-                    navigate(item.path);
-                  } else {
-                    import('sonner').then(({ toast }) => toast.info(t('member.comingSoon')));
-                  }
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted"
-              >
-                <Icon className="h-5 w-5 text-muted-foreground" />
-                <span className="flex-1 text-sm font-medium text-foreground">{item.label}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-            );
-          })}
+          {activityItems.map(renderMenuItem)}
+        </div>
+      </Section>
+
+      {/* Settings */}
+      <Section title={t('member.settingsGroup')} className="mb-6">
+        <div className="space-y-1">
+          {settingsItems.map(renderMenuItem)}
         </div>
       </Section>
 

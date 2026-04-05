@@ -47,18 +47,21 @@ export default function TrainerProfilePage() {
         <div className="space-y-1">
           <ListCard
             title={t('trainer.notifications')}
-            leading={<Bell className="h-5 w-5 text-muted-foreground" />}
+            leading={<Bell className="h-5 w-5 text-muted-foreground/50" />}
             subtitle={t('trainer.comingSoonLabel')}
+            className="opacity-60 pointer-events-none"
           />
           <ListCard
             title={t('trainer.preferences')}
-            leading={<Settings className="h-5 w-5 text-muted-foreground" />}
+            leading={<Settings className="h-5 w-5 text-muted-foreground/50" />}
             subtitle={t('trainer.comingSoonLabel')}
+            className="opacity-60 pointer-events-none"
           />
           <ListCard
             title={t('trainer.helpAndSupport')}
-            leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
+            leading={<HelpCircle className="h-5 w-5 text-muted-foreground/50" />}
             subtitle={t('trainer.comingSoonLabel')}
+            className="opacity-60 pointer-events-none"
           />
         </div>
       </Section>

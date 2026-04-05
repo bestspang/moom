@@ -990,6 +990,17 @@ export default {
     emergencyLastName: 'Emergency last name',
     emergencyPhone: 'Emergency phone',
     emergencyRelationship: 'Relationship',
+    // Profile page (staff surface)
+    staffRole: 'Staff',
+    settings: 'Settings',
+    notifications: 'Notifications',
+    preferences: 'Preferences',
+    helpAndSupport: 'Help & Support',
+    comingSoonLabel: 'Coming soon',
+    switchApp: 'Switch App',
+    adminPortal: 'Admin Portal',
+    memberApp: 'Member App',
+    signOut: 'Sign Out',
   },
 
   // Roles
@@ -1783,6 +1794,8 @@ export default {
     runClubDescription: 'Join group runs, track distances, and compete with friends. Stay tuned!',
     adminPortal: 'Admin Portal',
     signOut: 'Sign Out',
+    activityGroup: 'Activity',
+    settingsGroup: 'Settings',
     coinBalance: 'Coin Balance',
     badgesEarned: '{{n}} badges earned',
     viewAllBadges: 'View all →',
