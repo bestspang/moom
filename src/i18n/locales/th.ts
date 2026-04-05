@@ -1794,6 +1794,8 @@ export default {
     runClubDescription: 'ร่วมวิ่งกลุ่ม ติดตามระยะทาง และแข่งกับเพื่อน รอติดตามนะ!',
     adminPortal: 'แอดมิน',
     signOut: 'ออกจากระบบ',
+    activityGroup: 'กิจกรรม',
+    settingsGroup: 'ตั้งค่า',
     coinBalance: 'ยอด Coin',
     badgesEarned: 'ได้รับ {{n}} แบดจ์',
     viewAllBadges: 'ดูทั้งหมด →',
