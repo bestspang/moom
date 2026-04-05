@@ -27,6 +27,7 @@ export const ReportItem = ({
   description,
   buttonText,
   buttonVariant = 'view',
+  disabled,
   onClick,
   icon,
   accentColor = 'primary',
