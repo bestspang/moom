@@ -85,13 +85,18 @@ export function useInsightsOverview() {
         .neq('status', 'cancelled');
 
       let classUtilization = 0;
+      let totalCheckins = 0;
       if (schedData && schedData.length > 0) {
         const total = schedData.reduce((sum, s) => {
+          totalCheckins += (s.checked_in || 0);
           if (s.capacity && s.capacity > 0) return sum + (s.checked_in || 0) / s.capacity;
           return sum;
         }, 0);
         classUtilization = Math.round((total / schedData.length) * 100);
       }
+
+      // RPV (Revenue Per Visit)
+      const rpv = totalCheckins > 0 ? Math.round(totalRevenue / totalCheckins) : 0;
 
       // Lead conversion
       const { data: leadsData } = await supabase.from('leads').select('status');
@@ -108,6 +113,8 @@ export function useInsightsOverview() {
         leadConversionRate,
         activeMembers: activeMembers || 0,
         totalRevenue,
+        rpv,
+        totalCheckins,
       };
     },
     staleTime: 15 * 60 * 1000,
