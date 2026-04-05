@@ -44,6 +44,20 @@
 
 ---
 
+### UX/UI Consistency (Phase 1–5)
+- [ ] All member/trainer/staff pages use MobilePageHeader (no inline BackButton)
+- [ ] Member Packages: session progress bar shows used/total with color coding
+- [ ] Member Packages: expiry ≤3d shows red, ≤7d shows orange
+- [ ] Staff Profile: all labels show Thai when language = TH
+- [ ] Staff Profile: Coming Soon items are visually disabled (no click handler)
+- [ ] Staff Home: recent check-ins section shows or empty state
+- [ ] Trainer Home: Impact card has tap hint + navigates to /trainer/impact
+- [ ] Trainer Profile: Coming Soon items have no chevron, opacity-60
+- [ ] Member Edit Profile: MobilePageHeader with back button, form still saves
+- [ ] Member Upload Slip: MobilePageHeader with back button, upload still works
+
+---
+
 ## Quick Regression Checks
 
 - [ ] Frontend build passes (`npm run build`)
