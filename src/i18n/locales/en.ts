@@ -350,6 +350,9 @@ export default {
     expired: 'Expired',
     decliningAttendance: 'Declining Attendance',
     visits: 'visits',
+    goodMorning: 'Good morning',
+    goodAfternoon: 'Good afternoon',
+    goodEvening: 'Good evening',
   },
 
   // Goals
