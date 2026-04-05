@@ -309,7 +309,7 @@ async function processChallenges(
     const matchesGoal =
       (challenge.goal_type === "action_count" && challenge.goal_action_key === eventType) ||
       (challenge.goal_type === "xp_threshold") ||
-      (challenge.goal_type === "class_count" && eventType === "class_attended") ||
+      (challenge.goal_type === "class_count" && (eventType === "class_attend" || eventType === "class_attended")) ||
       (challenge.goal_type === "streak" && eventType === "check_in");
 
     if (!matchesGoal) continue;
