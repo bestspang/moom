@@ -350,6 +350,9 @@ export default {
     expired: 'หมดอายุ',
     decliningAttendance: 'เข้าใช้ลดลง',
     visits: 'ครั้ง',
+    goodMorning: 'สวัสดีตอนเช้า',
+    goodAfternoon: 'สวัสดีตอนบ่าย',
+    goodEvening: 'สวัสดีตอนเย็น',
   },
 
   // Goals
