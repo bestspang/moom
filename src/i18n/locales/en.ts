@@ -1794,6 +1794,8 @@ export default {
     runClubDescription: 'Join group runs, track distances, and compete with friends. Stay tuned!',
     adminPortal: 'Admin Portal',
     signOut: 'Sign Out',
+    activityGroup: 'Activity',
+    settingsGroup: 'Settings',
     coinBalance: 'Coin Balance',
     badgesEarned: '{{n}} badges earned',
     viewAllBadges: 'View all →',
