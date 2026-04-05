@@ -76,21 +76,21 @@ export default function MemberBookingDetailPage() {
 
   if (isLoading) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.bookingDetails')} action={backAction} />
       <Section><Skeleton className="h-48 rounded-lg" /></Section>
     </div>
   );
 
   if (isError) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.bookingDetails')} action={backAction} />
       <QueryError onRetry={() => refetch()} />
     </div>
   );
 
   if (!booking) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.bookingDetails')} action={backAction} />
       <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.bookingNotFound')}</p></Section>
     </div>
   );
