@@ -638,7 +638,7 @@ Deno.serve(async (req) => {
           .from("xp_ledger")
           .select("id", { count: "exact", head: true })
           .eq("member_id", member_id)
-          .eq("event_type", "class_attended");
+          .in("event_type", ["class_attend", "class_attended"]);
 
         const stats: Record<string, number> = {
           checkin_count: checkinCount ?? 0,
