@@ -1896,6 +1896,7 @@ export default {
     bookingCancelled: 'Booking cancelled',
     bookingCancelFailed: 'Failed to cancel booking',
     // Class detail page
+    classDetails: 'Class Details',
     classNotFound: 'Class not found',
     availability: 'Availability',
     percentFull: '{{pct}}% full',

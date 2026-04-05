@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { QueryError } from '@/apps/shared/components/QueryError';
@@ -44,29 +45,29 @@ export default function MemberClassDetailPage() {
     onError: () => toast.error(t('member.classBookFailed')),
   });
 
-  const BackButton = () => (
-    <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+  const backAction = (
+    <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
       <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
 
   if (isLoading) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.classDetails')} action={backAction} />
       <Section><Skeleton className="h-48 rounded-lg" /></Section>
     </div>
   );
 
   if (isError) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.classDetails')} action={backAction} />
       <QueryError onRetry={() => refetch()} />
     </div>
   );
 
   if (!cls) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.classDetails')} action={backAction} />
       <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.classNotFound')}</p></Section>
     </div>
   );
@@ -76,7 +77,7 @@ export default function MemberClassDetailPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.classDetails')} action={backAction} />
 
       <Section className="mb-6">
         <div className="rounded-lg bg-card p-5 shadow-sm border border-border">
@@ -84,7 +85,7 @@ export default function MemberClassDetailPage() {
             {cls.categoryName && <span className="text-xs font-medium text-muted-foreground">{cls.categoryName}</span>}
             <MobileStatusBadge status={cls.status} />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-4">{cls.className}</h1>
+          <h2 className="text-xl font-bold text-foreground mb-4">{cls.className}</h2>
 
           <div className="space-y-2.5">
             <div className="flex items-center gap-3 text-sm text-foreground">
