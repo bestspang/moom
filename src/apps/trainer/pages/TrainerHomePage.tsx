@@ -88,9 +88,13 @@ export default function TrainerHomePage() {
       </Section>
 
       <Section className="mb-4">
-        <button onClick={() => navigate('/trainer/impact')} className="w-full text-left">
+        <button
+          onClick={() => navigate('/trainer/impact')}
+          className="w-full text-left rounded-lg border border-border/50 active:scale-[0.98] transition-transform"
+        >
           {(trainerType ?? 'in_house') === 'in_house' ? <CoachImpactCard /> : <PartnerReputationCard />}
         </button>
+        <p className="text-xs text-muted-foreground text-center mt-1.5">{t('trainer.tapForDetails')}</p>
       </Section>
 
       <Section title={t('trainer.todaysSchedule')} className="mb-4">

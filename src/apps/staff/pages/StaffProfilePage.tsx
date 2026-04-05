@@ -48,21 +48,27 @@ export default function StaffProfilePage() {
 
       <Section title={t('staff.settings')}>
         <div className="space-y-1">
-          <ListCard
-            title={t('staff.notifications')}
-            leading={<Bell className="h-5 w-5 text-muted-foreground" />}
-            subtitle={t('staff.comingSoonLabel')}
-          />
-          <ListCard
-            title={t('staff.preferences')}
-            leading={<Settings className="h-5 w-5 text-muted-foreground" />}
-            subtitle={t('staff.comingSoonLabel')}
-          />
-          <ListCard
-            title={t('staff.helpAndSupport')}
-            leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
-            subtitle={t('staff.comingSoonLabel')}
-          />
+          <div className="opacity-60 pointer-events-none">
+            <ListCard
+              title={t('staff.notifications')}
+              leading={<Bell className="h-5 w-5 text-muted-foreground" />}
+              subtitle={t('staff.comingSoonLabel')}
+            />
+          </div>
+          <div className="opacity-60 pointer-events-none">
+            <ListCard
+              title={t('staff.preferences')}
+              leading={<Settings className="h-5 w-5 text-muted-foreground" />}
+              subtitle={t('staff.comingSoonLabel')}
+            />
+          </div>
+          <div className="opacity-60 pointer-events-none">
+            <ListCard
+              title={t('staff.helpAndSupport')}
+              leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
+              subtitle={t('staff.comingSoonLabel')}
+            />
+          </div>
         </div>
       </Section>
 

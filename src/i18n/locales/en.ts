@@ -1001,6 +1001,9 @@ export default {
     adminPortal: 'Admin Portal',
     memberApp: 'Member App',
     signOut: 'Sign Out',
+    recentCheckins: 'Recent Check-ins',
+    noCheckinsToday: 'No check-ins today yet',
+    viewSchedule: 'Schedule',
   },
 
   // Roles
@@ -1844,6 +1847,8 @@ export default {
     effectXpBonus: '+{{amount}} XP bonus',
     effectAccess: 'Unlocks access',
     // Package
+    sessionsUsed: '{{used}}/{{total}} sessions used',
+    remaining: 'left',
     expiresOn: 'Expires {{date}}',
     // Moved from auth namespace
     earnXpOnRenewal: 'Renewing your package earns +{{xp}} XP & +{{coins}} Coin',
@@ -2953,5 +2958,6 @@ export default {
     noBadgesYet: 'No badges earned yet',
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
+    tapForDetails: 'Tap to see details →',
   },
 };

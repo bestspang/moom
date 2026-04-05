@@ -1001,6 +1001,9 @@ export default {
     adminPortal: 'Admin Portal',
     memberApp: 'แอปสมาชิก',
     signOut: 'ออกจากระบบ',
+    recentCheckins: 'เช็คอินล่าสุด',
+    noCheckinsToday: 'ยังไม่มีเช็คอินวันนี้',
+    viewSchedule: 'ตาราง',
   },
 
   // Roles
@@ -1844,6 +1847,8 @@ export default {
     effectXpBonus: '+{{amount}} โบนัส XP',
     effectAccess: 'ปลดล็อกการเข้าถึง',
     // Package
+    sessionsUsed: 'ใช้ไป {{used}}/{{total}} เซสชัน',
+    remaining: 'เหลือ',
     expiresOn: 'หมดอายุ {{date}}',
     // Moved from auth namespace
     earnXpOnRenewal: 'ต่อแพ็กเกจรับ +{{xp}} XP & +{{coins}} Coin',
@@ -2798,5 +2803,6 @@ export default {
     noBadgesYet: 'ยังไม่มีเหรียญตรา',
     viewAllBadges: 'ดูเหรียญตราทั้งหมด',
     earnedOn: 'ได้รับเมื่อ',
+    tapForDetails: 'แตะเพื่อดูรายละเอียด →',
   },
 };
