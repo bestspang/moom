@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Upload, X, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
