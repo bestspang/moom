@@ -219,7 +219,7 @@ const Insights = () => {
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">{t('insights.detailedReports')}</h3>
               <ReportItem title={t('reports.activeMembersTitle')} description={t('reports.activeMembersDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/member/active-members')} icon={<Users className="h-4 w-4" />} accentColor="primary" />
               <ReportItem title={t('reports.membersAtRisk')} description={t('reports.membersAtRiskDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/member/members-at-risk')} icon={<AlertTriangle className="h-4 w-4" />} accentColor="warning" />
-              <ReportItem title={t('reports.membersPackageUsage')} description={t('reports.packageUsageDesc')} buttonText={t('reports.exportReport')} onClick={handleComingSoon} icon={<Package className="h-4 w-4" />} accentColor="teal" />
+              <ReportItem title={t('reports.membersPackageUsage')} description={t('reports.packageUsageDesc')} buttonText={t('reportsExtra.comingSoon')} onClick={undefined} icon={<Package className="h-4 w-4" />} accentColor="teal" />
             </div>
           </div>
         </TabsContent>
@@ -282,7 +282,7 @@ const Insights = () => {
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">{t('insights.detailedReports')}</h3>
               <ReportItem title={t('reports.classCapacityByHourTitle')} description={t('reports.classCapacityByHourDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/class/capacity-by-hour')} icon={<Clock className="h-4 w-4" />} accentColor="teal" />
               <ReportItem title={t('reports.classCapacityTitle')} description={t('reports.classCapacityDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/class/capacity-over-time')} icon={<TrendingUp className="h-4 w-4" />} accentColor="primary" />
-              <ReportItem title={t('reports.classCategoryPopularity')} description={t('reports.classCategoryPopularityDesc')} buttonText={t('reports.exportReport')} onClick={handleComingSoon} icon={<PieChart className="h-4 w-4" />} accentColor="purple" />
+              <ReportItem title={t('reports.classCategoryPopularity')} description={t('reports.classCategoryPopularityDesc')} buttonText={t('reportsExtra.comingSoon')} onClick={undefined} icon={<PieChart className="h-4 w-4" />} accentColor="purple" />
             </div>
           </div>
         </TabsContent>
@@ -292,7 +292,7 @@ const Insights = () => {
           <div className="space-y-2">
             <ReportItem title={t('reports.packageSalesTitle')} description={t('reports.packageSalesDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales')} icon={<BarChart3 className="h-4 w-4" />} accentColor="teal" />
             <ReportItem title={t('reports.packageSalesOverTimeTitle')} description={t('reports.packageSalesOverTimeDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales-over-time')} icon={<Calendar className="h-4 w-4" />} accentColor="primary" />
-            <ReportItem title={t('reports.membersPackageAtRisk')} description={t('reports.packageAtRiskDesc')} buttonText={t('reports.exportReport')} onClick={handleComingSoon} icon={<AlertTriangle className="h-4 w-4" />} accentColor="warning" />
+            <ReportItem title={t('reports.membersPackageAtRisk')} description={t('reports.packageAtRiskDesc')} buttonText={t('reportsExtra.comingSoon')} onClick={undefined} icon={<AlertTriangle className="h-4 w-4" />} accentColor="warning" />
           </div>
         </TabsContent>
       </Tabs>

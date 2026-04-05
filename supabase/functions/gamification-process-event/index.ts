@@ -309,7 +309,7 @@ async function processChallenges(
     const matchesGoal =
       (challenge.goal_type === "action_count" && challenge.goal_action_key === eventType) ||
       (challenge.goal_type === "xp_threshold") ||
-      (challenge.goal_type === "class_count" && eventType === "class_attended") ||
+      (challenge.goal_type === "class_count" && (eventType === "class_attend" || eventType === "class_attended")) ||
       (challenge.goal_type === "streak" && eventType === "check_in");
 
     if (!matchesGoal) continue;
@@ -638,7 +638,7 @@ Deno.serve(async (req) => {
           .from("xp_ledger")
           .select("id", { count: "exact", head: true })
           .eq("member_id", member_id)
-          .eq("event_type", "class_attended");
+          .in("event_type", ["class_attend", "class_attended"]);
 
         const stats: Record<string, number> = {
           checkin_count: checkinCount ?? 0,

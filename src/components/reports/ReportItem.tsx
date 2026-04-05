@@ -7,8 +7,9 @@ export interface ReportItemProps {
   title: string;
   description: string;
   buttonText: string;
+  disabled?: boolean;
   buttonVariant?: 'view' | 'export';
-  onClick: () => void;
+  onClick?: () => void;
   icon: React.ReactNode;
   accentColor?: 'primary' | 'warning' | 'teal' | 'purple';
   compact?: boolean;
@@ -26,6 +27,7 @@ export const ReportItem = ({
   description,
   buttonText,
   buttonVariant = 'view',
+  disabled,
   onClick,
   icon,
   accentColor = 'primary',
@@ -54,6 +56,7 @@ export const ReportItem = ({
           compact ? 'text-xs' : 'border-primary text-primary hover:bg-primary/10 w-full sm:w-auto'
         )}
         onClick={onClick}
+        disabled={disabled || !onClick}
       >
         {buttonVariant === 'export' && <Download className="h-4 w-4 mr-1.5" />}
         {buttonText}

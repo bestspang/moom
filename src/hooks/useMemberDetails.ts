@@ -653,7 +653,7 @@ export const useAssignPackageToMember = () => {
         },
       });
       fireGamificationEvent({
-        event_type: 'package_purchased',
+        event_type: 'package_purchase',
         member_id: variables.memberId,
         idempotency_key: `purchase:${result.transactionNo}`,
         metadata: {

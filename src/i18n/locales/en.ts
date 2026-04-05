@@ -2908,6 +2908,7 @@ export default {
     notificationsComingSoon: 'Notifications settings coming soon',
     preferencesComingSoon: 'Preferences coming soon',
     helpCenterComingSoon: 'Help center coming soon',
+    comingSoonLabel: 'Coming soon',
     // Impact detail page
     coachImpactTitle: 'Coach Impact',
     partnerReputationTitle: 'Partner Reputation',

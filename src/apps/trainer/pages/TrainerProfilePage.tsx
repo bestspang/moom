@@ -8,7 +8,7 @@ import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users } from 'lucide-r
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
-import { toast } from 'sonner';
+
 
 export default function TrainerProfilePage() {
   const { t } = useTranslation();
@@ -48,20 +48,17 @@ export default function TrainerProfilePage() {
           <ListCard
             title={t('trainer.notifications')}
             leading={<Bell className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.notificationsComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
           <ListCard
             title={t('trainer.preferences')}
             leading={<Settings className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.preferencesComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
           <ListCard
             title={t('trainer.helpAndSupport')}
             leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.helpCenterComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
         </div>
       </Section>
