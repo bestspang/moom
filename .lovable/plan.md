@@ -1,67 +1,96 @@
 
 
-# Audit Result: ทุก Surface Up-to-Date — พบแค่ docs ไม่อัพเดท
+# Strategic Business Intelligence Upgrade — MOOM Gym Management Platform
 
-## System Analysis
+## Current State Assessment
 
-ตรวจสอบทุกไฟล์ที่แก้ไขใน Phase 1-5 แล้ว:
+The platform already has solid foundations:
+- **Dashboard**: KPI cards, business health score, revenue forecast, needs attention, schedule preview, goals, AI briefing
+- **Analytics/Insights**: Revenue trends, member growth, class fill rate heatmap, lead funnel, KPI overview (ARPU, retention, LTV, utilization)
+- **Finance**: Full transaction management, P&L, forecasting, transfer slips
+- **Member App**: Gamification (XP, badges, quests, streaks, squads), momentum, referrals, check-in
+- **Churn Prediction**: 30-day vs 60-day attendance comparison
+- **Goals**: Monthly target tracking (revenue, members, retention, checkins)
 
-### ผลการตรวจ — Code ✅ ไม่มีบั๊ก
+## What's Missing — High-Impact Strategic Features
 
-| ส่วนที่ตรวจ | สถานะ | หมายเหตุ |
-|---|---|---|
-| TypeScript build | ✅ ผ่าน | `tsc --noEmit` = 0 errors |
-| Routes (App.tsx) | ✅ ครบ | ทุก member/trainer/staff route มี component |
-| i18n keys (EN + TH) | ✅ ครบ | ทุก key ที่ใช้ใน Phase 1-5 มีทั้ง en.ts และ th.ts |
-| MobilePageHeader | ✅ consistent | ทุกหน้า member/trainer/staff ใช้ MobilePageHeader แล้ว |
-| ListCard className prop | ✅ รองรับ | TrainerProfilePage ส่ง className ได้ |
-| ปุ่ม Coming Soon | ✅ disabled | Staff + Trainer profile ใช้ `opacity-60 pointer-events-none` |
-| Session progress bar | ✅ ทำงาน | MemberPackagesPage คำนวณ used/total ถูกต้อง |
-| Expiry urgency colors | ✅ ทำงาน | ≤3d = red, ≤7d = orange |
-| Recent check-ins (Staff) | ✅ ทำงาน | query `member_attendance` ล่าสุด 5 รายการ |
-| Tap hint (Trainer) | ✅ แสดง | มี hint text + clickable border |
-| Gamification event keys | ✅ ถูกต้อง | `check_in`, `class_attend`, `package_purchase`, `profile_completed` |
-| Receipt flow | ✅ ถูกต้อง | ใช้ `member_upload_slip` → `transfer_slips` |
-| TODO/FIXME markers | ✅ ไม่มี | ไม่มี stub ค้างใน apps/ |
+### Priority 1: Cohort Retention Analysis (Revenue Protector)
+**Why**: Current retention is just "% with active package." Real retention = "of members who joined in Month X, how many are still active N months later?" This is THE metric that predicts gym survival.
 
-### ปัญหาเดียวที่พบ — Docs ไม่อัพเดท
+**Implementation**:
+- New hook `useCohortRetention` — groups members by join month, tracks active status at 1/3/6/12 month marks
+- Cohort retention chart (stacked area or heatmap) on Insights page
+- Add a "Retention" tab to Insights
 
-**DEVLOG.md** ไม่มี entry สำหรับ Phase 1-5 UX/UI redesign ที่ทำไปทั้งหมด ทำให้ AI ในอนาคตไม่รู้ว่ามีการเปลี่ยนแปลงอะไร → อาจเข้ามาแก้ซ้ำหรือ revert
+### Priority 2: Revenue Per Visit (RPV) & Unit Economics
+**Why**: Knowing revenue/member is basic. Knowing revenue/visit tells you if your pricing matches usage. High RPV = members pay but don't come (risky — they'll churn). Low RPV = they come a lot but pay little (unprofitable).
 
-**SMOKE_TEST.md** ไม่มี checklist สำหรับ:
-- Session progress bar ใน MemberPackagesPage
-- Recent check-ins ใน StaffHomePage
-- Tap hint ใน TrainerHomePage
-- Disabled Coming Soon items
+**Implementation**:
+- Calculate RPV = total revenue / total check-ins (per month)
+- Add to Insights overview KPI cards
+- Add i18n keys
 
-**PROJECT_MEMORY.md** ไม่ได้บันทึกว่า:
-- ทุกหน้าใช้ MobilePageHeader แล้ว (invariant)
-- Coming Soon items ต้องใช้ `opacity-60 pointer-events-none` (pattern)
+### Priority 3: Peak Hour Revenue Optimizer
+**Why**: The class fill rate heatmap exists but doesn't connect to revenue. A gym owner needs: "Which time slots make money? Which ones lose money?" to decide pricing, staffing, and scheduling.
 
-### ความเสี่ยงจากการไม่อัพเดท docs
+**Implementation**:
+- Overlay revenue data onto the existing heatmap (or add a new "Revenue by Time Slot" view)
+- Show revenue/class for each time slot
+- Highlight underperforming slots with actionable suggestions
 
-AI ในรอบถัดไปอาจ:
-1. เพิ่ม inline BackButton กลับมาแทน MobilePageHeader (regression)
-2. เพิ่ม fake toast buttons กลับมา (break "no fake actions" rule)
-3. ลบ session progress bar / urgency colors โดยไม่รู้ว่าเป็นฟีเจอร์ใหม่
+### Priority 4: Member Lifetime Journey Timeline
+**Why**: Current member detail shows data in tabs. A timeline view ("joined → first class → bought package → streak started → attendance dropped → package expired") tells the story at a glance. This is what enables personal outreach.
 
-## แผนแก้ไข
+**Implementation**:
+- New component `MemberJourneyTimeline` on MemberDetails page
+- Aggregates events from `member_attendance`, `member_packages`, `transactions`, `badge_earnings`
+- Visual timeline with icons per event type
 
-### ไฟล์ที่แก้
+### Priority 5: Smart Notifications / Action Triggers
+**Why**: The "Needs Attention" card shows problems but requires the admin to check the dashboard. Automated triggers (e.g., "Member hasn't checked in for 14 days → send LINE message") turn passive data into active retention.
 
-| # | ไฟล์ | การเปลี่ยนแปลง |
-|---|------|----------------|
-| 1 | `docs/DEVLOG.md` | เพิ่ม entry สำหรับ Phase 1-5 UX/UI redesign |
-| 2 | `docs/SMOKE_TEST.md` | เพิ่ม checklist items สำหรับฟีเจอร์ใหม่ |
-| 3 | `docs/PROJECT_MEMORY.md` | เพิ่ม invariants: MobilePageHeader everywhere, Coming Soon pattern |
+**Implementation**:
+- New `notification_rules` table: condition + action + channel
+- Edge function `evaluate-notification-rules` runs daily
+- Admin UI to create/edit rules (Settings > Automation)
 
-### สิ่งที่ไม่เปลี่ยน
-- ไม่แตะโค้ดใดๆ เลย — โค้ดถูกต้องแล้วทั้งหมด
-- ไม่แตะ DB / Edge Functions / Auth / RLS
-- ไม่แตะ i18n keys (ครบแล้ว)
+### Priority 6: Competitive Benchmarking Dashboard
+**Why**: Gym owners don't know if 60% retention is good or bad. Even simple benchmarks ("industry average: 72%") give context that drives action.
 
-### ผลลัพธ์
-- Docs เป็นปัจจุบัน → AI ในอนาคตรู้ว่าอะไรเปลี่ยนไปแล้ว
-- ลดโอกาส regression จากการที่ AI แก้สิ่งที่ดีอยู่แล้ว
-- Smoke test ครอบคลุมฟีเจอร์ใหม่ทั้งหมด
+**Implementation**:
+- Static benchmark data (configurable in settings) for key metrics
+- Show "vs benchmark" indicators on Insights KPI cards
+- Allow admin to set their own benchmark targets
+
+## Recommended Implementation Order
+
+| Phase | Feature | Impact | Effort | Files |
+|-------|---------|--------|--------|-------|
+| A | Cohort Retention Chart | Very High | Medium | New hook + new Insights tab |
+| B | Revenue Per Visit KPI | High | Low | Add to `useInsightsMetrics` + Insights page |
+| C | Member Journey Timeline | High | Medium | New component on MemberDetails |
+| D | Peak Hour Revenue Overlay | Medium | Medium | Extend `useClassFillRate` + Analytics |
+| E | Notification Rules (Automation) | Very High | High | New table + edge function + settings UI |
+| F | Benchmark Indicators | Medium | Low | Static config + Insights UI |
+
+## What NOT to Change
+- Existing dashboard layout (working well after Phase 1-5 redesign)
+- Existing hooks and data contracts
+- Auth/RLS/permissions system
+- Gamification system
+- Member/Trainer/Staff surfaces (just completed redesign)
+
+## Technical Approach
+- All new features as **additive modules** (new hooks, new components)
+- Zero changes to existing working code
+- Each phase is independently deployable
+- All new i18n keys for EN + TH
+
+## Smoke Test (per phase)
+1. New charts render with real data
+2. Existing Insights/Analytics pages unchanged
+3. Dark mode renders correctly
+4. Mobile responsive
+5. Permission gates still work
+6. Published site unaffected
 
