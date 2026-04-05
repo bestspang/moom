@@ -12,6 +12,8 @@ export interface InsightsOverview {
   leadConversionRate: number;
   activeMembers: number;
   totalRevenue: number;
+  rpv: number;
+  totalCheckins: number;
 }
 
 export function useInsightsOverview() {
