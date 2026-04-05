@@ -35,15 +35,15 @@ export function QuickMenuStrip() {
 
   const iconClass = 'h-5 w-5';
 
+  // Primary items — only pages that work
   const quickItems: QuickItem[] = [
-    { icon: <PersonStanding className={iconClass} />, label: t('member.runClub'), to: '/member/run-club' },
     { icon: <Ticket className={iconClass} />, label: t('member.myCoupons'), to: '/member/coupons' },
     { icon: <Package className={iconClass} />, label: t('member.packages'), to: '/member/packages' },
+    { icon: <ClipboardList className={iconClass} />, label: t('member.attendanceHistory'), to: '/member/attendance' },
   ];
 
   const allPages: QuickItem[] = [
     ...quickItems,
-    { icon: <ClipboardList className={iconClass} />, label: t('member.attendanceHistory'), to: '/member/attendance' },
     { icon: <Share2 className={iconClass} />, label: t('member.inviteFriendsTitle'), to: '/member/referral' },
     { icon: <Gift className={iconClass} />, label: t('member.rewardWalletMenu'), to: '/member/rewards' },
     { icon: <Star className={iconClass} />, label: t('member.badgeCollectionMenu'), to: '/member/badges' },
@@ -51,6 +51,7 @@ export function QuickMenuStrip() {
     { icon: <Calendar className={iconClass} />, label: t('member.bookClass'), to: '/member/schedule' },
     { icon: <Shield className={iconClass} />, label: t('member.securityLogin'), to: '/member/security' },
     { icon: <Bell className={iconClass} />, label: t('member.notifications'), to: '/member/notifications' },
+    { icon: <PersonStanding className={iconClass} />, label: t('member.runClub'), to: '/member/run-club' },
   ];
 
   return (

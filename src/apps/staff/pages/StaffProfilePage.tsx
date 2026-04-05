@@ -1,16 +1,28 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, Bell, HelpCircle } from 'lucide-react';
+import { LogOut, Bell, Settings, HelpCircle, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
+import type { Database } from '@/integrations/supabase/types';
+
+type AppRole = Database['public']['Enums']['app_role'];
+const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin'];
 
 export default function StaffProfilePage() {
-  const { user, signOut } = useAuth();
+  const { t } = useTranslation();
+  const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
-  const firstName = user?.user_metadata?.first_name ?? 'Staff';
+  const firstName = user?.user_metadata?.first_name ?? t('staff.staffRole');
+  const lastName = user?.user_metadata?.last_name ?? '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const email = user?.email ?? '';
+
+  const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
 
   const handleSignOut = async () => {
     await signOut();
@@ -19,7 +31,7 @@ export default function StaffProfilePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Profile" />
+      <MobilePageHeader title={t('staff.profile')} />
 
       <Section className="mb-4">
         <div className="flex items-center gap-4 rounded-lg bg-card p-4 shadow-sm">
@@ -27,25 +39,61 @@ export default function StaffProfilePage() {
             {firstName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-foreground truncate">{firstName}</p>
+            <p className="font-semibold text-foreground truncate">{fullName}</p>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
-            <p className="text-xs text-primary mt-0.5">Staff</p>
+            <p className="text-xs text-primary mt-0.5">{t('staff.staffRole')}</p>
           </div>
         </div>
       </Section>
 
-      <Section title="Settings">
+      <Section title={t('staff.settings')}>
         <div className="space-y-1">
-          <ListCard title="Notifications" leading={<Bell className="h-5 w-5 text-muted-foreground" />} showChevron />
-          <ListCard title="Preferences" leading={<Settings className="h-5 w-5 text-muted-foreground" />} showChevron />
-          <ListCard title="Help & Support" leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />} showChevron />
+          <ListCard
+            title={t('staff.notifications')}
+            leading={<Bell className="h-5 w-5 text-muted-foreground" />}
+            subtitle={t('staff.comingSoonLabel')}
+          />
+          <ListCard
+            title={t('staff.preferences')}
+            leading={<Settings className="h-5 w-5 text-muted-foreground" />}
+            subtitle={t('staff.comingSoonLabel')}
+          />
+          <ListCard
+            title={t('staff.helpAndSupport')}
+            leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
+            subtitle={t('staff.comingSoonLabel')}
+          />
+        </div>
+      </Section>
+
+      {/* Surface switcher */}
+      <Section title={t('staff.switchApp')} className="mt-4">
+        <div className="space-y-1">
+          {hasAdminAccess && (
+            <ListCard
+              title={t('staff.adminPortal')}
+              leading={<ShieldCheck className="h-5 w-5 text-muted-foreground" />}
+              showChevron
+              onClick={async () => {
+                window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+              }}
+            />
+          )}
+          <ListCard
+            title={t('staff.memberApp')}
+            leading={<Users className="h-5 w-5 text-muted-foreground" />}
+            showChevron
+            onClick={async () => {
+              window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('member', '/member'));
+            }}
+          />
         </div>
       </Section>
 
       <Section className="mt-6">
         <Button variant="outline" className="w-full text-destructive border-destructive/30" onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {t('staff.signOut')}
         </Button>
       </Section>
     </div>
