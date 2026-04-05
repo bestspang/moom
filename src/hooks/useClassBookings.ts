@@ -297,9 +297,9 @@ export const useMarkAttendance = () => {
       if (variables.status === 'attended') {
         const schedule = (data as any).schedule;
         fireGamificationEvent({
-          event_type: 'class_attended',
+          event_type: 'class_attend',
           member_id: data.member_id,
-          idempotency_key: `class_attended:${variables.bookingId}`,
+          idempotency_key: `class_attend:${variables.bookingId}`,
           location_id: schedule?.location_id,
           metadata: { schedule_id: data.schedule_id, booking_id: variables.bookingId },
         });
