@@ -1847,6 +1847,8 @@ export default {
     effectXpBonus: '+{{amount}} โบนัส XP',
     effectAccess: 'ปลดล็อกการเข้าถึง',
     // Package
+    sessionsUsed: 'ใช้ไป {{used}}/{{total}} เซสชัน',
+    remaining: 'เหลือ',
     expiresOn: 'หมดอายุ {{date}}',
     // Moved from auth namespace
     earnXpOnRenewal: 'ต่อแพ็กเกจรับ +{{xp}} XP & +{{coins}} Coin',
