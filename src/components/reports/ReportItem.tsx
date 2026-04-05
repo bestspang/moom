@@ -9,7 +9,7 @@ export interface ReportItemProps {
   buttonText: string;
   disabled?: boolean;
   buttonVariant?: 'view' | 'export';
-  onClick: () => void;
+  onClick?: () => void;
   icon: React.ReactNode;
   accentColor?: 'primary' | 'warning' | 'teal' | 'purple';
   compact?: boolean;
