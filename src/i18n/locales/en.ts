@@ -2958,5 +2958,6 @@ export default {
     noBadgesYet: 'No badges earned yet',
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
+    tapForDetails: 'Tap to see details →',
   },
 };
