@@ -7,6 +7,7 @@ export interface ReportItemProps {
   title: string;
   description: string;
   buttonText: string;
+  disabled?: boolean;
   buttonVariant?: 'view' | 'export';
   onClick: () => void;
   icon: React.ReactNode;
