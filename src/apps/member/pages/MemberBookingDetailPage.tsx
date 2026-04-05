@@ -100,7 +100,7 @@ export default function MemberBookingDetailPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.bookingDetails')} action={backAction} />
 
       <Section className="mb-6">
         <div className="rounded-lg bg-card p-5 shadow-sm border border-border">
