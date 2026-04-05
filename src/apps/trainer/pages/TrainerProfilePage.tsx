@@ -48,20 +48,17 @@ export default function TrainerProfilePage() {
           <ListCard
             title={t('trainer.notifications')}
             leading={<Bell className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.notificationsComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
           <ListCard
             title={t('trainer.preferences')}
             leading={<Settings className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.preferencesComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
           <ListCard
             title={t('trainer.helpAndSupport')}
             leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
-            showChevron
-            onClick={() => toast.info(t('trainer.helpCenterComingSoon'))}
+            subtitle={t('trainer.comingSoonLabel')}
           />
         </div>
       </Section>
