@@ -2256,6 +2256,11 @@ export default {
   dashboardExtra: {
     attendees: 'attendees',
     mainLocation: 'MOOM CLUB Main',
+    goodMorning: 'Good morning',
+    goodAfternoon: 'Good afternoon',
+    goodEvening: 'Good evening',
+    todayScheduleCompact: "Today's Classes",
+    viewAllSchedule: 'View full schedule',
   },
 
   // Error pages
