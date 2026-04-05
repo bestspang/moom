@@ -68,8 +68,8 @@ export default function MemberBookingDetailPage() {
     onError: () => toast.error(t('member.bookingCancelFailed')),
   });
 
-  const BackButton = () => (
-    <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+  const backAction = (
+    <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
       <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
