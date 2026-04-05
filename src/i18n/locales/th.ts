@@ -1896,6 +1896,7 @@ export default {
     bookingCancelled: 'ยกเลิกการจองแล้ว',
     bookingCancelFailed: 'ยกเลิกการจองไม่สำเร็จ',
     // Class detail page
+    classDetails: 'รายละเอียดคลาส',
     classNotFound: 'ไม่พบคลาส',
     availability: 'ความพร้อม',
     percentFull: 'เต็ม {{pct}}%',
