@@ -990,6 +990,17 @@ export default {
     emergencyLastName: 'Emergency last name',
     emergencyPhone: 'Emergency phone',
     emergencyRelationship: 'Relationship',
+    // Profile page (staff surface)
+    staffRole: 'Staff',
+    settings: 'Settings',
+    notifications: 'Notifications',
+    preferences: 'Preferences',
+    helpAndSupport: 'Help & Support',
+    comingSoonLabel: 'Coming soon',
+    switchApp: 'Switch App',
+    adminPortal: 'Admin Portal',
+    memberApp: 'Member App',
+    signOut: 'Sign Out',
   },
 
   // Roles
