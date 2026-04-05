@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 export interface StatCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   comparison?: {
     value: number;
     label?: string;
