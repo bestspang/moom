@@ -58,14 +58,16 @@ export default function MemberEditProfilePage() {
 
   return (
     <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-4 pb-2">
-        <button type="button" onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-          <ArrowLeft className="h-4 w-4" /> {t('common.back')}
-        </button>
-      </div>
+      <MobilePageHeader
+        title={t('member.editProfileTitle')}
+        action={
+          <button type="button" onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
+            <ArrowLeft className="h-4 w-4" /> {t('common.back')}
+          </button>
+        }
+      />
 
       <Section className="mb-6">
-        <h1 className="text-xl font-bold text-foreground mb-4">{t('member.editProfileTitle')}</h1>
         <div className="space-y-4">
           <div>
             <Label htmlFor="firstName">{t('member.firstName')}</Label>
