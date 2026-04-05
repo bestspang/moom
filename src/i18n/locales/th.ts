@@ -990,6 +990,17 @@ export default {
     emergencyLastName: 'นามสกุลผู้ติดต่อฉุกเฉิน',
     emergencyPhone: 'เบอร์โทรฉุกเฉิน',
     emergencyRelationship: 'ความสัมพันธ์',
+    // Profile page (staff surface)
+    staffRole: 'พนักงาน',
+    settings: 'ตั้งค่า',
+    notifications: 'การแจ้งเตือน',
+    preferences: 'การตั้งค่า',
+    helpAndSupport: 'ช่วยเหลือ & สนับสนุน',
+    comingSoonLabel: 'เร็วๆ นี้',
+    switchApp: 'สลับแอป',
+    adminPortal: 'Admin Portal',
+    memberApp: 'แอปสมาชิก',
+    signOut: 'ออกจากระบบ',
   },
 
   // Roles
