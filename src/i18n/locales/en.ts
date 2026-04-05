@@ -1847,6 +1847,8 @@ export default {
     effectXpBonus: '+{{amount}} XP bonus',
     effectAccess: 'Unlocks access',
     // Package
+    sessionsUsed: '{{used}}/{{total}} sessions used',
+    remaining: 'left',
     expiresOn: 'Expires {{date}}',
     // Moved from auth namespace
     earnXpOnRenewal: 'Renewing your package earns +{{xp}} XP & +{{coins}} Coin',
