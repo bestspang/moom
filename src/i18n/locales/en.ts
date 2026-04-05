@@ -2952,19 +2952,4 @@ export default {
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
   },
-
-  // Staff surface
-  staff: {
-    profile: 'Profile',
-    staffRole: 'Staff',
-    settings: 'Settings',
-    notifications: 'Notifications',
-    preferences: 'Preferences',
-    helpAndSupport: 'Help & Support',
-    comingSoonLabel: 'Coming soon',
-    switchApp: 'Switch App',
-    adminPortal: 'Admin Portal',
-    memberApp: 'Member App',
-    signOut: 'Sign Out',
-  },
 };
