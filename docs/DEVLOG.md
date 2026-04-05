@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-04-05 — Strategic Business Intelligence Upgrade
+
+### Changes
+- **useCohortRetention hook**: groups members by join month, calculates retention at 1/3/6/12 months
+- **usePeakHourRevenue hook**: estimates revenue per time slot
+- **useInsightsMetrics**: added RPV (Revenue Per Visit) + totalCheckins
+- **Insights page**: Retention tab with cohort table + chart, RPV KPI, benchmark indicators, peak hour revenue heatmap
+- **StatCard**: subtitle prop widened to ReactNode
+- **i18n**: 30+ new keys EN/TH
+
+### Files: useCohortRetention.ts (NEW), usePeakHourRevenue.ts (NEW), useInsightsMetrics.ts, Insights.tsx, StatCard.tsx, en.ts, th.ts
+
+---
+
 ## 2026-04-05 — UX/UI Full Redesign (Phase 1–5)
 
 ### User Request
