@@ -282,7 +282,7 @@ const Insights = () => {
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">{t('insights.detailedReports')}</h3>
               <ReportItem title={t('reports.classCapacityByHourTitle')} description={t('reports.classCapacityByHourDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/class/capacity-by-hour')} icon={<Clock className="h-4 w-4" />} accentColor="teal" />
               <ReportItem title={t('reports.classCapacityTitle')} description={t('reports.classCapacityDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/class/capacity-over-time')} icon={<TrendingUp className="h-4 w-4" />} accentColor="primary" />
-              <ReportItem title={t('reports.classCategoryPopularity')} description={t('reports.classCategoryPopularityDesc')} buttonText={t('reports.exportReport')} onClick={handleComingSoon} icon={<PieChart className="h-4 w-4" />} accentColor="purple" />
+              <ReportItem title={t('reports.classCategoryPopularity')} description={t('reports.classCategoryPopularityDesc')} buttonText={t('reportsExtra.comingSoon')} onClick={undefined} icon={<PieChart className="h-4 w-4" />} accentColor="purple" />
             </div>
           </div>
         </TabsContent>
