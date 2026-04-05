@@ -2,6 +2,75 @@
 
 ---
 
+## 2026-04-05 — UX/UI Full Redesign (Phase 1–5)
+
+### User Request
+Full UX/UI redesign across all surfaces (Member, Staff, Trainer) with consistency pass.
+
+### Scope
+- IN: header consistency, i18n gaps, fake button removal, visual polish, form page headers
+- OUT: backend/DB/auth changes, new features
+
+### Phases Completed
+
+**Phase 1 — Critical Fixes**
+- StaffProfilePage: added i18n for all labels, removed fake toast-only buttons (Settings, Notifications, Help)
+- MemberHomePage: removed QuickMenuStrip from home, reduced section count
+- MemberProfilePage: visual grouping improvements
+- QuickMenuStrip: reordered items (removed Run Club as first)
+- TrainerProfilePage: Coming Soon items use `opacity-60 pointer-events-none` (no chevron, no click handler)
+
+**Phase 2 — Member Packages**
+- MemberPackagesPage: added Package/ShoppingBag icons to tabs
+- Added session progress bar (used/total with color coding: ≥90% red, ≥70% orange, else primary)
+- Added expiry urgency colors (≤3d destructive, ≤7d orange)
+- Added gamification nudge (earn XP on renewal)
+
+**Phase 3 — Staff + Trainer Polish**
+- StaffHomePage: added recent check-ins section (queries member_attendance, latest 5)
+- TrainerHomePage: added tap hint text + clickable border on Impact card
+
+**Phase 4 — Detail Pages**
+- MemberClassDetailPage: replaced inline back button with MobilePageHeader
+- MemberBookingDetailPage: same treatment
+
+**Phase 5 — Form Pages Header Consistency**
+- MemberEditProfilePage: replaced inline ArrowLeft + pt-4 pb-2 with MobilePageHeader
+- MemberUploadSlipPage: same treatment, moved title from inline h1 to MobilePageHeader
+
+### Files Touched
+- `src/apps/staff/pages/StaffProfilePage.tsx`
+- `src/apps/staff/pages/StaffHomePage.tsx`
+- `src/apps/member/pages/MemberHomePage.tsx`
+- `src/apps/member/pages/MemberProfilePage.tsx`
+- `src/apps/member/pages/MemberPackagesPage.tsx`
+- `src/apps/member/pages/MemberClassDetailPage.tsx`
+- `src/apps/member/pages/MemberBookingDetailPage.tsx`
+- `src/apps/member/pages/MemberEditProfilePage.tsx`
+- `src/apps/member/pages/MemberUploadSlipPage.tsx`
+- `src/apps/member/components/QuickMenuStrip.tsx`
+- `src/apps/trainer/pages/TrainerHomePage.tsx`
+- `src/apps/trainer/pages/TrainerProfilePage.tsx`
+- `src/i18n/locales/en.ts` — added staff profile i18n keys
+- `src/i18n/locales/th.ts` — added staff profile i18n keys
+
+### Contracts Changed
+- **NO** — all changes are UI/UX only
+
+### Permissions/Security Impact
+- None
+
+### Risk & Rollback
+- Pure UI changes, no data/logic risk
+- Rollback: revert individual file changes
+
+### Notes for Next Task
+- All member/trainer/staff pages now use MobilePageHeader (invariant)
+- Coming Soon pattern: `opacity-60 pointer-events-none` with subtitle, no click handler
+- Do NOT add inline BackButton or fake toast buttons — these were intentionally removed
+
+---
+
 ## 2026-04-05 — System-Wide Contract Sync & Bug Fixes
 
 ### User Request
