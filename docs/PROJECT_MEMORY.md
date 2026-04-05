@@ -57,15 +57,10 @@
 - Admin reviews via `TransferSlips.tsx` → `SlipDetailDialog.tsx`
 - Staff views via `StaffPaymentsPage.tsx`
 
-### 3. Generated Files (DO NOT EDIT)
+### 6. Generated Files (DO NOT EDIT)
 - `src/integrations/supabase/client.ts`
 - `src/integrations/supabase/types.ts`
 - `.env`
-
-### 4. No Fake Actions on Live Surfaces
-- Every clickable button must be wired to real logic OR clearly disabled
-- `toast.info("coming soon")` on clickable items is NOT acceptable
-- Use `subtitle` or `disabled` prop instead
 
 ---
 
