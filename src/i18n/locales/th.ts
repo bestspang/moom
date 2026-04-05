@@ -2803,5 +2803,6 @@ export default {
     noBadgesYet: 'ยังไม่มีเหรียญตรา',
     viewAllBadges: 'ดูเหรียญตราทั้งหมด',
     earnedOn: 'ได้รับเมื่อ',
+    tapForDetails: 'แตะเพื่อดูรายละเอียด →',
   },
 };
