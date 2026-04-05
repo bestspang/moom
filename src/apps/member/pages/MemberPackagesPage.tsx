@@ -9,13 +9,13 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { MobileStatusBadge } from '@/apps/shared/components/MobileStatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Package, Check, Zap } from 'lucide-react';
+import { Package, Check, Zap, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyPackages, fetchAvailablePackages } from '../api/services';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 
 export default function MemberPackagesPage() {
   const navigate = useNavigate();
@@ -49,6 +49,20 @@ export default function MemberPackagesPage() {
     staleTime: 1000 * 60 * 30,
   });
 
+  const getExpiryUrgency = (expiryDate: string | null) => {
+    if (!expiryDate) return null;
+    const days = differenceInDays(parseISO(expiryDate), new Date());
+    if (days <= 3) return 'text-destructive';
+    if (days <= 7) return 'text-orange-500';
+    return null;
+  };
+
+  const getSessionPercent = (remaining: number | null, total: number | null) => {
+    if (remaining == null || total == null || total === 0) return null;
+    const used = total - remaining;
+    return Math.min(Math.round((used / total) * 100), 100);
+  };
+
   return (
     <div className="animate-in fade-in-0 duration-200">
       <MobilePageHeader title={t('member.packages')} subtitle={t('member.packagesSubtitle')} />
@@ -75,10 +89,11 @@ export default function MemberPackagesPage() {
               key={tabKey}
               onClick={() => setTab(tabKey)}
               className={cn(
-                'flex-1 rounded-md py-2 text-sm font-medium transition-all',
+                'flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition-all',
                 tab === tabKey ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               )}
             >
+              {tabKey === 'my' ? <Package className="h-3.5 w-3.5" /> : <ShoppingBag className="h-3.5 w-3.5" />}
               {tabKey === 'my' ? t('member.myPackages') : t('member.browse')}
             </button>
           ))}
@@ -100,20 +115,55 @@ export default function MemberPackagesPage() {
             />
           ) : (
             <div className="space-y-2">
-              {myPackages.map(pkg => (
-                <ListCard
-                  key={pkg.id}
-                  title={pkg.packageName}
-                  subtitle={
-                    pkg.sessionsRemaining != null
-                      ? `${pkg.sessionsRemaining}/${pkg.sessionsTotal ?? '∞'} ${t('member.sessionsRemaining').replace('{{n}} ', '')}`
-                      : pkg.expiryDate
-                        ? t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy'))
-                        : undefined
-                  }
-                  trailing={<MobileStatusBadge status={pkg.status} />}
-                />
-              ))}
+              {myPackages.map(pkg => {
+                const sessionPercent = getSessionPercent(pkg.sessionsRemaining, pkg.sessionsTotal);
+                const urgencyClass = getExpiryUrgency(pkg.expiryDate);
+                const sessionsUsed = pkg.sessionsTotal != null && pkg.sessionsRemaining != null
+                  ? pkg.sessionsTotal - pkg.sessionsRemaining
+                  : null;
+
+                return (
+                  <div key={pkg.id} className="rounded-lg bg-card p-4 shadow-sm border border-border">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="text-sm font-semibold text-foreground truncate">{pkg.packageName}</h3>
+                      <MobileStatusBadge status={pkg.status} />
+                    </div>
+
+                    {/* Session progress bar */}
+                    {sessionPercent != null && sessionsUsed != null && pkg.sessionsTotal != null && (
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                          <span>{t('member.sessionsUsed').replace('{{used}}', String(sessionsUsed)).replace('{{total}}', String(pkg.sessionsTotal))}</span>
+                          <span>{pkg.sessionsRemaining} {t('member.remaining')}</span>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all',
+                              sessionPercent >= 90 ? 'bg-destructive' : sessionPercent >= 70 ? 'bg-orange-500' : 'bg-primary'
+                            )}
+                            style={{ width: `${sessionPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Expiry info */}
+                    {pkg.expiryDate && (
+                      <p className={cn('text-xs text-muted-foreground', urgencyClass)}>
+                        {t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy'))}
+                      </p>
+                    )}
+
+                    {/* Sessions remaining (no total) */}
+                    {pkg.sessionsRemaining != null && pkg.sessionsTotal == null && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('member.sessionsRemaining').replace('{{n}}', String(pkg.sessionsRemaining))}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </Section>
