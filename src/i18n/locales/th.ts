@@ -1001,6 +1001,9 @@ export default {
     adminPortal: 'Admin Portal',
     memberApp: 'แอปสมาชิก',
     signOut: 'ออกจากระบบ',
+    recentCheckins: 'เช็คอินล่าสุด',
+    noCheckinsToday: 'ยังไม่มีเช็คอินวันนี้',
+    viewSchedule: 'ตาราง',
   },
 
   // Roles

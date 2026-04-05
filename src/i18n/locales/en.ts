@@ -1001,6 +1001,9 @@ export default {
     adminPortal: 'Admin Portal',
     memberApp: 'Member App',
     signOut: 'Sign Out',
+    recentCheckins: 'Recent Check-ins',
+    noCheckinsToday: 'No check-ins today yet',
+    viewSchedule: 'Schedule',
   },
 
   // Roles
