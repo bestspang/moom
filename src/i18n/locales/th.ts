@@ -2753,6 +2753,7 @@ export default {
     notificationsComingSoon: 'ตั้งค่าการแจ้งเตือนเร็วๆ นี้',
     preferencesComingSoon: 'การตั้งค่าเร็วๆ นี้',
     helpCenterComingSoon: 'ศูนย์ช่วยเหลือเร็วๆ นี้',
+    comingSoonLabel: 'เร็วๆ นี้',
     // Impact detail page
     coachImpactTitle: 'Coach Impact',
     partnerReputationTitle: 'Partner Reputation',
