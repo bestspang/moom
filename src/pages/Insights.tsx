@@ -292,7 +292,7 @@ const Insights = () => {
           <div className="space-y-2">
             <ReportItem title={t('reports.packageSalesTitle')} description={t('reports.packageSalesDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales')} icon={<BarChart3 className="h-4 w-4" />} accentColor="teal" />
             <ReportItem title={t('reports.packageSalesOverTimeTitle')} description={t('reports.packageSalesOverTimeDesc')} buttonText={t('reports.viewFullReport')} onClick={() => navigate('/report/package/sales-over-time')} icon={<Calendar className="h-4 w-4" />} accentColor="primary" />
-            <ReportItem title={t('reports.membersPackageAtRisk')} description={t('reports.packageAtRiskDesc')} buttonText={t('reports.exportReport')} onClick={handleComingSoon} icon={<AlertTriangle className="h-4 w-4" />} accentColor="warning" />
+            <ReportItem title={t('reports.membersPackageAtRisk')} description={t('reports.packageAtRiskDesc')} buttonText={t('reportsExtra.comingSoon')} onClick={undefined} icon={<AlertTriangle className="h-4 w-4" />} accentColor="warning" />
           </div>
         </TabsContent>
       </Tabs>
