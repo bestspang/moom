@@ -46,6 +46,15 @@ export default {
     saved: 'Saved successfully',
     confirmDelete: 'Confirm Delete',
     comingSoon: 'Coming soon',
+    add: 'Add',
+    close: 'Close',
+    copied: 'Copied',
+    days: 'days',
+    done: 'Done',
+    import: 'Import',
+    requiredFields: 'Please fill in all required fields',
+    selectDate: 'Select date',
+    unlimited: 'Unlimited',
   },
 
   // Bulk actions
@@ -56,6 +65,8 @@ export default {
     duplicate: 'Duplicate',
     deleteTitle: 'Delete selected items',
     deleteDesc: 'items will be permanently deleted. This action cannot be undone.',
+    deleteSuccess: 'Items deleted successfully',
+    statusSuccess: 'Status updated successfully',
   },
 
   // Navigation
@@ -563,6 +574,8 @@ export default {
     readyToUse: 'Ready to use',
     completed: 'Completed',
     editPackage: 'Edit Package',
+    editPackageDescription: 'Modify package details and settings',
+    joinedDate: 'Joined Date',
     deletePackage: 'Delete Package',
     confirmDeletePackage: 'Are you sure you want to delete this package? This action cannot be undone.',
     activationDate: 'Activation Date',
@@ -841,6 +854,7 @@ export default {
     discountRequired: 'Discount value is required',
     maxSaleAmount: 'Max Sale Amount',
     discountOverride: 'Discount Override',
+    times: 'times',
   },
 
   // Schedule
@@ -944,6 +958,7 @@ export default {
     intermediate: 'Intermediate',
     advanced: 'Advanced',
     selectType: 'Select type',
+    classType: 'Class Type',
     classTypeDesc: 'Group class with multiple participants',
     ptTypeDesc: 'One-on-one personal training session',
     classInfo: 'Class information',
@@ -1066,6 +1081,8 @@ export default {
     noSlips: 'No slips',
     slipsWillAppear: 'Transfer slips will appear here',
     unknownMember: 'Unknown',
+    role: 'Role',
+    selectRole: 'Select role',
   },
 
   // Roles
@@ -1639,6 +1656,7 @@ export default {
       rows: 'rows',
       unknown: 'Unknown',
       startImport: 'Import',
+      selectType: 'Select data type',
     },
     integrations: {
       stripeTitle: 'Stripe Payment Gateway',
@@ -2285,6 +2303,9 @@ export default {
     navCheckIn: 'Check In',
     navRewards: 'Rewards',
     navProfile: 'Profile',
+    classFull: 'Class is full',
+    prestigeRequirements: 'Prestige Requirements',
+    rewards: 'Rewards',
   },
 
   // Members form fields
@@ -2298,6 +2319,16 @@ export default {
     female: 'Female',
     other: 'Other',
     requiredFieldsNote: '* Required fields',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    notes: 'Notes',
+    address1: 'Address Line 1',
+    address2: 'Address Line 2',
+    district: 'District',
+    subdistrict: 'Subdistrict',
+    province: 'Province',
+    postalCode: 'Postal Code',
+    selectLocation: 'Select Location',
   },
 
   // Member Creation Wizard
