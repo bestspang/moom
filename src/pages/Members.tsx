@@ -374,7 +374,7 @@ const Members = () => {
         onClearSelection={() => setSelectedRows([])}
         onDelete={handleBulkDelete}
         onExport={handleBulkExport}
-        onDuplicate={() => {}}
+        
         statusOptions={memberStatusOptions}
         onChangeStatus={handleBulkStatusChange}
         isLoading={bulkDelete.isPending || bulkUpdateStatus.isPending}

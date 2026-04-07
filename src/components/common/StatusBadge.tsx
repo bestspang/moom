@@ -33,12 +33,12 @@ interface StatusBadgeProps extends VariantProps<typeof badgeVariants> {
   className?: string;
 }
 
-export const StatusBadge = ({
-  variant,
-  children,
-  className,
-}: StatusBadgeProps) => {
+export const StatusBadge = React.forwardRef<
+  HTMLSpanElement,
+  StatusBadgeProps
+>(({ variant, children, className }, ref) => {
   return (
-    <span className={cn(badgeVariants({ variant }), className)}>{children}</span>
+    <span ref={ref} className={cn(badgeVariants({ variant }), className)}>{children}</span>
   );
-};
+});
+StatusBadge.displayName = 'StatusBadge';
