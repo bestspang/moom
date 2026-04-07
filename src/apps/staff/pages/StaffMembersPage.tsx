@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Users, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function StaffMembersPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
 
@@ -33,11 +35,11 @@ export default function StaffMembersPage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <MobilePageHeader title="Members" subtitle="Search and manage" />
+      <MobilePageHeader title={t('staff.membersTitle')} subtitle={t('staff.membersSubtitle')} />
       <Section className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search members..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t('staff.searchMembers')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
       </Section>
       {isError ? (
@@ -45,7 +47,7 @@ export default function StaffMembersPage() {
       ) : isLoading ? (
         <Section><div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div></Section>
       ) : !data?.length ? (
-        <EmptyState icon={<Users className="h-10 w-10" />} title="No members found" description={search ? 'Try a different search term' : 'Members will appear here'} />
+        <EmptyState icon={<Users className="h-10 w-10" />} title={t('staff.noMembersFound')} description={search ? t('staff.tryDifferentSearch') : t('staff.membersWillAppear')} />
       ) : (
         <Section>
           <div className="space-y-2">
