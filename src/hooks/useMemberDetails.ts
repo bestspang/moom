@@ -669,6 +669,62 @@ export const useAssignPackageToMember = () => {
   });
 };
 
+export const useUpdateMemberPackage = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId, data }: { id: string; memberId: string; data: { activation_date?: string | null; expiry_date?: string | null; sessions_remaining?: number | null; status?: string } }) => {
+      const { error } = await supabase
+        .from('member_packages')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      logActivity({
+        event_type: 'member_package_updated',
+        activity: `Member package updated`,
+        entity_type: 'member_package',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+        new_value: variables.data as Record<string, unknown>,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
+export const useDeleteMemberPackage = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId }: { id: string; memberId: string }) => {
+      const { error } = await supabase
+        .from('member_packages')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      logActivity({
+        event_type: 'member_package_deleted',
+        activity: `Member package deleted`,
+        entity_type: 'member_package',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
 // ─── Utilities ─────────────────────────────────────────────
 
 export const calculateDaysUntilExpiry = (packages: MemberPackage[]): number => {
