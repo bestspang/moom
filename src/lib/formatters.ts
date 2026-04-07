@@ -15,38 +15,56 @@ export function getDateLocale(language: string = 'en') {
  * Format date in Bangkok timezone
  * Format: "D MMM YYYY" (e.g., "3 FEB 2026")
  */
-export function formatDate(date: Date | string, language: string = 'en'): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  const locale = getDateLocale(language);
-  return format(d, 'd MMM yyyy', { locale }).toUpperCase();
+export function formatDate(date: Date | string | null | undefined, language: string = 'en'): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    const locale = getDateLocale(language);
+    return format(d, 'd MMM yyyy', { locale }).toUpperCase();
+  } catch {
+    return '-';
+  }
 }
 
 /**
  * Format date with day of week
  * Format: "DAY, D MMM YYYY" (e.g., "TUE, 3 FEB 2026")
  */
-export function formatDateWithDay(date: Date | string, language: string = 'en'): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  const locale = getDateLocale(language);
-  return format(d, 'EEE, d MMM yyyy', { locale }).toUpperCase();
+export function formatDateWithDay(date: Date | string | null | undefined, language: string = 'en'): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    const locale = getDateLocale(language);
+    return format(d, 'EEE, d MMM yyyy', { locale }).toUpperCase();
+  } catch {
+    return '-';
+  }
 }
 
 /**
  * Format time in 24-hour format
  * Format: "HH:MM" (e.g., "15:21")
  */
-export function formatTime(date: Date | string): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'HH:mm');
+export function formatTime(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    return format(d, 'HH:mm');
+  } catch {
+    return '-';
+  }
 }
 
 /**
  * Format date and time
  * Format: "D MMM YYYY, HH:MM"
  */
-export function formatDateTime(date: Date | string): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return `${formatDate(d)}, ${formatTime(d)}`;
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  return `${formatDate(date)}, ${formatTime(date)}`;
 }
 
 /**
