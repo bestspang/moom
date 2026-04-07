@@ -1,45 +1,59 @@
 
 
-# Fix: Google OAuth "missing OAuth secret" on Custom Domain
+# Fix: Duplicate Members from Case-Sensitive Email Matching
 
 ## Root Cause
 
-Auth logs show `member.moom.fit` hitting `/authorize` → **400: "Unsupported provider: missing OAuth secret"**.
+จากภาพหน้า Members: มี 2 รายการที่ email เดียวกันแต่ตัวพิมพ์ต่างกัน — `pinpossawee@gmail.com` vs `Pinpossawee@gmail.com`
 
-The code in both `MemberLogin.tsx` and `AdminLogin.tsx` has an `isCustomDomain()` branch that bypasses Lovable Cloud's managed Google OAuth and calls `supabase.auth.signInWithOAuth` directly. Since there are no Google OAuth credentials configured in the Supabase project itself, this fails on custom domains (`member.moom.fit`, `admin.moom.fit`).
+สาเหตุ: `handle_new_user` trigger ใช้ `WHERE email = NEW.email` ซึ่งเป็น **case-sensitive** match
 
 ```text
-Current flow (broken):
-  isCustomDomain() = true → supabase.auth.signInWithOAuth → 400 missing secret
-
-Correct flow:
-  Always → lovable.auth.signInWithOAuth → Lovable Cloud manages credentials
+Admin สร้างสมาชิก → email: "Pinpossawee@gmail.com" (ตัว P ใหญ่)
+User ล็อกอินผ่าน Google → email: "pinpossawee@gmail.com" (ตัว p เล็ก)
+Trigger: WHERE email = NEW.email → ไม่เจอ → สร้างสมาชิกใหม่ซ้ำ!
 ```
 
-The same bug exists in `IdentityLinkingCard.tsx` (Link Google Account on member security page).
+นอกจากนี้ `MemberSignup.tsx` ยังมี bug เดิมที่ยังไม่ได้แก้: `isCustomDomain()` branch ยังใช้ `supabase.auth.signInWithOAuth` แทน `lovable.auth.signInWithOAuth`
 
-## Fix
+## Plan
 
-Remove all `isCustomDomain()` branches for Google OAuth. Always use `lovable.auth.signInWithOAuth("google", ...)` regardless of domain.
+### 1. DB Migration — Case-insensitive email matching in trigger
 
-### Files to change
+อัพเดท `handle_new_user()`:
+- เปลี่ยน `WHERE email = NEW.email` → `WHERE lower(email) = lower(NEW.email)`
+- ป้องกันการสร้างซ้ำในอนาคตทุกกรณี
+
+### 2. Fix MemberSignup.tsx — Remove isCustomDomain() branch
+
+เหมือนที่แก้ใน `MemberLogin.tsx` และ `AdminLogin.tsx` แล้ว:
+- ลบ `isCustomDomain()` branch
+- ใช้ `lovable.auth.signInWithOAuth("google", ...)` เสมอ
+
+### 3. Clean up existing duplicate
+
+ใช้ `delete_member_cascade` RPC ลบรายการ "Member" (M-44599719) ที่เป็นตัวซ้ำ เพราะตัวนี้ไม่มีข้อมูลจริง (ไม่มีเบอร์โทร ไม่มีสาขา ไม่มีชื่อเล่น)
+
+แล้วอัพเดท `identity_map` ให้ auth user id ของ Google login ชี้ไปที่ member record ตัวจริง (พศวีร์ ศิลพันธุ์)
+
+## Files to change
 
 | # | File | Change |
 |---|------|--------|
-| 1 | `src/pages/Auth/MemberLogin.tsx` | Remove `isCustomDomain()` branch in `handleGoogleSignIn`, always use `lovable.auth.signInWithOAuth` |
-| 2 | `src/pages/Auth/AdminLogin.tsx` | Same fix |
-| 3 | `src/apps/member/features/auth/IdentityLinkingCard.tsx` | Already uses `lovable.auth` — no change needed |
+| 1 | DB Migration | `handle_new_user()` — `lower(email)` matching |
+| 2 | `src/pages/Auth/MemberSignup.tsx` | Remove `isCustomDomain()` branch, always use `lovable.auth` |
+| 3 | Data cleanup | Delete duplicate member + relink identity_map |
+| 4 | `docs/DEVLOG.md` | Log changes |
 
-### What stays the same
-- Email/password login — unaffected
-- Phone OTP — unaffected
-- Email OTP — unaffected
-- All other auth flows, RLS, permissions
-- `isCustomDomain()` function itself (used elsewhere)
+## What stays the same
+- Admin member CRUD
+- Existing login flows (MemberLogin, AdminLogin already fixed)
+- All other auth/RLS/permissions
+- All other member data
 
-### Smoke Test
-1. Google login works on preview (lovable.app)
-2. Google login works on custom domain (member.moom.fit / admin.moom.fit)
-3. After Google login, user lands on correct surface
-4. Existing email/password login still works
+## Smoke Test
+1. Google signup ไม่สร้างสมาชิกซ้ำเมื่อ email ต่างแค่ตัวพิมพ์
+2. Google login ยังทำงานได้ทั้ง preview และ custom domain
+3. หน้า Members แสดงรายการถูกต้อง (ไม่มีซ้ำ)
+4. MemberSignup Google button ทำงานได้
 
