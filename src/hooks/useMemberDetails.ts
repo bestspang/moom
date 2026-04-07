@@ -692,7 +692,7 @@ export const useAssignPackageToMember = () => {
         metadata: {
           package_id: variables.pkg.id,
           package_name: variables.pkg.name_en,
-          net_paid: variables.pkg.price,
+          net_paid: variables.pkg.price - Math.min((variables.promotionDiscount || 0) + (variables.couponDiscount || 0) + (variables.manualDiscount || 0), variables.pkg.price),
           term_months: Math.ceil((variables.pkg.term_days || 30) / 30),
         },
       });

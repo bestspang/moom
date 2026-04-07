@@ -95,8 +95,11 @@ export const MemberRecordsTab = ({ memberId, notes, isLoading }: MemberRecordsTa
   };
 
   // Combine notes + comm logs into unified feed
+  // Filter notes prop to only include type 'note' or untyped to avoid duplicates with commLogs
+  const noteOnlyRecords = notes.filter((n: any) => !n.note_type || n.note_type === 'note');
+
   const allRecords = [
-    ...notes.map((n) => ({
+    ...noteOnlyRecords.map((n) => ({
       id: n.id,
       type: 'note' as const,
       text: n.note,
