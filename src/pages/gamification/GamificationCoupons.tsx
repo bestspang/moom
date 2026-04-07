@@ -77,23 +77,23 @@ const GamificationCoupons = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Manage coupon templates for merch, packages, and events.</p>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Coupon</Button>
+        <p className="text-sm text-muted-foreground">{t('gamification.coupons.description')}</p>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {t('gamification.coupons.addCoupon')}</Button>
       </div>
 
       {!coupons || coupons.length === 0 ? (
-        <EmptyState message="No coupon templates" description="Create coupon templates to offer discounts through the reward system." />
+        <EmptyState message={t('gamification.coupons.noCoupons')} description={t('gamification.coupons.noCouponsDesc')} />
       ) : (
         <DataTable
           data={coupons}
           rowKey={(r: CouponTemplate) => r.id}
           columns={[
-            { key: 'name', header: 'Name', cell: (r: CouponTemplate) => r.name_en },
-            { key: 'type', header: 'Type', cell: (r: CouponTemplate) => r.discount_type === 'fixed' ? `฿${r.discount_value}` : `${r.discount_value}%` },
-            { key: 'minSpend', header: 'Min Spend', cell: (r: CouponTemplate) => r.min_spend ? `฿${r.min_spend}` : '—' },
-            { key: 'appliesTo', header: 'Applies To', cell: (r: CouponTemplate) => r.applies_to },
-            { key: 'validDays', header: 'Valid Days', cell: (r: CouponTemplate) => r.valid_days },
-            { key: 'active', header: 'Active', cell: (r: CouponTemplate) => r.is_active ? '✅' : '—' },
+            { key: 'name', header: t('gamification.coupons.colName'), cell: (r: CouponTemplate) => r.name_en },
+            { key: 'type', header: t('gamification.coupons.colType'), cell: (r: CouponTemplate) => r.discount_type === 'fixed' ? `฿${r.discount_value}` : `${r.discount_value}%` },
+            { key: 'minSpend', header: t('gamification.coupons.colMinSpend'), cell: (r: CouponTemplate) => r.min_spend ? `฿${r.min_spend}` : '—' },
+            { key: 'appliesTo', header: t('gamification.coupons.colAppliesTo'), cell: (r: CouponTemplate) => r.applies_to },
+            { key: 'validDays', header: t('gamification.coupons.colValidDays'), cell: (r: CouponTemplate) => r.valid_days },
+            { key: 'active', header: t('gamification.coupons.colActive'), cell: (r: CouponTemplate) => r.is_active ? '✅' : '—' },
             { key: 'actions', header: '', cell: (r: CouponTemplate) => (
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -107,41 +107,41 @@ const GamificationCoupons = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Coupon Template' : 'Create Coupon Template'}</DialogTitle>
+            <DialogTitle>{editing ? t('gamification.coupons.editCoupon') : t('gamification.coupons.createCoupon')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Name (EN) *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-              <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+              <div><Label>{t('gamification.coupons.nameEn')} *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+              <div><Label>{t('gamification.coupons.nameTh')}</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Discount Type</Label>
+                <Label>{t('gamification.coupons.discountType')}</Label>
                 <Select value={form.discount_type} onValueChange={v => setForm(f => ({ ...f, discount_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fixed">Fixed (฿)</SelectItem>
-                    <SelectItem value="percent">Percent (%)</SelectItem>
+                    <SelectItem value="fixed">{t('gamification.coupons.fixed')}</SelectItem>
+                    <SelectItem value="percent">{t('gamification.coupons.percent')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Discount Value *</Label><Input type="number" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.coupons.discountValue')} *</Label><Input type="number" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: Number(e.target.value) }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Max Discount (฿)</Label><Input type="number" value={form.max_discount} onChange={e => setForm(f => ({ ...f, max_discount: e.target.value }))} placeholder="None" /></div>
-              <div><Label>Min Spend (฿)</Label><Input type="number" value={form.min_spend} onChange={e => setForm(f => ({ ...f, min_spend: e.target.value }))} placeholder="None" /></div>
+              <div><Label>{t('gamification.coupons.maxDiscount')}</Label><Input type="number" value={form.max_discount} onChange={e => setForm(f => ({ ...f, max_discount: e.target.value }))} placeholder="—" /></div>
+              <div><Label>{t('gamification.coupons.minSpend')}</Label><Input type="number" value={form.min_spend} onChange={e => setForm(f => ({ ...f, min_spend: e.target.value }))} placeholder="—" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Valid Days</Label><Input type="number" value={form.valid_days} onChange={e => setForm(f => ({ ...f, valid_days: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.coupons.validDays')}</Label><Input type="number" value={form.valid_days} onChange={e => setForm(f => ({ ...f, valid_days: Number(e.target.value) }))} /></div>
               <div>
-                <Label>Applies To</Label>
+                <Label>{t('gamification.coupons.appliesTo')}</Label>
                 <Select value={form.applies_to} onValueChange={v => setForm(f => ({ ...f, applies_to: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="merch">Merch</SelectItem>
-                    <SelectItem value="package">Package</SelectItem>
-                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="all">{t('gamification.coupons.appliesToAll')}</SelectItem>
+                    <SelectItem value="merch">{t('gamification.coupons.appliesToMerch')}</SelectItem>
+                    <SelectItem value="package">{t('gamification.coupons.appliesToPackage')}</SelectItem>
+                    <SelectItem value="event">{t('gamification.coupons.appliesToEvent')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -149,7 +149,7 @@ const GamificationCoupons = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Switch checked={form.stackable} onCheckedChange={v => setForm(f => ({ ...f, stackable: v }))} />
-                <Label>Stackable</Label>
+                <Label>{t('gamification.coupons.stackable')}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />

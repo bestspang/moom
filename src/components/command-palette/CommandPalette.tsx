@@ -15,7 +15,7 @@ import {
   Home, DoorOpen, Calendar, LayoutGrid, List, Grid3X3,
   Users, Star, Tag, Gift, UserCheck, Shield, MapPin,
   FileText, Megaphone, Dumbbell, Receipt, DollarSign,
-  BarChart3, Settings, Search, User, Plus,
+  BarChart3, Settings, Search, User, Plus, Bell, Trophy,
 } from 'lucide-react';
 import { dispatchCommand } from '@/lib/commandEvents';
 
@@ -47,6 +47,9 @@ const PAGE_ITEMS = [
   { labelKey: 'commandPalette.pageFinance', path: '/finance', icon: DollarSign, group: 'pages' },
   { labelKey: 'commandPalette.pageReports', path: '/report', icon: BarChart3, group: 'pages' },
   { labelKey: 'commandPalette.pageSettings', path: '/setting/general', icon: Settings, group: 'pages' },
+  { labelKey: 'commandPalette.pageProfile', path: '/profile', icon: User, group: 'pages' },
+  { labelKey: 'commandPalette.pageNotifications', path: '/notifications', icon: Bell, group: 'pages' },
+  { labelKey: 'commandPalette.pageGamification', path: '/gamification', icon: Trophy, group: 'pages' },
 ];
 
 interface QuickAction {

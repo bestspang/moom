@@ -16,14 +16,14 @@ import { updateMyProfile } from '../api/services';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import { useTranslation } from 'react-i18next';
 
-const editProfileSchema = z.object({
-  first_name: z.string().min(1, 'Required'),
-  last_name: z.string().min(1, 'Required'),
+const createEditProfileSchema = (t: (key: string) => string) => z.object({
+  first_name: z.string().min(1, t('validation.required')),
+  last_name: z.string().min(1, t('validation.required')),
   phone: z.string().optional(),
   preferred_language: z.enum(['en', 'th', 'ja']).default('en'),
 });
 
-type EditProfileForm = z.infer<typeof editProfileSchema>;
+type EditProfileForm = z.infer<ReturnType<typeof createEditProfileSchema>>;
 
 export default function MemberEditProfilePage() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function MemberEditProfilePage() {
   const { firstName, lastName, email, user, memberId } = useMemberSession();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<EditProfileForm>({
-    resolver: zodResolver(editProfileSchema),
+    resolver: zodResolver(createEditProfileSchema(t)),
     defaultValues: {
       first_name: firstName,
       last_name: lastName,

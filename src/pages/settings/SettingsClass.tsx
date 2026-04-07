@@ -81,15 +81,16 @@ const SettingsClass = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 opacity-30 cursor-not-allowed"
+                disabled
               >
                 <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t('common.edit')}</TooltipContent>
+            <TooltipContent>{t('common.comingSoon')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

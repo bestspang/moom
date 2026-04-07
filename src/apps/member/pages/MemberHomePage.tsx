@@ -20,7 +20,7 @@ import { fetchMemberStatusTier } from '../features/momentum/api';
 import { ReferralCard } from '../features/referral/ReferralCard';
 import { SuggestedClassCard } from '../features/suggestions/SuggestedClassCard';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useState } from 'react';
 
 function getTimeGreeting(t: (key: string) => string): string {
@@ -238,7 +238,7 @@ export default function MemberHomePage() {
               <ListCard
                 key={booking.id}
                 title={booking.schedule.className}
-                subtitle={`${format(new Date(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
+                subtitle={`${format(parseISO(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
                 meta={booking.schedule.trainerName ? t('member.withTrainer').replace('{{name}}', booking.schedule.trainerName) : undefined}
                 trailing={<MobileStatusBadge status={booking.status} />}
               />
