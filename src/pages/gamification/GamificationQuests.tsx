@@ -15,14 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { FilterChips } from '@/apps/shared/components/FilterChips';
 
-const PERIOD_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'seasonal', label: 'Seasonal' },
-];
-
 interface QuestForm {
   name_en: string;
   name_th: string;
@@ -58,6 +50,14 @@ const GamificationQuests = () => {
   const [form, setForm] = useState<QuestForm>(emptyForm);
   const [periodFilter, setPeriodFilter] = useState('all');
 
+  const PERIOD_FILTERS = [
+    { value: 'all', label: t('common.all') },
+    { value: 'daily', label: t('gamification.quests.daily') },
+    { value: 'weekly', label: t('gamification.quests.weekly') },
+    { value: 'monthly', label: t('gamification.quests.monthly') },
+    { value: 'seasonal', label: t('gamification.quests.seasonal') },
+  ];
+
   const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (q: QuestTemplate) => {
     setEditing(q);
@@ -89,26 +89,26 @@ const GamificationQuests = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Manage daily, weekly, monthly, and seasonal quest templates.</p>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Quest</Button>
+        <p className="text-sm text-muted-foreground">{t('gamification.quests.description')}</p>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {t('gamification.quests.addQuest')}</Button>
       </div>
 
       <FilterChips options={PERIOD_FILTERS} selected={periodFilter} onChange={setPeriodFilter} />
 
       {filtered.length === 0 ? (
-        <EmptyState message="No quest templates" description="Create your first quest template to start assigning quests to members." />
+        <EmptyState message={t('gamification.quests.noQuests')} description={t('gamification.quests.noQuestsDesc')} />
       ) : (
         <DataTable
           data={filtered}
           rowKey={(r: QuestTemplate) => r.id}
           columns={[
-            { key: 'name', header: 'Name', cell: (r: QuestTemplate) => r.name_en },
-            { key: 'period', header: 'Period', cell: (r: QuestTemplate) => <StatusBadge>{r.quest_period}</StatusBadge> },
-            { key: 'audience', header: 'Audience', cell: (r: QuestTemplate) => r.audience_type },
-            { key: 'goal', header: 'Goal', cell: (r: QuestTemplate) => `${r.goal_action_key || r.goal_type} × ${r.goal_value}` },
+            { key: 'name', header: t('gamification.form.nameEn'), cell: (r: QuestTemplate) => r.name_en },
+            { key: 'period', header: t('gamification.quests.period'), cell: (r: QuestTemplate) => <StatusBadge>{r.quest_period}</StatusBadge> },
+            { key: 'audience', header: t('gamification.quests.audience'), cell: (r: QuestTemplate) => r.audience_type },
+            { key: 'goal', header: t('gamification.quests.goal'), cell: (r: QuestTemplate) => `${r.goal_action_key || r.goal_type} × ${r.goal_value}` },
             { key: 'xp', header: 'XP', cell: (r: QuestTemplate) => r.xp_reward },
-            { key: 'coin', header: 'Coin', cell: (r: QuestTemplate) => r.coin_reward },
-            { key: 'active', header: 'Active', cell: (r: QuestTemplate) => r.is_active ? '✅' : '—' },
+            { key: 'coin', header: t('gamification.quests.coin'), cell: (r: QuestTemplate) => r.coin_reward },
+            { key: 'active', header: t('common.active'), cell: (r: QuestTemplate) => r.is_active ? '✅' : '—' },
             { key: 'actions', header: '', cell: (r: QuestTemplate) => (
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -122,62 +122,62 @@ const GamificationQuests = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Quest Template' : 'Create Quest Template'}</DialogTitle>
+            <DialogTitle>{editing ? t('gamification.quests.editQuest') : t('gamification.quests.createQuest')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Name (EN) *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
-              <div><Label>Name (TH)</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.nameEn')} *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.nameTh')}</Label><Input value={form.name_th} onChange={e => setForm(f => ({ ...f, name_th: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Description (EN)</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
-              <div><Label>Description (TH)</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.descriptionEn')}</Label><Textarea rows={2} value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} /></div>
+              <div><Label>{t('gamification.form.descriptionTh')}</Label><Textarea rows={2} value={form.description_th} onChange={e => setForm(f => ({ ...f, description_th: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Period</Label>
+                <Label>{t('gamification.quests.period')}</Label>
                 <Select value={form.quest_period} onValueChange={v => setForm(f => ({ ...f, quest_period: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="seasonal">Seasonal</SelectItem>
+                    <SelectItem value="daily">{t('gamification.quests.daily')}</SelectItem>
+                    <SelectItem value="weekly">{t('gamification.quests.weekly')}</SelectItem>
+                    <SelectItem value="monthly">{t('gamification.quests.monthly')}</SelectItem>
+                    <SelectItem value="seasonal">{t('gamification.quests.seasonal')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Audience</Label>
+                <Label>{t('gamification.quests.audience')}</Label>
                 <Select value={form.audience_type} onValueChange={v => setForm(f => ({ ...f, audience_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="trainer_inhouse">Trainer (In-house)</SelectItem>
-                    <SelectItem value="trainer_freelance">Trainer (Freelance)</SelectItem>
+                    <SelectItem value="member">{t('gamification.quests.audienceMember')}</SelectItem>
+                    <SelectItem value="trainer_inhouse">{t('gamification.quests.audienceTrainerInhouse')}</SelectItem>
+                    <SelectItem value="trainer_freelance">{t('gamification.quests.audienceTrainerFreelance')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label>Goal Type</Label>
+                <Label>{t('gamification.quests.goalType')}</Label>
                 <Select value={form.goal_type} onValueChange={v => setForm(f => ({ ...f, goal_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="action_count">Action Count</SelectItem>
-                    <SelectItem value="xp_threshold">XP Threshold</SelectItem>
-                    <SelectItem value="class_count">Class Count</SelectItem>
-                    <SelectItem value="streak">Streak</SelectItem>
+                    <SelectItem value="action_count">{t('gamification.quests.goalActionCount')}</SelectItem>
+                    <SelectItem value="xp_threshold">{t('gamification.quests.goalXpThreshold')}</SelectItem>
+                    <SelectItem value="class_count">{t('gamification.quests.goalClassCount')}</SelectItem>
+                    <SelectItem value="streak">{t('gamification.quests.goalStreak')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Action Key</Label><Input value={form.goal_action_key} onChange={e => setForm(f => ({ ...f, goal_action_key: e.target.value }))} placeholder="e.g. check_in" /></div>
-              <div><Label>Goal Value</Label><Input type="number" value={form.goal_value} onChange={e => setForm(f => ({ ...f, goal_value: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.quests.actionKey')}</Label><Input value={form.goal_action_key} onChange={e => setForm(f => ({ ...f, goal_action_key: e.target.value }))} placeholder="e.g. check_in" /></div>
+              <div><Label>{t('gamification.quests.goalValue')}</Label><Input type="number" value={form.goal_value} onChange={e => setForm(f => ({ ...f, goal_value: Number(e.target.value) }))} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>XP Reward</Label><Input type="number" value={form.xp_reward} onChange={e => setForm(f => ({ ...f, xp_reward: Number(e.target.value) }))} /></div>
-              <div><Label>Coin Reward</Label><Input type="number" value={form.coin_reward} onChange={e => setForm(f => ({ ...f, coin_reward: Number(e.target.value) }))} /></div>
-              <div><Label>Sort Order</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.quests.xpReward')}</Label><Input type="number" value={form.xp_reward} onChange={e => setForm(f => ({ ...f, xp_reward: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.quests.coinReward')}</Label><Input type="number" value={form.coin_reward} onChange={e => setForm(f => ({ ...f, coin_reward: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.quests.sortOrder')}</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} /></div>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />

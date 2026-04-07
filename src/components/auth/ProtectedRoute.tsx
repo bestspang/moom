@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { detectSurface } from '@/apps/shared/hostname';
+import { useTranslation } from 'react-i18next';
 import type { Database } from '@/integrations/supabase/types';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
@@ -22,6 +23,7 @@ const accessLevelOrder: Record<AccessLevel, number> = {
 
 const AccessDenied: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const surface = detectSurface();
   const backPath = surface === 'member' ? '/member' : '/';
 
@@ -31,12 +33,12 @@ const AccessDenied: React.FC = () => {
         <div className="rounded-full bg-destructive/10 p-4">
           <ShieldX className="h-10 w-10 text-destructive" />
         </div>
-        <h1 className="text-xl font-semibold text-foreground">Access Denied</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t('auth.accessDenied')}</h1>
         <p className="text-sm text-muted-foreground">
-          You don't have permission to view this page. Contact your administrator if you believe this is an error.
+          {t('auth.accessDeniedDescription')}
         </p>
         <Button variant="outline" onClick={() => navigate(backPath)}>
-          Back to {surface === 'member' ? 'Home' : 'Dashboard'}
+          {t('auth.backTo', { page: surface === 'member' ? t('auth.home') : t('auth.dashboard') })}
         </Button>
       </div>
     </div>
@@ -65,10 +67,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (minAccessLevel && accessLevel) {
+  if (minAccessLevel) {
+    if (!accessLevel) {
+      return <AccessDenied />;
+    }
     const userLevel = accessLevelOrder[accessLevel];
     const requiredLevel = accessLevelOrder[minAccessLevel];
-    
+
     if (userLevel < requiredLevel) {
       return <AccessDenied />;
     }
