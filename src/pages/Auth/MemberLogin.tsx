@@ -63,7 +63,7 @@ const MemberLogin: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email.toLowerCase().trim(), data.password);
       if (error) {
         toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
       } else {
@@ -93,14 +93,14 @@ const MemberLogin: React.FC = () => {
   };
 
   const handleSendEmailOtp = async () => {
-    if (!otpEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpEmail)) {
+    if (!otpEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpEmail.toLowerCase().trim())) {
       toast({ variant: 'destructive', title: t('validation.invalidEmail') });
       return;
     }
     setIsOtpLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: otpEmail,
+        email: otpEmail.toLowerCase().trim(),
         options: {
           emailRedirectTo: window.location.origin + '/member',
           data: { signup_surface: 'member' },
@@ -239,7 +239,7 @@ const MemberLogin: React.FC = () => {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t('auth.email')}</Label>
-                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={`lowercase ${errors.email ? 'border-destructive' : ''}`} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">
@@ -287,7 +287,7 @@ const MemberLogin: React.FC = () => {
                       type="email"
                       placeholder="email@example.com"
                       value={otpEmail}
-                      onChange={(e) => setOtpEmail(e.target.value)}
+                      onChange={(e) => setOtpEmail(e.target.value.toLowerCase().trim())}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendEmailOtp()}
                     />
                   </div>

@@ -37,7 +37,7 @@ const AdminLogin: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email.toLowerCase().trim(), data.password);
       if (error) {
         toast({ variant: 'destructive', title: t('auth.loginFailed'), description: error.message });
       } else {
@@ -85,7 +85,7 @@ const AdminLogin: React.FC = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t('auth.email')}</Label>
-              <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+              <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={`lowercase ${errors.email ? 'border-destructive' : ''}`} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
