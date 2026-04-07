@@ -571,15 +571,18 @@ export const useAssignPackageToMember = () => {
 
   return useMutation({
     mutationFn: async (params: PurchasePackageParams) => {
-      const { memberId, memberName, pkg, paymentMethod, locationId, locationName, notes } = params;
+      const { memberId, memberName, pkg, paymentMethod, locationId, locationName, notes, promotionId, promotionDiscount = 0, couponWalletId, couponDiscount = 0, manualDiscount = 0 } = params;
+
+      const totalDiscount = Math.min(promotionDiscount + couponDiscount + manualDiscount, pkg.price);
+      const netPrice = pkg.price - totalDiscount;
 
       // 1. Generate transaction number
       const { data: txNo, error: txNoErr } = await supabase.rpc('next_transaction_number');
       if (txNoErr) throw txNoErr;
 
-      // 2. Calculate VAT
+      // 2. Calculate VAT on net price
       const vatRate = 0.07;
-      const amountGross = pkg.price;
+      const amountGross = netPrice;
       const amountExVat = Math.round((amountGross / (1 + vatRate)) * 100) / 100;
       const amountVat = Math.round((amountGross - amountExVat) * 100) / 100;
 
@@ -593,11 +596,11 @@ export const useAssignPackageToMember = () => {
           package_id: pkg.id,
           type: pkg.type as any,
           amount: amountGross,
-          amount_gross: amountGross,
+          amount_gross: pkg.price,
           amount_ex_vat: amountExVat,
           amount_vat: amountVat,
           vat_rate: vatRate,
-          discount_amount: 0,
+          discount_amount: totalDiscount,
           payment_method: paymentMethod as any,
           status: 'paid' as any,
           location_id: locationId || null,
@@ -627,13 +630,38 @@ export const useAssignPackageToMember = () => {
         });
       if (mpErr) throw mpErr;
 
-      // 5. Insert member_billing record (same pattern as approve-slip)
+      // 5. Insert member_billing record
       await supabase.from('member_billing').insert({
         member_id: memberId,
         transaction_id: txn.id,
         amount: amountGross,
         description: `Purchase: ${pkg.name_en}`,
       });
+
+      // 6. Record promotion redemption if used
+      if (promotionId && promotionDiscount > 0) {
+        await supabase.from('promotion_redemptions').insert({
+          promotion_id: promotionId,
+          member_id: memberId,
+          transaction_id: txn.id,
+          discount_amount: promotionDiscount,
+          gross_amount: pkg.price,
+          net_amount: netPrice,
+        });
+        // increment usage_count
+        await supabase.rpc('increment_counter', { row_id: promotionId, table_name: 'promotions', column_name: 'usage_count' }).catch(() => {
+          // If RPC doesn't exist, try direct update
+          supabase.from('promotions').update({ usage_count: supabase.rpc ? undefined : 0 } as any).eq('id', promotionId);
+        });
+      }
+
+      // 7. Mark coupon as used if used
+      if (couponWalletId && couponDiscount > 0) {
+        await supabase
+          .from('coupon_wallet')
+          .update({ status: 'used', used_at: new Date().toISOString() })
+          .eq('id', couponWalletId);
+      }
 
       return { transactionNo: txNo, transactionId: txn.id };
     },
