@@ -130,7 +130,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled className="opacity-50">
                     {t('settings.general.specifyBankAccount')}
                   </Button>
                 </div>
@@ -154,7 +154,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled className="opacity-50">
                     {t('settings.general.setupStripe')}
                   </Button>
                 </div>
@@ -178,7 +178,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled className="opacity-50">
                     {t('settings.general.setupStripe')}
                   </Button>
                 </div>
@@ -199,11 +199,11 @@ const SettingsGeneral = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{t('common.edit')}</TooltipContent>
+                      <TooltipContent>{t('common.comingSoon')}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -286,11 +286,11 @@ const SettingsGeneral = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
                 <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t('common.edit')}</TooltipContent>
+            <TooltipContent>{t('common.comingSoon')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -332,11 +332,11 @@ const SettingsGeneral = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t('common.edit')}</TooltipContent>
+              <TooltipContent>{t('common.comingSoon')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

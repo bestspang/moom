@@ -23,10 +23,8 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  GraduationCap,
   Briefcase,
   Wallet,
-  UserPlus,
   Trophy,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';

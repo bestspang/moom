@@ -14,6 +14,7 @@ import {
   fetchAttendanceLeaderboardByWindow,
   fetchAroundMeByWindow,
   fetchStreakAroundMe,
+  fetchMySquad,
   type LeaderboardEntry,
   type ChallengeCompletionStat,
   type LeaderboardTimeWindow,
@@ -309,6 +310,12 @@ export default function MemberLeaderboardPage() {
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
 
+  const { data: mySquad } = useQuery({
+    queryKey: ['my-squad', memberId],
+    queryFn: () => fetchMySquad(memberId!),
+    enabled: !!memberId,
+  });
+
   return (
     <div className="pb-24">
       <MobilePageHeader
@@ -328,7 +335,7 @@ export default function MemberLeaderboardPage() {
             <XpLeaderboardTab memberId={memberId} t={t} />
           </TabsContent>
           <TabsContent value="squads">
-            <SquadRankingsTab t={t} />
+            <SquadRankingsTab currentSquadId={mySquad?.id} t={t} />
           </TabsContent>
           <TabsContent value="challenges">
             <ChallengesTab memberId={memberId} t={t} />
