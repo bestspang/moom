@@ -20,7 +20,7 @@ interface BulkActionBarProps {
   onClearSelection: () => void;
   onDelete: () => void;
   onExport: () => void;
-  onDuplicate: () => void;
+  onDuplicate?: () => void;
   statusOptions: StatusOption[];
   onChangeStatus: (status: string) => void;
   isLoading?: boolean;
@@ -74,10 +74,12 @@ export function BulkActionBar({
         </Button>
 
         {/* Duplicate */}
-        <Button variant="outline" size="sm" onClick={onDuplicate} disabled={isLoading}>
-          <Copy className="h-3.5 w-3.5 mr-1" />
-          {t('bulk.duplicate')}
-        </Button>
+        {onDuplicate && (
+          <Button variant="outline" size="sm" onClick={onDuplicate} disabled={isLoading}>
+            <Copy className="h-3.5 w-3.5 mr-1" />
+            {t('bulk.duplicate')}
+          </Button>
+        )}
 
         {/* Delete */}
         <Button
