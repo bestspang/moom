@@ -420,7 +420,7 @@ const MemberDetails = () => {
                   <MemberPackagesTab packages={packages} isLoading={packagesLoading} onPurchase={() => setPurchaseOpen(true)} />
                 </TabsContent>
                 <TabsContent value="billing" className="mt-6">
-                  <MemberBillingTab billing={billing} isLoading={billingLoading} />
+                  <MemberBillingTab billing={billing} memberId={id!} isLoading={billingLoading} />
                 </TabsContent>
                 <TabsContent value="injuries" className="mt-6">
                   <MemberInjuriesTab memberId={id!} injuries={injuries} isLoading={injuriesLoading} />
