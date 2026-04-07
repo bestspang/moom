@@ -1,59 +1,54 @@
 
 
-# Fix: Duplicate Members from Case-Sensitive Email Matching
+# Font System + Default Language + Email Lowercase
 
-## Root Cause
+## สิ่งที่ต้องเปลี่ยน 3 อย่าง
 
-จากภาพหน้า Members: มี 2 รายการที่ email เดียวกันแต่ตัวพิมพ์ต่างกัน — `pinpossawee@gmail.com` vs `Pinpossawee@gmail.com`
-
-สาเหตุ: `handle_new_user` trigger ใช้ `WHERE email = NEW.email` ซึ่งเป็น **case-sensitive** match
-
-```text
-Admin สร้างสมาชิก → email: "Pinpossawee@gmail.com" (ตัว P ใหญ่)
-User ล็อกอินผ่าน Google → email: "pinpossawee@gmail.com" (ตัว p เล็ก)
-Trigger: WHERE email = NEW.email → ไม่เจอ → สร้างสมาชิกใหม่ซ้ำ!
-```
-
-นอกจากนี้ `MemberSignup.tsx` ยังมี bug เดิมที่ยังไม่ได้แก้: `isCustomDomain()` branch ยังใช้ `supabase.auth.signInWithOAuth` แทน `lovable.auth.signInWithOAuth`
-
-## Plan
-
-### 1. DB Migration — Case-insensitive email matching in trigger
-
-อัพเดท `handle_new_user()`:
-- เปลี่ยน `WHERE email = NEW.email` → `WHERE lower(email) = lower(NEW.email)`
-- ป้องกันการสร้างซ้ำในอนาคตทุกกรณี
-
-### 2. Fix MemberSignup.tsx — Remove isCustomDomain() branch
-
-เหมือนที่แก้ใน `MemberLogin.tsx` และ `AdminLogin.tsx` แล้ว:
-- ลบ `isCustomDomain()` branch
-- ใช้ `lovable.auth.signInWithOAuth("google", ...)` เสมอ
-
-### 3. Clean up existing duplicate
-
-ใช้ `delete_member_cascade` RPC ลบรายการ "Member" (M-44599719) ที่เป็นตัวซ้ำ เพราะตัวนี้ไม่มีข้อมูลจริง (ไม่มีเบอร์โทร ไม่มีสาขา ไม่มีชื่อเล่น)
-
-แล้วอัพเดท `identity_map` ให้ auth user id ของ Google login ชี้ไปที่ member record ตัวจริง (พศวีร์ ศิลพันธุ์)
-
-## Files to change
+### 1. เปลี่ยน Font ทั้งระบบ: Sarabun → IBM Plex Sans Thai + Inter
 
 | # | File | Change |
 |---|------|--------|
-| 1 | DB Migration | `handle_new_user()` — `lower(email)` matching |
-| 2 | `src/pages/Auth/MemberSignup.tsx` | Remove `isCustomDomain()` branch, always use `lovable.auth` |
-| 3 | Data cleanup | Delete duplicate member + relink identity_map |
-| 4 | `docs/DEVLOG.md` | Log changes |
+| 1 | `index.html` | เปลี่ยน `lang="en"` → `lang="th"` |
+| 2 | `src/index.css` | เปลี่ยน Google Fonts import จาก Sarabun → IBM Plex Sans Thai (300-700) + Inter (300-800), เปลี่ยน `font-family` ใน body |
+| 3 | `tailwind.config.ts` | เปลี่ยน `fontFamily.sans` จาก `['Sarabun', ...]` → `['IBM Plex Sans Thai', 'Inter', 'system-ui', 'sans-serif']` |
 
-## What stays the same
-- Admin member CRUD
-- Existing login flows (MemberLogin, AdminLogin already fixed)
-- All other auth/RLS/permissions
-- All other member data
+### 2. Default Language เป็นไทยทั้ง Admin + Member
+
+| # | File | Change |
+|---|------|--------|
+| 4 | `src/i18n/index.ts` | เปลี่ยน `lng: 'en'` → `lng: 'th'` |
+| 5 | `src/contexts/LanguageContext.tsx` | เปลี่ยน default fallback จาก `'en'` → `'th'` (เมื่อไม่มี localStorage) |
+
+### 3. Email ต้องเป็นตัวเล็กเสมอ (lowercase)
+
+เพิ่ม `toLowerCase().trim()` ที่ email input ทุกจุดที่รับค่าจากผู้ใช้:
+
+| # | File | Change |
+|---|------|--------|
+| 6 | `src/components/members/wizard/StepContact.tsx` | เพิ่ม `onChange` ที่ lowercase email |
+| 7 | `src/components/members/EditMemberDialog.tsx` | เพิ่ม email lowercase transform |
+| 8 | `src/components/leads/CreateLeadDialog.tsx` | เพิ่ม email lowercase transform |
+| 9 | `src/pages/Auth/MemberSignup.tsx` | เพิ่ม email lowercase ก่อน submit |
+| 10 | `src/pages/Auth/MemberLogin.tsx` | เพิ่ม email lowercase ก่อน submit |
+| 11 | `src/pages/Auth/AdminLogin.tsx` | เพิ่ม email lowercase ก่อน submit |
+| 12 | `src/pages/Auth/Login.tsx` | เพิ่ม email lowercase ก่อน submit |
+| 13 | `src/pages/Auth/Signup.tsx` | เพิ่ม email lowercase ก่อน submit |
+| 14 | `src/components/staff/CreateStaffDialog.tsx` | เพิ่ม email lowercase transform |
+
+เพิ่ม CSS class `lowercase` ให้ email input fields เพื่อ visual feedback ว่าระบบ normalize แล้ว
+
+## สิ่งที่ไม่เปลี่ยน
+- Logic ทั้งหมด (auth, CRUD, RLS, routing)
+- i18n translation keys (ใช้ของเดิม)
+- Color system, spacing, layout
+- DB trigger (แก้ไปแล้วใน migration ก่อนหน้า — ใช้ `lower()` แล้ว)
 
 ## Smoke Test
-1. Google signup ไม่สร้างสมาชิกซ้ำเมื่อ email ต่างแค่ตัวพิมพ์
-2. Google login ยังทำงานได้ทั้ง preview และ custom domain
-3. หน้า Members แสดงรายการถูกต้อง (ไม่มีซ้ำ)
-4. MemberSignup Google button ทำงานได้
+1. Font ใหม่แสดงผลถูกต้องทั้งภาษาไทยและอังกฤษ
+2. เปิดครั้งแรก (ไม่มี localStorage) → แสดงภาษาไทย
+3. Admin dashboard แสดงภาษาไทย by default
+4. Member app แสดงภาษาไทย by default
+5. กรอก email ตัวใหญ่ → แสดงเป็นตัวเล็กอัตโนมัติ
+6. สมัครสมาชิก/ล็อกอิน email ตัวใหญ่ → ส่งเป็นตัวเล็ก
+7. Dark mode ยังแสดงผลปกติ
 
