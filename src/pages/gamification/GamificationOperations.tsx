@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Zap, Coins, Award, Ticket } from 'lucide-react';
 
-const OPERATIONS = [
-  { value: 'adjust_xp', label: 'Adjust XP', icon: Zap, description: 'Add or subtract XP from a member' },
-  { value: 'adjust_coin', label: 'Adjust Coin', icon: Coins, description: 'Add or subtract Coins from a member' },
-  { value: 'grant_badge', label: 'Grant Badge', icon: Award, description: 'Award a badge to a member' },
-  { value: 'revoke_badge', label: 'Revoke Badge', icon: Award, description: 'Remove a badge from a member' },
-  { value: 'issue_coupon', label: 'Issue Coupon', icon: Ticket, description: 'Issue a coupon to a member' },
+const OPERATION_KEYS = [
+  { value: 'adjust_xp', labelKey: 'gamification.operations.adjustXp', descKey: 'gamification.operations.adjustXpDesc', icon: Zap },
+  { value: 'adjust_coin', labelKey: 'gamification.operations.adjustCoin', descKey: 'gamification.operations.adjustCoinDesc', icon: Coins },
+  { value: 'grant_badge', labelKey: 'gamification.operations.grantBadge', descKey: 'gamification.operations.grantBadgeDesc', icon: Award },
+  { value: 'revoke_badge', labelKey: 'gamification.operations.revokeBadge', descKey: 'gamification.operations.revokeBadgeDesc', icon: Award },
+  { value: 'issue_coupon', labelKey: 'gamification.operations.issueCoupon', descKey: 'gamification.operations.issueCouponDesc', icon: Ticket },
 ] as const;
 
 const GamificationOperations = () => {
+  const { t } = useLanguage();
   const [operation, setOperation] = useState<string>('adjust_xp');
   const [memberId, setMemberId] = useState('');
   const [value, setValue] = useState('');
@@ -26,8 +27,8 @@ const GamificationOperations = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!memberId.trim()) return toast.error('Member ID is required');
-    if (!reason.trim()) return toast.error('Reason is required for audit trail');
+    if (!memberId.trim()) return toast.error(t('gamification.operations.memberIdRequired'));
+    if (!reason.trim()) return toast.error(t('gamification.operations.reasonRequired'));
 
     setLoading(true);
     try {
@@ -45,19 +46,19 @@ const GamificationOperations = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success(`Operation "${operation}" completed successfully`);
+      toast.success(t('gamification.operations.success'));
       setValue('');
       setReason('');
       setBadgeId('');
       setCouponTemplateId('');
     } catch (err: any) {
-      toast.error(err.message || 'Operation failed');
+      toast.error(err.message || t('gamification.operations.error'));
     } finally {
       setLoading(false);
     }
   };
 
-  const currentOp = OPERATIONS.find((o) => o.value === operation);
+  const currentOp = OPERATION_KEYS.find((o) => o.value === operation);
   const needsValue = operation === 'adjust_xp' || operation === 'adjust_coin';
   const needsBadge = operation === 'grant_badge' || operation === 'revoke_badge';
   const needsCoupon = operation === 'issue_coupon';
@@ -65,21 +66,21 @@ const GamificationOperations = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Manual Operations</h2>
+        <h2 className="text-lg font-semibold">{t('gamification.operations.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Perform controlled manual adjustments. All operations are logged to the audit trail.
+          {t('gamification.operations.description')}
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Operation</CardTitle>
-            <CardDescription>Select what you want to do</CardDescription>
+            <CardTitle className="text-base">{t('gamification.operations.operationLabel')}</CardTitle>
+            <CardDescription>{t('gamification.operations.operationHint')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-2">
-              {OPERATIONS.map((op) => {
+              {OPERATION_KEYS.map((op) => {
                 const Icon = op.icon;
                 const active = operation === op.value;
                 return (
@@ -94,8 +95,8 @@ const GamificationOperations = () => {
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <div>
-                      <div className="font-medium">{op.label}</div>
-                      <div className="text-xs text-muted-foreground">{op.description}</div>
+                      <div className="font-medium">{t(op.labelKey)}</div>
+                      <div className="text-xs text-muted-foreground">{t(op.descKey)}</div>
                     </div>
                   </button>
                 );
@@ -108,12 +109,12 @@ const GamificationOperations = () => {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               {currentOp && <currentOp.icon className="h-4 w-4" />}
-              {currentOp?.label}
+              {currentOp && t(currentOp.labelKey)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="member-id">Member ID (UUID)</Label>
+              <Label htmlFor="member-id">{t('gamification.operations.memberId')}</Label>
               <Input
                 id="member-id"
                 placeholder="e.g. a1b2c3d4-..."
@@ -124,7 +125,7 @@ const GamificationOperations = () => {
 
             {needsValue && (
               <div className="space-y-2">
-                <Label htmlFor="value">Amount (use negative to subtract)</Label>
+                <Label htmlFor="value">{t('gamification.operations.amountLabel')}</Label>
                 <Input
                   id="value"
                   type="number"
@@ -137,7 +138,7 @@ const GamificationOperations = () => {
 
             {needsBadge && (
               <div className="space-y-2">
-                <Label htmlFor="badge-id">Badge ID (UUID)</Label>
+                <Label htmlFor="badge-id">{t('gamification.operations.badgeId')}</Label>
                 <Input
                   id="badge-id"
                   placeholder="e.g. badge-uuid..."
@@ -149,7 +150,7 @@ const GamificationOperations = () => {
 
             {needsCoupon && (
               <div className="space-y-2">
-                <Label htmlFor="coupon-id">Coupon Template ID (UUID)</Label>
+                <Label htmlFor="coupon-id">{t('gamification.operations.couponTemplateId')}</Label>
                 <Input
                   id="coupon-id"
                   placeholder="e.g. template-uuid..."
@@ -160,10 +161,10 @@ const GamificationOperations = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason (required for audit)</Label>
+              <Label htmlFor="reason">{t('gamification.operations.reasonLabel')}</Label>
               <Input
                 id="reason"
-                placeholder="e.g. Compensation for system error"
+                placeholder={t('gamification.operations.reasonPlaceholder')}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
@@ -175,7 +176,7 @@ const GamificationOperations = () => {
               disabled={loading || !memberId || !reason}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Execute Operation
+              {t('gamification.operations.execute')}
             </Button>
           </CardContent>
         </Card>

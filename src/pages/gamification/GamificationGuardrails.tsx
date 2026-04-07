@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useEconomyGuardrails, EconomyGuardrail } from '@/hooks/useEconomyGuardrails';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Save, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const GamificationGuardrails = () => {
+  const { t } = useLanguage();
   const { data: guardrails, isLoading, updateGuardrail } = useEconomyGuardrails();
   const [edits, setEdits] = useState<Record<string, { rule_value: string; is_active: boolean }>>({});
 
@@ -45,9 +47,9 @@ const GamificationGuardrails = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Economy Guardrails</h2>
+        <h2 className="text-lg font-semibold">{t('gamification.guardrails.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          These values drive package/shop XP & Coin calculations, caps, and safety rules. Changes take effect on the next event processed.
+          {t('gamification.guardrails.description')}
         </p>
       </div>
 
@@ -58,10 +60,10 @@ const GamificationGuardrails = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[280px]">Rule Code</TableHead>
-                  <TableHead className="w-[120px]">Value</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[80px]">Active</TableHead>
+                  <TableHead className="w-[280px]">{t('gamification.guardrails.ruleCode')}</TableHead>
+                  <TableHead className="w-[120px]">{t('gamification.guardrails.value')}</TableHead>
+                  <TableHead>{t('gamification.guardrails.descriptionCol')}</TableHead>
+                  <TableHead className="w-[80px]">{t('common.active')}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>

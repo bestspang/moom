@@ -77,24 +77,24 @@ const GamificationShopRules = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Configure XP and Coin earn rules for shop purchases.</p>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Rule</Button>
+        <p className="text-sm text-muted-foreground">{t('gamification.shopRules.description')}</p>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {t('gamification.shopRules.addRule')}</Button>
       </div>
 
       {!rules || rules.length === 0 ? (
-        <EmptyState message="No shop rules" description="Configure how purchases earn XP and Coin." />
+        <EmptyState message={t('gamification.shopRules.noRules')} description={t('gamification.shopRules.noRulesDesc')} />
       ) : (
         <DataTable
           data={rules}
           rowKey={(r: ShopRewardRule) => r.id}
           columns={[
-            { key: 'orderType', header: 'Order Type', cell: (r: ShopRewardRule) => r.order_type },
-            { key: 'xpOrder', header: 'XP/Order', cell: (r: ShopRewardRule) => r.xp_per_order },
-            { key: 'xpUnit', header: 'XP/Unit', cell: (r: ShopRewardRule) => `${r.xp_per_spend_unit} per ฿${r.spend_unit}` },
-            { key: 'xpCap', header: 'XP Cap', cell: (r: ShopRewardRule) => r.xp_cap ?? '∞' },
-            { key: 'coinUnit', header: 'Coin/Unit', cell: (r: ShopRewardRule) => `${r.coin_per_spend_unit} per ฿${r.coin_spend_unit}` },
-            { key: 'coinCap', header: 'Coin Cap', cell: (r: ShopRewardRule) => r.coin_cap ?? '∞' },
-            { key: 'active', header: 'Active', cell: (r: ShopRewardRule) => r.is_active ? '✅' : '—' },
+            { key: 'orderType', header: t('gamification.shopRules.orderType'), cell: (r: ShopRewardRule) => r.order_type },
+            { key: 'xpOrder', header: t('gamification.shopRules.xpPerOrder'), cell: (r: ShopRewardRule) => r.xp_per_order },
+            { key: 'xpUnit', header: t('gamification.shopRules.xpPerUnit'), cell: (r: ShopRewardRule) => `${r.xp_per_spend_unit} per ฿${r.spend_unit}` },
+            { key: 'xpCap', header: t('gamification.shopRules.xpCap'), cell: (r: ShopRewardRule) => r.xp_cap ?? '∞' },
+            { key: 'coinUnit', header: t('gamification.shopRules.coinPerUnit'), cell: (r: ShopRewardRule) => `${r.coin_per_spend_unit} per ฿${r.coin_spend_unit}` },
+            { key: 'coinCap', header: t('gamification.shopRules.coinCap'), cell: (r: ShopRewardRule) => r.coin_cap ?? '∞' },
+            { key: 'active', header: t('common.active'), cell: (r: ShopRewardRule) => r.is_active ? '✅' : '—' },
             { key: 'actions', header: '', cell: (r: ShopRewardRule) => (
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -108,37 +108,37 @@ const GamificationShopRules = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Shop Rule' : 'Create Shop Rule'}</DialogTitle>
+            <DialogTitle>{editing ? t('gamification.shopRules.editRule') : t('gamification.shopRules.createRule')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Order Type</Label>
+                <Label>{t('gamification.shopRules.orderType')}</Label>
                 <Select value={form.order_type} onValueChange={v => setForm(f => ({ ...f, order_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="merch">Merch</SelectItem>
-                    <SelectItem value="package">Package</SelectItem>
-                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="merch">{t('gamification.shopRules.typeMerch')}</SelectItem>
+                    <SelectItem value="package">{t('gamification.shopRules.typePackage')}</SelectItem>
+                    <SelectItem value="event">{t('gamification.shopRules.typeEvent')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Min Spend (฿)</Label><Input type="number" value={form.min_spend} onChange={e => setForm(f => ({ ...f, min_spend: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.minSpend')}</Label><Input type="number" value={form.min_spend} onChange={e => setForm(f => ({ ...f, min_spend: Number(e.target.value) }))} /></div>
             </div>
-            <p className="text-xs font-bold text-foreground uppercase tracking-wider">XP Rules</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-wider">{t('gamification.shopRules.xpRules')}</p>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>XP/Order</Label><Input type="number" value={form.xp_per_order} onChange={e => setForm(f => ({ ...f, xp_per_order: Number(e.target.value) }))} /></div>
-              <div><Label>XP/Spend Unit</Label><Input type="number" value={form.xp_per_spend_unit} onChange={e => setForm(f => ({ ...f, xp_per_spend_unit: Number(e.target.value) }))} /></div>
-              <div><Label>XP Cap</Label><Input type="number" value={form.xp_cap} onChange={e => setForm(f => ({ ...f, xp_cap: e.target.value }))} placeholder="∞" /></div>
+              <div><Label>{t('gamification.shopRules.xpPerOrder')}</Label><Input type="number" value={form.xp_per_order} onChange={e => setForm(f => ({ ...f, xp_per_order: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.xpPerSpendUnit')}</Label><Input type="number" value={form.xp_per_spend_unit} onChange={e => setForm(f => ({ ...f, xp_per_spend_unit: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.xpCap')}</Label><Input type="number" value={form.xp_cap} onChange={e => setForm(f => ({ ...f, xp_cap: e.target.value }))} placeholder="∞" /></div>
             </div>
-            <p className="text-xs font-bold text-foreground uppercase tracking-wider">Coin Rules</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-wider">{t('gamification.shopRules.coinRules')}</p>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>Spend Unit (฿)</Label><Input type="number" value={form.coin_spend_unit} onChange={e => setForm(f => ({ ...f, coin_spend_unit: Number(e.target.value) }))} /></div>
-              <div><Label>Coin/Unit</Label><Input type="number" value={form.coin_per_spend_unit} onChange={e => setForm(f => ({ ...f, coin_per_spend_unit: Number(e.target.value) }))} /></div>
-              <div><Label>Coin Cap</Label><Input type="number" value={form.coin_cap} onChange={e => setForm(f => ({ ...f, coin_cap: e.target.value }))} placeholder="∞" /></div>
+              <div><Label>{t('gamification.shopRules.spendUnit')}</Label><Input type="number" value={form.coin_spend_unit} onChange={e => setForm(f => ({ ...f, coin_spend_unit: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.coinPerUnit')}</Label><Input type="number" value={form.coin_per_spend_unit} onChange={e => setForm(f => ({ ...f, coin_per_spend_unit: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.coinCap')}</Label><Input type="number" value={form.coin_cap} onChange={e => setForm(f => ({ ...f, coin_cap: e.target.value }))} placeholder="∞" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Required Level</Label><Input type="number" value={form.required_level} onChange={e => setForm(f => ({ ...f, required_level: Number(e.target.value) }))} /></div>
+              <div><Label>{t('gamification.shopRules.requiredLevel')}</Label><Input type="number" value={form.required_level} onChange={e => setForm(f => ({ ...f, required_level: Number(e.target.value) }))} /></div>
               <div className="flex items-center gap-2 pt-6">
                 <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
                 <Label>{t('common.active')}</Label>

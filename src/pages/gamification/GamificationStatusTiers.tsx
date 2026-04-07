@@ -67,33 +67,33 @@ export default function GamificationStatusTiers() {
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Total Tiers" value={rules?.length ?? 0} icon={<Shield className="h-5 w-5" />} />
-        <StatCard title="SP Rules" value={spRules?.length ?? 0} icon={<TrendingUp className="h-5 w-5" />} />
-        <StatCard title="Benefits" value={benefits?.length ?? 0} icon={<Award className="h-5 w-5" />} />
-        <StatCard title="Evaluated Members" value={totalMembers} icon={<Users className="h-5 w-5" />} />
+        <StatCard title={t('gamification.statusTiers.totalTiers')} value={rules?.length ?? 0} icon={<Shield className="h-5 w-5" />} />
+        <StatCard title={t('gamification.statusTiers.spRules')} value={spRules?.length ?? 0} icon={<TrendingUp className="h-5 w-5" />} />
+        <StatCard title={t('gamification.statusTiers.benefits')} value={benefits?.length ?? 0} icon={<Award className="h-5 w-5" />} />
+        <StatCard title={t('gamification.statusTiers.evaluatedMembers')} value={totalMembers} icon={<Users className="h-5 w-5" />} />
       </div>
 
       {/* Tier Qualification Rules */}
       <div>
-        <h3 className="text-sm font-bold mb-3">Tier Qualification Rules</h3>
+        <h3 className="text-sm font-bold mb-3">{t('gamification.statusTiers.qualificationRules')}</h3>
         <DataTable
           rowKey={(row: any) => row.id ?? row.tier_code}
           columns={[
-            { key: 'tier_code', header: 'Tier', cell: (row: any) => (
+            { key: 'tier_code', header: t('gamification.statusTiers.tier'), cell: (row: any) => (
               <span className="flex items-center gap-2 font-bold capitalize">
                 <span>{row.icon_emoji}</span>
                 {row.display_name_en}
               </span>
             )},
-            { key: 'min_level', header: 'Min Level', cell: (row: any) => row.min_level },
-            { key: 'min_sp_90d', header: 'Min SP (90d)', cell: (row: any) => row.min_sp_90d },
-            { key: 'active_days', header: 'Active Days', cell: (row: any) => (
+            { key: 'min_level', header: t('gamification.statusTiers.minLevel'), cell: (row: any) => row.min_level },
+            { key: 'min_sp_90d', header: t('gamification.statusTiers.minSp90d'), cell: (row: any) => row.min_sp_90d },
+            { key: 'active_days', header: t('gamification.statusTiers.activeDays'), cell: (row: any) => (
               <span>{row.min_active_days_period} in {row.active_days_window}d</span>
             )},
-            { key: 'requires_pkg', header: 'Req. Package', cell: (row: any) => (
+            { key: 'requires_pkg', header: t('gamification.statusTiers.reqPackage'), cell: (row: any) => (
               row.requires_active_package ? '✅' : '—'
             )},
-            { key: 'members', header: 'Members', cell: (row: any) => (
+            { key: 'members', header: t('gamification.statusTiers.members'), cell: (row: any) => (
               <span className="font-mono">{dist[row.tier_code] ?? 0}</span>
             )},
           ]}
@@ -103,14 +103,14 @@ export default function GamificationStatusTiers() {
 
       {/* SP Earning Rules */}
       <div>
-        <h3 className="text-sm font-bold mb-3">Status Point Earning Rules</h3>
+        <h3 className="text-sm font-bold mb-3">{t('gamification.statusTiers.spEarningRules')}</h3>
         <DataTable
           rowKey={(row: any) => row.id ?? row.action_key}
           columns={[
-            { key: 'action_key', header: 'Action Key', cell: (row: any) => row.action_key },
-            { key: 'sp_value', header: 'SP Value', cell: (row: any) => row.sp_value },
-            { key: 'daily_cap', header: 'Daily Cap', cell: (row: any) => row.daily_cap ?? '∞' },
-            { key: 'is_active', header: 'Active', cell: (row: any) => row.is_active ? '✅' : '❌' },
+            { key: 'action_key', header: t('gamification.statusTiers.actionKey'), cell: (row: any) => row.action_key },
+            { key: 'sp_value', header: t('gamification.statusTiers.spValue'), cell: (row: any) => row.sp_value },
+            { key: 'daily_cap', header: t('gamification.statusTiers.dailyCap'), cell: (row: any) => row.daily_cap ?? '∞' },
+            { key: 'is_active', header: t('common.active'), cell: (row: any) => row.is_active ? '✅' : '❌' },
           ]}
           data={spRules ?? []}
         />
@@ -118,16 +118,16 @@ export default function GamificationStatusTiers() {
 
       {/* Benefits */}
       <div>
-        <h3 className="text-sm font-bold mb-3">Tier Benefits</h3>
+        <h3 className="text-sm font-bold mb-3">{t('gamification.statusTiers.tierBenefits')}</h3>
         <DataTable
           rowKey={(row: any) => row.id}
           columns={[
-            { key: 'tier_code', header: 'Tier', cell: (row: any) => (
+            { key: 'tier_code', header: t('gamification.statusTiers.tier'), cell: (row: any) => (
               <span className="capitalize font-medium">{row.tier_code}</span>
             )},
-            { key: 'description_en', header: 'Benefit', cell: (row: any) => row.description_en },
-            { key: 'frequency', header: 'Frequency', cell: (row: any) => row.frequency },
-            { key: 'max_per_month', header: 'Max/Month', cell: (row: any) => row.max_per_month ?? '∞' },
+            { key: 'description_en', header: t('gamification.statusTiers.benefit'), cell: (row: any) => row.description_en },
+            { key: 'frequency', header: t('gamification.statusTiers.frequency'), cell: (row: any) => row.frequency },
+            { key: 'max_per_month', header: t('gamification.statusTiers.maxPerMonth'), cell: (row: any) => row.max_per_month ?? '∞' },
           ]}
           data={benefits ?? []}
         />
