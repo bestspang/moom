@@ -37,8 +37,10 @@ export const StepContact: React.FC<StepContactProps> = ({ register, errors }) =>
         <Label>{t('auth.email')}</Label>
         <Input
           type="email"
-          {...register('email')}
-          className={errors.email ? 'border-destructive' : ''}
+          {...register('email', {
+            onChange: (e) => { e.target.value = e.target.value.toLowerCase().trim(); },
+          })}
+          className={`lowercase ${errors.email ? 'border-destructive' : ''}`}
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email.message}</p>

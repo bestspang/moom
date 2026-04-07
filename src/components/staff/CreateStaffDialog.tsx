@@ -148,7 +148,7 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
           date_of_birth: form.date_of_birth || null,
           gender: form.gender || null,
           phone: form.phone.trim() || null,
-          email: form.email.trim() || null,
+          email: form.email.trim().toLowerCase() || null,
           address_1: form.address_1.trim() || null,
           address_2: form.address_2.trim() || null,
           subdistrict: form.subdistrict.trim() || null,
@@ -256,7 +256,8 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
               type="email"
               placeholder="email@example.com"
               value={form.email}
-              onChange={e => updateField('email', e.target.value)}
+              onChange={e => updateField('email', e.target.value.toLowerCase().trim())}
+              className="lowercase"
             />
           </div>
         </div>

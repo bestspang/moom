@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* MOOM CLUB Design System v0.0.1 */
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -256,7 +256,7 @@
 
   body {
     @apply bg-background text-foreground font-sans text-[13px];
-    font-family: 'Sarabun', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans Thai', 'Inter', system-ui, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {

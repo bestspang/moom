@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Sarabun', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['IBM Plex Sans Thai', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -162,7 +162,7 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
         last_name: data.lastName || null,
         nickname: data.nickname || null,
         phone: data.phone || null,
-        email: data.email || null,
+        email: data.email?.toLowerCase().trim() || null,
         gender: data.gender || null,
         date_of_birth: data.dateOfBirth || null,
         source: data.source || null,
@@ -226,7 +226,7 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="lead-email">{t('leads.email')}</Label>
-            <Input id="lead-email" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+            <Input id="lead-email" type="email" {...register('email')} className={`lowercase ${errors.email ? 'border-destructive' : ''}`} />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
         </div>

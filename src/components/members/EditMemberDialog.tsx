@@ -177,7 +177,7 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
           first_name: data.firstName,
           last_name: data.lastName,
           nickname: data.nickname || null,
-          email: data.email || null,
+          email: data.email?.toLowerCase().trim() || null,
           phone: data.phone || null,
           date_of_birth: data.dateOfBirth || null,
           gender: data.gender || null,
@@ -316,7 +316,7 @@ export const EditMemberDialog: React.FC<EditMemberDialogProps> = ({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">{t('auth.email')}</Label>
-                <Input id="email" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+                <Input id="email" type="email" {...register('email')} className={`lowercase ${errors.email ? 'border-destructive' : ''}`} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">

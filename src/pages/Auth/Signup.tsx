@@ -57,7 +57,7 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName);
+      const { error } = await signUp(data.email.toLowerCase().trim(), data.password, data.firstName, data.lastName);
       
       if (error) {
         toast({
@@ -128,7 +128,7 @@ const Signup = () => {
                 type="email"
                 placeholder="email@example.com"
                 {...register('email')}
-                className={errors.email ? 'border-destructive' : ''}
+                className={`lowercase ${errors.email ? 'border-destructive' : ''}`}
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>

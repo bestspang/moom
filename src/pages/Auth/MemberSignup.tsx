@@ -67,7 +67,7 @@ const MemberSignup: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password, data.firstName, data.lastName, 'member', referralCode ? { referral_code: referralCode } : undefined);
+      const { error } = await signUp(data.email.toLowerCase().trim(), data.password, data.firstName, data.lastName, 'member', referralCode ? { referral_code: referralCode } : undefined);
       if (error) {
         toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
       } else {
@@ -228,7 +228,7 @@ const MemberSignup: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">{t('auth.email')}</Label>
-                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
+                <Input id="email" type="email" placeholder="email@example.com" {...register('email')} className={`lowercase ${errors.email ? 'border-destructive' : ''}`} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">
