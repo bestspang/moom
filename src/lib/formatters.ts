@@ -15,10 +15,16 @@ export function getDateLocale(language: string = 'en') {
  * Format date in Bangkok timezone
  * Format: "D MMM YYYY" (e.g., "3 FEB 2026")
  */
-export function formatDate(date: Date | string, language: string = 'en'): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  const locale = getDateLocale(language);
-  return format(d, 'd MMM yyyy', { locale }).toUpperCase();
+export function formatDate(date: Date | string | null | undefined, language: string = 'en'): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    const locale = getDateLocale(language);
+    return format(d, 'd MMM yyyy', { locale }).toUpperCase();
+  } catch {
+    return '-';
+  }
 }
 
 /**
