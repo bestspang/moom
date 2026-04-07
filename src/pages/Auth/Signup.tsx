@@ -130,7 +130,6 @@ const Signup = () => {
                 {...register('email')}
                 className={`lowercase ${errors.email ? 'border-destructive' : ''}`}
               />
-              />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
               )}

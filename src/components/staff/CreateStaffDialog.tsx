@@ -259,7 +259,6 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({ open, onOp
               onChange={e => updateField('email', e.target.value.toLowerCase().trim())}
               className="lowercase"
             />
-            />
           </div>
         </div>
       </div>
