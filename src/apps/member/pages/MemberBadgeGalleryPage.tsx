@@ -5,7 +5,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSession } from '../hooks/useMemberSession';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { Trophy, Lock } from 'lucide-react';
 import { getBadgeEmoji } from '../features/momentum/badgeEmoji';
 import { format } from 'date-fns';
@@ -49,7 +49,7 @@ function getTierStyle(tier?: string) {
 
 export default function MemberBadgeGalleryPage() {
   const { memberId } = useMemberSession();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const { data: badges, isLoading } = useQuery({
     queryKey: ['my-badges', memberId],

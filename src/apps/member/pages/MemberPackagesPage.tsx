@@ -13,13 +13,13 @@ import { Package, Check, Zap, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { fetchMyPackages, fetchAvailablePackages } from '../api/services';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
 export default function MemberPackagesPage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { memberId, isAuthenticated } = useMemberSession();
   const [tab, setTab] = useState<'my' | 'browse'>('my');
 

@@ -12,6 +12,9 @@ import {
   Bell,
   Home,
   Dumbbell,
+  TrendingUp,
+  Trophy,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +53,16 @@ const TrainerAppPreview = () => {
       icon: AlertTriangle,
       label: t('roadmap.trainerApp.menu.incidents'),
       description: t('roadmap.trainerApp.menu.incidentsDesc'),
+    },
+    {
+      icon: TrendingUp,
+      label: t('roadmap.trainerApp.menu.impact'),
+      description: t('roadmap.trainerApp.menu.impactDesc'),
+    },
+    {
+      icon: Trophy,
+      label: t('roadmap.trainerApp.menu.badges'),
+      description: t('roadmap.trainerApp.menu.badgesDesc'),
     },
   ];
 
@@ -103,12 +116,14 @@ const TrainerAppPreview = () => {
                     t('roadmap.trainerApp.features.ptLog'),
                     t('roadmap.trainerApp.features.memberView'),
                     t('roadmap.trainerApp.features.noShow'),
+                    t('roadmap.trainerApp.features.impact'),
+                    t('roadmap.trainerApp.features.badges'),
                   ].map((feature, i) => (
                     <li
                       key={i}
                       className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
-                      <Clock className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 text-accent-teal" />
                       {feature}
                     </li>
                   ))}
@@ -224,16 +239,11 @@ const TrainerAppPreview = () => {
                     ))}
                   </div>
 
-                  {/* Coming soon overlay */}
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-[2rem]">
-                    <div className="text-center p-6">
-                      <Clock className="h-12 w-12 text-primary mx-auto mb-4" />
-                      <h3 className="font-bold text-lg mb-2">
-                        {t('roadmap.comingSoon')}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {t('roadmap.trainerApp.comingSoonText')}
-                      </p>
+                  {/* Now Available badge */}
+                  <div className="absolute top-12 right-4 z-10">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-teal/10 border border-accent-teal/30 text-accent-teal text-xs font-semibold">
+                      <Check className="h-3.5 w-3.5" />
+                      {t('roadmap.trainerApp.nowAvailable')}
                     </div>
                   </div>
                 </div>

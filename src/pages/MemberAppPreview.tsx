@@ -11,6 +11,11 @@ import {
   User,
   Bell,
   Home,
+  Trophy,
+  BarChart3,
+  Flame,
+  Users,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +53,26 @@ const MemberAppPreview = () => {
       icon: FileText,
       label: t('roadmap.memberApp.menu.contracts'),
       description: t('roadmap.memberApp.menu.contractsDesc'),
+    },
+    {
+      icon: Trophy,
+      label: t('roadmap.memberApp.menu.badges'),
+      description: t('roadmap.memberApp.menu.badgesDesc'),
+    },
+    {
+      icon: BarChart3,
+      label: t('roadmap.memberApp.menu.leaderboard'),
+      description: t('roadmap.memberApp.menu.leaderboardDesc'),
+    },
+    {
+      icon: Flame,
+      label: t('roadmap.memberApp.menu.momentum'),
+      description: t('roadmap.memberApp.menu.momentumDesc'),
+    },
+    {
+      icon: Users,
+      label: t('roadmap.memberApp.menu.squad'),
+      description: t('roadmap.memberApp.menu.squadDesc'),
     },
   ];
 
@@ -100,13 +125,16 @@ const MemberAppPreview = () => {
                     t('roadmap.memberApp.features.packages'),
                     t('roadmap.memberApp.features.qrCheckin'),
                     t('roadmap.memberApp.features.payments'),
-                    t('roadmap.memberApp.features.contracts'),
+                    t('roadmap.memberApp.features.badges'),
+                    t('roadmap.memberApp.features.leaderboard'),
+                    t('roadmap.memberApp.features.momentum'),
+                    t('roadmap.memberApp.features.squad'),
                   ].map((feature, i) => (
                     <li
                       key={i}
                       className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
-                      <Clock className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 text-accent-teal" />
                       {feature}
                     </li>
                   ))}
@@ -174,16 +202,11 @@ const MemberAppPreview = () => {
                     ))}
                   </div>
 
-                  {/* Coming soon overlay */}
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-[2rem]">
-                    <div className="text-center p-6">
-                      <Clock className="h-12 w-12 text-primary mx-auto mb-4" />
-                      <h3 className="font-bold text-lg mb-2">
-                        {t('roadmap.comingSoon')}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {t('roadmap.memberApp.comingSoonText')}
-                      </p>
+                  {/* Now Available badge */}
+                  <div className="absolute top-12 right-4 z-10">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-teal/10 border border-accent-teal/30 text-accent-teal text-xs font-semibold">
+                      <Check className="h-3.5 w-3.5" />
+                      {t('roadmap.memberApp.nowAvailable')}
                     </div>
                   </div>
                 </div>
