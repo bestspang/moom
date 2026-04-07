@@ -54,6 +54,7 @@ export const EditMemberPackageDialog = ({ open, onOpenChange, pkg }: EditMemberP
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('members.editPackage')}</DialogTitle>
+          <DialogDescription>{t('members.editPackageDescription') || ''}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
