@@ -1,101 +1,76 @@
 
 
-# Enhanced Member Package Management + Purchase with Promotions/Coupons/Discounts
+# Enhance UX/UI — หน้ารายละเอียดสมาชิก (Member Details)
 
-## Current State
+## Current Issues
 
-**MemberPackagesTab**: Read-only DataTable showing packages with status filter + "Purchase Package" button. No edit/delete actions.
-
-**PurchasePackageDialog**: 3-step wizard (Select Package → Payment Details → Summary). No promotion, coupon, or manual discount support. Transaction records `discount_amount: 0` always.
-
-**DB Schema supports it all**:
-- `member_packages` has `activation_date`, `expiry_date`, `sessions_remaining`, `status` — all updatable
-- `transactions` has `discount_amount` field
-- `promotions` table has `discount_type`, `discount_value`, `percentage_discount`, `flat_rate_discount`, `promo_code`, `status`
-- `promotion_redemptions` table tracks usage (discount_amount, gross_amount, net_amount, promo_code_used)
-- `coupon_wallet` + `coupon_templates` for member coupons
-- RLS: Operators can manage member_packages (UPDATE, DELETE allowed)
-
-**Missing mutations**: No `useUpdateMemberPackage` or `useDeleteMemberPackage` hooks exist.
+1. **Sidebar ไม่มี Quick Actions** — ไม่มีปุ่มดำเนินการเร็ว (Edit, Suspend, Purchase) ต้องเข้าไปหาในแต่ละ tab
+2. **Tab bar อัดแน่น 10 tabs** — แถบ tab ยาวเกิน wrap หลายแถว ดู cluttered โดยเฉพาะบน laptop
+3. **Home tab ซ้ำกับ sidebar** — แสดง member_id, status, joined date ซ้ำกับ sidebar card
+4. **StatCards ไม่มี icon** — 4 stat cards ด้านบนดูเรียบเกิน ไม่มี visual cue
+5. **Sidebar contact card ไม่มี click actions** — เบอร์โทร/email ไม่สามารถกดโทร/ส่งเมลได้
+6. **Front Desk Notes ลอยล่างสุด** — อยู่ไกลจาก sidebar ทั้งที่เป็นข้อมูลที่ staff ใช้บ่อย
+7. **Camera button ไม่ทำงาน** — ปุ่ม Camera บน avatar เป็น stub (ไม่มี logic)
+8. **Profile tab UX ไม่ดี** — ทุก field แสดงเป็น Input readOnly ดูเหมือนฟอร์ม แต่ไม่ใช่ form
+9. **Engagement score badge เล็กเกินไป** — ข้อมูลสำคัญแต่แสดงเป็น badge เล็กจิ๋ว
 
 ## Implementation Plan
 
-### Part 1: Package Edit/Delete in MemberPackagesTab
+### Part 1: Sidebar Enhancement
 
 | # | File | Change |
 |---|------|--------|
-| 1 | `src/hooks/useMemberDetails.ts` | Add `useUpdateMemberPackage` mutation (update activation_date, expiry_date, sessions_remaining, status) + `useDeleteMemberPackage` mutation |
-| 2 | `src/components/members/tabs/MemberPackagesTab.tsx` | Add row actions column (Edit / Delete dropdown). Add `EditMemberPackageDialog` inline — form with: activation date, expiry date, sessions remaining, status. Add delete confirmation dialog. |
+| 1 | `MemberDetails.tsx` | ย้าย Front Desk Notes ไป sidebar (ใต้ contact card), เพิ่ม Quick Actions card (Edit Profile, Purchase Package, Suspend/Unsuspend), ลบ Camera button stub |
+| 2 | `MemberDetails.tsx` | เพิ่ม Engagement Score mini-card ใน sidebar แทน badge เล็ก — แสดง score + level + ring chart |
 
-**Edit dialog fields**:
-- วันเริ่มใช้ (Activation Date) — DatePicker
-- วันหมดอายุ (Expiry Date) — DatePicker
-- จำนวนครั้งคงเหลือ (Sessions Remaining) — number input
-- สถานะ (Status) — select: active / ready_to_use / on_hold / completed / expired
-
-**Delete**: Confirm dialog → delete from `member_packages` → activity log
-
-### Part 2: Promotions + Coupons + Manual Discount in PurchasePackageDialog
-
-Add a new section in **Step 2 (Payment Details)** with 3 discount options:
+### Part 2: Tab Consolidation & Cleanup
 
 | # | File | Change |
 |---|------|--------|
-| 3 | `src/components/members/PurchasePackageDialog.tsx` | Add discount section in Step 2 with: (A) Promotion selector, (B) Coupon selector, (C) Manual discount input. Update VAT calculation in Step 3 to reflect discounts. Update `handleConfirm` to record discount in transaction + create `promotion_redemptions` row if promotion used |
+| 3 | `MemberDetails.tsx` | ลด tabs จาก 10 → 7: merge Home+Profile → "ภาพรวม", merge Notes+Communications → "บันทึก", ใส่ icon ใน tab trigger |
+| 4 | `MemberHomeTab.tsx` | Rename → MemberOverviewTab: รวม account details grid + profile fields (read-only display, ไม่ใช่ Input) + Edit button เปิด EditMemberDialog |
+| 5 | `MemberNotesTab.tsx` | รวม Communication Log เข้ามาเป็น unified feed — filter chips แยก note/call/line/email |
 
-**A) Promotion Selector**:
-- Fetch active promotions that apply to selected package (`promotions` where status='active' + check `applicable_packages` or `promotion_packages` join table)
-- Show dropdown with promotion name + discount info
-- Calculate discount: percentage → `price * percentage_discount / 100` (capped by `max_redemption_value`), flat → `flat_rate_discount`
-
-**B) Coupon Selector**:
-- Fetch member's active coupons from `coupon_wallet` joined with `coupon_templates` where `status='active'` and `expires_at > now()`
-- Show dropdown with coupon name + discount value
-- Calculate: fixed → `discount_value`, percentage → `price * discount_value / 100` (capped by `max_discount`)
-
-**C) Manual Discount**:
-- Simple number input "ส่วนลดเพิ่มเติม (฿)" — direct baht amount
-
-**Discount stacking**: promotion + coupon + manual → total discount. Cap at package price.
-
-**Step 3 Summary update**: Show original price, promotion discount, coupon discount, manual discount, net price, VAT breakdown on net.
-
-**On confirm**:
-- Transaction: `discount_amount = totalDiscount`, `amount = netPrice`
-- If promotion used: insert `promotion_redemptions` row + increment `usage_count`
-- If coupon used: update `coupon_wallet` status → 'used', set `used_at`
-
-### Part 3: i18n Keys
+### Part 3: StatCards Visual Polish
 
 | # | File | Change |
 |---|------|--------|
-| 4 | `src/i18n/locales/en.ts` | Add keys: members.editPackage, members.deletePackage, members.confirmDeletePackage, members.activationDate, members.selectPromotion, members.selectCoupon, members.manualDiscount, members.discountSection, members.promotionDiscount, members.couponDiscount, members.originalPrice, members.netPrice |
-| 5 | `src/i18n/locales/th.ts` | Thai translations for all above |
+| 6 | `MemberDetails.tsx` | เพิ่ม icon ให้ StatCards ทั้ง 4: Calendar, Trophy, Wallet, Clock |
 
-### Part 4: Docs
+### Part 4: Contact Card Clickable Actions
 
 | # | File | Change |
 |---|------|--------|
-| 6 | `docs/DEVLOG.md` | Log changes |
+| 7 | `MemberDetails.tsx` | Phone → `tel:` link, Email → `mailto:` link, เพิ่ม copy-to-clipboard icon |
 
-## What stays the same
-- All existing purchase logic (just extended, not rewritten)
-- Member app purchase flow (separate page, unaffected)
-- Promotions CRUD pages
-- Coupon templates CRUD
-- DB schema (no migrations needed — all fields already exist)
-- RLS policies (operators already have full access)
+### Part 5: Profile Tab → Read-Only Display
+
+| # | File | Change |
+|---|------|--------|
+| 8 | `MemberProfileTab.tsx` → ย้ายเข้า Overview tab | แสดงข้อมูลเป็น label-value pairs (ไม่ใช่ Input readOnly), ปุ่ม Edit เปิด EditMemberDialog modal แทนการ edit inline |
+
+### Part 6: i18n + Docs
+
+| # | File | Change |
+|---|------|--------|
+| 9 | `en.ts` + `th.ts` | เพิ่ม keys: members.tabs.overview, members.tabs.records, members.quickActions, members.copyEmail, members.copyPhone |
+| 10 | `docs/DEVLOG.md` | Log changes |
+
+## สิ่งที่ไม่เปลี่ยน
+- Backend / DB / RLS — ไม่มีการเปลี่ยน
+- Tab content logic ของ Attendance, Packages, Billing, Injuries, Suspensions, Contracts — คงเดิม
+- EditMemberDialog — ใช้ของเดิม (เปิดจาก Quick Actions แทน)
+- PurchasePackageDialog — คงเดิม
+- MemberTimeline — คงเดิม
 
 ## Smoke Test
-1. Open Member Detail → Packages tab → see Edit/Delete actions per row
-2. Edit a package: change expiry date → save → date updated in table
-3. Edit a package: change sessions remaining → save → reflected
-4. Delete a package → confirm → removed from list
-5. Purchase Package → Step 2 → see promotion dropdown with active promotions
-6. Select a promotion → discount reflected in Step 3 summary
-7. Select a member coupon → additional discount shown
-8. Enter manual discount → reflected in total
-9. Confirm purchase → transaction has correct discount_amount
-10. Confirm purchase with coupon → coupon status changes to 'used'
-11. Existing purchase flow (no discount) still works unchanged
+1. เข้าหน้า Member Detail → Sidebar แสดง avatar, ชื่อ, contact (กดโทร/email ได้), Quick Actions, Desk Notes, LINE Identity
+2. กดปุ่ม Quick Action "แก้ไขโปรไฟล์" → เปิด EditMemberDialog → save ได้
+3. กดปุ่ม Quick Action "ซื้อแพ็กเกจ" → เปิด PurchasePackageDialog
+4. Tab "ภาพรวม" แสดง account details + profile info เป็น read-only + Timeline
+5. Tab "บันทึก" แสดง notes + communications รวมกัน พร้อม filter chips
+6. Tab ที่เหลือ (Attendance, Packages, Billing, Injuries, Suspensions, Contracts) ยังทำงานเหมือนเดิม
+7. StatCards แสดง icon ทั้ง 4
+8. Dark mode ยังดูดี
+9. Responsive: tablet/mobile sidebar stack ลงล่าง
 
