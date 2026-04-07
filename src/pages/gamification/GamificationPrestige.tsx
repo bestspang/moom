@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,6 +29,7 @@ const LEVEL_ICONS: Record<number, React.ReactNode> = {
 };
 
 const GamificationPrestige = () => {
+  const { t } = useLanguage();
   const qc = useQueryClient();
   const [edits, setEdits] = useState<Record<string, { target_value: number; is_active: boolean }>>({});
 
@@ -67,7 +69,7 @@ const GamificationPrestige = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prestige-criteria'] });
-      toast.success('Prestige criterion updated');
+      toast.success(t('gamification.prestige.updateSuccess'));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -96,10 +98,9 @@ const GamificationPrestige = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Prestige Tier Criteria (Levels 18–20)</h2>
+        <h2 className="text-lg font-semibold">{t('gamification.prestige.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          These criteria gate level-up beyond XP requirements. Members must meet ALL active criteria to advance.
-          Changes are system-protected — use caution.
+          {t('gamification.prestige.description')}
         </p>
       </div>
 
@@ -116,10 +117,10 @@ const GamificationPrestige = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[220px]">Criterion</TableHead>
-                  <TableHead className="w-[100px]">Target</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[80px]">Active</TableHead>
+                  <TableHead className="w-[220px]">{t('gamification.prestige.criterion')}</TableHead>
+                  <TableHead className="w-[100px]">{t('gamification.prestige.target')}</TableHead>
+                  <TableHead>{t('gamification.prestige.descriptionCol')}</TableHead>
+                  <TableHead className="w-[80px]">{t('common.active')}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -180,7 +181,7 @@ const GamificationPrestige = () => {
                 {(!grouped[level] || grouped[level].length === 0) && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-4">
-                      No criteria configured for this level
+                      {t('gamification.prestige.noCriteria')}
                     </TableCell>
                   </TableRow>
                 )}

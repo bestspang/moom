@@ -90,7 +90,7 @@ const GamificationOverview = () => {
       <div>
         <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <Coins className="h-4 w-4 text-primary" />
-          Economy Health
+          {t('gamification.overview.economyHealth')}
         </h3>
         {loadingEconomy ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,10 +98,10 @@ const GamificationOverview = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard icon={<Users className="h-5 w-5" />} title="Active Profiles" value={economyStats?.totalMembers ?? 0} color="blue" />
-            <StatCard icon={<Coins className="h-5 w-5" />} title="Coin in Circulation" value={(economyStats?.totalCoinInCirculation ?? 0).toLocaleString()} color="orange" />
-            <StatCard icon={<Gift className="h-5 w-5" />} title="Total Redemptions" value={economyStats?.totalRedemptions ?? 0} color="teal" />
-            <StatCard icon={<Target className="h-5 w-5" />} title="Quest Completion" value={`${economyStats?.questCompletionRate ?? 0}%`} color="blue" />
+            <StatCard icon={<Users className="h-5 w-5" />} title={t('gamification.overview.activeProfiles')} value={economyStats?.totalMembers ?? 0} color="blue" />
+            <StatCard icon={<Coins className="h-5 w-5" />} title={t('gamification.overview.coinInCirculation')} value={(economyStats?.totalCoinInCirculation ?? 0).toLocaleString()} color="orange" />
+            <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.totalRedemptions')} value={economyStats?.totalRedemptions ?? 0} color="teal" />
+            <StatCard icon={<Target className="h-5 w-5" />} title={t('gamification.overview.questCompletion')} value={`${economyStats?.questCompletionRate ?? 0}%`} color="blue" />
           </div>
         )}
       </div>
@@ -110,12 +110,12 @@ const GamificationOverview = () => {
       <div>
         <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-primary" />
-          System Configuration
+          {t('gamification.overview.systemConfig')}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard icon={<Shield className="h-5 w-5" />} title="Levels" value={activeLevels} color="blue" />
+          <StatCard icon={<Shield className="h-5 w-5" />} title={t('gamification.overview.levels')} value={activeLevels} color="blue" />
           <StatCard icon={<Zap className="h-5 w-5" />} title={t('gamification.overview.activeRules')} value={activeRules} color="blue" />
-          <StatCard icon={<ScrollText className="h-5 w-5" />} title="Quest Templates" value={activeQuestTemplates} color="teal" />
+          <StatCard icon={<ScrollText className="h-5 w-5" />} title={t('gamification.overview.questTemplates')} value={activeQuestTemplates} color="teal" />
           <StatCard icon={<Award className="h-5 w-5" />} title={t('gamification.overview.totalBadges')} value={totalBadges} color="magenta" />
           <StatCard icon={<Gift className="h-5 w-5" />} title={t('gamification.overview.activeRewards')} value={activeRewards} color="orange" />
           <StatCard icon={<AlertTriangle className="h-5 w-5" />} title={t('gamification.overview.flaggedEvents')} value={flaggedEvents} color={flaggedEvents > 0 ? 'orange' : 'gray'} />
@@ -126,34 +126,34 @@ const GamificationOverview = () => {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Economy breakdown */}
         <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Economy Summary</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm font-medium">{t('gamification.overview.economySummary')}</CardTitle></CardHeader>
           <CardContent>
             {loadingEconomy ? (
               <Skeleton className="h-32" />
             ) : (
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Total XP distributed</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.totalXpDistributed')}</span>
                   <span className="text-sm font-bold text-foreground">{(economyStats?.totalXpEarned ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Total Coin earned (lifetime)</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.totalCoinEarned')}</span>
                   <span className="text-sm font-bold text-foreground">{(economyStats?.totalCoinEverEarned ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Total Coin spent</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.totalCoinSpent')}</span>
                   <span className="text-sm font-bold text-foreground">{(economyStats?.totalCoinSpent ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Avg member level</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.avgMemberLevel')}</span>
                   <span className="text-sm font-bold text-foreground">{economyStats?.avgLevel ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Quests assigned</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.questsAssigned')}</span>
                   <span className="text-sm font-bold text-foreground">{economyStats?.totalQuestsAssigned ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Badges earned</span>
+                  <span className="text-sm text-muted-foreground">{t('gamification.overview.badgesEarned')}</span>
                   <span className="text-sm font-bold text-foreground">{economyStats?.totalBadgesEarned ?? 0}</span>
                 </div>
               </div>
@@ -194,28 +194,28 @@ const GamificationOverview = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rules')}>
-              <Zap className="h-3.5 w-3.5" /> XP / Coin Rules
+              <Zap className="h-3.5 w-3.5" /> {t('gamification.tabs.rules')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/quests')}>
-              <ScrollText className="h-3.5 w-3.5" /> Quest Templates
+              <ScrollText className="h-3.5 w-3.5" /> {t('gamification.tabs.quests')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/badges')}>
-              <Award className="h-3.5 w-3.5" /> Badges
+              <Award className="h-3.5 w-3.5" /> {t('gamification.tabs.badges')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/rewards')}>
-              <Gift className="h-3.5 w-3.5" /> Rewards
+              <Gift className="h-3.5 w-3.5" /> {t('gamification.tabs.rewards')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/levels')}>
-              <Shield className="h-3.5 w-3.5" /> Levels
+              <Shield className="h-3.5 w-3.5" /> {t('gamification.tabs.levels')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/challenges')}>
-              <Target className="h-3.5 w-3.5" /> Challenges
+              <Target className="h-3.5 w-3.5" /> {t('gamification.tabs.challenges')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/coupons')}>
-              <Plus className="h-3.5 w-3.5" /> Coupons
+              <Plus className="h-3.5 w-3.5" /> {t('gamification.tabs.coupons')}
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => navigate('/gamification/shop-rules')}>
-              <Coins className="h-3.5 w-3.5" /> Shop Rules
+              <Coins className="h-3.5 w-3.5" /> {t('gamification.tabs.shopRules')}
             </Button>
           </div>
         </CardContent>
