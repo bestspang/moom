@@ -9,13 +9,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Package, Banknote, CreditCard, QrCode, ArrowLeft, Check } from 'lucide-react';
+import { Search, Package, Banknote, CreditCard, QrCode, ArrowLeft, Check, Tag, Ticket, CircleDollarSign } from 'lucide-react';
 import { usePackages } from '@/hooks/usePackages';
 import { useAssignPackageToMember } from '@/hooks/useMemberDetails';
 import { useLocations } from '@/hooks/useLocations';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency } from '@/lib/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface PurchasePackageDialogProps {
   open: boolean;
@@ -48,9 +50,44 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
   const [locationId, setLocationId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
+  // Discount state
+  const [selectedPromotionId, setSelectedPromotionId] = useState<string>('');
+  const [selectedCouponId, setSelectedCouponId] = useState<string>('');
+  const [manualDiscount, setManualDiscount] = useState<number>(0);
+
   const { data: packages, isLoading } = usePackages('on_sale', search);
   const { data: locations } = useLocations('open');
   const assignMutation = useAssignPackageToMember();
+
+  // Fetch active promotions
+  const { data: promotions } = useQuery({
+    queryKey: ['promotions-for-purchase'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('status', 'active');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  // Fetch member's active coupons
+  const { data: memberCoupons } = useQuery({
+    queryKey: ['member-coupons-for-purchase', memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coupon_wallet')
+        .select('*, coupon_template:coupon_templates(*)')
+        .eq('member_id', memberId)
+        .eq('status', 'active')
+        .gte('expires_at', new Date().toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!memberId,
+  });
 
   const selectedPkg = useMemo(
     () => packages?.find((p) => p.id === selectedPkgId) || null,
@@ -62,14 +99,52 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
     [locations, locationId]
   );
 
-  // VAT calculations
-  const vatBreakdown = useMemo(() => {
+  const selectedPromotion = useMemo(
+    () => promotions?.find((p) => p.id === selectedPromotionId) || null,
+    [promotions, selectedPromotionId]
+  );
+
+  const selectedCoupon = useMemo(
+    () => memberCoupons?.find((c) => c.id === selectedCouponId) || null,
+    [memberCoupons, selectedCouponId]
+  );
+
+  // Calculate promotion discount
+  const promotionDiscountAmount = useMemo(() => {
+    if (!selectedPkg || !selectedPromotion) return 0;
+    const price = selectedPkg.price;
+    if (selectedPromotion.discount_type === 'percentage') {
+      const pct = selectedPromotion.percentage_discount || selectedPromotion.discount_value || 0;
+      const disc = Math.round(price * pct / 100);
+      const max = selectedPromotion.max_redemption_value;
+      return max ? Math.min(disc, max) : disc;
+    }
+    return selectedPromotion.flat_rate_discount || selectedPromotion.discount_value || 0;
+  }, [selectedPkg, selectedPromotion]);
+
+  // Calculate coupon discount
+  const couponDiscountAmount = useMemo(() => {
+    if (!selectedPkg || !selectedCoupon) return 0;
+    const template = selectedCoupon.coupon_template as any;
+    if (!template) return 0;
+    const price = selectedPkg.price;
+    if (template.discount_type === 'percentage') {
+      const disc = Math.round(price * template.discount_value / 100);
+      return template.max_discount ? Math.min(disc, template.max_discount) : disc;
+    }
+    return template.discount_value || 0;
+  }, [selectedPkg, selectedCoupon]);
+
+  // Total discount and VAT
+  const discountBreakdown = useMemo(() => {
     if (!selectedPkg) return null;
-    const gross = selectedPkg.price;
-    const exVat = Math.round((gross / 1.07) * 100) / 100;
-    const vat = Math.round((gross - exVat) * 100) / 100;
-    return { gross, exVat, vat };
-  }, [selectedPkg]);
+    const originalPrice = selectedPkg.price;
+    const totalDiscount = Math.min(promotionDiscountAmount + couponDiscountAmount + manualDiscount, originalPrice);
+    const netPrice = originalPrice - totalDiscount;
+    const exVat = Math.round((netPrice / 1.07) * 100) / 100;
+    const vat = Math.round((netPrice - exVat) * 100) / 100;
+    return { originalPrice, promotionDiscountAmount, couponDiscountAmount, manualDiscount: Math.min(manualDiscount, originalPrice), totalDiscount, netPrice, exVat, vat };
+  }, [selectedPkg, promotionDiscountAmount, couponDiscountAmount, manualDiscount]);
 
   const typeLabel = (type: string) => {
     switch (type) {
@@ -81,7 +156,7 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
   };
 
   const handleConfirm = () => {
-    if (!selectedPkg) return;
+    if (!selectedPkg || !discountBreakdown) return;
     assignMutation.mutate(
       {
         memberId,
@@ -98,12 +173,13 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
         locationId: locationId || undefined,
         locationName: selectedLocation?.name,
         notes: notes || undefined,
+        promotionId: selectedPromotionId || undefined,
+        promotionDiscount: promotionDiscountAmount,
+        couponWalletId: selectedCouponId || undefined,
+        couponDiscount: couponDiscountAmount,
+        manualDiscount: manualDiscount,
       },
-      {
-        onSuccess: () => {
-          resetAndClose();
-        },
-      }
+      { onSuccess: () => resetAndClose() }
     );
   };
 
@@ -114,6 +190,9 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
     setPaymentMethod('cash');
     setLocationId('');
     setNotes('');
+    setSelectedPromotionId('');
+    setSelectedCouponId('');
+    setManualDiscount(0);
     onOpenChange(false);
   };
 
@@ -205,7 +284,7 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
           </>
         )}
 
-        {/* ─── Step 2: Payment Details ─── */}
+        {/* ─── Step 2: Payment Details + Discounts ─── */}
         {step === 2 && (
           <>
             <div className="flex-1 overflow-y-auto space-y-4 min-h-0 max-h-[50vh]">
@@ -246,6 +325,78 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
                 </Select>
               </div>
 
+              {/* ─── Discount Section ─── */}
+              <Separator />
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2 text-base font-semibold">
+                  <Tag className="h-4 w-4" /> {t('members.discountSection')}
+                </Label>
+
+                {/* Promotion selector */}
+                <div className="space-y-1">
+                  <Label className="text-sm flex items-center gap-1">
+                    <Tag className="h-3.5 w-3.5" /> {t('members.selectPromotion')}
+                  </Label>
+                  <Select value={selectedPromotionId} onValueChange={setSelectedPromotionId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('members.selectPromotion')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('common.noData')}</SelectItem>
+                      {promotions?.map((promo) => (
+                        <SelectItem key={promo.id} value={promo.id}>
+                          {language === 'th' && promo.name_th ? promo.name_th : (promo.name_en || promo.name)}
+                          {promo.discount_type === 'percentage'
+                            ? ` (-${promo.percentage_discount || promo.discount_value}%)`
+                            : ` (-${formatCurrency(promo.flat_rate_discount || promo.discount_value || 0)})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Coupon selector */}
+                <div className="space-y-1">
+                  <Label className="text-sm flex items-center gap-1">
+                    <Ticket className="h-3.5 w-3.5" /> {t('members.selectCoupon')}
+                  </Label>
+                  <Select value={selectedCouponId} onValueChange={setSelectedCouponId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('members.selectCoupon')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('common.noData')}</SelectItem>
+                      {memberCoupons?.map((coupon) => {
+                        const tpl = coupon.coupon_template as any;
+                        const label = tpl ? (language === 'th' && tpl.name_th ? tpl.name_th : tpl.name_en) : 'Coupon';
+                        const discLabel = tpl?.discount_type === 'percentage'
+                          ? `(-${tpl.discount_value}%)`
+                          : `(-${formatCurrency(tpl?.discount_value || 0)})`;
+                        return (
+                          <SelectItem key={coupon.id} value={coupon.id}>
+                            {label} {discLabel}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Manual discount */}
+                <div className="space-y-1">
+                  <Label className="text-sm flex items-center gap-1">
+                    <CircleDollarSign className="h-3.5 w-3.5" /> {t('members.manualDiscount')}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={manualDiscount || ''}
+                    onChange={(e) => setManualDiscount(Math.max(0, Number(e.target.value)))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
               {/* Notes */}
               <div className="space-y-2">
                 <Label>{t('members.paymentNotes')}</Label>
@@ -270,7 +421,7 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
         )}
 
         {/* ─── Step 3: Summary ─── */}
-        {step === 3 && selectedPkg && vatBreakdown && (
+        {step === 3 && selectedPkg && discountBreakdown && (
           <>
             <div className="flex-1 overflow-y-auto space-y-4 min-h-0 max-h-[50vh]">
               <Card>
@@ -300,20 +451,50 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
 
                   <Separator />
 
-                  {/* Price breakdown */}
+                  {/* Price breakdown with discounts */}
                   <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>{t('members.originalPrice')}</span>
+                      <span>{formatCurrency(discountBreakdown.originalPrice)}</span>
+                    </div>
+
+                    {discountBreakdown.promotionDiscountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.promotionDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.promotionDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {discountBreakdown.couponDiscountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.couponDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.couponDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {discountBreakdown.manualDiscount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.manualDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.manualDiscount)}</span>
+                      </div>
+                    )}
+
+                    {discountBreakdown.totalDiscount > 0 && <Separator />}
+
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{t('members.netPrice')}</span>
+                      <span>{formatCurrency(discountBreakdown.netPrice)}</span>
+                    </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>{t('members.priceExVat')}</span>
-                      <span>{formatCurrency(vatBreakdown.exVat)}</span>
+                      <span>{formatCurrency(discountBreakdown.exVat)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>{t('members.vatAmount')}</span>
-                      <span>{formatCurrency(vatBreakdown.vat)}</span>
+                      <span>{formatCurrency(discountBreakdown.vat)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold text-base">
                       <span>{t('members.totalAmount')}</span>
-                      <span>{formatCurrency(vatBreakdown.gross)}</span>
+                      <span>{formatCurrency(discountBreakdown.netPrice)}</span>
                     </div>
                   </div>
 
