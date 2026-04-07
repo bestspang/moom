@@ -758,6 +758,96 @@ export const useDeleteMemberPackage = () => {
   });
 };
 
+export const useCreateMemberBilling = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async (params: { memberId: string; amount: number; description: string; billing_date: string; transaction_id?: string | null }) => {
+      const { error } = await supabase
+        .from('member_billing')
+        .insert({
+          member_id: params.memberId,
+          amount: params.amount,
+          description: params.description,
+          billing_date: params.billing_date,
+          transaction_id: params.transaction_id || null,
+        });
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      logActivity({
+        event_type: 'member_billing_added',
+        activity: `Billing added: ${variables.description} (${variables.amount})`,
+        entity_type: 'member',
+        entity_id: variables.memberId,
+        new_value: { amount: variables.amount, description: variables.description },
+      });
+      toast.success(t('common.created'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
+export const useUpdateMemberBilling = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId, data }: { id: string; memberId: string; data: { amount?: number; description?: string; billing_date?: string; transaction_id?: string | null } }) => {
+      const { error } = await supabase
+        .from('member_billing')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      logActivity({
+        event_type: 'member_billing_updated',
+        activity: `Billing updated`,
+        entity_type: 'member_billing',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+        new_value: variables.data as Record<string, unknown>,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
+export const useDeleteMemberBilling = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId }: { id: string; memberId: string }) => {
+      const { error } = await supabase
+        .from('member_billing')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      logActivity({
+        event_type: 'member_billing_deleted',
+        activity: `Billing record deleted`,
+        entity_type: 'member_billing',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
 // ─── Utilities ─────────────────────────────────────────────
 
 export const calculateDaysUntilExpiry = (packages: MemberPackage[]): number => {
