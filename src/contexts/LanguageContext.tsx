@@ -15,7 +15,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const { t, i18n } = useTranslation();
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('moom-language');
-    return (saved as Language) || 'en';
+    return (saved as Language) || 'th';
   });
 
   useEffect(() => {
