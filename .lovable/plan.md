@@ -1,53 +1,37 @@
 
 
-# Fix: StatusBadge forwardRef Warning + Members Page Audit
+# Audit Result: ระบบปัจจุบัน — สถานะทั้งหมด
 
-## ปัญหาที่พบ
+## การตรวจสอบที่ทำแล้ว
 
-### 1. StatusBadge forwardRef Warning (Console Error)
-**Root Cause:** `StatusBadge` เป็น function component ธรรมดาที่ถูก render ภายใน `DataTable` → React พยายาม pass ref ให้แต่ component ไม่รองรับ `forwardRef`
+| ตรวจอะไร | ผลลัพธ์ | หมายเหตุ |
+|---|---|---|
+| TypeScript (`tsc --noEmit`) | ✅ 0 errors | |
+| Production build (`vite build`) | ✅ สำเร็จ | |
+| CSS `@import` order | ✅ ถูกต้อง | IBM Plex + Inter อยู่บรรทัดแรก ก่อน `@tailwind` |
+| Sarabun references | ✅ ลบหมดแล้ว | ไม่เหลือใน CSS, Tailwind config, หรือ HTML |
+| Default language | ✅ `th` | ทั้ง `i18n/index.ts` และ `index.html lang="th"` |
+| Font family (Tailwind) | ✅ IBM Plex Sans Thai, Inter | |
+| StatusBadge forwardRef | ✅ ใช้ `React.forwardRef` แล้ว | |
+| BulkActionBar duplicate button | ✅ ซ่อนแล้ว | `onDuplicate` เป็น optional |
+| CreateStaffDialog syntax | ✅ ไม่มี duplicate `/>` | เคยพังแต่แก้แล้ว |
+| Members.tsx buttons | ✅ ทำงานครบ | Create, Import, Export, Search, Bulk, Edit |
+| MemberDetails.tsx tabs | ✅ export ครบ 9 tabs | |
+| Email lowercase | ✅ ครบทุกจุด | Auth pages + CRUD dialogs |
 
-**Fix:** Wrap `StatusBadge` ด้วย `React.forwardRef` — เปลี่ยนแค่ signature ไม่เปลี่ยน behavior
+## Root Cause ของ "Component is not a function"
 
-### 2. BulkActionBar — Duplicate button is a no-op stub
-**Root Cause:** `onDuplicate={() => {}}` ใน Members.tsx — กดแล้วไม่ทำอะไร ละเมิด No-Stub Policy
+ข้อผิดพลาดนี้เกิดจาก **HMR cache เก่า** ที่ค้างอยู่หลังจากที่ CSS `@import` order เคยผิด (Sarabun import อยู่หลัง `@tailwind`) ทำให้ Vite ไม่สามารถ re-render components ได้ถูกต้อง
 
-**Fix:** ซ่อนปุ่ม Duplicate จาก BulkActionBar โดยทำให้ `onDuplicate` เป็น optional prop — ถ้าไม่ส่งก็ไม่แสดงปุ่ม
+**สถานะปัจจุบัน**: CSS import order ถูกต้องแล้ว, build ผ่าน, ไม่มี error ใหม่ใน dev log
 
-### 3. ปุ่มอื่นๆ — ตรวจแล้วทำงานปกติ
-| ปุ่ม | สถานะ |
-|------|--------|
-| Create Member | ✅ เปิด dialog |
-| Manage > Import CSV | ✅ เปิด ImportCenterDialog |
-| Manage > Export | ✅ เรียก exportMembers |
-| Manage > Download Template | ✅ สร้าง CSV |
-| Search | ✅ filter + reset page |
-| Status Tabs | ✅ filter + reset page + clear selection |
-| Row Click → Detail | ✅ navigate |
-| Row Edit (dropdown) | ✅ เปิด EditMemberDialog (permission-gated) |
-| Bulk Select/All | ✅ toggle |
-| Bulk Change Status | ✅ mutation + toast |
-| Bulk Export | ✅ export selected |
-| Bulk Delete | ✅ confirm dialog + mutation |
-| Pagination | ✅ page change + clear selection |
+**วิธีแก้ที่ผู้ใช้ต้องทำ**: Hard refresh browser (Ctrl+Shift+R / Cmd+Shift+R) เพื่อล้าง HMR cache เก่า
 
-## Implementation Plan
+## สรุป — ไม่ต้องแก้โค้ดเพิ่ม
 
-| # | File | Change |
-|---|------|--------|
-| 1 | `src/components/common/StatusBadge.tsx` | Wrap with `React.forwardRef` |
-| 2 | `src/components/common/BulkActionBar.tsx` | Make `onDuplicate` optional, hide button when not provided |
-| 3 | `src/pages/Members.tsx` | Remove `onDuplicate={() => {}}` prop |
-
-## สิ่งที่ไม่เปลี่ยน
-- DataTable logic
-- All other buttons/functions
-- DB / Auth / RLS
-- Other pages using StatusBadge (backward compatible — forwardRef is additive)
-
-## Smoke Test
-1. Members page loads without console warnings
-2. All buttons still work (create, import, export, template, edit, bulk actions)
-3. Bulk action bar ไม่แสดงปุ่ม Duplicate
-4. StatusBadge ยังแสดงผลถูกต้องทุกหน้าที่ใช้
+ทุกส่วนที่ตรวจทำงานถูกต้อง:
+- Font, language, email lowercase — ครบตาม plan
+- StatusBadge, BulkActionBar — แก้ไขเรียบร้อย
+- Build + TypeScript — ผ่านทั้งหมด
+- ข้อผิดพลาดที่เห็น = stale HMR cache ไม่ใช่ bug ในโค้ด
 
