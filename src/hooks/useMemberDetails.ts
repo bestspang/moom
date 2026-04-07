@@ -558,6 +558,11 @@ export interface PurchasePackageParams {
   locationId?: string;
   locationName?: string;
   notes?: string;
+  promotionId?: string;
+  promotionDiscount?: number;
+  couponWalletId?: string;
+  couponDiscount?: number;
+  manualDiscount?: number;
 }
 
 export const useAssignPackageToMember = () => {
