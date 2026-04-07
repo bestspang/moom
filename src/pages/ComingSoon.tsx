@@ -51,7 +51,7 @@ const ComingSoon = () => {
       title: t('roadmap.v002.title'),
       description: t('roadmap.v002.description'),
       status: 'inProgress' as const,
-      progress: 15,
+      progress: 75,
       features: [
         {
           icon: Smartphone,
@@ -78,7 +78,7 @@ const ComingSoon = () => {
             t('roadmap.trainerApp.features.memberView'),
             t('roadmap.trainerApp.features.noShow'),
           ],
-          status: 'planned' as const,
+          status: 'inProgress' as const,
           onPreview: () => navigate('/trainer-app'),
         },
         {
@@ -99,7 +99,7 @@ const ComingSoon = () => {
       version: 'v0.0.3',
       title: t('roadmap.v003.title'),
       description: t('roadmap.v003.description'),
-      status: 'planned' as const,
+      status: 'inProgress' as const,
       features: [
         {
           icon: CreditCard,
@@ -111,7 +111,7 @@ const ComingSoon = () => {
             t('roadmap.payments.features.autoVerify'),
             t('roadmap.payments.features.receipts'),
           ],
-          status: 'planned' as const,
+          status: 'inProgress' as const,
         },
         {
           icon: QrCode,
@@ -123,7 +123,7 @@ const ComingSoon = () => {
             t('roadmap.qrCheckin.features.usageLedger'),
             t('roadmap.qrCheckin.features.realtime'),
           ],
-          status: 'planned' as const,
+          status: 'done' as const,
         },
         {
           icon: Shield,
@@ -135,7 +135,7 @@ const ComingSoon = () => {
             t('roadmap.security.features.dataRetention'),
             t('roadmap.security.features.auditLog'),
           ],
-          status: 'planned' as const,
+          status: 'inProgress' as const,
         },
       ],
     },

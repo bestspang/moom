@@ -51,18 +51,20 @@ const Reports = () => {
     {
       title: t('reports.membersPackageUsage'),
       description: t('reports.packageUsageDesc'),
-      buttonText: t('reports.exportReport'),
+      buttonText: `${t('reports.exportReport')} (${t('reportsExtra.comingSoon')})`,
       buttonVariant: 'export' as const,
       onClick: handleComingSoon,
+      disabled: true,
       icon: <Package className="h-5 w-5" />,
       accentColor: 'teal' as const,
     },
     {
       title: t('reports.membersPackageAtRisk'),
       description: t('reports.packageAtRiskDesc'),
-      buttonText: t('reports.exportReport'),
+      buttonText: `${t('reports.exportReport')} (${t('reportsExtra.comingSoon')})`,
       buttonVariant: 'export' as const,
       onClick: handleComingSoon,
+      disabled: true,
       icon: <AlertTriangle className="h-5 w-5" />,
       accentColor: 'warning' as const,
     },
@@ -90,18 +92,20 @@ const Reports = () => {
     {
       title: t('reports.classCategoryPopularity'),
       description: t('reports.classCategoryPopularityDesc'),
-      buttonText: t('reports.exportReport'),
+      buttonText: `${t('reports.exportReport')} (${t('reportsExtra.comingSoon')})`,
       buttonVariant: 'export' as const,
       onClick: handleComingSoon,
+      disabled: true,
       icon: <PieChart className="h-5 w-5" />,
       accentColor: 'purple' as const,
     },
     {
       title: t('reports.classPopularity'),
       description: t('reports.classPopularityDesc'),
-      buttonText: t('reports.exportReport'),
+      buttonText: `${t('reports.exportReport')} (${t('reportsExtra.comingSoon')})`,
       buttonVariant: 'export' as const,
       onClick: handleComingSoon,
+      disabled: true,
       icon: <BarChart3 className="h-5 w-5" />,
       accentColor: 'purple' as const,
     },
@@ -155,6 +159,7 @@ const Reports = () => {
               buttonText={r.buttonText}
               buttonVariant={r.buttonVariant}
               onClick={r.onClick}
+              disabled={'disabled' in r ? r.disabled : undefined}
               icon={r.icon}
               accentColor={r.accentColor}
             />
@@ -169,6 +174,7 @@ const Reports = () => {
               buttonText={r.buttonText}
               buttonVariant={r.buttonVariant}
               onClick={r.onClick}
+              disabled={'disabled' in r ? r.disabled : undefined}
               icon={r.icon}
               accentColor={r.accentColor}
             />
