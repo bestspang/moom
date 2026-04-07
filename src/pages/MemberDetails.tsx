@@ -58,8 +58,8 @@ const MemberDetails = () => {
 
   // Fetch all member data
   const { data: member, isLoading: memberLoading } = useMember(id);
-  const { data: packages = [] } = useMemberPackages(id);
-  const { data: attendance = [] } = useMemberAttendance(id);
+  const { data: packages = [], isLoading: packagesLoading } = useMemberPackages(id);
+  const { data: attendance = [], isLoading: attendanceLoading } = useMemberAttendance(id);
   const { data: billing = [], isLoading: billingLoading } = useMemberBilling(id);
   const { data: notes = [], isLoading: notesLoading } = useMemberNotes(id);
   const { data: injuries = [], isLoading: injuriesLoading } = useMemberInjuries(id);
@@ -67,8 +67,6 @@ const MemberDetails = () => {
   const { data: contracts = [], isLoading: contractsLoading } = useMemberContracts(id);
   const { data: summaryStats } = useMemberSummaryStats(id);
   const { data: engagementScore } = useEngagementScore(id);
-  const { isLoading: attendanceLoading } = useMemberAttendance(id);
-  const { isLoading: packagesLoading } = useMemberPackages(id);
 
   const updateMember = useUpdateMember();
 
