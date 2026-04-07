@@ -82,28 +82,12 @@ const MemberSignup: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      if (isCustomDomain()) {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin + '/member',
-            skipBrowserRedirect: true,
-            queryParams: { prompt: 'select_account' },
-          },
-        });
-        if (error) {
-          toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
-        } else if (data?.url) {
-          window.location.href = data.url;
-        }
-      } else {
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-          extraParams: { prompt: "select_account" },
-        });
-        if (result.error) {
-          toast({ variant: 'destructive', title: t('auth.signupFailed'), description: result.error.message });
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+      if (result.error) {
+        toast({ variant: 'destructive', title: t('auth.signupFailed'), description: result.error.message });
       }
     } catch {
       toast({ variant: 'destructive', title: t('auth.signupFailed'), description: t('auth.googleSignInFailed') });
