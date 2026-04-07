@@ -648,11 +648,11 @@ export const useAssignPackageToMember = () => {
           gross_amount: pkg.price,
           net_amount: netPrice,
         });
-        // increment usage_count
-        await supabase.rpc('increment_counter', { row_id: promotionId, table_name: 'promotions', column_name: 'usage_count' }).catch(() => {
-          // If RPC doesn't exist, try direct update
-          supabase.from('promotions').update({ usage_count: supabase.rpc ? undefined : 0 } as any).eq('id', promotionId);
-        });
+        // Try to increment usage_count on promotions
+        const { data: promo } = await supabase.from('promotions').select('usage_count').eq('id', promotionId).single();
+        if (promo) {
+          await supabase.from('promotions').update({ usage_count: (promo.usage_count || 0) + 1 }).eq('id', promotionId);
+        }
       }
 
       // 7. Mark coupon as used if used
