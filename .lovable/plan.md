@@ -1,89 +1,114 @@
 
 
-# Dashboard Enhancement — จากมุมมองเจ้าของธุรกิจ Gym
+# Dashboard Strategic Enhancement — Business Growth Command Center
 
-## วิเคราะห์สถานะปัจจุบัน
+## Analysis from Business Owner Perspective
 
-Dashboard ปัจจุบันมีข้อมูลที่ดีแล้ว แต่ขาด **ตัวเลขที่เจ้าของธุรกิจอยากเห็นทันทีที่เปิดหน้าจอ** — รายได้วันนี้ และ active members จำนวนจริง ตอนนี้:
+The current dashboard is solid for **monitoring** but weak for **decision-making**. A gym owner opens this 10x/day — they need to instantly know: "Am I growing?" "What should I do right now?" "Where's the money coming from?"
 
-- **ไม่มี "รายได้วันนี้"** — ต้องไปหน้า Finance ถึงจะเห็น
-- **StatCard ตัวที่ 4 เป็น GoalProgress** — ซึ่งเป็น card ใหญ่ที่ไม่เหมาะอยู่ใน grid 4 ช่อง (ข้อมูลเยอะเกินสำหรับ compact stat)
-- **DashboardWelcome** ไม่ localize วันที่ (hardcoded `en-US`)
-- **AI Briefing** ซ่อนอยู่ล่างสุด กดเปิดแล้วยังต้องกด expand อีกชั้น — ซ้อน Collapsible สองชั้น
-- **Today's Schedule** ใช้ DataTable 5 columns ที่ compact เกินไปบน mobile
-- **Revenue Forecast** แสดงแค่ 3 bars ง่ายๆ ไม่มี % เปลี่ยนแปลง
+### What's Missing (High-Impact, Simple)
 
-## แผนการปรับปรุง (5 changes)
+| Gap | Business Impact | Complexity |
+|-----|----------------|------------|
+| **No "Today vs Last Week" context** | Owner can't tell if today is good or bad relative to normal | Low |
+| **No live activity pulse** | No sense of "what's happening RIGHT NOW" | Medium |
+| **Revenue card has no breakdown** | Owner sees ฿12,000 but doesn't know: walk-ins? renewals? new sales? | Medium |
+| **No quick-action shortcuts for common workflows** | Owner still navigates 3 clicks to do routine tasks | Low |
+| **Schedule card doesn't show fill rate** | Can't see underbooked classes that need promotion | Low |
+| **NeedsAttention is passive** | Shows problems but no suggested action buttons | Low |
 
-### Change 1: เพิ่ม "รายได้วันนี้" StatCard + เปลี่ยน layout เป็น 5 cards
-**ทำไม:** เจ้าของ gym เปิด dashboard ทุกเช้า สิ่งแรกที่อยากเห็นคือ "วันนี้ได้เงินเท่าไร"
+## Plan (6 Surgical Changes)
 
-- เพิ่ม `todayRevenue` ใน `useDashboardStats` — query transactions วันนี้ที่ status=paid
-- เพิ่ม StatCard ใหม่ "รายได้วันนี้" สี magenta พร้อม icon `Banknote`
-- ย้าย `GoalProgressCard` ออกจาก grid 4 cards → ย้ายไปเป็น row ใหม่ (full-width card เล็กๆ)
-- Layout: grid 2x2 บน mobile, 5 cols บน desktop (checkins, in-class, classes, revenue, active members)
-- เพิ่ม `activeMembers` stat — count members where status='active'
+### Change 1: Add "vs same day last week" context to StatCards
+**Why:** "42 check-ins" means nothing without context. "42 check-ins (+18% vs last Tue)" tells you today is a great day.
+
+- Update `useDashboardStats.ts`: Add `checkinsLastWeekSameDay` — query attendance for same weekday last week
+- Update `useDashboardTrends.ts`: Add `revenueLastWeekSameDay` for revenue comparison
+- Show comparison badges on Check-ins and Revenue StatCards: `+18% vs last {dayName}`
 
 **Files:** `useDashboardStats.ts`, `Dashboard.tsx`
 
-### Change 2: Localize DashboardWelcome date + เพิ่ม "วันนี้คลาส X, สมาชิก Y" subtitle
-**ทำไม:** วันที่แสดงเป็น English เสมอ + Welcome ควรสรุป snapshot ให้ทันที
+### Change 2: Live Activity Feed — "What's happening now"
+**Why:** Creates urgency and engagement. Owner sees "Somchai just checked in", "Package sold to Nida" — feels alive.
 
-- ใช้ `getDateLocale` ใน `DashboardWelcome` แทน hardcoded `en-US`
-- เพิ่ม prop `stats` เพื่อแสดง quick summary: "วันนี้ X คลาส · Y เช็คอิน"
+- Create `RecentActivityFeed.tsx` — compact card showing last 5 real-time events
+- Query last 5 entries from `member_attendance` + `transactions` (last 2 hours), merged and sorted by time
+- Each entry: avatar initial + "Name checked in" / "Name purchased Package X" + relative time ("2m ago")
+- Add to Dashboard Row 4 (replace the side-by-side layout with a 3-column: NeedsAttention | Schedule | Activity Feed on desktop, stacked on mobile)
+
+**Files:** New `src/components/dashboard/RecentActivityFeed.tsx`, new `src/hooks/useRecentActivity.ts`, `Dashboard.tsx`
+
+### Change 3: Schedule card — show fill rate visual
+**Why:** Owner instantly sees which upcoming class is empty (needs promotion) vs full (success).
+
+- Add fill rate indicator to each schedule row: mini progress bar or fraction badge colored by fill %
+- Green (>70%), Yellow (30-70%), Red (<30%)
+- Change availability display from "3/15" to a colored badge
+
+**Files:** `Dashboard.tsx` (schedule section only)
+
+### Change 4: Quick Command Buttons on Welcome Header
+**Why:** Owner does 5 things daily: check-in, add member, schedule class, review slips, view reports. Should be 1 click.
+
+- Add "Add Member" and "Review Slips" quick buttons to `DashboardWelcome.tsx` alongside existing Check-in and Schedule buttons
+- Only show "Review Slips" when `pendingSlips > 0` (pass as prop)
+- Compact icon-only on mobile, icon+text on desktop
 
 **Files:** `DashboardWelcome.tsx`, `Dashboard.tsx`
 
-### Change 3: ปรับ Today's Schedule เป็น compact card list (ไม่ใช่ DataTable)
-**ทำไม:** DataTable 5 columns อ่านยากบน laptop/tablet — schedule card format อ่านง่ายกว่า
+### Change 5: NeedsAttention — add action buttons
+**Why:** Showing "3 expiring packages" is passive. Adding "Send renewal reminder" or "→ View all" per section makes it actionable.
 
-- แทน DataTable ด้วย list ของ schedule items แบบ compact:
-  ```
-  09:00  Yoga Basics        Coach A    3/15
-  10:00  HIIT Training       Coach B    12/20
-  ```
-- แต่ละ row เป็น clickable → navigate ไปหน้า schedule detail
-- แสดงแค่ 4 columns: time, class, trainer, availability (ตัด room)
+- For Expiring Packages section: add "Remind All" button (navigates to announcement page with pre-filter)
+- For Declining Attendance: add "Send reach-out" button
+- For Pending Slips: already has action button (keep as is)
 
-**Files:** `Dashboard.tsx`
+**Files:** `NeedsAttentionCard.tsx`
 
-### Change 4: ยุบ AI Briefing double-collapsible เป็นชั้นเดียว
-**ทำไม:** ตอนนี้ต้องกด "Show AI Briefing" → แล้ว DailyBriefingCard ข้างในยังมี Collapsible อีกชั้น = UX ซ้ำซ้อน
+### Change 6: i18n keys for new elements
 
-- ลบ outer Collapsible ออก → ให้ DailyBriefingCard อยู่เป็น row ปกติ (collapsed by default ภายในตัวเอง)
-- หรือ: ถ้า briefingStats มีข้อมูล ให้แสดง summary 1 บรรทัดเป็น teaser ก่อนกด expand
+- Add translation keys for: activity feed title, "just checked in", "purchased", "vs last week", "remind all", "reach out", "add member"
 
-**Files:** `Dashboard.tsx`
+**Files:** `en.ts`, `th.ts`
 
-### Change 5: Revenue Forecast — เพิ่ม % change indicator
-**ทำไม:** เห็นแค่ตัวเลขไม่พอ ต้องเห็น "เพิ่มขึ้น/ลดลง กี่%"
+## Layout After Changes
 
-- คำนวณ `monthOverMonth` = `(thisMonth - lastMonth) / lastMonth * 100`
-- แสดง badge สีเขียว/แดง ข้าง "This Month" bar: `+15%` หรือ `-8%`
+```text
+┌─────────────────────────────────────────────────────┐
+│  Welcome, Somchai 👋  [+ Member] [Schedule] [Check-in] [Review Slips(3)]  │
+│  วันอังคาร, 8 เม.ย. 2569 · 5 classes · 12 check-ins                      │
+├──────────────────┬──────────────────────────────────┤
+│  Business Health │  Revenue Forecast (+12% MoM)     │
+├────┬────┬────┬────┬────┤
+│✅42│🏋️8 │📅5 │💰฿12k│👥156│  ← StatCards with "vs last week" badges
+│+18%│    │    │+5%  │    │
+├─────────────────────────┤
+│  🎯 Goal Progress       │
+├────────┬────────┬───────┤
+│Needs   │Schedule│Live   │  ← 3-column on desktop
+│Attention│(fill%) │Activity│
+│[Remind]│        │Feed   │
+├─────────────────────────┤
+│ ✨ AI Daily Briefing    │
+└─────────────────────────┘
+```
 
-**Files:** `RevenueForecastCard.tsx`
-
----
-
-## สิ่งที่ไม่เปลี่ยน
-- BusinessHealthCard — ดีอยู่แล้ว
-- NeedsAttentionCard — ดีอยู่แล้ว
-- GoalProgressCard component เดิม — แค่ย้ายตำแหน่ง
-- ทุก hooks, mutations, DB, RLS, auth, routing อื่นๆ
-
-## i18n Keys เพิ่ม
-- `dashboard.revenueToday` / `dashboard.activeMembers`
-- `dashboard.todaySummary` (template: "{{classes}} classes · {{checkins}} check-ins")
+## What Does NOT Change
+- BusinessHealthCard, RevenueForecastCard, GoalProgressCard, DailyBriefingCard — existing logic untouched
+- All hooks except surgical additions to `useDashboardStats`
+- DB schema / RLS / Edge Functions / Auth / Routing
+- All other pages
 
 ## Smoke Test
-1. Dashboard → เห็น "รายได้วันนี้" StatCard พร้อมตัวเลขจริง
-2. Dashboard → เห็น Active Members count
-3. Welcome header → วันที่แสดงเป็นภาษาไทย (เมื่อตั้งค่า TH)
-4. Welcome header → แสดง quick summary "วันนี้ X คลาส"
-5. Today's Schedule → แสดงเป็น compact list ไม่ใช่ table
-6. AI Briefing → ไม่ต้องกด 2 ครั้งเพื่อเปิด
-7. Revenue Forecast → เห็น % เปลี่ยนแปลง month-over-month
-8. GoalProgress → แสดงเป็น row แยกต่างหาก (ไม่อัดใน stat grid)
-9. Mobile responsive ยังดี
-10. Dark mode ยังแสดงผลถูกต้อง
+1. Dashboard loads → 5 StatCards with values
+2. Check-in StatCard shows "+X% vs last {day}" when comparison available
+3. Revenue StatCard shows comparison badge
+4. Welcome header → 4 quick action buttons (Check-in, Schedule, Add Member, Review Slips)
+5. "Review Slips" button only appears when pending slips > 0
+6. Schedule card → each class row shows colored fill-rate indicator
+7. Live Activity Feed → shows last 5 check-ins/purchases with relative time
+8. NeedsAttention → "Remind All" button on expiring packages section
+9. Mobile responsive — activity feed stacks below schedule
+10. Dark mode renders correctly
+11. Thai language → all new labels translated
 
