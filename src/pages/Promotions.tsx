@@ -87,7 +87,7 @@ const Promotions = () => {
     return `${Number(val)}฿`;
   };
 
-  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy').toUpperCase() : '-';
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'd MMM yyyy', { locale }).toUpperCase() : '-';
 
   const buildCsvColumns = (): CsvColumn<Promotion>[] => [
     { key: 'name', header: 'Name', accessor: (r) => r.name },

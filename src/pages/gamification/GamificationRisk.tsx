@@ -6,9 +6,11 @@ import { EmptyState } from '@/components/common';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 
 const GamificationRisk = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const { data: flagged, isLoading: flagLoading } = useGamificationAudit({ flaggedOnly: true, limit: 50 });
   const { data: allAudit, isLoading: auditLoading } = useGamificationAudit({ limit: 100 });
 
@@ -41,7 +43,7 @@ const GamificationRisk = () => {
                     {entry.flag_reason && <p className="text-xs text-destructive mt-0.5">{entry.flag_reason}</p>}
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
-                    <p>{format(new Date(entry.created_at), 'dd MMM HH:mm')}</p>
+                    <p>{format(new Date(entry.created_at), 'dd MMM HH:mm', { locale })}</p>
                   </div>
                 </div>
               ))}
@@ -67,7 +69,7 @@ const GamificationRisk = () => {
                   <div className="flex items-center gap-3 text-muted-foreground">
                     {entry.xp_delta !== 0 && <span className={entry.xp_delta > 0 ? 'text-accent-teal' : 'text-destructive'}>{entry.xp_delta > 0 ? '+' : ''}{entry.xp_delta} XP</span>}
                     {entry.points_delta !== 0 && <span className={entry.points_delta > 0 ? 'text-primary' : 'text-destructive'}>{entry.points_delta > 0 ? '+' : ''}{entry.points_delta} pts</span>}
-                    <span>{format(new Date(entry.created_at), 'dd/MM HH:mm')}</span>
+                    <span>{format(new Date(entry.created_at), 'dd/MM HH:mm', { locale })}</span>
                   </div>
                 </div>
               ))}

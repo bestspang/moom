@@ -26,12 +26,14 @@ import { ImportMembersDialog } from '@/components/members/ImportMembersDialog';
 import { ImportCenterDialog } from '@/components/import/ImportCenterDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 import { useCommandListener } from '@/lib/commandEvents';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
 
 const Members = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const navigate = useNavigate();
   const { can } = usePermissions();
   const [search, setSearch] = useState('');
@@ -192,7 +194,7 @@ const Members = () => {
     {
       key: 'memberSince',
       header: t('members.joinedDate'),
-      cell: (row) => row.member_since ? format(new Date(row.member_since), 'dd MMM yyyy') : '-',
+      cell: (row) => row.member_since ? format(new Date(row.member_since), 'dd MMM yyyy', { locale }) : '-',
     },
     {
       key: 'recentPackage',
@@ -204,7 +206,7 @@ const Members = () => {
       header: t('members.lastAttended'),
       cell: (row) => {
         const d = enrichment?.[row.id]?.last_attended;
-        return d ? format(new Date(d), 'dd MMM yyyy') : '-';
+        return d ? format(new Date(d), 'dd MMM yyyy', { locale }) : '-';
       },
     },
     {

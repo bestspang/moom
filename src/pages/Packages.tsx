@@ -19,12 +19,6 @@ type Package = Tables<'packages'>;
 
 const TEMPLATE_HEADERS = ['ID', 'Name', 'Type', 'Term(D)', 'Sessions', 'Price', 'Categories', 'Access locations', 'Sold at', 'Date modified', 'Status'];
 
-const PACKAGE_STATUS_OPTIONS = [
-  { value: 'on_sale', label: 'On Sale' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'drafts', label: 'Drafts' },
-  { value: 'archive', label: 'Archive' },
-];
 
 const Packages = () => {
   const { t, language } = useLanguage();
@@ -33,6 +27,13 @@ const Packages = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const PACKAGE_STATUS_OPTIONS = [
+    { value: 'on_sale', label: t('common.onSale') },
+    { value: 'scheduled', label: t('common.scheduled') },
+    { value: 'drafts', label: t('common.draft') },
+    { value: 'archive', label: t('common.archive') },
+  ];
   const [importOpen, setImportOpen] = useState(false);
 
   const { data: packages, isLoading } = usePackages(activeTab, search);

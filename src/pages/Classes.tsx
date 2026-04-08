@@ -12,11 +12,6 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type ClassRow = Tables<'classes'> & { category?: { id: string; name: string } | null };
 
-const CLASS_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'drafts', label: 'Drafts' },
-  { value: 'archive', label: 'Archive' },
-];
 
 const TEMPLATE_HEADERS = ['Name', 'Name (TH)', 'Type', 'Category', 'Level', 'Duration', 'Status'];
 
@@ -28,6 +23,12 @@ const Classes = () => {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const CLASS_STATUS_OPTIONS = [
+    { value: 'active', label: t('common.active') },
+    { value: 'drafts', label: t('common.draft') },
+    { value: 'archive', label: t('common.archive') },
+  ];
 
   const { data: classesResult, isLoading } = useClasses(
     undefined, search, undefined, undefined, undefined, page, perPage
