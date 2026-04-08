@@ -407,6 +407,41 @@ export const PurchasePackageDialog = ({ open, onOpenChange, memberId, memberName
                   rows={2}
                 />
               </div>
+
+              {/* ─── Real-time Price Preview ─── */}
+              {selectedPkg && discountBreakdown && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardContent className="pt-3 pb-3 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">{t('members.originalPrice')}</span>
+                      <span>{formatCurrency(discountBreakdown.originalPrice)}</span>
+                    </div>
+                    {discountBreakdown.promotionDiscountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.promotionDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.promotionDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {discountBreakdown.couponDiscountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.couponDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.couponDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {discountBreakdown.manualDiscount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{t('members.manualDiscount')}</span>
+                        <span>-{formatCurrency(discountBreakdown.manualDiscount)}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between font-semibold text-base">
+                      <span>{t('members.netPrice')}</span>
+                      <span>{formatCurrency(discountBreakdown.netPrice)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="flex justify-between gap-2 pt-2 border-t">
