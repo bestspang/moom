@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Dumbbell, CalendarCheck, DoorOpen } from 'lucide-react';
+import { Users, Dumbbell, CalendarCheck, DoorOpen, Banknote } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { StatCard, DataTable, type Column } from '@/components/common';
+import { StatCard } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   useDashboardStats,
   useHighRiskMembers,
@@ -14,7 +13,6 @@ import {
 import {
   useScheduleByDate,
   mapScheduleToItem,
-  type ScheduleItem,
 } from '@/hooks/useSchedule';
 import { DailyBriefingCard } from '@/components/dashboard/DailyBriefingCard';
 import DashboardWelcome from '@/components/dashboard/DashboardWelcome';
@@ -26,6 +24,7 @@ import { BusinessHealthCard } from '@/components/dashboard/BusinessHealthCard';
 import { RevenueForecastCard } from '@/components/dashboard/RevenueForecastCard';
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { formatCurrency } from '@/lib/formatters';
 
 // Skeleton component for stat cards
 const StatCardSkeleton = () => (
@@ -43,7 +42,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
   const [quickCheckInOpen, setQuickCheckInOpen] = useState(false);
-  const [briefingOpen, setBriefingOpen] = useState(false);
 
   // Fetch real data
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -52,14 +50,6 @@ const Dashboard = () => {
   const { data: trends } = useDashboardTrends();
 
   const scheduleData = useMemo(() => rawScheduleData.map(mapScheduleToItem).slice(0, 5), [rawScheduleData]);
-
-  const scheduleColumns: Column<ScheduleItem>[] = [
-    { key: 'time', header: t('schedule.time'), cell: (row) => row.time },
-    { key: 'class', header: t('schedule.class'), cell: (row) => row.className },
-    { key: 'trainer', header: t('schedule.trainer'), cell: (row) => row.trainer },
-    { key: 'room', header: t('schedule.room'), cell: (row) => row.room },
-    { key: 'availability', header: t('schedule.availability'), cell: (row) => row.availability },
-  ];
 
   const checkinComparison = stats
     ? stats.checkinsToday - stats.checkinsYesterday
@@ -76,14 +66,17 @@ const Dashboard = () => {
       expiringPackages7d: expiringPkgs?.filter(p => p.daysLeft <= 7).length || 0,
       expiringPackages30d: expiringPkgs?.length || 0,
       highRiskCount: highRiskMembers.length,
-      activeMembers: stats.checkinsToday,
+      activeMembers: stats.activeMembers,
     };
   }, [stats, expiringPkgs, highRiskMembers]);
 
   return (
     <div className="space-y-6">
-      {/* Row 0 — Welcome header with quick actions */}
-      <DashboardWelcome onQuickCheckIn={() => setQuickCheckInOpen(true)} />
+      {/* Row 0 — Welcome header with quick actions + daily summary */}
+      <DashboardWelcome
+        onQuickCheckIn={() => setQuickCheckInOpen(true)}
+        stats={stats ? { classesToday: stats.classesToday, checkinsToday: stats.checkinsToday } : undefined}
+      />
 
       {/* Row 1 — Business Health + Revenue Forecast (finance-gated) */}
       {can('finance', 'read') && (
@@ -97,10 +90,11 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Row 2 — 4 KPI StatCards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Row 2 — 5 KPI StatCards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {statsLoading ? (
           <>
+            <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -138,12 +132,31 @@ const Dashboard = () => {
               trend={trends?.classes7d}
               onClick={() => navigate('/calendar')}
             />
-            <GoalProgressCard />
+            {can('finance', 'read') && (
+              <StatCard
+                title={t('dashboardExtra.revenueToday')}
+                value={formatCurrency(stats?.todayRevenue || 0)}
+                color="magenta"
+                icon={<Banknote className="h-5 w-5" />}
+                onClick={() => navigate('/finance')}
+              />
+            )}
+            <StatCard
+              title={t('dashboardExtra.activeMembers')}
+              value={stats?.activeMembers || 0}
+              subtitle={t('dashboardExtra.members')}
+              color="blue"
+              icon={<Users className="h-5 w-5" />}
+              onClick={() => navigate('/members')}
+            />
           </>
         )}
       </div>
 
-      {/* Row 3 — Needs Attention + Today's Schedule side by side */}
+      {/* Row 3 — Goal Progress (full-width compact) */}
+      <GoalProgressCard />
+
+      {/* Row 4 — Needs Attention + Today's Schedule side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <NeedsAttentionCard />
 
@@ -169,29 +182,40 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
+            ) : scheduleData.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                {t('dashboard.noClassesToday')}
+              </p>
             ) : (
-              <DataTable
-                columns={scheduleColumns}
-                data={scheduleData}
-                rowKey={(row) => row.id}
-                emptyMessage={t('dashboard.noClassesToday')}
-              />
+              <div className="divide-y divide-border">
+                {scheduleData.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate('/calendar')}
+                    className="flex items-center gap-3 w-full text-left py-2.5 hover:bg-accent/50 rounded-md px-2 -mx-2 transition-colors"
+                  >
+                    <span className="text-xs font-mono text-muted-foreground w-12 shrink-0">
+                      {item.time}
+                    </span>
+                    <span className="text-sm font-medium flex-1 truncate">
+                      {item.className}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                      {item.trainer}
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {item.availability}
+                    </span>
+                  </button>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Row 4 — AI Daily Briefing (collapsible) */}
-      <Collapsible open={briefingOpen} onOpenChange={setBriefingOpen}>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full justify-center gap-1">
-            {briefingOpen ? '▲ Hide AI Briefing' : '▼ Show AI Briefing'}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <DailyBriefingCard stats={briefingStats} />
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Row 5 — AI Daily Briefing (single collapsible — no outer wrapper) */}
+      <DailyBriefingCard stats={briefingStats} />
 
       <CheckInDialog open={quickCheckInOpen} onOpenChange={setQuickCheckInOpen} />
     </div>
