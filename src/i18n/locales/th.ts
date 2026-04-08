@@ -2397,6 +2397,9 @@ export default {
     goodEvening: 'สวัสดีตอนเย็น',
     todayScheduleCompact: 'คลาสวันนี้',
     viewAllSchedule: 'ดูตารางเรียนทั้งหมด',
+    revenueToday: 'รายได้วันนี้',
+    activeMembers: 'สมาชิกที่ใช้งาน',
+    members: 'คน',
   },
 
   // Error pages

@@ -2397,6 +2397,9 @@ export default {
     goodEvening: 'Good evening',
     todayScheduleCompact: "Today's Classes",
     viewAllSchedule: 'View full schedule',
+    revenueToday: 'Revenue today',
+    activeMembers: 'Active members',
+    members: 'members',
   },
 
   // Error pages
