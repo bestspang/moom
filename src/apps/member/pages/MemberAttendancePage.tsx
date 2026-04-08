@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 export default function MemberAttendancePage() {
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const { data: records, isLoading, isError, refetch } = useQuery({
     queryKey: ['member-attendance', memberId],

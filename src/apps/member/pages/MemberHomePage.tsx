@@ -34,6 +34,7 @@ function getTimeGreeting(t: (key: string) => string): string {
 export default function MemberHomePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => localStorage.getItem('moom-onboarding-dismissed') === 'true'

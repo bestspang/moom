@@ -23,6 +23,7 @@ import { useMemberSession } from '../hooks/useMemberSession';
 
 export default function MemberClassDetailPage() {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

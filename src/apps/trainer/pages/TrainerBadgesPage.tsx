@@ -25,6 +25,7 @@ function getTierStyle(tier?: string) {
 export default function TrainerBadgesPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const { data: earned, isLoading } = useQuery({
     queryKey: ['trainer-badge-earnings'],

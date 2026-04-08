@@ -19,6 +19,7 @@ import { format, parseISO } from 'date-fns';
 
 export default function MemberBookingsPage() {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const navigate = useNavigate();
   const { memberId } = useMemberSession();
   const [filter, setFilter] = useState('all');

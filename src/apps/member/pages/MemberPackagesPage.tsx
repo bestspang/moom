@@ -21,6 +21,7 @@ import { useDateLocale } from '@/hooks/useDateLocale';
 export default function MemberPackagesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { memberId, isAuthenticated } = useMemberSession();
   const [tab, setTab] = useState<'my' | 'browse'>('my');
 

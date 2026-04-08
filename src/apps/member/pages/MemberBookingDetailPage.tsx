@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export default function MemberBookingDetailPage() {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

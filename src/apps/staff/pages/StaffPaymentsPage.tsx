@@ -15,6 +15,7 @@ import { useDateLocale } from '@/hooks/useDateLocale';
 export default function StaffPaymentsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['staff-transfer-slips'],
