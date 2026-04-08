@@ -324,6 +324,14 @@ const MemberDetails = () => {
                 {t('members.purchasePackage')}
               </Button>
               <Button
+                variant="outline"
+                className="w-full justify-start text-sm h-9"
+                onClick={() => setActiveTab('packages')}
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                {t('members.tabs.packages')}
+              </Button>
+              <Button
                 variant={hasActiveSuspension ? 'default' : 'outline'}
                 className="w-full justify-start text-sm h-9"
                 onClick={() => setActiveTab('suspensions')}
