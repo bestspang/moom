@@ -8,9 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface DashboardStats {
   checkinsToday: number;
   checkinsYesterday: number;
+  checkinsLastWeekSameDay: number;
   currentlyInClass: number;
   classesToday: number;
   todayRevenue: number;
+  revenueLastWeekSameDay: number;
   activeMembers: number;
 }
 
