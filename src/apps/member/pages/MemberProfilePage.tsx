@@ -147,6 +147,26 @@ export default function MemberProfilePage() {
       <Section title={t('member.settingsGroup')} className="mb-6">
         <div className="space-y-1">
           {settingsItems.map(renderMenuItem)}
+          <div className="flex w-full items-center gap-3 rounded-lg px-3 py-3">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-foreground">{t('staff.language')}</span>
+            <button
+              onClick={() => i18n.changeLanguage(i18n.language === 'th' ? 'en' : 'th')}
+              className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+            >
+              {i18n.language === 'th' ? 'TH → EN' : 'EN → TH'}
+            </button>
+          </div>
+          <div className="flex w-full items-center gap-3 rounded-lg px-3 py-3">
+            {theme === 'dark' ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+            <span className="flex-1 text-sm font-medium text-foreground">{t('staff.theme')}</span>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+            >
+              {theme === 'dark' ? t('staff.lightMode') : t('staff.darkMode')}
+            </button>
+          </div>
         </div>
       </Section>
 
