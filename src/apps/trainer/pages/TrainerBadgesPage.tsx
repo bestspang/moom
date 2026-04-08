@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Lock } from 'lucide-react';
 import { getBadgeEmoji } from '@/apps/member/features/momentum/badgeEmoji';
 import { format } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTrainerBadgeEarnings, fetchAllBadgesForTrainer } from '@/apps/trainer/features/impact/api';
@@ -94,7 +95,7 @@ export default function TrainerBadgesPage() {
                     </p>
                   )}
                   <p className="text-[10px] text-muted-foreground mt-auto font-medium">
-                    {t('trainer.earnedOn')} {format(new Date(mb.earnedAt), 'MMM d, yyyy')}
+                    {t('trainer.earnedOn')} {format(new Date(mb.earnedAt), 'MMM d, yyyy', { locale: dateLocale })}
                   </p>
                 </div>
               );

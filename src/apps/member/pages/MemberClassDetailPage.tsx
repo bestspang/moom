@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { fetchScheduleById, createBooking } from '../api/services';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useMemberSession } from '../hooks/useMemberSession';
 
 export default function MemberClassDetailPage() {
@@ -90,7 +91,7 @@ export default function MemberClassDetailPage() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-3 text-sm text-foreground">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{format(parseISO(cls.scheduledDate), 'EEE, d MMM yyyy')} · {cls.startTime.slice(0, 5)} – {cls.endTime.slice(0, 5)}</span>
+              <span>{format(parseISO(cls.scheduledDate), 'EEE, d MMM yyyy', { locale: dateLocale })} · {cls.startTime.slice(0, 5)} – {cls.endTime.slice(0, 5)}</span>
             </div>
             {cls.trainerName && (
               <div className="flex items-center gap-3 text-sm text-foreground">
@@ -149,7 +150,7 @@ export default function MemberClassDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('member.confirmBooking')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('member.bookingConfirmDescription', { className: cls.className, date: format(parseISO(cls.scheduledDate), 'EEE, d MMM'), time: cls.startTime.slice(0, 5) })}
+              {t('member.bookingConfirmDescription', { className: cls.className, date: format(parseISO(cls.scheduledDate), 'EEE, d MMM', { locale: dateLocale }), time: cls.startTime.slice(0, 5) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -16,6 +16,7 @@ import { fetchMyPackages, fetchAvailablePackages } from '../api/services';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, differenceInDays } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 export default function MemberPackagesPage() {
   const navigate = useNavigate();
@@ -151,7 +152,7 @@ export default function MemberPackagesPage() {
                     {/* Expiry info */}
                     {pkg.expiryDate && (
                       <p className={cn('text-xs text-muted-foreground', urgencyClass)}>
-                        {t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy'))}
+                        {t('member.expiresOn').replace('{{date}}', format(parseISO(pkg.expiryDate), 'd MMM yyyy', { locale: dateLocale }))}
                       </p>
                     )}
 

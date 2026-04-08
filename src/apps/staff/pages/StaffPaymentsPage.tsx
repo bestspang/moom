@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 export default function StaffPaymentsPage() {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export default function StaffPaymentsPage() {
               <ListCard
                 key={s.id}
                 title={s.members ? `${s.members.first_name} ${s.members.last_name ?? ''}`.trim() : t('staff.unknownMember')}
-                subtitle={s.slip_date ? format(parseISO(s.slip_date), 'd MMM yyyy') : undefined}
+                subtitle={s.slip_date ? format(parseISO(s.slip_date), 'd MMM yyyy', { locale: dateLocale }) : undefined}
                 meta={`฿${Number(s.amount ?? 0).toLocaleString()}`}
                 trailing={
                   <span className={`text-xs font-medium ${s.status === 'approved' ? 'text-primary' : s.status === 'pending' ? 'text-amber-500' : 'text-muted-foreground'}`}>

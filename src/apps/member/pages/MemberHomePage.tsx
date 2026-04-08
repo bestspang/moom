@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, ScanLine, Sparkles, ChevronRight, Megaphone, Zap } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { fetchMyBookings, fetchMyPackages, fetchActiveAnnouncements } from '../api/services';
 import { fetchMomentumProfile } from '../features/momentum/api';
 import { xpForLevel } from '../features/momentum/types';
@@ -238,7 +239,7 @@ export default function MemberHomePage() {
               <ListCard
                 key={booking.id}
                 title={booking.schedule.className}
-                subtitle={`${format(parseISO(booking.schedule.date), 'EEE, d MMM')} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
+                subtitle={`${format(parseISO(booking.schedule.date), 'EEE, d MMM', { locale: dateLocale })} · ${booking.schedule.startTime.slice(0, 5)} – ${booking.schedule.endTime.slice(0, 5)}`}
                 meta={booking.schedule.trainerName ? t('member.withTrainer').replace('{{name}}', booking.schedule.trainerName) : undefined}
                 trailing={<MobileStatusBadge status={booking.status} />}
               />
