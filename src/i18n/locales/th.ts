@@ -46,6 +46,15 @@ export default {
     saved: 'บันทึกสำเร็จ',
     confirmDelete: 'ยืนยันการลบ',
     comingSoon: 'เร็วๆ นี้',
+    add: 'เพิ่ม',
+    close: 'ปิด',
+    copied: 'คัดลอกแล้ว',
+    days: 'วัน',
+    done: 'เสร็จสิ้น',
+    import: 'นำเข้า',
+    requiredFields: 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมด',
+    selectDate: 'เลือกวันที่',
+    unlimited: 'ไม่จำกัด',
   },
 
   // Bulk actions
@@ -56,6 +65,8 @@ export default {
     duplicate: 'ทำสำเนา',
     deleteTitle: 'ลบรายการที่เลือก',
     deleteDesc: 'รายการจะถูกลบถาวร ไม่สามารถยกเลิกได้',
+    deleteSuccess: 'ลบรายการสำเร็จ',
+    statusSuccess: 'อัปเดตสถานะสำเร็จ',
   },
 
   // Navigation
@@ -563,6 +574,8 @@ export default {
     readyToUse: 'พร้อมใช้',
     completed: 'เสร็จสิ้น',
     editPackage: 'แก้ไขแพ็คเกจ',
+    editPackageDescription: 'แก้ไขรายละเอียดและการตั้งค่าแพ็กเกจ',
+    joinedDate: 'วันที่สมัคร',
     deletePackage: 'ลบแพ็คเกจ',
     confirmDeletePackage: 'คุณแน่ใจว่าต้องการลบแพ็คเกจนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
     activationDate: 'วันเริ่มใช้',
@@ -841,6 +854,7 @@ export default {
     discountRequired: 'กรุณาระบุจำนวนส่วนลด',
     maxSaleAmount: 'จำนวนขายสูงสุด',
     discountOverride: 'ส่วนลดเฉพาะ',
+    times: 'ครั้ง',
   },
 
   // Schedule
@@ -944,6 +958,7 @@ export default {
     intermediate: 'ปานกลาง',
     advanced: 'ขั้นสูง',
     selectType: 'เลือกประเภท',
+    classType: 'ประเภทคลาส',
     classTypeDesc: 'คลาสกลุ่มที่มีผู้เข้าร่วมหลายคน',
     ptTypeDesc: 'เทรนส่วนตัวแบบ 1 ต่อ 1',
     classInfo: 'ข้อมูลคลาส',
@@ -1066,6 +1081,8 @@ export default {
     noSlips: 'ไม่มีสลิป',
     slipsWillAppear: 'สลิปโอนเงินจะแสดงที่นี่',
     unknownMember: 'ไม่ทราบ',
+    role: 'บทบาท',
+    selectRole: 'เลือกบทบาท',
   },
 
   // Roles
@@ -1639,6 +1656,7 @@ export default {
       rows: 'แถว',
       unknown: 'ไม่ทราบ',
       startImport: 'นำเข้า',
+      selectType: 'เลือกประเภทข้อมูล',
     },
     integrations: {
       stripeTitle: 'Stripe Payment Gateway',
@@ -2285,6 +2303,9 @@ export default {
     navCheckIn: 'เช็คอิน',
     navRewards: 'รางวัล',
     navProfile: 'โปรไฟล์',
+    classFull: 'คลาสเต็มแล้ว',
+    prestigeRequirements: 'ข้อกำหนด Prestige',
+    rewards: 'รางวัล',
   },
 
   // Members form fields
@@ -2298,6 +2319,16 @@ export default {
     female: 'หญิง',
     other: 'อื่นๆ',
     requiredFieldsNote: '* ข้อมูลที่จำเป็น',
+    firstName: 'ชื่อ',
+    lastName: 'นามสกุล',
+    notes: 'หมายเหตุ',
+    address1: 'ที่อยู่บรรทัด 1',
+    address2: 'ที่อยู่บรรทัด 2',
+    district: 'เขต/อำเภอ',
+    subdistrict: 'แขวง/ตำบล',
+    province: 'จังหวัด',
+    postalCode: 'รหัสไปรษณีย์',
+    selectLocation: 'เลือกสถานที่',
   },
 
   // Member Creation Wizard
@@ -2790,7 +2821,7 @@ export default {
 
   gamification: {
     title: 'Gamification Studio',
-    tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ', quests: 'เควส', coupons: 'คูปอง', shopRules: 'กฎร้านค้า', guardrails: 'การ์ดเรล', operations: 'ปฏิบัติการ', prestige: 'เพรสทีจ' },
+    tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ', quests: 'เควส', coupons: 'คูปอง', shopRules: 'กฎร้านค้า', guardrails: 'การ์ดเรล', operations: 'ปฏิบัติการ', prestige: 'เพรสทีจ', statusTiers: 'ระดับสถานะ' },
     overview: { activeRules: 'กฎที่ใช้งาน', activeChallenges: 'ชาเลนจ์ที่ใช้งาน', totalBadges: 'แบดจ์ทั้งหมด', activeRewards: 'รางวัลที่ใช้งาน', xpDistributed: 'XP ที่แจก', flaggedEvents: 'เหตุการณ์ต้องสงสัย', recentActivity: 'กิจกรรมล่าสุด', quickActions: 'ทางลัด' },
     rules: { description: 'กำหนด XP และคะแนนสำหรับแต่ละ action', addRule: 'เพิ่มกฎ', editRule: 'แก้ไขกฎ', noRules: 'ยังไม่มีกฎ', noRulesDesc: 'เพิ่มกฎแรกของคุณ', action: 'Action Key', label: 'ชื่อ', points: 'คะแนน', cooldown: 'Cooldown', maxDay: 'สูงสุด/วัน', deleteConfirm: 'กฎนี้จะถูกลบถาวร' },
     levels: { description: 'กำหนดระดับ XP สำหรับสมาชิก', addLevel: 'เพิ่มระดับ', editLevel: 'แก้ไขระดับ', noLevels: 'ยังไม่มีระดับ', noLevelsDesc: 'สร้างระดับสำหรับสมาชิก', color: 'สีแบดจ์', deleteConfirm: 'ระดับนี้จะถูกลบถาวร', levelNumber: 'ระดับ #', xpRequired: 'XP ที่ต้องการ' },
