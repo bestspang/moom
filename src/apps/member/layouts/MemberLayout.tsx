@@ -5,10 +5,12 @@ import { MemberHeaderErrorBoundary } from '../components/MemberHeaderErrorBounda
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { XPToast } from '../features/momentum/XPToast';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export function MemberLayout() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  useRealtimeSync();
 
   if (loading) {
     return (
