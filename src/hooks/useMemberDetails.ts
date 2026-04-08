@@ -53,6 +53,7 @@ export interface MemberPackage {
     name_th: string | null;
     type: string;
     sessions: number | null;
+    term_days: number;
   } | null;
 }
 
