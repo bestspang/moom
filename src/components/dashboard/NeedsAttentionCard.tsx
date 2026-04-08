@@ -63,14 +63,25 @@ const NeedsAttentionCard = () => {
                     <Package className="h-3.5 w-3.5" />
                     {t('dashboard.expiringPackages')} ({expiringPkgs.length})
                   </h4>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="text-primary p-0 h-auto text-xs"
-                    onClick={() => navigate('/report/member/members-at-risk')}
-                  >
-                    {t('common.viewAll')}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-primary p-0 h-auto text-xs"
+                      onClick={() => navigate('/announcements')}
+                    >
+                      {t('dashboardExtra.remindAll')}
+                    </Button>
+                    <span className="text-muted-foreground text-xs">·</span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-primary p-0 h-auto text-xs"
+                      onClick={() => navigate('/report/member/members-at-risk')}
+                    >
+                      {t('common.viewAll')}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   {expiringPkgs.slice(0, 3).map((pkg) => (
