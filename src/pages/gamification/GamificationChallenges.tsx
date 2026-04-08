@@ -20,6 +20,7 @@ const statusVariantMap: Record<string, any> = {
 
 const GamificationChallenges = () => {
   const { t, language } = useLanguage();
+  const locale = getDateLocale(language);
   const [statusFilter, setStatusFilter] = useState('all');
   const { data: challenges, isLoading } = useGamificationChallenges(statusFilter);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -72,7 +73,7 @@ const GamificationChallenges = () => {
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{language === 'th' && c.description_th ? c.description_th : c.description_en}</p>
                     <div className="flex gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(c.start_date), 'dd MMM')} — {format(new Date(c.end_date), 'dd MMM yyyy')}</span>
+                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(c.start_date), 'dd MMM', { locale })} — {format(new Date(c.end_date), 'dd MMM yyyy', { locale })}</span>
                       <span className="flex items-center gap-1"><Target className="h-3 w-3" />{c.goal_value}× {c.goal_action_key || c.goal_type}</span>
                     </div>
                   </div>
