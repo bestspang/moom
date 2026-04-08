@@ -1,6 +1,8 @@
 import React from 'react';
-import { DoorOpen, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DoorOpen, Calendar, UserPlus, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDateLocale } from '@/lib/formatters';
@@ -9,11 +11,13 @@ import { format } from 'date-fns';
 interface DashboardWelcomeProps {
   onQuickCheckIn: () => void;
   stats?: { classesToday: number; checkinsToday: number };
+  pendingSlips?: number;
 }
 
-const DashboardWelcome: React.FC<DashboardWelcomeProps> = ({ onQuickCheckIn, stats }) => {
+const DashboardWelcome: React.FC<DashboardWelcomeProps> = ({ onQuickCheckIn, stats, pendingSlips = 0 }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const locale = getDateLocale(language);
 
   const hour = new Date().getHours();
@@ -45,16 +49,29 @@ const DashboardWelcome: React.FC<DashboardWelcomeProps> = ({ onQuickCheckIn, sta
           )}
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={() => navigate('/members')} className="gap-1.5">
+          <UserPlus className="h-4 w-4" />
+          <span className="hidden sm:inline">{t('dashboardExtra.addMember')}</span>
+        </Button>
         <Button variant="outline" size="sm" asChild>
           <a href="/calendar">
-            <Calendar className="h-4 w-4 mr-1.5" />
-            {t('dashboard.goToSchedule')}
+            <Calendar className="h-4 w-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">{t('dashboard.goToSchedule')}</span>
           </a>
         </Button>
+        {pendingSlips > 0 && (
+          <Button variant="outline" size="sm" onClick={() => navigate('/finance?tab=slips')} className="gap-1.5">
+            <Receipt className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('dashboardExtra.reviewSlips')}</span>
+            <Badge variant="destructive" className="ml-0.5 h-5 min-w-5 px-1 text-[10px]">
+              {pendingSlips}
+            </Badge>
+          </Button>
+        )}
         <Button size="sm" onClick={onQuickCheckIn}>
-          <DoorOpen className="h-4 w-4 mr-1.5" />
-          {t('lobby.checkIn')}
+          <DoorOpen className="h-4 w-4 sm:mr-1.5" />
+          <span className="hidden sm:inline">{t('lobby.checkIn')}</span>
         </Button>
       </div>
     </div>
