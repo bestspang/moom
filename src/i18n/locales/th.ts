@@ -1792,6 +1792,11 @@ export default {
     referralApplied: '🎉 ใช้รหัสเชิญ: {{code}}',
     referralBothEarn: 'ทั้งคุณและเพื่อนจะได้รับคะแนนรางวัล!',
     useDifferentNumber: 'ใช้เบอร์อื่น',
+    accessDenied: 'ไม่มีสิทธิ์เข้าถึง',
+    accessDeniedDescription: 'คุณไม่มีสิทธิ์ดูหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเกิดข้อผิดพลาด',
+    backTo: 'กลับไป{{page}}',
+    home: 'หน้าแรก',
+    dashboard: 'แดชบอร์ด',
   },
 
   // Member surface
@@ -2939,23 +2944,6 @@ export default {
       reasonPlaceholder: 'เช่น ชดเชยจากข้อผิดพลาดของระบบ',
       execute: 'ดำเนินการ',
     },
-    overview: {
-      economyHealth: 'สุขภาพเศรษฐกิจ',
-      activeProfiles: 'โปรไฟล์ที่ใช้งาน',
-      coinInCirculation: 'Coin หมุนเวียน',
-      totalRedemptions: 'การแลกทั้งหมด',
-      questCompletion: 'ความสำเร็จเควส',
-      systemConfig: 'การตั้งค่าระบบ',
-      levels: 'เลเวล',
-      questTemplates: 'เทมเพลตเควส',
-      economySummary: 'สรุปเศรษฐกิจ',
-      totalXpDistributed: 'XP แจกจ่ายทั้งหมด',
-      totalCoinEarned: 'Coin ที่ได้รับทั้งหมด (ตลอดกาล)',
-      totalCoinSpent: 'Coin ที่ใช้ทั้งหมด',
-      avgMemberLevel: 'เลเวลเฉลี่ยสมาชิก',
-      questsAssigned: 'เควสที่มอบหมาย',
-      badgesEarned: 'ตราเกียรติยศที่ได้รับ',
-    },
     guardrails: {
       title: 'กันชนเศรษฐกิจ',
       description: 'ค่าเหล่านี้ขับเคลื่อนการคำนวณ XP & Coin ของแพ็กเกจ/ร้านค้า การเปลี่ยนแปลงจะมีผลในอีเวนต์ถัดไป',
@@ -2995,14 +2983,6 @@ export default {
     },
   },
 
-  // Auth
-  auth: {
-    accessDenied: 'ไม่มีสิทธิ์เข้าถึง',
-    accessDeniedDescription: 'คุณไม่มีสิทธิ์ดูหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเกิดข้อผิดพลาด',
-    backTo: 'กลับไป{{page}}',
-    home: 'หน้าแรก',
-    dashboard: 'แดชบอร์ด',
-  },
 
   // Trainer surface
   trainer: {
