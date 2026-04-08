@@ -4,11 +4,13 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrainerHeader } from '../components/TrainerHeader';
 import { useTranslation } from 'react-i18next';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export function TrainerLayout() {
   const location = useLocation();
   const { user, loading } = useAuth();
   const { t } = useTranslation();
+  useRealtimeSync();
 
   const TRAINER_NAV = [
     { label: t('trainer.nav.home'), path: '/trainer', icon: Home },

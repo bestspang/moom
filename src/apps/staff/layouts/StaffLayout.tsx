@@ -3,11 +3,13 @@ import { Home, ScanLine, Users, CreditCard, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export function StaffLayout() {
   const location = useLocation();
   const { user, loading } = useAuth();
   const { t } = useTranslation();
+  useRealtimeSync();
 
   const STAFF_NAV = [
     { label: t('staff.nav.home'), path: '/staff', icon: Home },
