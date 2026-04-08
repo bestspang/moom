@@ -19,12 +19,6 @@ type Package = Tables<'packages'>;
 
 const TEMPLATE_HEADERS = ['ID', 'Name', 'Type', 'Term(D)', 'Sessions', 'Price', 'Categories', 'Access locations', 'Sold at', 'Date modified', 'Status'];
 
-const PACKAGE_STATUS_OPTIONS = [
-  { value: 'on_sale', label: 'On Sale' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'drafts', label: 'Drafts' },
-  { value: 'archive', label: 'Archive' },
-];
 
 const Packages = () => {
   const { t, language } = useLanguage();
