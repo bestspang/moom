@@ -45,6 +45,7 @@ export const useDashboardStats = () => {
       const today = formatDateForDB(new Date());
       const todayRange = getBangkokDayRange(new Date());
       const yesterdayRange = getBangkokDayRange(new Date(Date.now() - 86400000));
+      const lastWeekSameDayRange = getBangkokDayRange(new Date(Date.now() - 7 * 86400000));
 
       const { count: checkinsToday } = await supabase
         .from('member_attendance')
@@ -57,6 +58,13 @@ export const useDashboardStats = () => {
         .select('*', { count: 'exact', head: true })
         .gte('check_in_time', yesterdayRange.start)
         .lt('check_in_time', yesterdayRange.end);
+
+      // Same day last week — for "vs last {dayName}" comparison
+      const { count: checkinsLastWeekSameDay } = await supabase
+        .from('member_attendance')
+        .select('*', { count: 'exact', head: true })
+        .gte('check_in_time', lastWeekSameDayRange.start)
+        .lt('check_in_time', lastWeekSameDayRange.end);
 
       const { count: classesToday } = await supabase
         .from('schedule')
@@ -80,6 +88,15 @@ export const useDashboardStats = () => {
         .eq('status', 'paid');
       const todayRevenue = (revenueData || []).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
+      // Revenue same day last week
+      const { data: revLastWeekData } = await supabase
+        .from('transactions')
+        .select('amount')
+        .gte('created_at', lastWeekSameDayRange.start)
+        .lt('created_at', lastWeekSameDayRange.end)
+        .eq('status', 'paid');
+      const revenueLastWeekSameDay = (revLastWeekData || []).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
       // Active members count
       const { count: activeMembers } = await supabase
         .from('members')
@@ -89,9 +106,11 @@ export const useDashboardStats = () => {
       return {
         checkinsToday: checkinsToday || 0,
         checkinsYesterday: checkinsYesterday || 0,
+        checkinsLastWeekSameDay: checkinsLastWeekSameDay || 0,
         currentlyInClass: currentlyInClass || 0,
         classesToday: classesToday || 0,
         todayRevenue,
+        revenueLastWeekSameDay,
         activeMembers: activeMembers || 0,
       };
     },
