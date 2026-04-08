@@ -27,6 +27,13 @@ const Packages = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const PACKAGE_STATUS_OPTIONS = [
+    { value: 'on_sale', label: t('common.onSale') },
+    { value: 'scheduled', label: t('common.scheduled') },
+    { value: 'drafts', label: t('common.draft') },
+    { value: 'archive', label: t('common.archive') },
+  ];
   const [importOpen, setImportOpen] = useState(false);
 
   const { data: packages, isLoading } = usePackages(activeTab, search);
