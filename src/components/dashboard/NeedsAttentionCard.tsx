@@ -221,6 +221,15 @@ const NeedsAttentionCard = () => {
                     variant="link"
                     size="sm"
                     className="text-primary p-0 h-auto text-xs"
+                    onClick={() => navigate('/announcements')}
+                  >
+                    {t('dashboardExtra.reachOut')}
+                  </Button>
+                  <span className="text-muted-foreground text-xs">·</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary p-0 h-auto text-xs"
                     onClick={() => navigate('/members')}
                   >
                     {t('common.viewAll')}
