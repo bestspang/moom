@@ -10,6 +10,8 @@ export interface DashboardStats {
   checkinsYesterday: number;
   currentlyInClass: number;
   classesToday: number;
+  todayRevenue: number;
+  activeMembers: number;
 }
 
 export interface RiskMember {
@@ -67,11 +69,28 @@ export const useDashboardStats = () => {
         .gte('check_in_time', twoHoursAgo)
         .not('schedule_id', 'is', null);
 
+      // Today's revenue — sum of paid transactions today
+      const { data: revenueData } = await supabase
+        .from('transactions')
+        .select('amount')
+        .gte('created_at', todayRange.start)
+        .lt('created_at', todayRange.end)
+        .eq('status', 'paid');
+      const todayRevenue = (revenueData || []).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+      // Active members count
+      const { count: activeMembers } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+
       return {
         checkinsToday: checkinsToday || 0,
         checkinsYesterday: checkinsYesterday || 0,
         currentlyInClass: currentlyInClass || 0,
         classesToday: classesToday || 0,
+        todayRevenue,
+        activeMembers: activeMembers || 0,
       };
     },
   });
