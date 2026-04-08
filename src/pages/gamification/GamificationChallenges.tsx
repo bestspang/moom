@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/common';
 import { useGamificationChallenges, type GamificationChallenge } from '@/hooks/useGamificationChallenges';
 import { StatusBadge } from '@/components/common';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import CreateChallengeDialog from '@/components/gamification/CreateChallengeDialog';
 

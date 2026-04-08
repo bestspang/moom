@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/common';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/lib/formatters';
 
 const GamificationRisk = () => {
   const { t } = useLanguage();
