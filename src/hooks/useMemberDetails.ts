@@ -759,7 +759,42 @@ export const useDeleteMemberPackage = () => {
   });
 };
 
-export const useCreateMemberBilling = () => {
+export const useActivateMemberPackage = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId, termDays }: { id: string; memberId: string; termDays: number }) => {
+      const today = new Date().toISOString().split('T')[0];
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + termDays);
+      const expiry = expiryDate.toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('member_packages')
+        .update({
+          status: 'active',
+          activation_date: today,
+          expiry_date: expiry,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      logActivity({
+        event_type: 'member_package_activated',
+        activity: `Member package activated`,
+        entity_type: 'member_package',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
   const queryClient = useQueryClient();
   const { t } = useLanguage();
 
