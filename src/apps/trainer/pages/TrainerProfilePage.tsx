@@ -4,16 +4,18 @@ import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users } from 'lucide-react';
+import { LogOut, Settings, Bell, HelpCircle, ShieldCheck, Users, Globe, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
+import { useTheme } from 'next-themes';
 
 
 export default function TrainerProfilePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, allRoles, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const firstName = user?.user_metadata?.first_name ?? t('trainer.trainerRole');
   const lastName = user?.user_metadata?.last_name ?? '';
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
@@ -46,14 +48,32 @@ export default function TrainerProfilePage() {
       <Section title={t('trainer.settings')}>
         <div className="space-y-1">
           <ListCard
-            title={t('trainer.notifications')}
-            leading={<Bell className="h-5 w-5 text-muted-foreground/50" />}
-            subtitle={t('trainer.comingSoonLabel')}
-            className="opacity-60 pointer-events-none"
+            title={t('staff.language')}
+            leading={<Globe className="h-5 w-5 text-muted-foreground" />}
+            trailing={
+              <button
+                onClick={() => i18n.changeLanguage(i18n.language === 'th' ? 'en' : 'th')}
+                className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+              >
+                {i18n.language === 'th' ? 'TH → EN' : 'EN → TH'}
+              </button>
+            }
           />
           <ListCard
-            title={t('trainer.preferences')}
-            leading={<Settings className="h-5 w-5 text-muted-foreground/50" />}
+            title={t('staff.theme')}
+            leading={theme === 'dark' ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+            trailing={
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+              >
+                {theme === 'dark' ? t('staff.lightMode') : t('staff.darkMode')}
+              </button>
+            }
+          />
+          <ListCard
+            title={t('trainer.notifications')}
+            leading={<Bell className="h-5 w-5 text-muted-foreground/50" />}
             subtitle={t('trainer.comingSoonLabel')}
             className="opacity-60 pointer-events-none"
           />

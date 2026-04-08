@@ -18,12 +18,14 @@ import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { fetchBookingById, cancelBooking } from '../api/services';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { ClassRatingSheet } from '../features/momentum/ClassRatingSheet';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function MemberBookingDetailPage() {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -113,7 +115,7 @@ export default function MemberBookingDetailPage() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-3 text-sm text-foreground">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{format(parseISO(schedule.date), 'EEE, d MMM yyyy')} · {schedule.startTime.slice(0, 5)} – {schedule.endTime.slice(0, 5)}</span>
+              <span>{format(parseISO(schedule.date), 'EEE, d MMM yyyy', { locale: dateLocale })} · {schedule.startTime.slice(0, 5)} – {schedule.endTime.slice(0, 5)}</span>
             </div>
             {schedule.trainerName && (
               <div className="flex items-center gap-3 text-sm text-foreground">
@@ -130,13 +132,13 @@ export default function MemberBookingDetailPage() {
           {booking.bookedAt && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t('member.bookedAt')}</span>
-              <span className="text-foreground">{format(parseISO(booking.bookedAt), 'PPp')}</span>
+              <span className="text-foreground">{format(parseISO(booking.bookedAt), 'PPp', { locale: dateLocale })}</span>
             </div>
           )}
           {booking.cancelledAt && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t('member.cancelledAt')}</span>
-              <span className="text-foreground">{format(parseISO(booking.cancelledAt), 'PPp')}</span>
+              <span className="text-foreground">{format(parseISO(booking.cancelledAt), 'PPp', { locale: dateLocale })}</span>
             </div>
           )}
           {booking.cancelReason && (

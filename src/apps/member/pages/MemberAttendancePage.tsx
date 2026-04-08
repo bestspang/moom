@@ -8,12 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ClipboardCheck, CalendarDays, TrendingUp, Flame } from 'lucide-react';
 import { format, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { fetchMyAttendance } from '../api/services';
 import { useTranslation } from 'react-i18next';
 
 export default function MemberAttendancePage() {
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const { data: records, isLoading, isError, refetch } = useQuery({
     queryKey: ['member-attendance', memberId],
@@ -72,7 +74,7 @@ export default function MemberAttendancePage() {
             {records.map(r => (
               <div key={r.id} className="flex items-center justify-between rounded-lg bg-card p-3 shadow-sm border border-border">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{format(parseISO(r.checkInTime), 'PPp')}</p>
+                  <p className="text-sm font-medium text-foreground">{format(parseISO(r.checkInTime), 'PPp', { locale: dateLocale })}</p>
                   {r.className && <p className="text-xs text-muted-foreground">{r.className}</p>}
                 </div>
                 <span className="text-xs font-medium text-muted-foreground capitalize rounded-full bg-muted px-2 py-0.5">

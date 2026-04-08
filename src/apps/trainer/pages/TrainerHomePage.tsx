@@ -8,6 +8,7 @@ import { Calendar, Users, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { CoachImpactCard } from '@/apps/trainer/features/impact/CoachImpactCard';
 import { PartnerReputationCard } from '@/apps/trainer/features/impact/PartnerReputationCard';
 import { fetchTrainerType } from '@/apps/trainer/features/impact/api';
@@ -17,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 export default function TrainerHomePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? 'Trainer';
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -125,7 +127,7 @@ export default function TrainerHomePage() {
               <ListCard
                 key={a.id}
                 title={a.message}
-                subtitle={a.publish_date ? format(new Date(a.publish_date), 'd MMM') : undefined}
+                subtitle={a.publish_date ? format(new Date(a.publish_date), 'd MMM', { locale: dateLocale }) : undefined}
                 leading={<Megaphone className="h-4 w-4 text-muted-foreground" />}
                 showChevron={false}
               />

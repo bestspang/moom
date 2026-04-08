@@ -3,6 +3,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'next-themes';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMomentumProfile, fetchMyBadges } from '../features/momentum/api';
 import { TierBadge } from '../features/momentum/TierBadge';
@@ -12,7 +13,7 @@ import { XPProgressBar } from '../features/momentum/XPProgressBar';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
-import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock, Gift } from 'lucide-react';
+import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock, Gift, Globe, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
@@ -25,8 +26,9 @@ const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_
 export default function MemberProfilePage() {
   const { signOut, allRoles } = useAuth();
   const { firstName, lastName, email, memberId } = useMemberSession();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const hasAdminAccess = allRoles.some(r => ADMIN_CAPABLE_ROLES.includes(r));
 
   const { data: momentum } = useQuery({
@@ -145,6 +147,26 @@ export default function MemberProfilePage() {
       <Section title={t('member.settingsGroup')} className="mb-6">
         <div className="space-y-1">
           {settingsItems.map(renderMenuItem)}
+          <div className="flex w-full items-center gap-3 rounded-lg px-3 py-3">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-foreground">{t('staff.language')}</span>
+            <button
+              onClick={() => i18n.changeLanguage(i18n.language === 'th' ? 'en' : 'th')}
+              className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+            >
+              {i18n.language === 'th' ? 'TH → EN' : 'EN → TH'}
+            </button>
+          </div>
+          <div className="flex w-full items-center gap-3 rounded-lg px-3 py-3">
+            {theme === 'dark' ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+            <span className="flex-1 text-sm font-medium text-foreground">{t('staff.theme')}</span>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-xs font-medium text-primary px-2 py-1 rounded-md bg-primary/10"
+            >
+              {theme === 'dark' ? t('staff.lightMode') : t('staff.darkMode')}
+            </button>
+          </div>
         </div>
       </Section>
 
