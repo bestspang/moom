@@ -150,14 +150,16 @@ export default function MemberProfilePage() {
       {/* Admin switch */}
       {hasAdminAccess && (
         <Section className="mb-6">
-          <a
-            href={isDevEnvironment() ? '/?surface=admin' : 'https://admin.moom.fit'}
+          <button
+            onClick={async () => {
+              window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+            }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted border border-border bg-card"
           >
             <Shield className="h-5 w-5 text-primary" />
             <span className="flex-1 text-sm font-medium text-foreground">{t('member.adminPortal')}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </a>
+          </button>
         </Section>
       )}
 

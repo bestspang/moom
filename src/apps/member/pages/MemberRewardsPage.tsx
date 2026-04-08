@@ -10,6 +10,7 @@ import { useMemberSession } from '../hooks/useMemberSession';
 import { useTranslation } from 'react-i18next';
 import { Gift, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 const EVENT_LABEL_KEYS: Record<string, string> = {
   checkin: 'member.eventCheckin',
@@ -26,6 +27,7 @@ const EVENT_LABEL_KEYS: Record<string, string> = {
 export default function MemberRewardsPage() {
   const { memberId } = useMemberSession();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['momentum-profile', memberId],
@@ -140,7 +142,7 @@ export default function MemberRewardsPage() {
                       {EVENT_LABEL_KEYS[entry.eventType] ? t(EVENT_LABEL_KEYS[entry.eventType]) : entry.eventType}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(entry.createdAt), 'MMM d, yyyy · h:mm a')}
+                      {format(new Date(entry.createdAt), 'MMM d, yyyy · h:mm a', { locale: dateLocale })}
                     </p>
                   </div>
                 </div>

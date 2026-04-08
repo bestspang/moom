@@ -9,9 +9,11 @@ import { useMemberSession } from '../hooks/useMemberSession';
 import { Ticket, Clock, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 function CouponCard({ coupon }: { coupon: CouponWalletItem }) {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const tpl = coupon.template;
   if (!tpl) return null;
 
@@ -67,9 +69,9 @@ function CouponCard({ coupon }: { coupon: CouponWalletItem }) {
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" />
           {isUsed && coupon.usedAt ? (
-            <span>{t('member.usedOn', { date: format(new Date(coupon.usedAt), 'MMM d, yyyy') })}</span>
+            <span>{t('member.usedOn', { date: format(new Date(coupon.usedAt), 'MMM d, yyyy', { locale: dateLocale }) })}</span>
           ) : (
-            <span>{t('member.expiresDate', { date: format(new Date(coupon.expiresAt), 'MMM d, yyyy') })}</span>
+            <span>{t('member.expiresDate', { date: format(new Date(coupon.expiresAt), 'MMM d, yyyy', { locale: dateLocale }) })}</span>
           )}
         </div>
       </div>
