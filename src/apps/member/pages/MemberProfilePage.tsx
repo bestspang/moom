@@ -14,7 +14,8 @@ import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
 import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { buildCrossSurfaceUrl, isDevEnvironment } from '@/apps/shared/hostname';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -150,14 +151,16 @@ export default function MemberProfilePage() {
       {/* Admin switch */}
       {hasAdminAccess && (
         <Section className="mb-6">
-          <a
-            href={isDevEnvironment() ? '/?surface=admin' : 'https://admin.moom.fit'}
+          <button
+            onClick={async () => {
+              window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+            }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted border border-border bg-card"
           >
             <Shield className="h-5 w-5 text-primary" />
             <span className="flex-1 text-sm font-medium text-foreground">{t('member.adminPortal')}</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </a>
+          </button>
         </Section>
       )}
 

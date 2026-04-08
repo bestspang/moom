@@ -1,21 +1,25 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
 import { Button } from '@/components/ui/button';
-import { LogOut, Bell, Settings, HelpCircle, ShieldCheck, Users } from 'lucide-react';
+import { LogOut, Globe, Moon, Sun, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
-const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin'];
+const ADMIN_CAPABLE_ROLES: AppRole[] = ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'];
 
 export default function StaffProfilePage() {
   const { t } = useTranslation();
   const { user, allRoles, signOut } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
   const firstName = user?.user_metadata?.first_name ?? t('staff.staffRole');
   const lastName = user?.user_metadata?.last_name ?? '';
@@ -46,29 +50,21 @@ export default function StaffProfilePage() {
         </div>
       </Section>
 
+      {/* Language & Theme */}
       <Section title={t('staff.settings')}>
         <div className="space-y-1">
-          <div className="opacity-60 pointer-events-none">
-            <ListCard
-              title={t('staff.notifications')}
-              leading={<Bell className="h-5 w-5 text-muted-foreground" />}
-              subtitle={t('staff.comingSoonLabel')}
-            />
-          </div>
-          <div className="opacity-60 pointer-events-none">
-            <ListCard
-              title={t('staff.preferences')}
-              leading={<Settings className="h-5 w-5 text-muted-foreground" />}
-              subtitle={t('staff.comingSoonLabel')}
-            />
-          </div>
-          <div className="opacity-60 pointer-events-none">
-            <ListCard
-              title={t('staff.helpAndSupport')}
-              leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
-              subtitle={t('staff.comingSoonLabel')}
-            />
-          </div>
+          <ListCard
+            title={language === 'en' ? 'ภาษาไทย' : 'English'}
+            leading={<Globe className="h-5 w-5 text-muted-foreground" />}
+            subtitle={language === 'en' ? t('staff.switchToThai') : t('staff.switchToEnglish')}
+            onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}
+          />
+          <ListCard
+            title={resolvedTheme === 'dark' ? t('staff.lightMode') : t('staff.darkMode')}
+            leading={resolvedTheme === 'dark' ? <Sun className="h-5 w-5 text-muted-foreground" /> : <Moon className="h-5 w-5 text-muted-foreground" />}
+            subtitle={resolvedTheme === 'dark' ? t('staff.switchToLight') : t('staff.switchToDark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          />
         </div>
       </Section>
 

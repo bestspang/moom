@@ -12,10 +12,12 @@ import { Calendar } from 'lucide-react';
 import { fetchSchedule, type ScheduleItem } from '../api/services';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 export default function MemberSchedulePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const [category, setCategory] = useState('all');
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -71,7 +73,7 @@ export default function MemberSchedulePage() {
         />
       ) : (
         Object.entries(grouped).map(([date, classes]) => (
-          <Section key={date} title={format(parseISO(date), 'EEEE, d MMM')} className="mb-6">
+          <Section key={date} title={format(parseISO(date), 'EEEE, d MMM', { locale: dateLocale })} className="mb-6">
             <div className="space-y-2">
               {classes.map(cls => (
                 <ListCard

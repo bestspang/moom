@@ -11,9 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 export default function TrainerSchedulePage() {
   const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const [category, setCategory] = useState('all');
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -75,7 +77,7 @@ export default function TrainerSchedulePage() {
         <EmptyState icon={<Calendar className="h-10 w-10" />} title={t('trainer.noClassesFound')} description={t('trainer.checkBackLater')} />
       ) : (
         Object.entries(grouped).map(([date, classes]) => (
-          <Section key={date} title={format(parseISO(date), 'EEEE, d MMM')} className="mb-6">
+          <Section key={date} title={format(parseISO(date), 'EEEE, d MMM', { locale: dateLocale })} className="mb-6">
             <div className="space-y-2">
               {classes.map(cls => (
                 <ListCard

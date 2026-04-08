@@ -113,7 +113,7 @@ export default function StaffHomePage() {
           <Button onClick={() => navigate('/staff/payments')} variant="outline" size="sm">
             <CreditCard className="h-4 w-4 mr-1.5" />{t('staff.nav.payments')}
           </Button>
-          <Button onClick={() => navigate('/calendar')} variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="opacity-60 pointer-events-none">
             <Calendar className="h-4 w-4 mr-1.5" />{t('staff.viewSchedule')}
           </Button>
         </div>
