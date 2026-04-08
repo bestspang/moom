@@ -136,7 +136,7 @@ const Dashboard = () => {
               <StatCard
                 title={t('dashboardExtra.revenueToday')}
                 value={formatCurrency(stats?.todayRevenue || 0)}
-                color="purple"
+                color="magenta"
                 icon={<Banknote className="h-5 w-5" />}
                 onClick={() => navigate('/finance')}
               />
