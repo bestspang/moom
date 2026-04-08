@@ -2400,6 +2400,13 @@ export default {
     revenueToday: 'Revenue today',
     activeMembers: 'Active members',
     members: 'members',
+    addMember: 'Add Member',
+    reviewSlips: 'Review Slips',
+    liveActivity: 'Live Activity',
+    noRecentActivity: 'No recent activity',
+    justCheckedIn: 'checked in',
+    remindAll: 'Remind All',
+    reachOut: 'Reach out',
   },
 
   // Error pages

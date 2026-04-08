@@ -2400,6 +2400,13 @@ export default {
     revenueToday: 'รายได้วันนี้',
     activeMembers: 'สมาชิกที่ใช้งาน',
     members: 'คน',
+    addMember: 'เพิ่มสมาชิก',
+    reviewSlips: 'ตรวจสลิป',
+    liveActivity: 'กิจกรรมล่าสุด',
+    noRecentActivity: 'ยังไม่มีกิจกรรม',
+    justCheckedIn: 'เช็คอิน',
+    remindAll: 'แจ้งเตือนทั้งหมด',
+    reachOut: 'ติดต่อ',
   },
 
   // Error pages
