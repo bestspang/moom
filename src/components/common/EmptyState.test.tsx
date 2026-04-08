@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@/test/test-utils';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { EmptyState } from './EmptyState';
 
 describe('EmptyState (common)', () => {
