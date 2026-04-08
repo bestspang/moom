@@ -795,6 +795,7 @@ export const useActivateMemberPackage = () => {
   });
 };
 
+export const useCreateMemberBilling = () => {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
 
