@@ -14,7 +14,8 @@ import { BadgeGrid } from '../features/momentum/BadgeGrid';
 import { Button } from '@/components/ui/button';
 import { LogOut, ChevronRight, User, Bell, Heart, Award, CalendarCheck, CreditCard, HelpCircle, Shield, Lock, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { buildCrossSurfaceUrl, isDevEnvironment } from '@/apps/shared/hostname';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
+import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
