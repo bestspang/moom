@@ -53,6 +53,7 @@ export interface MemberPackage {
     name_th: string | null;
     type: string;
     sessions: number | null;
+    term_days: number;
   } | null;
 }
 
@@ -150,7 +151,7 @@ export const useMemberPackages = (memberId: string | undefined) => {
       if (!memberId) return [];
       const { data, error } = await supabase
         .from('member_packages')
-        .select(`*, package:packages(name_en, name_th, type, sessions), purchase_transaction:transactions!member_packages_purchase_transaction_id_fkey(transaction_id)`)
+        .select(`*, package:packages(name_en, name_th, type, sessions, term_days), purchase_transaction:transactions!member_packages_purchase_transaction_id_fkey(transaction_id)`)
         .eq('member_id', memberId)
         .order('purchase_date', { ascending: false });
       if (error) throw error;
@@ -748,6 +749,42 @@ export const useDeleteMemberPackage = () => {
       logActivity({
         event_type: 'member_package_deleted',
         activity: `Member package deleted`,
+        entity_type: 'member_package',
+        entity_id: variables.id,
+        member_id: variables.memberId,
+      });
+      toast.success(t('common.saved'));
+    },
+    onError: (error) => toast.error(error.message),
+  });
+};
+
+export const useActivateMemberPackage = () => {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+
+  return useMutation({
+    mutationFn: async ({ id, memberId, termDays }: { id: string; memberId: string; termDays: number }) => {
+      const today = new Date().toISOString().split('T')[0];
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + termDays);
+      const expiry = expiryDate.toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('member_packages')
+        .update({
+          status: 'active',
+          activation_date: today,
+          expiry_date: expiry,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      logActivity({
+        event_type: 'member_package_activated',
+        activity: `Member package activated`,
         entity_type: 'member_package',
         entity_id: variables.id,
         member_id: variables.memberId,
