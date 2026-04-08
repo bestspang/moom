@@ -19,7 +19,7 @@ export default function TrainerProfilePage() {
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const email = user?.email ?? '';
 
-  const hasAdminAccess = allRoles.some(r => ['owner', 'admin'].includes(r));
+  const hasAdminAccess = allRoles.some(r => ['owner', 'admin', 'trainer', 'freelance_trainer', 'front_desk'].includes(r));
 
   const handleSignOut = async () => {
     await signOut();

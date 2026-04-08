@@ -1792,6 +1792,11 @@ export default {
     referralApplied: '🎉 Referral code applied: {{code}}',
     referralBothEarn: "You'll both earn reward points!",
     useDifferentNumber: 'Use a different number',
+    accessDenied: 'Access Denied',
+    accessDeniedDescription: "You don't have permission to view this page. Contact your administrator if you believe this is an error.",
+    backTo: 'Back to {{page}}',
+    home: 'Home',
+    dashboard: 'Dashboard',
   },
 
   // Member surface
@@ -2875,6 +2880,21 @@ export default {
       flaggedEvents: 'Flagged Events',
       recentActivity: 'Recent Activity',
       quickActions: 'Quick Actions',
+      economyHealth: 'Economy Health',
+      activeProfiles: 'Active Profiles',
+      coinInCirculation: 'Coin in Circulation',
+      totalRedemptions: 'Total Redemptions',
+      questCompletion: 'Quest Completion',
+      systemConfig: 'System Configuration',
+      levels: 'Levels',
+      questTemplates: 'Quest Templates',
+      economySummary: 'Economy Summary',
+      totalXpDistributed: 'Total XP distributed',
+      totalCoinEarned: 'Total Coin earned (lifetime)',
+      totalCoinSpent: 'Total Coin spent',
+      avgMemberLevel: 'Avg member level',
+      questsAssigned: 'Quests assigned',
+      badgesEarned: 'Badges earned',
     },
     rules: {
       description: 'Map actions to XP and points. Configure cooldowns and daily limits.',
@@ -3097,23 +3117,6 @@ export default {
       reasonPlaceholder: 'e.g. Compensation for system error',
       execute: 'Execute Operation',
     },
-    overview: {
-      economyHealth: 'Economy Health',
-      activeProfiles: 'Active Profiles',
-      coinInCirculation: 'Coin in Circulation',
-      totalRedemptions: 'Total Redemptions',
-      questCompletion: 'Quest Completion',
-      systemConfig: 'System Configuration',
-      levels: 'Levels',
-      questTemplates: 'Quest Templates',
-      economySummary: 'Economy Summary',
-      totalXpDistributed: 'Total XP distributed',
-      totalCoinEarned: 'Total Coin earned (lifetime)',
-      totalCoinSpent: 'Total Coin spent',
-      avgMemberLevel: 'Avg member level',
-      questsAssigned: 'Quests assigned',
-      badgesEarned: 'Badges earned',
-    },
     guardrails: {
       title: 'Economy Guardrails',
       description: 'These values drive package/shop XP & Coin calculations, caps, and safety rules. Changes take effect on the next event processed.',
@@ -3153,14 +3156,6 @@ export default {
     },
   },
 
-  // Auth
-  auth: {
-    accessDenied: 'Access Denied',
-    accessDeniedDescription: "You don't have permission to view this page. Contact your administrator if you believe this is an error.",
-    backTo: 'Back to {{page}}',
-    home: 'Home',
-    dashboard: 'Dashboard',
-  },
 
   // Trainer surface
   trainer: {

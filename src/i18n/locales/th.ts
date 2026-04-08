@@ -1792,6 +1792,11 @@ export default {
     referralApplied: '🎉 ใช้รหัสเชิญ: {{code}}',
     referralBothEarn: 'ทั้งคุณและเพื่อนจะได้รับคะแนนรางวัล!',
     useDifferentNumber: 'ใช้เบอร์อื่น',
+    accessDenied: 'ไม่มีสิทธิ์เข้าถึง',
+    accessDeniedDescription: 'คุณไม่มีสิทธิ์ดูหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเกิดข้อผิดพลาด',
+    backTo: 'กลับไป{{page}}',
+    home: 'หน้าแรก',
+    dashboard: 'แดชบอร์ด',
   },
 
   // Member surface
@@ -2822,7 +2827,7 @@ export default {
   gamification: {
     title: 'Gamification Studio',
     tabs: { overview: 'ภาพรวม', rules: 'กฎเกณฑ์', levels: 'ระดับ', challenges: 'ชาเลนจ์', badges: 'แบดจ์', rewards: 'รางวัล', trainers: 'ระดับเทรนเนอร์', risk: 'ความเสี่ยงและตรวจสอบ', quests: 'เควส', coupons: 'คูปอง', shopRules: 'กฎร้านค้า', guardrails: 'การ์ดเรล', operations: 'ปฏิบัติการ', prestige: 'เพรสทีจ', statusTiers: 'ระดับสถานะ' },
-    overview: { activeRules: 'กฎที่ใช้งาน', activeChallenges: 'ชาเลนจ์ที่ใช้งาน', totalBadges: 'แบดจ์ทั้งหมด', activeRewards: 'รางวัลที่ใช้งาน', xpDistributed: 'XP ที่แจก', flaggedEvents: 'เหตุการณ์ต้องสงสัย', recentActivity: 'กิจกรรมล่าสุด', quickActions: 'ทางลัด' },
+    overview: { activeRules: 'กฎที่ใช้งาน', activeChallenges: 'ชาเลนจ์ที่ใช้งาน', totalBadges: 'แบดจ์ทั้งหมด', activeRewards: 'รางวัลที่ใช้งาน', xpDistributed: 'XP ที่แจก', flaggedEvents: 'เหตุการณ์ต้องสงสัย', recentActivity: 'กิจกรรมล่าสุด', quickActions: 'ทางลัด', economyHealth: 'สุขภาพเศรษฐกิจ', activeProfiles: 'โปรไฟล์ที่ใช้งาน', coinInCirculation: 'Coin หมุนเวียน', totalRedemptions: 'การแลกทั้งหมด', questCompletion: 'ความสำเร็จเควส', systemConfig: 'การตั้งค่าระบบ', levels: 'เลเวล', questTemplates: 'เทมเพลตเควส', economySummary: 'สรุปเศรษฐกิจ', totalXpDistributed: 'XP แจกจ่ายทั้งหมด', totalCoinEarned: 'Coin ที่ได้รับทั้งหมด (ตลอดกาล)', totalCoinSpent: 'Coin ที่ใช้ทั้งหมด', avgMemberLevel: 'เลเวลเฉลี่ยสมาชิก', questsAssigned: 'เควสที่มอบหมาย', badgesEarned: 'ตราเกียรติยศที่ได้รับ' },
     rules: { description: 'กำหนด XP และคะแนนสำหรับแต่ละ action', addRule: 'เพิ่มกฎ', editRule: 'แก้ไขกฎ', noRules: 'ยังไม่มีกฎ', noRulesDesc: 'เพิ่มกฎแรกของคุณ', action: 'Action Key', label: 'ชื่อ', points: 'คะแนน', cooldown: 'Cooldown', maxDay: 'สูงสุด/วัน', deleteConfirm: 'กฎนี้จะถูกลบถาวร' },
     levels: { description: 'กำหนดระดับ XP สำหรับสมาชิก', addLevel: 'เพิ่มระดับ', editLevel: 'แก้ไขระดับ', noLevels: 'ยังไม่มีระดับ', noLevelsDesc: 'สร้างระดับสำหรับสมาชิก', color: 'สีแบดจ์', deleteConfirm: 'ระดับนี้จะถูกลบถาวร', levelNumber: 'ระดับ #', xpRequired: 'XP ที่ต้องการ' },
     challenges: { description: 'สร้างชาเลนจ์รายวัน รายสัปดาห์ หรือตามฤดูกาล', create: 'สร้างชาเลนจ์', noChallenges: 'ยังไม่มีชาเลนจ์', noChallengesDesc: 'สร้างชาเลนจ์แรกของคุณ', draft: 'แบบร่าง', ended: 'สิ้นสุด', daily: 'รายวัน', weekly: 'รายสัปดาห์', seasonal: 'ตามฤดูกาล', goalType: 'ประเภทเป้าหมาย', goalValue: 'จำนวนเป้าหมาย', goalActionKey: 'Action Key เป้าหมาย', goalActionKeyHint: 'เช่น check_in', rewardXp: 'รางวัล XP', rewardPoints: 'รางวัลคะแนน', rewardBadge: 'รางวัลแบดจ์', startDate: 'วันเริ่ม', endDate: 'วันสิ้นสุด', sectionBasic: 'ข้อมูลพื้นฐาน', sectionGoal: 'เป้าหมาย', sectionReward: 'รางวัล', sectionSchedule: 'กำหนดการ', goalTypeActionCount: 'จำนวนครั้ง', goalTypeXpThreshold: 'เกณฑ์ XP', goalTypeClassCount: 'จำนวนคลาส', goalTypeStreak: 'ต่อเนื่อง' },
@@ -2939,23 +2944,6 @@ export default {
       reasonPlaceholder: 'เช่น ชดเชยจากข้อผิดพลาดของระบบ',
       execute: 'ดำเนินการ',
     },
-    overview: {
-      economyHealth: 'สุขภาพเศรษฐกิจ',
-      activeProfiles: 'โปรไฟล์ที่ใช้งาน',
-      coinInCirculation: 'Coin หมุนเวียน',
-      totalRedemptions: 'การแลกทั้งหมด',
-      questCompletion: 'ความสำเร็จเควส',
-      systemConfig: 'การตั้งค่าระบบ',
-      levels: 'เลเวล',
-      questTemplates: 'เทมเพลตเควส',
-      economySummary: 'สรุปเศรษฐกิจ',
-      totalXpDistributed: 'XP แจกจ่ายทั้งหมด',
-      totalCoinEarned: 'Coin ที่ได้รับทั้งหมด (ตลอดกาล)',
-      totalCoinSpent: 'Coin ที่ใช้ทั้งหมด',
-      avgMemberLevel: 'เลเวลเฉลี่ยสมาชิก',
-      questsAssigned: 'เควสที่มอบหมาย',
-      badgesEarned: 'ตราเกียรติยศที่ได้รับ',
-    },
     guardrails: {
       title: 'กันชนเศรษฐกิจ',
       description: 'ค่าเหล่านี้ขับเคลื่อนการคำนวณ XP & Coin ของแพ็กเกจ/ร้านค้า การเปลี่ยนแปลงจะมีผลในอีเวนต์ถัดไป',
@@ -2995,14 +2983,6 @@ export default {
     },
   },
 
-  // Auth
-  auth: {
-    accessDenied: 'ไม่มีสิทธิ์เข้าถึง',
-    accessDeniedDescription: 'คุณไม่มีสิทธิ์ดูหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเกิดข้อผิดพลาด',
-    backTo: 'กลับไป{{page}}',
-    home: 'หน้าแรก',
-    dashboard: 'แดชบอร์ด',
-  },
 
   // Trainer surface
   trainer: {
