@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.approve-slip]
 verify_jwt = false
 
+[functions.sell-package]
+verify_jwt = false
+
 [functions.stripe-create-checkout]
 verify_jwt = false
 

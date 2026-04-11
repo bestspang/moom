@@ -164,12 +164,13 @@ Deno.serve(async (req) => {
 
     // 7. Create member_billing
     if (slip.member_id) {
-      await supabase.from('member_billing').insert({
+      const { error: mbErr } = await supabase.from('member_billing').insert({
         member_id: slip.member_id,
         transaction_id: tx.id,
         amount: amountGross,
         description: `Payment: ${pkg?.name_en || txNo}`,
       })
+      if (mbErr) throw mbErr
     }
 
     // 8. Create member_package entitlement if package + member exist
@@ -178,7 +179,7 @@ Deno.serve(async (req) => {
       const expiryDate = new Date(now)
       expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30))
 
-      await supabase.from('member_packages').insert({
+      const { error: mpErr } = await supabase.from('member_packages').insert({
         member_id: slip.member_id,
         package_id: resolvedPkgId,
         purchase_date: now.toISOString(),
@@ -191,6 +192,7 @@ Deno.serve(async (req) => {
         purchase_transaction_id: tx.id,
         package_name_snapshot: pkg.name_en || null,
       })
+      if (mpErr) throw mpErr
     }
 
     // 9. Update slip status
@@ -209,7 +211,7 @@ Deno.serve(async (req) => {
     if (updateErr) throw updateErr
 
     // 10. Activity log
-    await supabase.from('activity_log').insert({
+    const { error: alErr } = await supabase.from('activity_log').insert({
       event_type: 'transfer_slip.approved',
       activity: `Transfer slip approved. Transaction ${txNo} created. Amount: ${amountGross} THB. Member: ${memberName}`,
       entity_type: 'transfer_slip',
@@ -227,6 +229,7 @@ Deno.serve(async (req) => {
         package_name: pkg?.name_en,
       },
     })
+    if (alErr) throw alErr
 
     // 11. Fire gamification event for purchase (fire-and-forget)
     if (slip.member_id) {

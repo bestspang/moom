@@ -572,99 +572,60 @@ export const useAssignPackageToMember = () => {
 
   return useMutation({
     mutationFn: async (params: PurchasePackageParams) => {
-      const { memberId, memberName, pkg, paymentMethod, locationId, locationName, notes, promotionId, promotionDiscount = 0, couponWalletId, couponDiscount = 0, manualDiscount = 0 } = params;
+      const {
+        memberId,
+        pkg,
+        paymentMethod,
+        locationId,
+        notes,
+        promotionId,
+        couponWalletId,
+        manualDiscount = 0,
+      } = params;
 
-      const totalDiscount = Math.min(promotionDiscount + couponDiscount + manualDiscount, pkg.price);
-      const netPrice = pkg.price - totalDiscount;
+      // Client-generated idempotency key so retries after a transient network
+      // error don't create duplicate transactions / packages.
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `sell-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      // 1. Generate transaction number
-      const { data: txNo, error: txNoErr } = await supabase.rpc('next_transaction_number');
-      if (txNoErr) throw txNoErr;
-
-      // 2. Calculate VAT on net price
-      const vatRate = 0.07;
-      const amountGross = netPrice;
-      const amountExVat = Math.round((amountGross / (1 + vatRate)) * 100) / 100;
-      const amountVat = Math.round((amountGross - amountExVat) * 100) / 100;
-
-      // 3. Insert transaction
-      const { data: txn, error: txnErr } = await supabase
-        .from('transactions')
-        .insert({
-          transaction_id: txNo,
-          order_name: `Purchase: ${pkg.name_en}`,
-          member_id: memberId,
-          package_id: pkg.id,
-          type: pkg.type as any,
-          amount: amountGross,
-          amount_gross: pkg.price,
-          amount_ex_vat: amountExVat,
-          amount_vat: amountVat,
-          vat_rate: vatRate,
-          discount_amount: totalDiscount,
-          payment_method: paymentMethod as any,
-          status: 'paid' as any,
-          location_id: locationId || null,
-          source_type: 'pos',
-          package_name_snapshot: pkg.name_en,
-          sold_to_name: memberName,
-          notes: notes || null,
-          paid_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-      if (txnErr) throw txnErr;
-
-      // 4. Insert member_packages linked to transaction
-      const { error: mpErr } = await supabase
-        .from('member_packages')
-        .insert({
-          member_id: memberId,
-          package_id: pkg.id,
-          package_name_snapshot: pkg.name_en,
-          sessions_total: pkg.sessions,
-          sessions_remaining: pkg.sessions,
-          sessions_used: 0,
-          status: 'ready_to_use',
-          purchase_date: new Date().toISOString(),
-          purchase_transaction_id: txn.id,
-        });
-      if (mpErr) throw mpErr;
-
-      // 5. Insert member_billing record
-      await supabase.from('member_billing').insert({
-        member_id: memberId,
-        transaction_id: txn.id,
-        amount: amountGross,
-        description: `Purchase: ${pkg.name_en}`,
+      const { data, error } = await supabase.functions.invoke('sell-package', {
+        body: {
+          memberId,
+          packageId: pkg.id,
+          paymentMethod,
+          locationId: locationId || undefined,
+          notes: notes || undefined,
+          promotionId: promotionId || undefined,
+          couponWalletId: couponWalletId || undefined,
+          manualDiscount,
+          idempotencyKey,
+        },
       });
 
-      // 6. Record promotion redemption if used
-      if (promotionId && promotionDiscount > 0) {
-        await supabase.from('promotion_redemptions').insert({
-          promotion_id: promotionId,
-          member_id: memberId,
-          transaction_id: txn.id,
-          discount_amount: promotionDiscount,
-          gross_amount: pkg.price,
-          net_amount: netPrice,
-        });
-        // Try to increment usage_count on promotions
-        const { data: promo } = await supabase.from('promotions').select('usage_count').eq('id', promotionId).single();
-        if (promo) {
-          await supabase.from('promotions').update({ usage_count: (promo.usage_count || 0) + 1 }).eq('id', promotionId);
+      if (error) {
+        // supabase.functions.invoke surfaces non-2xx responses as an error.
+        // Try to pull a meaningful message from the response body when possible.
+        let message = error.message || 'Failed to sell package';
+        const ctx = (error as unknown as { context?: Response }).context;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          } catch {
+            /* ignore */
+          }
         }
+        throw new Error(message);
       }
 
-      // 7. Mark coupon as used if used
-      if (couponWalletId && couponDiscount > 0) {
-        await supabase
-          .from('coupon_wallet')
-          .update({ status: 'used', used_at: new Date().toISOString() })
-          .eq('id', couponWalletId);
+      const result = (data as { data?: { transaction_id?: string; transaction_no?: string } } | null)?.data;
+      if (!result?.transaction_id || !result?.transaction_no) {
+        throw new Error('sell-package returned no transaction');
       }
 
-      return { transactionNo: txNo, transactionId: txn.id };
+      return { transactionNo: result.transaction_no, transactionId: result.transaction_id };
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
