@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jq '.projects[\"/Users/best/Desktop/Vibes/moom\"].enabledMcpjsonServers = [\"supabase\",\"sequential-thinking\",\"github\",\"context7\"]' ~/.claude.json)",
+      "Bash(mv ~/.claude.json.tmp ~/.claude.json)",
+      "Bash(chmod 600 ~/.claude.json)"
+    ]
+  }
+}

@@ -10,6 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Local-only env files (MCP secrets, personal overrides) — see .env.example
+# Note: the repo-root .env IS committed (public anon key only, safe by design)
+.env.local
+.env.*.local
 *.local
 
 # Editor directories and files
