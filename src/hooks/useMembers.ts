@@ -131,8 +131,8 @@ export const useCreateMember = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberStats() });
       logActivity({
         event_type: 'member_created',
         activity: `Member ${data.first_name} ${data.last_name} created`,
@@ -160,9 +160,9 @@ export const useUpdateMember = () => {
       return result;
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['member', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.member(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberStats() });
       logActivity({
         event_type: 'member_updated',
         activity: `Member ${result.first_name} ${result.last_name} updated`,
@@ -184,8 +184,8 @@ export const useDeleteMember = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberStats() });
       logActivity({
         event_type: 'member_deleted',
         activity: `Member deleted`,
@@ -207,8 +207,8 @@ export const useBulkDeleteMembers = () => {
       }
     },
     onSuccess: (_, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberStats() });
       logActivity({
         event_type: 'member_bulk_deleted',
         activity: `${ids.length} members deleted in bulk`,
@@ -230,8 +230,8 @@ export const useBulkUpdateMemberStatus = () => {
       if (error) throw error;
     },
     onSuccess: (_, { ids, status }) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['member-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberStats() });
       logActivity({
         event_type: 'member_bulk_status_changed',
         activity: `${ids.length} members status changed to ${status}`,
@@ -246,7 +246,7 @@ export const useBulkUpdateMemberStatus = () => {
 export const useNextMemberId = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['next-member-id'],
+    queryKey: queryKeys.nextMemberId(),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase

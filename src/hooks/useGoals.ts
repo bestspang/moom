@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export type GoalType = 'revenue' | 'new_members' | 'retention' | 'checkins';
 
@@ -101,6 +102,11 @@ export function useCreateGoal() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['goals'] });
+      logActivity({
+        event_type: 'goal_created',
+        activity: 'Goal created',
+        entity_type: 'goal',
+      });
     },
     onError: () => {
       toast.error('Failed to create goal');
@@ -117,6 +123,11 @@ export function useDeleteGoal() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['goals'] });
+      logActivity({
+        event_type: 'goal_deleted',
+        activity: 'Goal deleted',
+        entity_type: 'goal',
+      });
     },
   });
 }

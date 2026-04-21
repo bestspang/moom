@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 interface CheckinQRToken {
   id: string;
@@ -76,6 +77,11 @@ export const useGenerateQRToken = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-qr-token'] });
+      logActivity({
+        event_type: 'checkin_qr_generated',
+        activity: 'Check-in QR token generated',
+        entity_type: 'checkin_qr_token',
+      });
     },
     onError: (error) => {
       toast.error('Failed to generate QR code');
@@ -134,9 +140,15 @@ export const useValidateQRToken = () => {
 
       return { token: tokenData, memberId: effectiveMemberId };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['active-qr-token'] });
       queryClient.invalidateQueries({ queryKey: ['check-ins'] });
+      logActivity({
+        event_type: 'checkin_qr_validated',
+        activity: 'Check-in via QR code successful',
+        entity_type: 'member_attendance',
+        member_id: data.memberId || undefined,
+      });
       toast.success('Check-in successful!');
     },
     onError: (error: Error) => {

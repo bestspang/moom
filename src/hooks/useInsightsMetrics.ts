@@ -53,6 +53,8 @@ export function useInsightsOverview() {
         supabase.from('member_packages').select('*', { count: 'exact', head: true }).in('status', ['active', 'ready_to_use']),
         supabase.from('member_packages').select('*', { count: 'exact', head: true }).eq('status', 'expired').gte('expiry_date', ninetyDaysAgo),
       ]);
+      if (activeRes.error) throw activeRes.error;
+      if (expiredRes.error) throw expiredRes.error;
       const activePkgs = activeRes.count || 0;
       const expiredPkgs = expiredRes.count || 0;
       const eligible = activePkgs + expiredPkgs || 1;
@@ -99,7 +101,8 @@ export function useInsightsOverview() {
       const rpv = totalCheckins > 0 ? Math.round(totalRevenue / totalCheckins) : 0;
 
       // Lead conversion
-      const { data: leadsData } = await supabase.from('leads').select('status');
+      const { data: leadsData, error: leadsError } = await supabase.from('leads').select('status');
+      if (leadsError) throw leadsError;
       const totalLeads = leadsData?.length || 1;
       const converted = leadsData?.filter(l => l.status === 'converted').length || 0;
       const leadConversionRate = Math.round((converted / totalLeads) * 100);

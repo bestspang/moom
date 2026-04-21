@@ -19,6 +19,7 @@ import { CheckInCelebration } from '../features/momentum/CheckInCelebration';
 import { StreakFlame } from '../features/momentum/StreakFlame';
 import { useValidateQRToken } from '@/hooks/useCheckinQR';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
+import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 
 type CameraState = 'ready' | 'scanning' | 'processing' | 'fallback';
 
@@ -320,10 +321,7 @@ export default function MemberCheckInPage() {
     <div className="flex flex-col h-[calc(100dvh-8.5rem)] overflow-hidden animate-in fade-in-0 duration-200">
 
       {/* ── Page header ── */}
-      <div className="px-4 pt-3 pb-1">
-        <h1 className="text-lg font-bold text-foreground">{t('member.checkinTitle')}</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">{t('member.checkinSubtitle')}</p>
-      </div>
+      <MobilePageHeader title={t('member.checkinTitle')} subtitle={t('member.checkinSubtitle')} />
 
       {/* ── Zone 1: Member QR (top) ── */}
       <div className="pt-1 pb-2">

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface GamificationLevel {
   id: string;
@@ -37,7 +38,11 @@ export const useCreateGamificationLevel = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-levels'] }); toast.success('Level created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      toast.success('Level created');
+      logActivity({ event_type: 'gamification_level_created', entity_type: 'gamification_level', entity_id: data?.id, metadata: { level_number: data?.level_number, name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -50,7 +55,11 @@ export const useUpdateGamificationLevel = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-levels'] }); toast.success('Level updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      toast.success('Level updated');
+      logActivity({ event_type: 'gamification_level_updated', entity_type: 'gamification_level', entity_id: data?.id, metadata: { level_number: data?.level_number, name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -62,7 +71,11 @@ export const useDeleteGamificationLevel = () => {
       const { error } = await supabase.from('gamification_levels').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-levels'] }); toast.success('Level deleted'); },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      toast.success('Level deleted');
+      logActivity({ event_type: 'gamification_level_deleted', entity_type: 'gamification_level', entity_id: variables, metadata: {} });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

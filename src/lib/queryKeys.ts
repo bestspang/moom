@@ -17,6 +17,7 @@ export const queryKeys = {
   members: (params?: object) => ['members', params] as const,
   member: (id: string) => ['member', id] as const,
   memberStats: () => ['member-stats'] as const,
+  nextMemberId: () => ['next-member-id'] as const,
   leads: (search?: string, status?: string) => ['leads', search, status] as const,
   dashboardStats: () => ['dashboard-stats'] as const,
   highRiskMembers: () => ['high-risk-members'] as const,
@@ -45,6 +46,10 @@ export const queryKeys = {
 
   // Finance
   transactions: () => ['transactions'] as const,
+  financeTransactions: (filters?: object) => ['finance-transactions', filters] as const,
+  transferSlips: (filters?: object) => ['transfer-slips', filters] as const,
+  transferSlipStats: () => ['transfer-slip-stats'] as const,
+  transferSlipDetail: (id: string) => ['transfer-slip-detail', id] as const,
 
   // Training / Workouts
   trainingTemplates: (search?: string, filter?: string) => ['training-templates', search, filter] as const,

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface QuestTemplate {
   id: string;
@@ -23,6 +25,8 @@ export interface QuestTemplate {
   updated_at: string;
 }
 
+export type CreateQuestTemplate = Omit<QuestTemplate, 'id' | 'created_at' | 'updated_at'>;
+
 export const useGamificationQuests = () =>
   useQuery({
     queryKey: ['gamification-quest-templates'],
@@ -40,12 +44,16 @@ export const useGamificationQuests = () =>
 export const useCreateQuestTemplate = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (t: Partial<QuestTemplate>) => {
-      const { data, error } = await supabase.from('quest_templates').insert([t as any]).select().single();
+    mutationFn: async (t: CreateQuestTemplate) => {
+      const { data, error } = await supabase.from('quest_templates').insert([t]).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] }); toast.success('Quest template created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      toast.success(i18n.t('toast.questTemplateCreated'));
+      logActivity({ event_type: 'quest_template_created', entity_type: 'quest_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -58,7 +66,11 @@ export const useUpdateQuestTemplate = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] }); toast.success('Quest template updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      toast.success(i18n.t('toast.questTemplateUpdated'));
+      logActivity({ event_type: 'quest_template_updated', entity_type: 'quest_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -70,7 +82,11 @@ export const useDeleteQuestTemplate = () => {
       const { error } = await supabase.from('quest_templates').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] }); toast.success('Quest template deleted'); },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      toast.success(i18n.t('toast.questTemplateDeleted'));
+      logActivity({ event_type: 'quest_template_deleted', entity_type: 'quest_template', entity_id: variables, metadata: {} });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface EconomyGuardrail {
   id: string;
@@ -52,11 +53,12 @@ export function useEconomyGuardrails() {
         flagged: false,
       }).then(({ error: auditErr }) => {
         if (auditErr) console.warn('[audit] guardrail log failed:', auditErr.message);
-      });
-    },
-    onSuccess: () => {
+     qc.invalidateQueries({ queryKey: ['economy-guardrails'] });
+     toast.success('Guardrail updated'); @@
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['economy-guardrails'] });
       toast.success('Guardrail updated');
+      logActivity({ event_type: 'economy_guardrail_updated', entity_type: 'economy_guardrail', entity_id: variables.id, metadata: { rule_code: variables.rule_code, rule_value: variables.rule_value } });
     },
     onError: (err: Error) => toast.error(err.message),
   });

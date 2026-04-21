@@ -114,6 +114,7 @@ export default function TrainerHomePage() {
                 title={cls.classes?.name ?? 'Class'}
                 subtitle={`${cls.start_time?.slice(0, 5)} – ${cls.end_time?.slice(0, 5)}${cls.rooms?.name ? ` · ${cls.rooms.name}` : ''}`}
                 meta={`${cls.checked_in ?? 0}/${cls.capacity ?? 0} ${t('trainer.checkedIn')}`}
+                onClick={() => navigate('/trainer/schedule')}
               />
             ))}
           </div>

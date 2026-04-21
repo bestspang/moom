@@ -245,129 +245,51 @@ Deno.serve(async (req) => {
     const memberName = `${member.first_name ?? ''} ${member.last_name ?? ''}`.trim()
     const memberContact = member.phone || member.email || null
 
-    // --- 1. Insert transaction ---
-    const { data: tx, error: txErr } = await supabase
-      .from('transactions')
-      .insert({
-        transaction_id: txNo,
-        order_name: `Purchase: ${pkg.name_en}`,
-        amount: netPrice,
-        amount_gross: netPrice,
-        amount_ex_vat: amountExVat,
-        amount_vat: amountVat,
-        vat_rate: VAT_RATE,
-        currency: 'THB',
-        type: pkg.type,
-        payment_method: paymentMethod,
-        status: 'paid',
-        paid_at: new Date().toISOString(),
-        member_id: memberId,
-        package_id: packageId,
-        package_name_snapshot: pkg.name_en,
-        location_id: locationId || null,
-        staff_id: staffRecord?.id || null,
-        notes: notes || null,
-        source_type: 'pos',
-        source_ref: memberId,
-        idempotency_key: idempotencyKey,
-        discount_amount: totalDiscount,
-        sold_to_name: memberName || null,
-        sold_to_contact: memberContact,
-      })
-      .select('id, transaction_id')
-      .single()
-    if (txErr) throw txErr
-
-    // --- 2. Insert member_packages as ACTIVE with activation + expiry dates ---
+    // --- Compute expiry dates ---
     const now = new Date()
     const daysToAdd = Number(pkg.expiration_days ?? pkg.term_days ?? 30)
     const expiryDate = new Date(now)
     expiryDate.setDate(expiryDate.getDate() + daysToAdd)
 
-    const { error: mpErr } = await supabase
-      .from('member_packages')
-      .insert({
-        member_id: memberId,
-        package_id: packageId,
-        package_name_snapshot: pkg.name_en,
-        purchase_date: now.toISOString(),
-        activation_date: now.toISOString(),
-        expiry_date: expiryDate.toISOString(),
-        sessions_total: pkg.sessions ?? null,
-        sessions_remaining: pkg.sessions ?? null,
-        sessions_used: 0,
-        status: 'active',
-        purchase_transaction_id: tx.id,
-      })
-    if (mpErr) throw mpErr
+    // --- ATOMIC write: all inserts in a single Postgres transaction via RPC ---
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc('process_package_sale', {
+      p_transaction_id:        null,          // generated inside RPC
+      p_transaction_no:        txNo,
+      p_order_name:            `Purchase: ${pkg.name_en}`,
+      p_amount:                netPrice,
+      p_amount_gross:          netPrice,
+      p_amount_ex_vat:         amountExVat,
+      p_amount_vat:            amountVat,
+      p_vat_rate:              VAT_RATE,
+      p_currency:              'THB',
+      p_type:                  pkg.type,
+      p_payment_method:        paymentMethod,
+      p_paid_at:               now.toISOString(),
+      p_member_id:             memberId,
+      p_package_id:            packageId,
+      p_package_name_snapshot: pkg.name_en,
+      p_location_id:           locationId || null,
+      p_staff_id:              staffRecord?.id || null,
+      p_notes:                 notes || null,
+      p_source_type:           'pos',
+      p_source_ref:            memberId,
+      p_idempotency_key:       idempotencyKey,
+      p_discount_amount:       totalDiscount,
+      p_sold_to_name:          memberName || null,
+      p_sold_to_contact:       memberContact,
+      p_sessions_total:        pkg.sessions ?? null,
+      p_activation_date:       now.toISOString(),
+      p_expiry_date:           expiryDate.toISOString(),
+      p_promotion_id:          promotion?.id || null,
+      p_promotion_usage_count: promotion ? (promotion.usage_count || 0) + 1 : null,
+      p_promotion_discount:    promoDiscount,
+      p_coupon_wallet_id:      couponWallet?.id || null,
+      p_coupon_discount:       couponDiscount,
+    })
+    if (rpcErr) throw rpcErr
 
-    // --- 3. Insert member_billing ---
-    const { error: mbErr } = await supabase
-      .from('member_billing')
-      .insert({
-        member_id: memberId,
-        transaction_id: tx.id,
-        amount: netPrice,
-        description: `Purchase: ${pkg.name_en}`,
-      })
-    if (mbErr) throw mbErr
-
-    // --- 4. Record promotion redemption + bump usage_count ---
-    if (promotion && promoDiscount > 0) {
-      const { error: prErr } = await supabase
-        .from('promotion_redemptions')
-        .insert({
-          promotion_id: promotion.id,
-          member_id: memberId,
-          transaction_id: tx.id,
-          discount_amount: promoDiscount,
-          gross_amount: originalPrice,
-          net_amount: netPrice,
-        })
-      if (prErr) throw prErr
-
-      const { error: bumpErr } = await supabase
-        .from('promotions')
-        .update({ usage_count: (promotion.usage_count || 0) + 1 })
-        .eq('id', promotion.id)
-      if (bumpErr) throw bumpErr
-    }
-
-    // --- 5. Mark coupon as used ---
-    if (couponWallet && couponDiscount > 0) {
-      const { error: cuErr } = await supabase
-        .from('coupon_wallet')
-        .update({ status: 'used', used_at: new Date().toISOString() })
-        .eq('id', couponWallet.id)
-      if (cuErr) throw cuErr
-    }
-
-    // --- 6. Activity log ---
-    const { error: alErr } = await supabase
-      .from('activity_log')
-      .insert({
-        event_type: 'package_sold',
-        activity: `Package "${pkg.name_en}" sold to ${memberName || memberId} (${txNo}). Amount: ${netPrice} THB.`,
-        entity_type: 'member',
-        entity_id: memberId,
-        staff_id: staffRecord?.id || null,
-        member_id: memberId,
-        new_value: {
-          transaction_id: tx.id,
-          transaction_no: txNo,
-          package_id: packageId,
-          package_name: pkg.name_en,
-          amount: netPrice,
-          amount_gross: netPrice,
-          amount_ex_vat: amountExVat,
-          amount_vat: amountVat,
-          discount_amount: totalDiscount,
-          payment_method: paymentMethod,
-          promotion_id: promotion?.id ?? null,
-          coupon_wallet_id: couponWallet?.id ?? null,
-        },
-      })
-    if (alErr) throw alErr
+    const transactionId = rpcResult?.transaction_id
+    const transactionNo = rpcResult?.transaction_no || txNo
 
     // --- 7. Fire-and-forget gamification event ---
     try {
@@ -381,10 +303,10 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           event_type: 'package_purchase',
           member_id: memberId,
-          idempotency_key: `purchase:${tx.id}`,
+          idempotency_key: `purchase:${transactionId}`,
           location_id: locationId || undefined,
           metadata: {
-            transaction_id: tx.id,
+            transaction_id: transactionId,
             package_id: packageId,
             package_name: pkg.name_en,
             amount: netPrice,
@@ -400,8 +322,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         data: {
-          transaction_id: tx.id,
-          transaction_no: txNo,
+          transaction_id: transactionId,
+          transaction_no: transactionNo,
           amount: netPrice,
           amount_ex_vat: amountExVat,
           amount_vat: amountVat,

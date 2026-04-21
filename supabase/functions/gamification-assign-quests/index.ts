@@ -57,6 +57,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "member_id required" }), { status: 400, headers: cors });
     }
 
+    // Ownership check: caller must be admin/manager or the member themselves
+    const { data: memberRow } = await db.from('members').select('user_id').eq('id', memberId).single();
+    const isOwnMember = memberRow?.user_id === user.id;
+    const { data: hasManagerAccess } = await db.rpc('has_min_access_level', {
+      _user_id: user.id,
+      _min_level: 'level_3_manager',
+    });
+    if (!isOwnMember && !hasManagerAccess) {
+      return new Response(JSON.stringify({ error: 'Forbidden: manager role or own member required' }), { status: 403, headers: cors });
+    }
+
     const now = new Date();
     const questCount = period === "daily" ? 3 : 4;
 

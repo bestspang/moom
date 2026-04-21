@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 type OwnerType = 'member' | 'lead' | 'staff';
 
@@ -90,10 +91,11 @@ export const useRequestLineLink = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['line-identity', variables.ownerType, variables.ownerId] });
-      toast.success('LINE link request sent');
+      toast.success(i18n.t('toast.lineLinkSent'));
+      logActivity({ event_type: 'line_link_requested', metadata: { owner_type: variables.ownerType, owner_id: variables.ownerId } });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to request LINE link');
+      toast.error(error.message || i18n.t('toast.lineLinkFailed'));
     },
   });
 };
@@ -114,10 +116,11 @@ export const useUnlinkLineIdentity = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['line-identity', variables.ownerType, variables.ownerId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
-      toast.success('LINE account unlinked');
+      toast.success(i18n.t('toast.lineUnlinked'));
+      logActivity({ event_type: 'line_unlinked', metadata: { owner_type: variables.ownerType, owner_id: variables.ownerId } });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to unlink LINE account');
+      toast.error(error.message || i18n.t('toast.lineUnlinkFailed'));
     },
   });
 };

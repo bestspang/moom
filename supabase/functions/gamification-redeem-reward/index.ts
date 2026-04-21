@@ -142,6 +142,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: cors });
     }
 
+    // Verify caller owns this member OR is staff
+    const { data: memberRow } = await db.from('members').select('user_id').eq('id', member_id).single()
+    const { data: hasStaffAccess } = await db.rpc('has_min_access_level', {
+      _user_id: user.id,
+      _min_level: 'level_1_minimum',
+    })
+    const isOwnMember = memberRow?.user_id === user.id
+    const isStaff = !!hasStaffAccess
+    if (!isOwnMember && !isStaff) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors })
+    }
+
     // 1) Idempotency check
     const { data: existingRedemption } = await db
       .from("reward_redemptions")
@@ -188,12 +200,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Level requirement not met", required: reward.level_required, current: profile.current_level }), { status: 400, headers: cors });
     }
 
-    // 7) Check points balance
+    // 7) Check points balance (pre-flight; actual atomic debit below)
     if (profile.available_points < reward.points_cost) {
       return new Response(JSON.stringify({ error: "Insufficient points", required: reward.points_cost, available: profile.available_points }), { status: 400, headers: cors });
     }
 
-    // 8) Check stock
+    // 8) Check stock (pre-flight; actual atomic decrement via UPDATE WHERE below)
     if (!reward.is_unlimited) {
       const available = (reward.stock || 0) - (reward.redeemed_count || 0);
       if (available <= 0) {
@@ -217,10 +229,51 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Daily redemption limit reached for this reward" }), { status: 400, headers: cors });
     }
 
-    // 10) Debit points
-    const newAvailable = profile.available_points - reward.points_cost;
+    // 10) ATOMIC points debit — UPDATE only if balance is still sufficient (prevents double-spending)
+    const { count: debitCount, error: debitErr } = await db
+      .from("member_gamification_profiles")
+      .update({ available_points: profile.available_points - reward.points_cost })
+      .eq("member_id", member_id)
+      .gte("available_points", reward.points_cost)
+      .select("member_id", { count: "exact", head: true });
 
-    // Create redemption
+    if (debitErr) throw debitErr;
+    if ((debitCount ?? 0) === 0) {
+      // Another concurrent request already spent these points
+      return new Response(JSON.stringify({ error: "Insufficient points (concurrent request)" }), { status: 400, headers: cors });
+    }
+
+    // ATOMIC stock decrement — only if stock > redeemed_count (unlimited rewards skip this)
+    if (!reward.is_unlimited) {
+      const { count: stockCount, error: stockErr } = await db
+        .from("gamification_rewards")
+        .update({ redeemed_count: (reward.redeemed_count || 0) + 1 })
+        .eq("id", reward_id)
+        .lt("redeemed_count", reward.stock || 0)
+        .select("id", { count: "exact", head: true });
+
+      if (stockErr) {
+        // Roll back point debit before returning error
+        await db.from("member_gamification_profiles").update({
+          available_points: profile.available_points,
+        }).eq("member_id", member_id);
+        throw stockErr;
+      }
+      if ((stockCount ?? 0) === 0) {
+        // Stock ran out between pre-flight check and this atomic update — roll back debit
+        await db.from("member_gamification_profiles").update({
+          available_points: profile.available_points,
+        }).eq("member_id", member_id);
+        return new Response(JSON.stringify({ error: "Reward out of stock (concurrent request)" }), { status: 400, headers: cors });
+      }
+    } else {
+      // Still track redeemed_count for unlimited rewards
+      await db.from("gamification_rewards").update({
+        redeemed_count: (reward.redeemed_count || 0) + 1,
+      }).eq("id", reward_id);
+    }
+
+    const newAvailable = profile.available_points - reward.points_cost;
     const { data: redemption, error: redemptionErr } = await db
       .from("reward_redemptions")
       .insert({
@@ -246,15 +299,7 @@ Deno.serve(async (req) => {
       metadata: { reward_id, reward_name: reward.name_en },
     });
 
-    // Update profile
-    await db.from("member_gamification_profiles").update({
-      available_points: newAvailable,
-    }).eq("member_id", member_id);
-
-    // Increment redeemed_count
-    await db.from("gamification_rewards").update({
-      redeemed_count: (reward.redeemed_count || 0) + 1,
-    }).eq("id", reward_id);
+    // NOTE: profile points and reward redeemed_count already updated atomically above (see step 10)
 
     // Audit
     await db.from("gamification_audit_log").insert({

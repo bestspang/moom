@@ -59,6 +59,16 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
+    // RBAC: require manager (level_3_manager) or above
+    const adminDb = createClient(supabaseUrl, serviceKey);
+    const { data: hasAccess } = await adminDb.rpc("has_min_access_level", {
+      _user_id: user.id,
+      _min_level: "level_3_manager",
+    });
+    if (!hasAccess) {
+      return new Response(JSON.stringify({ error: "Forbidden: manager or admin role required" }), { status: 403, headers: cors });
+    }
+
     // Experience DB credentials
     const experienceUrl = Deno.env.get("EXPERIENCE_SUPABASE_URL");
     const experienceKey = Deno.env.get("EXPERIENCE_SUPABASE_SERVICE_KEY");
@@ -70,8 +80,7 @@ Deno.serve(async (req) => {
       }), { status: 503, headers: cors });
     }
 
-    // Admin DB (source)
-    const adminDb = createClient(supabaseUrl, serviceKey);
+    // Admin DB (source) — already initialized above for RBAC check
     // Experience DB (target)
     const expDb = createClient(experienceUrl, experienceKey);
 

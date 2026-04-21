@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Package = Tables<'packages'>;
 type PackageInsert = TablesInsert<'packages'>;
@@ -13,7 +14,7 @@ type PackageUpdate = TablesUpdate<'packages'>;
 export const usePackages = (status?: string, search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['packages', status, search],
+    queryKey: queryKeys.packages(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('packages').select('*');
@@ -37,7 +38,7 @@ export const usePackages = (status?: string, search?: string) => {
 export const usePackageStats = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['package-stats'],
+    queryKey: queryKeys.packageStats(),
     enabled: !!user,
     queryFn: async () => {
       const statuses = ['on_sale', 'scheduled', 'drafts', 'archive'] as const;
@@ -64,7 +65,7 @@ export const usePackageStats = () => {
 export const usePackage = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['packages', id],
+    queryKey: queryKeys.package(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -94,8 +95,8 @@ export const useCreatePackage = () => {
       return newPackage;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'package_created',
         activity: `Package "${data.name_en}" created`,
@@ -126,9 +127,9 @@ export const useUpdatePackage = () => {
       return updated;
     },
     onSuccess: (updated, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['packages', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.package(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'package_updated',
         activity: `Package "${updated.name_en}" updated`,
@@ -158,8 +159,8 @@ export const useDeletePackage = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'package_deleted',
         activity: `Package deleted`,
@@ -188,8 +189,8 @@ export const useArchivePackage = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'package_archived',
         activity: `Package archived`,
@@ -217,8 +218,8 @@ export const useBulkUpdatePackageStatus = () => {
       if (error) throw error;
     },
     onSuccess: (_, { ids, status }) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'packages_bulk_status',
         activity: `${ids.length} packages status changed to ${status}`,
@@ -238,8 +239,8 @@ export const useBulkDeletePackages = () => {
       if (error) throw error;
     },
     onSuccess: (_, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'packages_bulk_deleted',
         activity: `${ids.length} packages deleted`,
@@ -265,8 +266,8 @@ export const useBulkDuplicatePackages = () => {
       if (error) throw error;
     },
     onSuccess: (_, pkgs) => {
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageStats() });
       logActivity({
         event_type: 'packages_bulk_duplicated',
         activity: `${pkgs.length} packages duplicated`,

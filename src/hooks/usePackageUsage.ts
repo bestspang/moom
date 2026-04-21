@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 // Types based on database schema
 type UsageType = 'checkin' | 'booking' | 'pt_session' | 'adjustment';
@@ -144,9 +145,16 @@ export const useRecordUsage = () => {
 
       return ledgerEntry;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      logActivity({
+        event_type: 'package_usage_recorded',
+        activity: `Package usage recorded: ${variables.usageType} (${variables.deltaSessions} sessions)`,
+        entity_type: 'member_package',
+        entity_id: variables.memberPackageId,
+        new_value: { usageType: variables.usageType, deltaSessions: variables.deltaSessions },
+      });
       toast.success(i18n.t('toast.usageRecorded'));
     },
     onError: (error: Error) => {
@@ -215,9 +223,16 @@ export const useRefundUsage = () => {
 
       return ledgerEntry;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      logActivity({
+        event_type: 'package_sessions_refunded',
+        activity: `Package sessions refunded: ${variables.sessions} sessions`,
+        entity_type: 'member_package',
+        entity_id: variables.memberPackageId,
+        new_value: { sessions: variables.sessions, note: variables.note },
+      });
       toast.success(i18n.t('toast.sessionsRefunded'));
     },
     onError: (error) => {
@@ -282,9 +297,16 @@ export const useAdjustBalance = () => {
 
       return ledgerEntry;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
       queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      logActivity({
+        event_type: 'package_balance_adjusted',
+        activity: `Package balance adjusted to ${variables.newBalance} sessions`,
+        entity_type: 'member_package',
+        entity_id: variables.memberPackageId,
+        new_value: { newBalance: variables.newBalance, note: variables.note },
+      });
       toast.success(i18n.t('toast.balanceAdjusted'));
     },
     onError: (error) => {

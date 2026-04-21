@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface AiSuggestion {
   id: string;
@@ -57,8 +58,14 @@ export function useApproveSuggestion() {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      logActivity({
+        event_type: 'ai_suggestion_approved',
+        activity: 'AI suggestion approved',
+        entity_type: 'ai_suggestion',
+        entity_id: id,
+      });
       toast({ title: t('ai.suggestionApproved') });
     },
     onError: () => {
@@ -80,8 +87,14 @@ export function useRejectSuggestion() {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      logActivity({
+        event_type: 'ai_suggestion_rejected',
+        activity: 'AI suggestion rejected',
+        entity_type: 'ai_suggestion',
+        entity_id: id,
+      });
       toast({ title: t('ai.suggestionRejected') });
     },
     onError: () => {
@@ -106,8 +119,14 @@ export function useApplySuggestion() {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      logActivity({
+        event_type: 'ai_suggestion_applied',
+        activity: 'AI suggestion applied',
+        entity_type: 'ai_suggestion',
+        entity_id: id,
+      });
       toast({ title: t('ai.suggestionApplied') });
     },
     onError: () => {

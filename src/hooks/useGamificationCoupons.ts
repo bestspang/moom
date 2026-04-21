@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface CouponTemplate {
   id: string;
@@ -18,6 +20,8 @@ export interface CouponTemplate {
   updated_at: string;
 }
 
+export type CreateCouponTemplate = Omit<CouponTemplate, 'id' | 'created_at' | 'updated_at'>;
+
 export const useGamificationCoupons = () =>
   useQuery({
     queryKey: ['gamification-coupon-templates'],
@@ -34,12 +38,16 @@ export const useGamificationCoupons = () =>
 export const useCreateCouponTemplate = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (t: Partial<CouponTemplate>) => {
-      const { data, error } = await supabase.from('coupon_templates').insert([t as any]).select().single();
+    mutationFn: async (t: CreateCouponTemplate) => {
+      const { data, error } = await supabase.from('coupon_templates').insert([t]).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] }); toast.success('Coupon template created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      toast.success(i18n.t('toast.couponTemplateCreated'));
+      logActivity({ event_type: 'coupon_template_created', entity_type: 'coupon_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -52,7 +60,11 @@ export const useUpdateCouponTemplate = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] }); toast.success('Coupon template updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      toast.success(i18n.t('toast.couponTemplateUpdated'));
+      logActivity({ event_type: 'coupon_template_updated', entity_type: 'coupon_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -64,7 +76,11 @@ export const useDeleteCouponTemplate = () => {
       const { error } = await supabase.from('coupon_templates').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] }); toast.success('Coupon template deleted'); },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      toast.success(i18n.t('toast.couponTemplateDeleted'));
+      logActivity({ event_type: 'coupon_template_deleted', entity_type: 'coupon_template', entity_id: variables, metadata: {} });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

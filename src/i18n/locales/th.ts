@@ -2841,6 +2841,22 @@ export default {
     expenseCreateFailed: 'ไม่สามารถบันทึกค่าใช้จ่าย',
     expenseDeleted: 'ลบค่าใช้จ่ายแล้ว',
     expenseDeleteFailed: 'ไม่สามารถลบค่าใช้จ่าย',
+
+    // Gamification
+    couponTemplateCreated: 'สร้างเทมเพลตคูปองแล้ว',
+    couponTemplateUpdated: 'อัปเดตเทมเพลตคูปองแล้ว',
+    couponTemplateDeleted: 'ลบเทมเพลตคูปองแล้ว',
+    rewardCreated: 'สร้างรางวัลแล้ว',
+    rewardUpdated: 'อัปเดตรางวัลแล้ว',
+    rewardDeleted: 'ลบรางวัลแล้ว',
+    questTemplateCreated: 'สร้างเทมเพลตเควสแล้ว',
+    questTemplateUpdated: 'อัปเดตเทมเพลตเควสแล้ว',
+    questTemplateDeleted: 'ลบเทมเพลตเควสแล้ว',
+
+    // Promotions
+    packagesUpdateFailed: 'ไม่สามารถอัปเดตแพ็กเกจ',
+    packageAdded: 'เพิ่มแพ็กเกจในโปรโมชั่นแล้ว',
+    packageRemoved: 'ลบแพ็กเกจออกจากโปรโมชั่นแล้ว',
   },
   communication: {
     logged: 'บันทึกการสื่อสารแล้ว',

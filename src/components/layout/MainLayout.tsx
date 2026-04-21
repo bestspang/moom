@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { cn } from '@/lib/utils';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 export const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -37,7 +38,9 @@ export const MainLayout = () => {
           key={location.pathname}
           className="p-3 md:p-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
         >
-          <Outlet />
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>

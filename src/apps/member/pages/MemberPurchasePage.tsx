@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { QueryError } from '@/apps/shared/components/QueryError';
 import { Button } from '@/components/ui/button';
@@ -47,29 +48,32 @@ export default function MemberPurchasePage() {
     }
   };
 
-  const BackButton = () => (
-    <button onClick={() => step === 'payment' ? setStep('review') : navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+  const backAction = (
+    <button
+      onClick={() => step === 'payment' ? setStep('review') : navigate(-1)}
+      className="flex items-center gap-1 text-sm text-muted-foreground"
+    >
       <ArrowLeft className="h-4 w-4" /> {t('common.back')}
     </button>
   );
 
   if (isLoading) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.packages')} action={backAction} />
       <Section><Skeleton className="h-64 rounded-lg" /></Section>
     </div>
   );
 
   if (isError) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.packages')} action={backAction} />
       <QueryError onRetry={() => refetch()} />
     </div>
   );
 
   if (!pkg) return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.packages')} action={backAction} />
       <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.packageNotFound')}</p></Section>
     </div>
   );
@@ -92,7 +96,7 @@ export default function MemberPurchasePage() {
 
   return (
     <div className="animate-in fade-in-0 duration-200">
-      <div className="px-4 pt-12 pb-2"><BackButton /></div>
+      <MobilePageHeader title={t('member.packages')} action={backAction} />
 
       {/* Step indicator */}
       <div className="px-4 mb-4 flex items-center gap-2">

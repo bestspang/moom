@@ -15,6 +15,23 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: dynamicCors });
   }
 
+  // Auth: only allow requests with a valid CRON_SECRET or service-role key
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const authHeader = req.headers.get('Authorization')
+  const token = authHeader?.replace('Bearer ', '')
+  const xCronSecret = req.headers.get('x-cron-secret')
+
+  const isValidCron = cronSecret && (
+    authHeader === `Bearer ${cronSecret}` ||
+    xCronSecret === cronSecret
+  )
+  const isServiceRole = serviceRoleKey && token === serviceRoleKey
+
+  if (!isValidCron && !isServiceRole) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: dynamicCors })
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -72,27 +89,37 @@ Deno.serve(async (req) => {
       });
     });
 
-    // 3. Members inactive for 14+ days
-    const { data: activeMembers } = await supabase
-      .from('members')
-      .select('id, first_name, last_name')
-      .eq('status', 'active');
+    // 3. Members inactive for 14+ days — paginate in batches of 100
+    const BATCH_SIZE = 100;
+    let memberOffset = 0;
+    let hasMoreMembers = true;
+    const inactiveNotifications: typeof notifications = [];
 
-    if (activeMembers && activeMembers.length > 0) {
+    while (hasMoreMembers) {
+      const { data: activeMembers } = await supabase
+        .from('members')
+        .select('id, first_name, last_name')
+        .eq('status', 'active')
+        .range(memberOffset, memberOffset + BATCH_SIZE - 1);
+
+      if (!activeMembers || activeMembers.length === 0) {
+        hasMoreMembers = false;
+        break;
+      }
+
       const memberIds = activeMembers.map((m: any) => m.id);
 
-      // Get last check-in for each
       const { data: recentCheckins } = await supabase
         .from('member_attendance')
         .select('member_id, check_in_time')
-        .in('member_id', memberIds.slice(0, 500))
+        .in('member_id', memberIds)
         .gte('check_in_time', fourteenDaysAgo);
 
       const activeSet = new Set((recentCheckins || []).map((c: any) => c.member_id));
 
       activeMembers.forEach((member: any) => {
         if (!activeSet.has(member.id)) {
-          notifications.push({
+          inactiveNotifications.push({
             title: '🔴 Inactive member',
             message: `${member.first_name} ${member.last_name} hasn't visited in 14+ days`,
             type: 'member_inactive',
@@ -101,7 +128,12 @@ Deno.serve(async (req) => {
           });
         }
       });
+
+      memberOffset += BATCH_SIZE;
+      if (activeMembers.length < BATCH_SIZE) hasMoreMembers = false;
     }
+
+    notifications.push(...inactiveNotifications);
 
     // 4. Pending transfer slips
     const { data: pendingSlips } = await supabase

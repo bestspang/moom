@@ -431,6 +431,18 @@ Deno.serve(async (req) => {
 
     const { member_id, location_id } = identity;
 
+    // Verify caller owns this member OR is staff (using has_min_access_level RPC — profiles table does not exist)
+    const { data: memberRow } = await db.from('members').select('user_id').eq('id', member_id).single()
+    const { data: hasStaffAccess } = await db.rpc('has_min_access_level', {
+      _user_id: user.id,
+      _min_level: 'level_1_minimum',
+    })
+    const isOwnMember = memberRow?.user_id === user.id
+    const isStaff = !!hasStaffAccess
+    if (!isOwnMember && !isStaff) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors })
+    }
+
     // 1) IDEMPOTENCY CHECK
     const { data: existing } = await db.from("xp_ledger").select("id").eq("idempotency_key", idempotency_key).maybeSingle();
     if (existing) {

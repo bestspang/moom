@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
+import { logActivity } from '@/lib/activityLogger';
 
 type NotificationType = Database['public']['Enums']['notification_type'];
 
@@ -111,10 +112,16 @@ export const useMarkAsRead = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-recent'] });
+      logActivity({
+        event_type: 'notification_read',
+        activity: 'Notification marked as read',
+        entity_type: 'notification',
+        entity_id: id,
+      });
     },
   });
 };
@@ -140,6 +147,11 @@ export const useMarkAllAsRead = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-recent'] });
+      logActivity({
+        event_type: 'notifications_all_read',
+        activity: 'All notifications marked as read',
+        entity_type: 'notification',
+      });
       toast.success(t('notifications.allMarkedRead'));
     },
     onError: (error) => {

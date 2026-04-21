@@ -2866,6 +2866,22 @@ export default {
     expenseCreateFailed: 'Failed to record expense',
     expenseDeleted: 'Expense deleted',
     expenseDeleteFailed: 'Failed to delete expense',
+
+    // Gamification
+    couponTemplateCreated: 'Coupon template created',
+    couponTemplateUpdated: 'Coupon template updated',
+    couponTemplateDeleted: 'Coupon template deleted',
+    rewardCreated: 'Reward created',
+    rewardUpdated: 'Reward updated',
+    rewardDeleted: 'Reward deleted',
+    questTemplateCreated: 'Quest template created',
+    questTemplateUpdated: 'Quest template updated',
+    questTemplateDeleted: 'Quest template deleted',
+
+    // Promotions
+    packagesUpdateFailed: 'Failed to update packages',
+    packageAdded: 'Package added to promotion',
+    packageRemoved: 'Package removed from promotion',
   },
 
   // Communication

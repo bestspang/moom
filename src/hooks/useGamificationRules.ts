@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface GamificationRule {
   id: string;
@@ -39,7 +40,11 @@ export const useCreateGamificationRule = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-rules'] }); toast.success('Rule created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      toast.success('Rule created');
+      logActivity({ event_type: 'gamification_rule_created', entity_type: 'gamification_rule', entity_id: data?.id, metadata: { action_key: data?.action_key } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -52,7 +57,11 @@ export const useUpdateGamificationRule = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-rules'] }); toast.success('Rule updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      toast.success('Rule updated');
+      logActivity({ event_type: 'gamification_rule_updated', entity_type: 'gamification_rule', entity_id: data?.id, metadata: { action_key: data?.action_key } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -64,7 +73,11 @@ export const useDeleteGamificationRule = () => {
       const { error } = await supabase.from('gamification_rules').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-rules'] }); toast.success('Rule deleted'); },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      toast.success('Rule deleted');
+      logActivity({ event_type: 'gamification_rule_deleted', entity_type: 'gamification_rule', entity_id: variables, metadata: {} });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

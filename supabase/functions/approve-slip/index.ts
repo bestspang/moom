@@ -129,107 +129,36 @@ Deno.serve(async (req) => {
 
     const memberContact = slip.member?.phone || slip.member_phone_text || slip.member?.email || ''
 
-    // 6. Create finance transaction
-    const { data: tx, error: txErr } = await supabase
-      .from('transactions')
-      .insert({
-        transaction_id: txNo,
-        order_name: pkg?.name_en || 'Transfer Slip Payment',
-        amount: amountGross,
-        amount_gross: amountGross,
-        amount_ex_vat: amountExVat,
-        amount_vat: amountVat,
-        vat_rate: VAT_RATE,
-        currency: 'THB',
-        type: pkg?.type || null,
-        payment_method: slip.payment_method || 'bank_transfer',
-        status: 'paid',
-        paid_at: new Date().toISOString(),
-        member_id: slip.member_id || null,
-        package_id: resolvedPkgId || null,
-        package_name_snapshot: pkg?.name_en || null,
-        location_id: slip.location_id || null,
-        staff_id: staffRecord?.id || null,
-        notes: note || null,
-        source_type: 'transfer_slip',
-        source_ref: slipId,
-        idempotency_key: idempotencyKey,
-        sold_to_name: memberName || null,
-        sold_to_contact: memberContact || null,
-      })
-      .select()
-      .single()
+    const now = new Date()
+    const expiryDate = pkg ? new Date(now) : null
+    if (expiryDate && pkg) expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30))
 
-    if (txErr) throw txErr
-
-    // 7. Create member_billing
-    if (slip.member_id) {
-      const { error: mbErr } = await supabase.from('member_billing').insert({
-        member_id: slip.member_id,
-        transaction_id: tx.id,
-        amount: amountGross,
-        description: `Payment: ${pkg?.name_en || txNo}`,
-      })
-      if (mbErr) throw mbErr
-    }
-
-    // 8. Create member_package entitlement if package + member exist
-    if (resolvedPkgId && slip.member_id && pkg) {
-      const now = new Date()
-      const expiryDate = new Date(now)
-      expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30))
-
-      const { error: mpErr } = await supabase.from('member_packages').insert({
-        member_id: slip.member_id,
-        package_id: resolvedPkgId,
-        purchase_date: now.toISOString(),
-        activation_date: now.toISOString(),
-        expiry_date: expiryDate.toISOString(),
-        sessions_remaining: pkg.sessions || null,
-        sessions_used: 0,
-        sessions_total: pkg.sessions || null,
-        status: 'active',
-        purchase_transaction_id: tx.id,
-        package_name_snapshot: pkg.name_en || null,
-      })
-      if (mpErr) throw mpErr
-    }
-
-    // 9. Update slip status
-    const { error: updateErr } = await supabase
-      .from('transfer_slips')
-      .update({
-        status: 'approved',
-        reviewed_at: new Date().toISOString(),
-        reviewer_staff_id: staffRecord?.id || null,
-        review_note: note || null,
-        linked_transaction_id: tx.id,
-        package_id: resolvedPkgId || slip.package_id,
-      })
-      .eq('id', slipId)
-
-    if (updateErr) throw updateErr
-
-    // 10. Activity log
-    const { error: alErr } = await supabase.from('activity_log').insert({
-      event_type: 'transfer_slip.approved',
-      activity: `Transfer slip approved. Transaction ${txNo} created. Amount: ${amountGross} THB. Member: ${memberName}`,
-      entity_type: 'transfer_slip',
-      entity_id: slipId,
-      staff_id: staffRecord?.id || null,
-      member_id: slip.member_id || null,
-      new_value: {
-        transaction_id: tx.id,
-        transaction_no: txNo,
-        status: 'approved',
-        amount: amountGross,
-        amount_ex_vat: amountExVat,
-        amount_vat: amountVat,
-        package_id: resolvedPkgId,
-        package_name: pkg?.name_en,
-      },
+    // 6-10. ATOMIC write: all inserts/updates in a single Postgres transaction via RPC
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc('process_slip_approval', {
+      p_slip_id:                slipId,
+      p_transaction_no:         txNo,
+      p_amount_gross:           amountGross,
+      p_amount_ex_vat:          amountExVat,
+      p_amount_vat:             amountVat,
+      p_vat_rate:               VAT_RATE,
+      p_member_id:              slip.member_id || null,
+      p_package_id:             resolvedPkgId || null,
+      p_package_name_snapshot:  pkg?.name_en || null,
+      p_package_type:           pkg?.type || null,
+      p_location_id:            slip.location_id || null,
+      p_staff_id:               staffRecord?.id || null,
+      p_note:                   note || null,
+      p_idempotency_key:        idempotencyKey,
+      p_payment_method:         slip.payment_method || 'bank_transfer',
+      p_sold_to_name:           memberName || null,
+      p_sold_to_contact:        memberContact || null,
+      p_sessions_total:         pkg?.sessions || null,
+      p_activation_date:        now.toISOString(),
+      p_expiry_date:            expiryDate?.toISOString() || null,
     })
-    if (alErr) throw alErr
+    if (rpcErr) throw rpcErr
+
+    const tx = rpcResult
 
     // 11. Fire gamification event for purchase (fire-and-forget)
     if (slip.member_id) {
@@ -244,10 +173,10 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             event_type: 'package_purchase',
             member_id: slip.member_id,
-            idempotency_key: `purchase:${tx.id}`,
+            idempotency_key: `purchase:${tx?.transaction_id}`,
             location_id: slip.location_id || undefined,
             metadata: {
-              transaction_id: tx.id,
+              transaction_id: tx?.transaction_id,
               package_id: resolvedPkgId,
               package_name: pkg?.name_en,
               amount: amountGross,

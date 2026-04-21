@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 interface LineUser {
   id: string;
@@ -174,10 +175,17 @@ export const useLinkLineAccount = () => {
       if (error) throw error;
       return data as LineUser;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
       queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      logActivity({
+        event_type: 'line_account_linked',
+        activity: `LINE account linked to member`,
+        entity_type: 'member',
+        entity_id: variables.memberId,
+        member_id: variables.memberId,
+      });
       toast.success(i18n.t('toast.lineLinked'));
     },
     onError: (error: Error) => {
@@ -207,6 +215,13 @@ export const useUnlinkLineAccount = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      logActivity({
+        event_type: 'line_account_unlinked',
+        activity: `LINE account unlinked from member`,
+        entity_type: 'member',
+        entity_id: variables.memberId,
+        member_id: variables.memberId,
+      });
       toast.success(i18n.t('toast.lineUnlinked'));
     },
     onError: (error) => {
@@ -238,9 +253,11 @@ export const useUpdateLineLastLogin = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
-    },
-    onError: (error) => {
-      console.error('Update LINE last login error:', error);
+      logActivity({
+        event_type: 'line_last_login_updated',
+        activity: `LINE user last login updated`,
+        entity_type: 'line_user',
+      });
     },
   });
 };
@@ -276,6 +293,11 @@ export const useUpdateLineProfile = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
       queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      logActivity({
+        event_type: 'line_profile_updated',
+        activity: `LINE user profile updated`,
+        entity_type: 'line_user',
+      });
     },
     onError: (error) => {
       console.error('Update LINE profile error:', error);

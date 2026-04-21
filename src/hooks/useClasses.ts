@@ -214,8 +214,8 @@ export const useCreateClass = () => {
       return newClass;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       logActivity({
         event_type: 'class_created',
         activity: `Class "${data.name}" created`,
@@ -247,8 +247,8 @@ export const useUpdateClass = () => {
       return { updated, oldData };
     },
     onSuccess: ({ updated, oldData }, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       queryClient.invalidateQueries({ queryKey: ['class-performance'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       logActivity({
@@ -281,8 +281,8 @@ export const useDeleteClass = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       logActivity({
         event_type: 'class_deleted',
         activity: `Class deleted`,
@@ -310,8 +310,8 @@ export const useBulkUpdateClassStatus = () => {
       if (error) throw error;
     },
     onSuccess: (_, { ids, status }) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       logActivity({
         event_type: 'classes_bulk_status',
         activity: `${ids.length} classes status changed to ${status}`,
@@ -331,8 +331,8 @@ export const useBulkDeleteClasses = () => {
       if (error) throw error;
     },
     onSuccess: (_, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       logActivity({
         event_type: 'classes_bulk_deleted',
         activity: `${ids.length} classes deleted`,
@@ -358,8 +358,8 @@ export const useBulkDuplicateClasses = () => {
       if (error) throw error;
     },
     onSuccess: (_, cls) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['class-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
       logActivity({
         event_type: 'classes_bulk_duplicated',
         activity: `${cls.length} classes duplicated`,

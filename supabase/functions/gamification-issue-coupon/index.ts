@@ -55,6 +55,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing member_id or coupon_template_id" }), { status: 400, headers: cors });
     }
 
+    // Ownership check: only managers/admins (or internal service calls) may issue coupons
+    const { data: hasManagerAccess } = await db.rpc('has_min_access_level', {
+      _user_id: user.id,
+      _min_level: 'level_3_manager',
+    });
+    if (!hasManagerAccess) {
+      return new Response(JSON.stringify({ error: 'Forbidden: manager or admin role required to issue coupons' }), { status: 403, headers: cors });
+    }
+
     // Get template
     const { data: template } = await db
       .from("coupon_templates")

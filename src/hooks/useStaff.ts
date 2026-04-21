@@ -53,6 +53,11 @@ export const useStaffStats = () => {
         supabase.from('staff').select('*', { count: 'exact', head: true }).eq('status', 'terminated'),
       ]);
 
+      if (activeRes.error) throw activeRes.error;
+      if (pendingRes.error) throw pendingRes.error;
+      if (inactiveRes.error) throw inactiveRes.error;
+      if (terminatedRes.error) throw terminatedRes.error;
+
       return {
         active: activeRes.count ?? 0,
         pending: pendingRes.count ?? 0,

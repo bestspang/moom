@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Transaction = Tables<'transactions'>;
 
@@ -20,7 +21,7 @@ export const useFinanceTransactions = (filters: FinanceFilters) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['finance-transactions', filters],
+    queryKey: queryKeys.financeTransactions(filters),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -103,9 +104,9 @@ export const useUpdateTransactionStatus = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
       logActivity({
         event_type: 'transaction_status_updated',
         activity: `Transaction ${data.transaction_id} status changed to ${variables.status}`,

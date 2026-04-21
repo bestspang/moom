@@ -25,6 +25,11 @@ async function fetchEconomyStats() {
     supabase.from('badge_earnings').select('id', { count: 'exact' }),
   ]);
 
+  if (profilesRes.error) throw profilesRes.error;
+  if (redemptionsRes.error) throw redemptionsRes.error;
+  if (questInstancesRes.error) throw questInstancesRes.error;
+  if (badgeEarningsRes.error) throw badgeEarningsRes.error;
+
   const profiles = profilesRes.data ?? [];
   const totalMembers = profilesRes.count ?? 0;
   const totalCoinInCirculation = profiles.reduce((s, p) => s + (p.available_points ?? 0), 0);

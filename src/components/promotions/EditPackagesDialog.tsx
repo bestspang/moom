@@ -83,7 +83,7 @@ export const EditPackagesDialog = ({
       await Promise.all(ops);
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to update packages');
+      toast.error(e.message || t('toast.packagesUpdateFailed'));
     }
   };
 

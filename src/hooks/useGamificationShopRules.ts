@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface ShopRewardRule {
   id: string;
@@ -40,7 +41,11 @@ export const useCreateShopRule = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] }); toast.success('Shop rule created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      toast.success('Shop rule created');
+      logActivity({ event_type: 'shop_reward_rule_created', entity_type: 'shop_reward_rule', entity_id: data?.id, metadata: { order_type: data?.order_type } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -53,7 +58,11 @@ export const useUpdateShopRule = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] }); toast.success('Shop rule updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      toast.success('Shop rule updated');
+      logActivity({ event_type: 'shop_reward_rule_updated', entity_type: 'shop_reward_rule', entity_id: data?.id, metadata: { order_type: data?.order_type } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -65,7 +74,11 @@ export const useDeleteShopRule = () => {
       const { error } = await supabase.from('shop_reward_rules').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] }); toast.success('Shop rule deleted'); },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      toast.success('Shop rule deleted');
+      logActivity({ event_type: 'shop_reward_rule_deleted', entity_type: 'shop_reward_rule', entity_id: variables, metadata: {} });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

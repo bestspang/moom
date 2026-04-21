@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import type { Json } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { logActivity } from '@/lib/activityLogger';
 
 // Types based on database schema
 type FlagScope = 'global' | 'location' | 'user';
@@ -112,10 +113,17 @@ export const useToggleFeatureFlag = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
+      logActivity({
+        event_type: 'feature_flag_toggled',
+        activity: `Feature flag ${variables.id} set to ${variables.enabled}`,
+        entity_type: 'feature_flag',
+        entity_id: variables.id,
+        new_value: { enabled: variables.enabled },
+      });
       toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
@@ -154,8 +162,14 @@ export const useCreateFeatureFlag = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+      logActivity({
+        event_type: 'feature_flag_created',
+        activity: `Feature flag "${data.name}" created`,
+        entity_type: 'feature_flag',
+        entity_id: data.id,
+      });
       toast.success(i18n.t('toast.flagCreated'));
     },
     onError: (error) => {
@@ -194,9 +208,16 @@ export const useUpdateFeatureFlag = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
       queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
+      logActivity({
+        event_type: 'feature_flag_updated',
+        activity: `Feature flag "${data.name}" updated`,
+        entity_type: 'feature_flag',
+        entity_id: variables.id,
+        new_value: variables.updates as Record<string, unknown>,
+      });
       toast.success(i18n.t('toast.flagUpdated'));
     },
     onError: (error) => {
@@ -219,8 +240,14 @@ export const useDeleteFeatureFlag = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+      logActivity({
+        event_type: 'feature_flag_deleted',
+        activity: 'Feature flag deleted',
+        entity_type: 'feature_flag',
+        entity_id: id,
+      });
       toast.success(i18n.t('toast.flagDeleted'));
     },
     onError: (error) => {
@@ -269,8 +296,15 @@ export const useSetFlagAssignment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
+      logActivity({
+        event_type: 'feature_flag_assignment_updated',
+        activity: `Feature flag assignment updated`,
+        entity_type: 'feature_flag_assignment',
+        entity_id: data.id,
+        new_value: { flag_id: variables.flagId, enabled: variables.enabled },
+      });
       toast.success(i18n.t('toast.flagAssignmentUpdated'));
     },
     onError: (error) => {

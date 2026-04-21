@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Package = Tables<'packages'>;
@@ -68,6 +71,12 @@ export const useAddPromotionPackage = () => {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      toast.success(i18n.t('toast.packageAdded'));
+      logActivity({ event_type: 'promotion_package_added', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
+    },
+    onError: (error: Error) => {
+      console.error('[useAddPromotionPackage] add failed', error);
+      toast.error(error.message);
     },
   });
 };
@@ -86,6 +95,12 @@ export const useRemovePromotionPackage = () => {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      toast.success(i18n.t('toast.packageRemoved'));
+      logActivity({ event_type: 'promotion_package_removed', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
+    },
+    onError: (error: Error) => {
+      console.error('[useRemovePromotionPackage] remove failed', error);
+      toast.error(error.message);
     },
   });
 };
@@ -118,6 +133,12 @@ export const useUpdatePromotionPackage = () => {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      toast.success(i18n.t('toast.packageUpdated'));
+      logActivity({ event_type: 'promotion_package_updated', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
+    },
+    onError: (error: Error) => {
+      console.error('[useUpdatePromotionPackage] update failed', error);
+      toast.error(error.message);
     },
   });
 };

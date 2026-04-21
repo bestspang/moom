@@ -78,64 +78,36 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ received: true, idempotent: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
-      // Update transaction to paid
-      await supabase
-        .from('transactions')
-        .update({
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-          source_ref: session.id || session.payment_intent,
-        })
-        .eq('id', transactionId)
-
-      // Create member_billing
-      if (tx.member_id) {
-        await supabase.from('member_billing').insert({
-          member_id: tx.member_id,
-          transaction_id: tx.id,
-          amount: tx.amount,
-          description: `Payment: ${tx.package_name_snapshot || 'Stripe Payment'}`,
-        })
-      }
-
-      // Create member_package entitlement
-      if (tx.member_id && tx.package_id) {
-        const { data: pkg } = await supabase
+      // Resolve package for expiry calculation (needed before atomic RPC)
+      let pkg: { term_days?: number | null; expiration_days?: number | null; sessions?: number | null } | null = null
+      if (tx.package_id) {
+        const { data: pkgData } = await supabase
           .from('packages')
           .select('id, name_en, type, sessions, term_days, expiration_days')
           .eq('id', tx.package_id)
           .single()
-
-        if (pkg) {
-          const now = new Date()
-          const expiryDate = new Date(now)
-          expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30))
-
-          await supabase.from('member_packages').insert({
-            member_id: tx.member_id,
-            package_id: tx.package_id,
-            purchase_date: now.toISOString(),
-            activation_date: now.toISOString(),
-            expiry_date: expiryDate.toISOString(),
-            sessions_remaining: pkg.sessions || null,
-            sessions_used: 0,
-            sessions_total: pkg.sessions || null,
-            status: 'active',
-            purchase_transaction_id: tx.id,
-            package_name_snapshot: pkg.name_en || null,
-          })
-        }
+        pkg = pkgData
       }
 
-      // Activity log
-      await supabase.from('activity_log').insert({
-        event_type: 'stripe.payment_succeeded',
-        activity: `Stripe payment succeeded. Amount: ${tx.amount} THB. Package: ${tx.package_name_snapshot || 'N/A'}.`,
-        entity_type: 'finance_transaction',
-        entity_id: tx.id,
-        member_id: tx.member_id || null,
-        new_value: { status: 'paid', stripe_session_id: session.id, amount: tx.amount },
+      const now = new Date()
+      const expiryDate = pkg ? new Date(now) : null
+      if (expiryDate && pkg) expiryDate.setDate(expiryDate.getDate() + (pkg.expiration_days || pkg.term_days || 30))
+
+      // ATOMIC write: update transaction + create billing + create entitlement + activity log in one transaction
+      const { error: rpcErr } = await supabase.rpc('process_stripe_payment', {
+        p_transaction_id:    tx.id,
+        p_stripe_session_id: session.id || session.payment_intent,
+        p_package_id:        tx.package_id || null,
+        p_member_id:         tx.member_id || null,
+        p_amount:            tx.amount,
+        p_package_name:      tx.package_name_snapshot || null,
+        p_sessions_total:    pkg?.sessions || null,
+        p_expiry_date:       expiryDate?.toISOString() || null,
       })
+      if (rpcErr) {
+        console.error('[stripe-webhook] Atomic write RPC failed:', rpcErr)
+        throw rpcErr
+      }
 
       // Fire gamification event for purchase (fire-and-forget)
       if (tx.member_id) {

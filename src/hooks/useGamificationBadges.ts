@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface GamificationBadge {
   id: string;
@@ -39,7 +40,11 @@ export const useCreateGamificationBadge = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-badges'] }); toast.success('Badge created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-badges'] });
+      toast.success('Badge created');
+      logActivity({ event_type: 'gamification_badge_created', entity_type: 'gamification_badge', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -52,7 +57,11 @@ export const useUpdateGamificationBadge = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-badges'] }); toast.success('Badge updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-badges'] });
+      toast.success('Badge updated');
+      logActivity({ event_type: 'gamification_badge_updated', entity_type: 'gamification_badge', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };

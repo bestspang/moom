@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
+import { logActivity } from '@/lib/activityLogger';
 
 export interface GamificationReward {
   id: string;
@@ -22,6 +24,8 @@ export interface GamificationReward {
   updated_at: string;
 }
 
+export type CreateGamificationReward = Omit<GamificationReward, 'id' | 'created_at' | 'updated_at'>;
+
 export const useGamificationRewards = () => {
   return useQuery({
     queryKey: ['gamification-rewards'],
@@ -39,12 +43,16 @@ export const useGamificationRewards = () => {
 export const useCreateGamificationReward = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (reward: Partial<GamificationReward>) => {
-      const { data, error } = await supabase.from('gamification_rewards').insert([reward as any]).select().single();
+    mutationFn: async (reward: CreateGamificationReward) => {
+      const { data, error } = await supabase.from('gamification_rewards').insert([reward]).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-rewards'] }); toast.success('Reward created'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      toast.success(i18n.t('toast.rewardCreated'));
+      logActivity({ event_type: 'gamification_reward_created', entity_type: 'gamification_reward', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
@@ -57,7 +65,27 @@ export const useUpdateGamificationReward = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['gamification-rewards'] }); toast.success('Reward updated'); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      toast.success(i18n.t('toast.rewardUpdated'));
+      logActivity({ event_type: 'gamification_reward_updated', entity_type: 'gamification_reward', entity_id: data?.id, metadata: { name_en: data?.name_en } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+};
+
+export const useDeleteGamificationReward = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('gamification_rewards').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      toast.success(i18n.t('toast.rewardDeleted'));
+      logActivity({ event_type: 'gamification_reward_deleted', entity_type: 'gamification_reward', entity_id: id });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 };
