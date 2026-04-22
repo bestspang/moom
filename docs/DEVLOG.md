@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-04-22 (later) — Hot-fix: Atomic-RPC enum mismatch (P0 revenue path)
+
+### What broke
+Today's Phase 1 RPCs (`process_package_sale`, `process_slip_approval`) were written assuming enum names from column names — but `transactions.type` is `package_type` (not `transaction_type`), and `transaction_status` has no `'completed'` value (only `paid`). Result: every package sale and every slip approval would have thrown `42704: type "transaction_type" does not exist` or `22P02: invalid input value`. Stripe webhook also called `process_stripe_payment` which never existed.
+
+### Fixes (5 migrations)
+1. **`process_package_sale`** — `p_type::transaction_type` → `p_type::package_type`; `'completed'::transaction_status` → `'paid'::transaction_status`
+2. **`process_slip_approval`** — same enum corrections; default `package_type` `'class'` → `'session'`
+3. **`process_stripe_payment`** — created (was missing). Idempotent on transaction id; updates status → `paid`, inserts billing line, creates `member_packages` entitlement, writes `activity_log`. Service-role only.
+4. **Roles cleanup** — removed duplicate empty "Finance Officer" (`455fe2f3…`); the working `4ac943b7…` (3 perms) remains.
+5. **`smoke_test_payment_flow()`** — manager-only diagnostic that asserts every payment-relevant enum cast + RPC presence; run after any payment migration.
+
+### Guardrail added
+`AI_GUARDRAILS.md` Rule 8 — Verify enums and column types BEFORE writing any DB INSERT/UPDATE/cast. Mandatory `information_schema.columns` + `enum_range` query before authoring enum casts.
+
+### Verified
+- `pg_proc` shows all 4 RPCs present.
+- Roles table now has 1 Finance role (was 2).
+- `smoke_test_payment_flow()` correctly enforces manager-only authz.
+
+### Not changed
+Edge functions (`sell-package`, `approve-slip`, `stripe-webhook`) — callers send the right values, the bug was DB-side only. Frontend untouched.
+
+---
+
 ## 2026-04-22 — Phase 0 + 1 + 2: Stabilization Sweep + AI Regression Hardening
 
 ### User request

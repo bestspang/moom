@@ -51,6 +51,22 @@ These guardrails are designed to make that pattern **physically harder** to exec
 - Manually trace the unrelated features in the file you touched: did imports stay valid? Did existing props still flow?
 - If you changed an i18n key in EN, you **must** add the same key to TH (and vice versa) — run `node scripts/compare-i18n.mjs` to confirm parity.
 
+### 8. Verify enums and column types BEFORE writing any DB INSERT/UPDATE/cast
+A whole class of P0 outages comes from AI guessing enum names from column names. **Do not guess.** Before authoring a migration, RPC, or query that casts to an enum:
+1. Query the real type:
+   ```sql
+   SELECT column_name, udt_name FROM information_schema.columns
+   WHERE table_schema='public' AND table_name='<table>' AND column_name='<col>';
+   ```
+2. Query the real values:
+   ```sql
+   SELECT enum_range(NULL::<udt_name>);
+   ```
+3. Cross-check existing rows — `SELECT DISTINCT <col> FROM <table>` is ground truth for what values the app actually uses.
+4. After deploying any payment/RPC migration, call `SELECT public.smoke_test_payment_flow();` (manager-only) to catch enum/column drift before users hit it.
+
+Do **not** assume `transactions.status` uses an enum named `transaction_status` just because the column is `status`. Always confirm `udt_name` first.
+
 ---
 
 ## Common AI Anti-Patterns (do not do these)
