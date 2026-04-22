@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-04-22 (pass 3) — Live Activity feed: i18n column mismatch fix
+
+### What was found
+Postgres logs were flooding with `column packages_1.name does not exist` — 9 occurrences in 5 minutes, exactly matching the 30-second `refetchInterval` of `useRecentActivity`. Source: `src/hooks/useRecentActivity.ts:38` was selecting `package:packages(name)`, but the `packages` table only has i18n columns `name_en` and `name_th` — there is no bare `name` column. Every admin dashboard session was silently dropping the purchase half of the Live Activity feed and burning PostgREST quota.
+
+### Fix (3-line surgical patch — no schema, no API, no type changes)
+- `src/hooks/useRecentActivity.ts`
+  - `.select(...)` → `package:packages(name_en, name_th)`
+  - consumer → `(t.package as any)?.name_th || (t.package as any)?.name_en || \`฿${t.amount}\``
+- Refetch interval, query key, signature, check-in branch — all untouched.
+
+### Guardrails added
+`AI_GUARDRAILS.md`:
+- **Rule 11** — Verify column names before `.select()` chains. Lists the 13 MOOM tables with `name_en`/`name_th` (or `description_en`/`description_th`) pairs so future AI sessions can't assume bare `.name`. Same failure class as the enum-cast bugs — schema-by-naming-convention guesswork.
+
+### Verified
+- `bun run build` clean.
+- Postgres logs polled — `packages_1.name does not exist` no longer appears.
+- Live Activity feed renders both check-ins and purchases; falls back to amount when both i18n names are null.
+
+### Not done (intentional, deferred)
+- `gamification_rewards` / `gamification_challenges` are 0-row → empty states render correctly; seeding is a business decision, not a bug.
+- Bundle 3.1MB chunk-splitting, 473 inline query-key migration → separate dedicated rounds.
+
+---
+
 ## 2026-04-22 (pass 2) — Deep audit: idempotency + storage policy hardening
 
 ### What was found

@@ -84,6 +84,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_<table>_unique_<key>
 ```
 Combine with `FOR UPDATE` row locking inside the SECURITY DEFINER RPC. Without the index, two concurrent retries can both pass the "already exists?" check and double-insert.
 
+### 11. Verify column names before `.select()` chains — never assume from naming convention
+A whole class of P1 outages comes from AI sessions writing `.select('rel:table(name)')` when the table actually has i18n columns `name_en` / `name_th`. The PostgREST error `column X.name does not exist` is silent in the UI (empty render) but floods Postgres logs every refetch interval. Before authoring any Supabase `.select('col1, rel:table(col2)')`:
+1. Verify column existence:
+   ```sql
+   SELECT column_name FROM information_schema.columns
+   WHERE table_schema='public' AND table_name='<t>';
+   ```
+2. **MOOM tables with i18n column pairs (`name_en`/`name_th` or `description_en`/`description_th`) — do NOT assume `.name`:**
+   `packages, classes, class_categories, gamification_rewards, gamification_challenges, gamification_badges, gamification_levels, gamification_rules, gamification_seasons, gamification_trainer_tiers, level_benefits, coupon_templates, announcements`.
+3. Consumer code must fallback: `row.name_th || row.name_en` (never bare `.name`).
+
 ---
 
 ## Common AI Anti-Patterns (do not do these)
