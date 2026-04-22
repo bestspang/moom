@@ -78,3 +78,17 @@ Admin → SlipDetailDialog → UPDATE transfer_slips (status='rejected'|'voided'
 | `xp_ledger` | XP transaction log (idempotent) | Member own + Staff read |
 | `points_ledger` | Coin transaction log (idempotent) | Member own + Staff read |
 | `member_gamification_profiles` | Aggregated gamification state | Member own + Staff read |
+
+---
+
+## Atomic Write RPCs (Phase 1 — race-condition hardening)
+
+All multi-step financial / inventory writes are wrapped in `SECURITY DEFINER` Postgres functions that use `SELECT ... FOR UPDATE` to eliminate TOCTOU races. Edge functions call these via `.rpc(...)` instead of issuing multiple `INSERT`/`UPDATE` statements.
+
+| RPC | Replaces | Guarantees |
+|-----|----------|------------|
+| `process_redeem_reward(p_member_id, p_reward_id)` | 6-step block in `gamification-redeem-reward` | Locks profile + reward rows; atomic balance check, stock decrement, redemption insert, ledger entry. Returns `OUT_OF_STOCK` / `INSUFFICIENT_BALANCE` error codes. |
+| `process_package_sale(p_member_id, p_package_id, p_amount, p_payment_method, p_idempotency_key, p_discount_amount, p_processed_by)` | Multi-step writes in `sell-package` | Atomic insert of `transactions` + `member_billing` + `member_packages` (entitlement) + coupon usage + promotion counters. Idempotency-key dedupe. |
+| `process_slip_approval(p_slip_id, p_approved_by)` | Multi-step approval in `approve-slip` | Locks `transfer_slips` row, calls `process_package_sale` internally, updates slip status to `approved` — all in one transaction. Eliminates "paid but no package" orphan state. |
+
+> **Stripe webhook** uses `process_stripe_payment` (added earlier) for the same atomic guarantees.

@@ -146,6 +146,8 @@ Supabase migrations, edge-function deploys, and DB pushes are managed automatica
 
 ```
 ✨ MUST READ (every session)
+  - AI_GUARDRAILS.md           (mandatory pre-edit checklist — READ FIRST)
+  - PROTECTED_FILES.md         (do-not-touch list with blast-radius notes)
   - docs/PROJECT_MEMORY.md     (architecture invariants)
   - docs/CONTRACTS.md          (event keys, slip flow, routes)
   - docs/PLATFORM_CONTRACT.md  (envelope, lifecycles, perms)
