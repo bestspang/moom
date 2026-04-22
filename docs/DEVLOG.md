@@ -2,7 +2,51 @@
 
 ---
 
+## 2026-04-22 — Phase 0 + 1 + 2: Stabilization Sweep + AI Regression Hardening
+
+### User request
+ตรวจให้ทุก feature/function ทำงานจริง, sync เอกสาร/help/i18n, และป้องกัน AI ทำ regression ซ้ำ ๆ ในรอบถัดไป.
+
+### Phase 0 — Build & types
+- Re-audited Sprint 1 security findings — 5 of 8 already resolved during prior loops (CRON guards, RBAC checks, ghost `profiles` refs, manager checks on issue-coupon / assign-quests).
+- Confirmed `bun run build` green; typed Supabase clients in edge functions.
+
+### Phase 1 — Atomic write RPCs (race-condition hardening)
+Wrapped multi-step financial / inventory writes inside Postgres `SECURITY DEFINER` functions that use `SELECT ... FOR UPDATE`:
+
+| RPC | Replaces | Eliminates |
+|-----|----------|------------|
+| `process_redeem_reward` | 6-step block in `gamification-redeem-reward` | TOCTOU double-spend; oversold rewards |
+| `process_package_sale` | Multi-step writes in `sell-package` | Partial state on mid-flow failure (transaction without entitlement) |
+| `process_slip_approval` | Multi-step approval in `approve-slip` | "Paid but no package" orphan state |
+
+Edge functions refactored to call `.rpc(...)` instead of issuing N queries. CORS / auth guards / response envelopes preserved.
+
+### Phase 2 — i18n + UX
+- Re-audit found TH/EN parity already at 100% (2742 / 2742 keys) — no missing keys.
+- `MemberRunClubPage` is a passive info page (no interactive elements) — Coming Soon pattern verified compliant; no edit needed.
+
+### Phase 4 (inline) — AI Regression Prevention layer
+- **`AI_GUARDRAILS.md`** (new, root) — 7-rule mandatory pre-edit checklist.
+- **`PROTECTED_FILES.md`** (new, root) — 3-tier do-not-touch list with blast-radius notes.
+- **`CLAUDE.md` § 9** — both files added to "MUST READ every session" tier.
+- **`docs/SMOKE_TEST.md`** — added "AI Change Verification Gate" (5-check gate).
+- **`mem://ai-regression-prevention`** — memory rule auto-loaded per session.
+
+### Files
+- NEW: `AI_GUARDRAILS.md`, `PROTECTED_FILES.md`, `mem://ai-regression-prevention`, 3 atomic-RPC migrations
+- EDITED (minimal): `CLAUDE.md`, `docs/CONTRACTS.md`, `docs/SMOKE_TEST.md`, `mem://index.md`, `supabase/functions/gamification-redeem-reward/index.ts`
+- NOT TOUCHED (per protected-files policy): AuthContext, hostname.ts, App.tsx route table, useRealtimeSync, shadcn ui/*, supabase types/client
+
+### Regression checks
+- ✅ `bun run build` green (18.03s, 3863 modules)
+- ✅ TH/EN parity 2742 / 2742 (verified via `node scripts/compare-i18n.mjs`)
+- ✅ No file from `PROTECTED_FILES.md` Tier 1 was modified
+
+---
+
 ## 2026-04-05 — Strategic Business Intelligence Upgrade
+
 
 ### Changes
 - **useCohortRetention hook**: groups members by join month, calculates retention at 1/3/6/12 months
