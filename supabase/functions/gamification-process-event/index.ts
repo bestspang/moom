@@ -1,26 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
-
-const ALLOWED_ORIGINS = [
-  "https://admin.moom.fit",
-  "https://member.moom.fit",
-  "https://moom.lovable.app",
-];
-
-function isAllowedOrigin(origin: string): boolean {
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (/^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin)) return true;
-  return false;
-}
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+import { createDb, createUserDb, getCorsHeaders, type Db } from "../_shared/db.ts";
 
 interface GamificationEventRequest {
   event_type: string;
@@ -36,7 +14,7 @@ interface GamificationEventRequest {
 // ---------- Identity Resolution ----------
 
 async function resolveMemberId(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   body: GamificationEventRequest
 ): Promise<{ member_id: string; location_id: string | null } | null> {
   // Case 1: Direct member_id from Admin App
@@ -101,7 +79,7 @@ const GUARDRAIL_DEFAULTS: GuardrailMap = {
   REFERRAL_REWARD_POINTS_DEFAULT: "200",
 };
 
-async function getGuardrails(db: ReturnType<typeof createClient>): Promise<GuardrailMap> {
+async function getGuardrails(db: Db): Promise<GuardrailMap> {
   try {
     const { data } = await db
       .from("economy_guardrails")
@@ -130,7 +108,7 @@ function g(guardrails: GuardrailMap, key: string): number {
 
 // ---------- Core Logic Helpers ----------
 
-async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: string) {
+async function findMatchingRule(db: Db, eventType: string) {
   const { data: rules } = await db
     .from("gamification_rules")
     .select("*")
@@ -141,7 +119,7 @@ async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: 
 }
 
 async function checkCooldown(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   cooldownMinutes: number
@@ -158,7 +136,7 @@ async function checkCooldown(
 }
 
 async function checkDailyLimit(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   maxPerDay: number
@@ -178,7 +156,7 @@ async function checkDailyLimit(
   return { exceeded: c >= maxPerDay, count: c };
 }
 
-async function getOrCreateProfile(db: ReturnType<typeof createClient>, memberId: string) {
+async function getOrCreateProfile(db: Db, memberId: string) {
   let { data: profile } = await db
     .from("member_gamification_profiles")
     .select("*")
@@ -197,7 +175,7 @@ async function getOrCreateProfile(db: ReturnType<typeof createClient>, memberId:
   return profile;
 }
 
-async function updateStreak(db: ReturnType<typeof createClient>, memberId: string, currentLongest: number) {
+async function updateStreak(db: Db, memberId: string, currentLongest: number) {
   const today = new Date().toISOString().split("T")[0];
   const { data: streak } = await db
     .from("streak_snapshots")
@@ -246,7 +224,7 @@ async function updateStreak(db: ReturnType<typeof createClient>, memberId: strin
 }
 
 async function checkLevelUp(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   totalXp: number,
   currentLevel: number,
   memberId?: string,
@@ -287,7 +265,7 @@ async function checkLevelUp(
 }
 
 async function processChallenges(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   xpDelta: number,
@@ -402,19 +380,13 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    // Verify caller identity
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Verify caller identity (typed user-scoped client)
+    const userClient = createUserDb(authHeader);
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    // Service client for writes
-    const db = createClient(supabaseUrl, serviceKey);
+    // Service client for writes (typed service-role client)
+    const db: Db = createDb();
 
     const body: GamificationEventRequest = await req.json();
     const { event_type, idempotency_key, metadata } = body;

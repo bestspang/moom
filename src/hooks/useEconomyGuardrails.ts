@@ -29,7 +29,21 @@ export function useEconomyGuardrails() {
   });
 
   const updateGuardrail = useMutation({
-    mutationFn: async ({ id, rule_code, rule_value, is_active, old_rule_value, old_is_active }: { id: string; rule_code: string; rule_value: string; is_active: boolean; old_rule_value: string; old_is_active: boolean }) => {
+    mutationFn: async ({
+      id,
+      rule_code,
+      rule_value,
+      is_active,
+      old_rule_value,
+      old_is_active,
+    }: {
+      id: string;
+      rule_code: string;
+      rule_value: string;
+      is_active: boolean;
+      old_rule_value: string;
+      old_is_active: boolean;
+    }) => {
       // Validation: divisors must be > 0, caps must be ≥ 1
       const numVal = Number(rule_value);
       if (isNaN(numVal)) throw new Error('Value must be a number');
@@ -46,20 +60,35 @@ export function useEconomyGuardrails() {
 
       // Audit log — fire-and-forget
       const { data: { user } } = await supabase.auth.getUser();
-      supabase.from('gamification_audit_log').insert({
-        event_type: 'admin_update_guardrail',
-        action_key: rule_code,
-        staff_id: user?.id ?? null,
-        metadata: { guardrail_id: id, rule_code, old_value: old_rule_value, new_value: rule_value, old_is_active, new_is_active: is_active },
-        flagged: false,
-      }).then(({ error: auditErr }) => {
-        if (auditErr) console.warn('[audit] guardrail log failed:', auditErr.message);
-     qc.invalidateQueries({ queryKey: queryKeys.economyGuardrails() });
-     toast.success('Guardrail updated'); @@
+      supabase
+        .from('gamification_audit_log')
+        .insert({
+          event_type: 'admin_update_guardrail',
+          action_key: rule_code,
+          staff_id: user?.id ?? null,
+          metadata: {
+            guardrail_id: id,
+            rule_code,
+            old_value: old_rule_value,
+            new_value: rule_value,
+            old_is_active,
+            new_is_active: is_active,
+          },
+          flagged: false,
+        })
+        .then(({ error: auditErr }) => {
+          if (auditErr) console.warn('[audit] guardrail log failed:', auditErr.message);
+        });
+    },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.economyGuardrails() });
       toast.success('Guardrail updated');
-      logActivity({ event_type: 'economy_guardrail_updated', entity_type: 'economy_guardrail', entity_id: variables.id, metadata: { rule_code: variables.rule_code, rule_value: variables.rule_value } });
+      logActivity({
+        event_type: 'economy_guardrail_updated',
+        entity_type: 'economy_guardrail',
+        entity_id: variables.id,
+        metadata: { rule_code: variables.rule_code, rule_value: variables.rule_value },
+      });
     },
     onError: (err: Error) => toast.error(err.message),
   });
