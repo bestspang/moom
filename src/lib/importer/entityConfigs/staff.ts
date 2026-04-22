@@ -85,7 +85,7 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
       if (row.data.status) { const s = normalizeStatus(row.data.status); if (s) staffData.status = s; }
 
       if (matchId) {
-        const { error } = await supabase.from('staff').update(staffData).eq('id', matchId);
+        const { error } = await supabase.from('staff').update(staffData as never).eq('id', matchId);
         if (error) throw error;
         result.updated++;
         logActivity({ event_type: 'staff_updated', activity: `Staff ${staffData.first_name} updated via CSV import`, entity_type: 'staff', entity_id: matchId, new_value: { ...staffData, _source: 'csv_import' } });
