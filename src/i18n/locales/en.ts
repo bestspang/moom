@@ -55,6 +55,8 @@ export default {
     requiredFields: 'Please fill in all required fields',
     selectDate: 'Select date',
     unlimited: 'Unlimited',
+    failedToLoad: 'Failed to load',
+    retry: 'Retry',
   },
 
   // Bulk actions
@@ -1099,6 +1101,26 @@ export default {
     unknownMember: 'Unknown',
     role: 'Role',
     selectRole: 'Select role',
+    // Schedule page
+    scheduleSubtitle: 'Upcoming classes',
+    noClassesFound: 'No classes found',
+    checkBackLater: 'Check back later',
+    withTrainer: 'with {{name}}',
+    spots: '{{current}}/{{capacity}} spots',
+    checkedIn: 'checked in',
+    noAttendeesYet: 'No attendees yet',
+    // Member detail page
+    memberInfo: 'Member Info',
+    phone: 'Phone',
+    email: 'Email',
+    memberSince: 'Member since',
+    status: 'Status',
+    packages: 'Packages',
+    noPackages: 'No packages',
+    noPackagesDesc: 'This member has no packages yet',
+    sessionsRemaining: '{{remaining}} / {{total}} sessions',
+    expiresOn: 'Expires {{date}}',
+    unknownPackage: 'Unknown package',
   },
 
   // Roles
@@ -3291,5 +3313,22 @@ export default {
     viewAllBadges: 'View All Badges',
     earnedOn: 'Earned',
     tapForDetails: 'Tap to see details →',
+  },
+
+  // Identity / Login methods
+  identity: {
+    loginMethods: 'Login Methods',
+    linkGoogle: 'Link Google Account',
+    setPassword: 'Set Password',
+    updatePassword: 'Update Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    minCharsPlaceholder: 'Min 8 characters',
+    reEnterPassword: 'Re-enter password',
+    passwordTooShort: 'Password must be at least 8 characters',
+    passwordMismatch: 'Passwords do not match',
+    passwordSetSuccess: 'Password set successfully!',
+    linkGoogleFailed: 'Failed to link Google account',
+    setPasswordFailed: 'Failed to set password',
   },
 };

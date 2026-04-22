@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { useTheme } from 'next-themes';
-import { Badge } from '@/components/ui/badge';
 
 
 export default function TrainerProfilePage() {
@@ -75,14 +74,12 @@ export default function TrainerProfilePage() {
           <ListCard
             title={t('trainer.notifications')}
             leading={<Bell className="h-5 w-5 text-muted-foreground" />}
-            trailing={<Badge variant="secondary" className="text-[10px] px-1 py-0">{t('trainer.comingSoonLabel')}</Badge>}
-            showChevron={false}
+            onClick={() => navigate('/trainer/notifications')}
           />
           <ListCard
             title={t('trainer.helpAndSupport')}
             leading={<HelpCircle className="h-5 w-5 text-muted-foreground" />}
-            trailing={<Badge variant="secondary" className="text-[10px] px-1 py-0">{t('trainer.comingSoonLabel')}</Badge>}
-            showChevron={false}
+            onClick={() => window.open('https://line.me/R/ti/p/@moom', '_blank')}
           />
         </div>
       </Section>

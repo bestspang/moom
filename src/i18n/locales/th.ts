@@ -55,6 +55,8 @@ export default {
     requiredFields: 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมด',
     selectDate: 'เลือกวันที่',
     unlimited: 'ไม่จำกัด',
+    failedToLoad: 'โหลดข้อมูลไม่สำเร็จ',
+    retry: 'ลองใหม่',
   },
 
   // Bulk actions
@@ -1099,9 +1101,27 @@ export default {
     unknownMember: 'ไม่ทราบ',
     role: 'บทบาท',
     selectRole: 'เลือกบทบาท',
+    // Schedule page
+    scheduleSubtitle: 'คลาสที่กำลังจะมาถึง',
+    noClassesFound: 'ไม่พบคลาส',
+    checkBackLater: 'กลับมาดูภายหลัง',
+    withTrainer: 'กับ {{name}}',
+    spots: '{{current}}/{{capacity}} ที่นั่ง',
+    checkedIn: 'เช็คอินแล้ว',
+    noAttendeesYet: 'ยังไม่มีผู้เข้าร่วม',
+    // Member detail page
+    memberInfo: 'ข้อมูลสมาชิก',
+    phone: 'เบอร์โทร',
+    email: 'อีเมล',
+    memberSince: 'เป็นสมาชิกตั้งแต่',
+    status: 'สถานะ',
+    packages: 'แพ็กเกจ',
+    noPackages: 'ไม่มีแพ็กเกจ',
+    noPackagesDesc: 'สมาชิกนี้ยังไม่มีแพ็กเกจ',
+    sessionsRemaining: '{{remaining}} / {{total}} ครั้ง',
+    expiresOn: 'หมดอายุ {{date}}',
+    unknownPackage: 'แพ็กเกจที่ไม่รู้จัก',
   },
-
-  // Roles
   roles: {
     title: 'บทบาท',
     searchPlaceholder: 'ค้นหาชื่อบทบาท',
@@ -3118,5 +3138,22 @@ export default {
     viewAllBadges: 'ดูเหรียญตราทั้งหมด',
     earnedOn: 'ได้รับเมื่อ',
     tapForDetails: 'แตะเพื่อดูรายละเอียด →',
+  },
+
+  // Identity / Login methods
+  identity: {
+    loginMethods: 'วิธีการเข้าสู่ระบบ',
+    linkGoogle: 'เชื่อมต่อบัญชี Google',
+    setPassword: 'ตั้งรหัสผ่าน',
+    updatePassword: 'เปลี่ยนรหัสผ่าน',
+    newPassword: 'รหัสผ่านใหม่',
+    confirmPassword: 'ยืนยันรหัสผ่าน',
+    minCharsPlaceholder: 'อย่างน้อย 8 ตัวอักษร',
+    reEnterPassword: 'ใส่รหัสผ่านอีกครั้ง',
+    passwordTooShort: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+    passwordMismatch: 'รหัสผ่านไม่ตรงกัน',
+    passwordSetSuccess: 'ตั้งรหัสผ่านสำเร็จ',
+    linkGoogleFailed: 'ไม่สามารถเชื่อมต่อบัญชี Google',
+    setPasswordFailed: 'ไม่สามารถตั้งรหัสผ่านได้',
   },
 };

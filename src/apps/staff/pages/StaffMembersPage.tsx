@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { ListCard } from '@/apps/shared/components/ListCard';
@@ -12,7 +12,6 @@ import { Users, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
 
 export default function StaffMembersPage() {
   const { user } = useAuth();
@@ -60,12 +59,9 @@ export default function StaffMembersPage() {
                 subtitle={m.nickname ?? undefined}
                 meta={m.phone ?? undefined}
                 trailing={
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium ${m.status === 'active' ? 'text-primary' : 'text-muted-foreground'}`}>{m.status}</span>
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{t('staff.comingSoonLabel')}</Badge>
-                  </div>
+                  <span className={`text-xs font-medium ${m.status === 'active' ? 'text-primary' : 'text-muted-foreground'}`}>{m.status}</span>
                 }
-                showChevron={false}
+                onClick={() => navigate(`/staff/members/${m.id}`)}
               />
             ))}
           </div>

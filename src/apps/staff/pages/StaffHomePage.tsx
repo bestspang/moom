@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
 
 export default function StaffHomePage() {
   const navigate = useNavigate();
@@ -114,9 +113,8 @@ export default function StaffHomePage() {
           <Button onClick={() => navigate('/staff/payments')} variant="outline" size="sm">
             <CreditCard className="h-4 w-4 mr-1.5" />{t('staff.nav.payments')}
           </Button>
-          <Button variant="outline" size="sm" disabled className="relative opacity-60 cursor-not-allowed">
+          <Button onClick={() => navigate('/staff/schedule')} variant="outline" size="sm">
             <Calendar className="h-4 w-4 mr-1.5" />{t('staff.viewSchedule')}
-            <Badge variant="secondary" className="ml-1.5 text-[10px] px-1 py-0">{t('staff.comingSoonLabel')}</Badge>
           </Button>
         </div>
       </Section>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ interface ProviderInfo {
 
 export function IdentityLinkingCard() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [settingPassword, setSettingPassword] = useState(false);
@@ -37,10 +39,10 @@ export function IdentityLinkingCard() {
         redirect_uri: window.location.origin + '/member/security',
       });
       if (result.error) {
-        toast.error('Failed to link Google account');
+        toast.error(t('identity.linkGoogleFailed'));
       }
     } catch {
-      toast.error('Failed to link Google account');
+      toast.error(t('identity.linkGoogleFailed'));
     } finally {
       setLinkingGoogle(false);
     }
@@ -48,11 +50,11 @@ export function IdentityLinkingCard() {
 
   const handleSetPassword = async () => {
     if (password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error(t('identity.passwordTooShort'));
       return;
     }
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('identity.passwordMismatch'));
       return;
     }
     setSettingPassword(true);
@@ -61,12 +63,12 @@ export function IdentityLinkingCard() {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Password set successfully!');
+        toast.success(t('identity.passwordSetSuccess'));
         setPassword('');
         setConfirmPassword('');
       }
     } catch {
-      toast.error('Failed to set password');
+      toast.error(t('identity.setPasswordFailed'));
     } finally {
       setSettingPassword(false);
     }
@@ -74,7 +76,7 @@ export function IdentityLinkingCard() {
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground">Login Methods</h3>
+      <h3 className="text-sm font-semibold text-foreground">{t('identity.loginMethods')}</h3>
 
       {/* Linked providers */}
       <div className="space-y-2">
@@ -107,7 +109,7 @@ export function IdentityLinkingCard() {
           ) : (
             <Chrome className="h-4 w-4 mr-2" />
           )}
-          Link Google Account
+          {t('identity.linkGoogle')}
         </Button>
       )}
 
@@ -116,28 +118,28 @@ export function IdentityLinkingCard() {
         <div className="flex items-center gap-2">
           <Key className="h-4 w-4 text-muted-foreground" />
           <p className="text-sm font-medium text-foreground">
-            {hasEmail ? 'Update Password' : 'Set Password'}
+            {hasEmail ? t('identity.updatePassword') : t('identity.setPassword')}
           </p>
         </div>
         <div className="space-y-2">
           <div>
-            <Label htmlFor="new-pw" className="text-xs text-muted-foreground">New Password</Label>
+            <Label htmlFor="new-pw" className="text-xs text-muted-foreground">{t('identity.newPassword')}</Label>
             <Input
               id="new-pw"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Min 8 characters"
+              placeholder={t('identity.minCharsPlaceholder')}
             />
           </div>
           <div>
-            <Label htmlFor="confirm-pw" className="text-xs text-muted-foreground">Confirm Password</Label>
+            <Label htmlFor="confirm-pw" className="text-xs text-muted-foreground">{t('identity.confirmPassword')}</Label>
             <Input
               id="confirm-pw"
               type="password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter password"
+              placeholder={t('identity.reEnterPassword')}
             />
           </div>
           <Button
@@ -150,7 +152,7 @@ export function IdentityLinkingCard() {
             ) : (
               <Key className="h-4 w-4 mr-2" />
             )}
-            {hasEmail ? 'Update Password' : 'Set Password'}
+            {hasEmail ? t('identity.updatePassword') : t('identity.setPassword')}
           </Button>
         </div>
       </div>

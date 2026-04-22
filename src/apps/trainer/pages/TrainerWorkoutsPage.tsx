@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
@@ -8,10 +9,10 @@ import { QueryError } from '@/apps/shared/components/QueryError';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dumbbell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Badge } from '@/components/ui/badge';
 
 export default function TrainerWorkoutsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['trainer-workouts'],
     queryFn: async () => {
@@ -43,8 +44,7 @@ export default function TrainerWorkoutsPage() {
                 title={w.name}
                 subtitle={w.training_category ?? undefined}
                 meta={w.track_metric ? `${w.track_metric} (${w.unit})` : undefined}
-                trailing={<Badge variant="secondary" className="text-[10px] px-1 py-0">{t('trainer.comingSoonLabel')}</Badge>}
-                showChevron={false}
+                onClick={() => navigate(`/trainer/workouts/${w.id}`)}
               />
             ))}
           </div>
