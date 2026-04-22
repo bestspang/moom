@@ -35,7 +35,7 @@ export const useRecentActivity = () => {
           .limit(5),
         supabase
           .from('transactions')
-          .select('id, created_at, amount, member:members(first_name, last_name), package:packages(name)')
+          .select('id, created_at, amount, member:members(first_name, last_name), package:packages(name_en, name_th)')
           .eq('status', 'paid')
           .gte('created_at', twoHoursAgo)
           .order('created_at', { ascending: false })
@@ -63,7 +63,7 @@ export const useRecentActivity = () => {
           id: `purchase-${t.id}`,
           type: 'purchase',
           name: `${member.first_name} ${member.last_name || ''}`.trim(),
-          detail: (t.package as any)?.name || `฿${t.amount}`,
+          detail: (t.package as any)?.name_th || (t.package as any)?.name_en || `฿${t.amount}`,
           timestamp: t.created_at,
         });
       });
