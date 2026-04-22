@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface LineUser {
   id: string;
@@ -21,7 +22,7 @@ interface LineUser {
 // Fetch LINE user by LINE user ID
 export const useLineUser = (lineUserId: string) => {
   return useQuery({
-    queryKey: ['line-user', lineUserId],
+    queryKey: queryKeys.lineUser(lineUserId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('line_users')
@@ -42,7 +43,7 @@ export const useLineUser = (lineUserId: string) => {
 // Fetch LINE link for a member
 export const useMemberLineLink = (memberId: string) => {
   return useQuery({
-    queryKey: ['member-line-link', memberId],
+    queryKey: queryKeys.memberLineLink(memberId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('line_users')
@@ -60,7 +61,7 @@ export const useMemberLineLink = (memberId: string) => {
 // Fetch all LINE users (for admin)
 export const useLineUsers = () => {
   return useQuery({
-    queryKey: ['line-users'],
+    queryKey: queryKeys.lineUsers(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('line_users')
@@ -176,9 +177,9 @@ export const useLinkLineAccount = () => {
       return data as LineUser;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
-      queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUser(variables.lineUserId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberLineLink(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUsers() });
       logActivity({
         event_type: 'line_account_linked',
         activity: `LINE account linked to member`,
@@ -213,8 +214,8 @@ export const useUnlinkLineAccount = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-line-link', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberLineLink(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUsers() });
       logActivity({
         event_type: 'line_account_unlinked',
         activity: `LINE account unlinked from member`,
@@ -252,7 +253,7 @@ export const useUpdateLineLastLogin = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUser(variables.lineUserId) });
       logActivity({
         event_type: 'line_last_login_updated',
         activity: `LINE user last login updated`,
@@ -291,8 +292,8 @@ export const useUpdateLineProfile = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['line-user', variables.lineUserId] });
-      queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUser(variables.lineUserId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUsers() });
       logActivity({
         event_type: 'line_profile_updated',
         activity: `LINE user profile updated`,
@@ -308,7 +309,7 @@ export const useUpdateLineProfile = () => {
 // Search LINE users
 export const useSearchLineUsers = (searchTerm: string) => {
   return useQuery({
-    queryKey: ['search-line-users', searchTerm],
+    queryKey: queryKeys.searchLineUsers(searchTerm),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('line_users')
@@ -328,7 +329,7 @@ export const useSearchLineUsers = (searchTerm: string) => {
 // Get LINE user statistics
 export const useLineUserStats = () => {
   return useQuery({
-    queryKey: ['line-user-stats'],
+    queryKey: queryKeys.lineUserStats(),
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('line_users')

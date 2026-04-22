@@ -90,8 +90,8 @@ export const useCreateLocation = () => {
       return newLocation;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-      queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locationStats() });
       logActivity({
         event_type: 'location_created',
         activity: `Location "${data.name}" created`,
@@ -122,8 +122,8 @@ export const useUpdateLocation = () => {
       return updated;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-      queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locationStats() });
       logActivity({
         event_type: 'location_updated',
         activity: `Location "${data.name}" updated`,
@@ -153,8 +153,8 @@ export const useDeleteLocation = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['locations'] });
-      queryClient.invalidateQueries({ queryKey: ['location-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.locationStats() });
       logActivity({
         event_type: 'location_deleted',
         activity: `Location deleted`,

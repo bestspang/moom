@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 type NotificationType = Database['public']['Enums']['notification_type'];
 
@@ -27,7 +28,7 @@ export const useNotifications = (
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['notifications', status, types, user?.id],
+    queryKey: queryKeys.notifications(status, types, user?.id),
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -60,7 +61,7 @@ export const useUnreadCount = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['notifications-unread-count', user?.id],
+    queryKey: queryKeys.notificationsUnreadCount(user?.id),
     queryFn: async () => {
       if (!user?.id) return 0;
 
@@ -82,7 +83,7 @@ export const useRecentNotifications = (limit = 5) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['notifications-recent', user?.id, limit],
+    queryKey: queryKeys.notificationsRecent(user?.id, limit),
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -113,9 +114,9 @@ export const useMarkAsRead = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-recent'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnreadCount() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificationsRecent() });
       logActivity({
         event_type: 'notification_read',
         activity: 'Notification marked as read',
@@ -144,9 +145,9 @@ export const useMarkAllAsRead = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-recent'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnreadCount() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificationsRecent() });
       logActivity({
         event_type: 'notifications_all_read',
         activity: 'All notifications marked as read',

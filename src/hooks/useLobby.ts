@@ -8,6 +8,7 @@ import { logActivity } from '@/lib/activityLogger';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type CheckInWithRelations = Tables<'member_attendance'> & {
   member: Tables<'members'> | null;
@@ -23,7 +24,7 @@ export function useCheckIns(date: Date, search: string = '') {
   const dayRange = getBangkokDayRange(date);
   
   return useQuery({
-    queryKey: ['check-ins', dateStr, search],
+    queryKey: queryKeys.checkIns(dateStr, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -97,8 +98,8 @@ export function useCreateCheckIn() {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['check-ins'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkIns('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
 
       logActivity({
         event_type: 'member_check_in',
@@ -136,7 +137,7 @@ export function useCreateCheckIn() {
 export function useMembersForCheckIn(search: string = '') {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['members-for-checkin', search],
+    queryKey: queryKeys.membersForCheckin(search),
     enabled: !!user && (search.length >= 2 || search.length === 0),
     queryFn: async () => {
       let query = supabase
@@ -162,7 +163,7 @@ export function useMembersForCheckIn(search: string = '') {
 export function useMemberPackages(memberId: string | null) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['member-packages-for-checkin', memberId],
+    queryKey: queryKeys.memberPackagesForCheckin(memberId),
     enabled: !!user && !!memberId,
     queryFn: async () => {
       if (!memberId) return [];
@@ -189,7 +190,7 @@ export function useCheckDuplicate(memberId: string | null, locationId: string | 
   const dateStr = format(date, 'yyyy-MM-dd');
   const dayRange = getBangkokDayRange(date);
   return useQuery({
-    queryKey: ['check-in-duplicate', memberId, locationId, dateStr],
+    queryKey: queryKeys.checkInDuplicate(memberId, locationId, dateStr),
     enabled: !!user && !!memberId && !!locationId,
     queryFn: async () => {
       if (!memberId || !locationId) return false;

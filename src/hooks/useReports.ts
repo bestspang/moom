@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, format, eachDayOfInterval, startOfWeek, startOfMonth, startOfYear, getDay, getHours } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type RiskLevel = 'high' | 'medium' | 'low';
 
@@ -79,7 +80,7 @@ function calculateRiskLevel(
 
 export function useMembersAtRiskStats() {
   return useQuery({
-    queryKey: ['members-at-risk-stats'],
+    queryKey: queryKeys.membersAtRiskStats(),
     queryFn: async (): Promise<{ stats: RiskStats; members: MemberAtRisk[] }> => {
       const { data, error } = await supabase
         .from('member_packages')
@@ -208,7 +209,7 @@ export function useActiveMembers(
   filters: ActiveMembersFilters
 ) {
   return useQuery({
-    queryKey: ['active-members', dateRange, filters],
+    queryKey: queryKeys.activeMembers(dateRange, filters),
     queryFn: async () => {
       let query = supabase
         .from('member_attendance')
@@ -306,7 +307,7 @@ export function useClassCapacityByHour(
   filters: ClassCapacityByHourFilters
 ) {
   return useQuery({
-    queryKey: ['class-capacity-by-hour', dateRange, filters],
+    queryKey: queryKeys.classCapacityByHour(dateRange, filters),
     queryFn: async () => {
       let query = supabase
         .from('schedule')
@@ -410,7 +411,7 @@ export function useClassCapacityOverTime(
   filters: ClassCapacityOverTimeFilters
 ) {
   return useQuery({
-    queryKey: ['class-capacity-over-time', dateRange, filters],
+    queryKey: queryKeys.classCapacityOverTime(dateRange, filters),
     queryFn: async () => {
       let query = supabase
         .from('schedule')
@@ -512,7 +513,7 @@ export function usePackageSales(
   filters: PackageSalesFilters
 ) {
   return useQuery({
-    queryKey: ['package-sales', dateRange, filters],
+    queryKey: queryKeys.packageSales(dateRange, filters),
     queryFn: async () => {
       // Query paid transactions with package info
       let query = supabase
@@ -610,7 +611,7 @@ export function usePackageSalesOverTime(
   timePeriod: 'day' | 'week' | 'month' | 'year'
 ) {
   return useQuery({
-    queryKey: ['package-sales-over-time', dateRange, filters, timePeriod],
+    queryKey: queryKeys.packageSalesOverTime(dateRange, filters, timePeriod),
     queryFn: async () => {
       let query = supabase
         .from('transactions')

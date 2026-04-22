@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface RecentActivityItem {
   id: string;
@@ -18,7 +19,7 @@ export const useRecentActivity = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['dashboard', 'recent-activity'],
+    queryKey: queryKeys.recentActivity(),
     enabled: !!user,
     refetchInterval: 30_000, // auto-refresh every 30s
     staleTime: 15_000,

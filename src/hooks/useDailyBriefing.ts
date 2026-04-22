@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState, useCallback } from 'react';
+import { queryKeys } from '@/lib/queryKeys';
 
 const DISMISS_KEY_PREFIX = 'daily-briefing-dismiss-';
 
@@ -40,7 +41,7 @@ export function useDailyBriefing(stats: BriefingStats | undefined) {
   });
 
   const query = useQuery({
-    queryKey: ['daily-briefing', stats, language],
+    queryKey: queryKeys.dailyBriefing(stats, language),
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('daily-briefing', {
         body: { stats, language },
@@ -63,7 +64,7 @@ export function useDailyBriefing(stats: BriefingStats | undefined) {
   }, []);
 
   const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['daily-briefing'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.dailyBriefing() });
   }, [queryClient]);
 
   return { ...query, dismissed, dismiss, refresh };

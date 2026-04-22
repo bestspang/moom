@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface GamificationRule {
   id: string;
@@ -20,7 +21,7 @@ export interface GamificationRule {
 
 export const useGamificationRules = () => {
   return useQuery({
-    queryKey: ['gamification-rules'],
+    queryKey: queryKeys.gamificationRules(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_rules')
@@ -41,7 +42,7 @@ export const useCreateGamificationRule = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRules() });
       toast.success('Rule created');
       logActivity({ event_type: 'gamification_rule_created', entity_type: 'gamification_rule', entity_id: data?.id, metadata: { action_key: data?.action_key } });
     },
@@ -58,7 +59,7 @@ export const useUpdateGamificationRule = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRules() });
       toast.success('Rule updated');
       logActivity({ event_type: 'gamification_rule_updated', entity_type: 'gamification_rule', entity_id: data?.id, metadata: { action_key: data?.action_key } });
     },
@@ -74,7 +75,7 @@ export const useDeleteGamificationRule = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRules() });
       toast.success('Rule deleted');
       logActivity({ event_type: 'gamification_rule_deleted', entity_type: 'gamification_rule', entity_id: variables, metadata: {} });
     },

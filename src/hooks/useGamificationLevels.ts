@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface GamificationLevel {
   id: string;
@@ -18,7 +19,7 @@ export interface GamificationLevel {
 
 export const useGamificationLevels = () => {
   return useQuery({
-    queryKey: ['gamification-levels'],
+    queryKey: queryKeys.gamificationLevels(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_levels')
@@ -39,7 +40,7 @@ export const useCreateGamificationLevel = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationLevels() });
       toast.success('Level created');
       logActivity({ event_type: 'gamification_level_created', entity_type: 'gamification_level', entity_id: data?.id, metadata: { level_number: data?.level_number, name_en: data?.name_en } });
     },
@@ -56,7 +57,7 @@ export const useUpdateGamificationLevel = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationLevels() });
       toast.success('Level updated');
       logActivity({ event_type: 'gamification_level_updated', entity_type: 'gamification_level', entity_id: data?.id, metadata: { level_number: data?.level_number, name_en: data?.name_en } });
     },
@@ -72,7 +73,7 @@ export const useDeleteGamificationLevel = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['gamification-levels'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationLevels() });
       toast.success('Level deleted');
       logActivity({ event_type: 'gamification_level_deleted', entity_type: 'gamification_level', entity_id: variables, metadata: {} });
     },

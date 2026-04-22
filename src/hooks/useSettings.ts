@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type SettingsSection = 'general' | 'class' | 'client' | 'package' | 'contracts';
 
@@ -18,7 +19,7 @@ export interface Setting {
 
 export const useSettings = (section: SettingsSection) => {
   return useQuery({
-    queryKey: ['settings', section],
+    queryKey: queryKeys.settings(section),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('settings')
@@ -63,7 +64,7 @@ export const useUpdateSetting = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['settings', variables.section] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings(variables.section) });
       logActivity({
         event_type: 'setting_updated',
         activity: `Setting "${variables.section}.${variables.key}" updated`,
@@ -103,7 +104,7 @@ export const useSaveSettings = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['settings', variables.section] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings(variables.section) });
       logActivity({
         event_type: 'setting_updated',
         activity: `Settings section "${variables.section}" updated (${Object.keys(variables.settings).length} keys)`,

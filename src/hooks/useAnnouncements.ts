@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
@@ -62,7 +63,7 @@ export const useAnnouncements = (status?: AnnouncementStatus | null, search?: st
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['announcements', status, search],
+    queryKey: queryKeys.announcements(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -122,7 +123,7 @@ export const useAnnouncementStats = () => {
   const now = new Date().toISOString();
 
   return useQuery({
-    queryKey: ['announcement-stats'],
+    queryKey: queryKeys.announcementStats(),
     enabled: !!user,
     queryFn: async () => {
       const [scheduledRes, activeRes, completedRes] = await Promise.all([
@@ -183,8 +184,8 @@ export const useCreateAnnouncement = () => {
       return result;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcementStats() });
       logActivity({
         event_type: 'announcement_created',
         activity: `Announcement created`,
@@ -236,8 +237,8 @@ export const useUpdateAnnouncement = () => {
       return result;
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcementStats() });
       logActivity({
         event_type: 'announcement_updated',
         activity: `Announcement updated`,
@@ -268,8 +269,8 @@ export const useDeleteAnnouncement = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      queryClient.invalidateQueries({ queryKey: ['announcement-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcementStats() });
       logActivity({
         event_type: 'announcement_deleted',
         activity: `Announcement deleted`,

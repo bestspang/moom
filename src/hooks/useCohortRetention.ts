@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, subMonths, differenceInMonths } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface CohortRow {
   cohortMonth: string;       // yyyy-MM
@@ -23,7 +24,7 @@ export function useCohortRetention() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['cohort-retention'],
+    queryKey: queryKeys.cohortRetention(),
     enabled: !!user,
     queryFn: async (): Promise<CohortRow[]> => {
       const now = new Date();

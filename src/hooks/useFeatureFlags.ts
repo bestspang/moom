@@ -67,7 +67,7 @@ export const useFeatureFlag = (key: string) => {
 // Check if a feature is enabled (considering location/user overrides)
 export const useIsFeatureEnabled = (key: string, locationId?: string) => {
   return useQuery({
-    queryKey: ['feature-enabled', key, locationId],
+    queryKey: queryKeys.featureEnabled(key, locationId),
     queryFn: async () => {
       const { data: flag, error: flagError } = await supabase
         .from('feature_flags')
@@ -114,9 +114,9 @@ export const useToggleFeatureFlag = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
-      queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlag('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureEnabled('') });
       logActivity({
         event_type: 'feature_flag_toggled',
         activity: `Feature flag ${variables.id} set to ${variables.enabled}`,
@@ -163,7 +163,7 @@ export const useCreateFeatureFlag = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags() });
       logActivity({
         event_type: 'feature_flag_created',
         activity: `Feature flag "${data.name}" created`,
@@ -209,8 +209,8 @@ export const useUpdateFeatureFlag = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
-      queryClient.invalidateQueries({ queryKey: ['feature-flag'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlag('') });
       logActivity({
         event_type: 'feature_flag_updated',
         activity: `Feature flag "${data.name}" updated`,
@@ -241,7 +241,7 @@ export const useDeleteFeatureFlag = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags() });
       logActivity({
         event_type: 'feature_flag_deleted',
         activity: 'Feature flag deleted',
@@ -297,7 +297,7 @@ export const useSetFlagAssignment = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['feature-enabled'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.featureEnabled('') });
       logActivity({
         event_type: 'feature_flag_assignment_updated',
         activity: `Feature flag assignment updated`,
@@ -317,7 +317,7 @@ export const useSetFlagAssignment = () => {
 // Get flag assignments for a specific flag
 export const useFlagAssignments = (flagId: string) => {
   return useQuery({
-    queryKey: ['flag-assignments', flagId],
+    queryKey: queryKeys.flagAssignments(flagId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('feature_flag_assignments')

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, subMonths, getDay, parseISO } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface PeakHourCell {
   day: number;   // 0=Sun..6=Sat
@@ -20,7 +21,7 @@ export function usePeakHourRevenue() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['peak-hour-revenue'],
+    queryKey: queryKeys.peakHourRevenue(),
     enabled: !!user,
     queryFn: async (): Promise<PeakHourCell[]> => {
       const now = new Date();

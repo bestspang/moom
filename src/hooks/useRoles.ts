@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PermissionRow, ResourceKey } from './usePermissions';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Role = Tables<'roles'>;
 type RoleInsert = TablesInsert<'roles'>;
@@ -17,7 +18,7 @@ export interface RoleWithCount extends Role {
 export const useRoles = (search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['roles', search],
+    queryKey: queryKeys.roles(search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('roles').select('*');
@@ -51,7 +52,7 @@ export const useRoles = (search?: string) => {
 
 export const useRole = (id: string) => {
   return useQuery({
-    queryKey: ['roles', id],
+    queryKey: queryKeys.role(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('roles')
@@ -67,7 +68,7 @@ export const useRole = (id: string) => {
 
 export const useRolePermissions = (roleId: string) => {
   return useQuery({
-    queryKey: ['role-permissions', roleId],
+    queryKey: queryKeys.rolePermissions(roleId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('role_permissions')
@@ -131,9 +132,9 @@ export const useSaveRoleWithPermissions = () => {
       return roleId;
     },
     onSuccess: (roleId, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['my-permissions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rolePermissions('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myPermissions() });
       logActivity({
         event_type: 'role_updated',
         activity: `Role "${variables.role.name}" saved`,
@@ -156,7 +157,7 @@ export const useCreateRole = () => {
       return newRole;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
       toast.success('Role created successfully');
     },
     onError: (error) => {
@@ -174,8 +175,8 @@ export const useUpdateRole = () => {
       return updated;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: ['roles', variables.id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.role(variables.id) });
       toast.success('Role updated successfully');
     },
     onError: (error) => {
@@ -193,7 +194,7 @@ export const useDeleteRole = () => {
       return id;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
       logActivity({
         event_type: 'role_deleted',
         activity: `Role deleted`,

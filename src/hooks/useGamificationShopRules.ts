@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface ShopRewardRule {
   id: string;
@@ -22,7 +23,7 @@ export interface ShopRewardRule {
 
 export const useGamificationShopRules = () =>
   useQuery({
-    queryKey: ['gamification-shop-rules'],
+    queryKey: queryKeys.gamificationShopRules(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shop_reward_rules')
@@ -42,7 +43,7 @@ export const useCreateShopRule = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationShopRules() });
       toast.success('Shop rule created');
       logActivity({ event_type: 'shop_reward_rule_created', entity_type: 'shop_reward_rule', entity_id: data?.id, metadata: { order_type: data?.order_type } });
     },
@@ -59,7 +60,7 @@ export const useUpdateShopRule = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationShopRules() });
       toast.success('Shop rule updated');
       logActivity({ event_type: 'shop_reward_rule_updated', entity_type: 'shop_reward_rule', entity_id: data?.id, metadata: { order_type: data?.order_type } });
     },
@@ -75,7 +76,7 @@ export const useDeleteShopRule = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['gamification-shop-rules'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationShopRules() });
       toast.success('Shop rule deleted');
       logActivity({ event_type: 'shop_reward_rule_deleted', entity_type: 'shop_reward_rule', entity_id: variables, metadata: {} });
     },

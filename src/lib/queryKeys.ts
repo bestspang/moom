@@ -68,4 +68,138 @@ export const queryKeys = {
 
   // Dashboard
   gymCheckins: (dateStr: string, search?: string) => ['gym-checkins', dateStr, search] as const,
+
+  // Activity Log
+  activityLogs: (startDate?: string, endDate?: string, eventTypes?: string[], search?: string, page?: number, perPage?: number) => ['activity-logs', startDate, endDate, eventTypes, search, page, perPage] as const,
+
+  // Analytics
+  analyticsRevenueByMonth: () => ['analytics-revenue-by-month'] as const,
+  analyticsMemberGrowth: () => ['analytics-member-growth'] as const,
+  analyticsClassFillRate: () => ['analytics-class-fill-rate'] as const,
+  analyticsLeadFunnel: () => ['analytics-lead-funnel'] as const,
+
+  // Announcements
+  announcements: (status?: string | null, search?: string) => ['announcements', status, search] as const,
+  announcementStats: () => ['announcement-stats'] as const,
+
+  // Business Health
+  businessHealth: () => ['business-health'] as const,
+
+  // Check-in QR
+  activeQrToken: (memberId: string | null, locationId?: string) => ['active-qr-token', memberId, locationId] as const,
+  tokenInfo: (token: string | null) => ['token-info', token] as const,
+
+  // Check-ins (Lobby)
+  checkIns: (dateStr: string, search?: string) => ['check-ins', dateStr, search] as const,
+  membersForCheckin: (search?: string) => ['members-for-checkin', search] as const,
+  memberPackagesForCheckin: (memberId: string | null) => ['member-packages-for-checkin', memberId] as const,
+  checkInDuplicate: (memberId: string | null, locationId: string | null, dateStr: string) => ['check-in-duplicate', memberId, locationId, dateStr] as const,
+
+  // Churn Prediction
+  churnPrediction: () => ['churn-prediction'] as const,
+
+  // Class Categories
+  classCategories: (search?: string) => ['class-categories', search] as const,
+  classCategory: (id: string) => ['class-categories', id] as const,
+  categoryClasses: (categoryId: string) => ['class-categories', categoryId, 'classes'] as const,
+
+  // Cohort Retention
+  cohortRetention: () => ['cohort-retention'] as const,
+
+  // Daily Briefing
+  dailyBriefing: (stats?: object, language?: string) => ['daily-briefing', stats, language] as const,
+
+  // Economy Guardrails
+  economyGuardrails: () => ['economy-guardrails'] as const,
+
+  // Engagement Scores
+  engagementScores: (memberIds: string[]) => ['engagement-scores', memberIds] as const,
+
+  // Expenses
+  expenses: (startDate?: string, endDate?: string) => ['expenses', startDate, endDate] as const,
+
+  // Feature Flags (extended)
+  featureEnabled: (key: string, locationId?: string) => ['feature-enabled', key, locationId] as const,
+  flagAssignments: (flagId: string) => ['flag-assignments', flagId] as const,
+
+  // Gamification
+  gamificationAudit: (flaggedOnly?: boolean) => ['gamification-audit', flaggedOnly] as const,
+  gamificationTrainerTiers: () => ['gamification-trainer-tiers'] as const,
+  gamificationSeasons: () => ['gamification-seasons'] as const,
+  gamificationBadges: () => ['gamification-badges'] as const,
+  gamificationChallenges: (statusFilter?: string) => ['gamification-challenges', statusFilter] as const,
+  gamificationCouponTemplates: () => ['gamification-coupon-templates'] as const,
+  gamificationLevels: () => ['gamification-levels'] as const,
+  gamificationQuestTemplates: () => ['gamification-quest-templates'] as const,
+  gamificationRewards: () => ['gamification-rewards'] as const,
+  gamificationRules: () => ['gamification-rules'] as const,
+  gamificationShopRules: () => ['gamification-shop-rules'] as const,
+
+  // Goals
+  goals: () => ['goals'] as const,
+
+  // Insights / Metrics
+  insightsOverview: () => ['insights-overview'] as const,
+  revenueDaily30d: () => ['revenue-daily-30d'] as const,
+
+  // Leads (single)
+  leadDetail: (id: string) => ['leads', id] as const,
+
+  // LINE
+  lineIdentity: (ownerType: string, ownerId?: string) => ['line-identity', ownerType, ownerId] as const,
+  lineUser: (lineUserId: string) => ['line-user', lineUserId] as const,
+  memberLineLink: (memberId: string) => ['member-line-link', memberId] as const,
+  lineUsers: () => ['line-users'] as const,
+  searchLineUsers: (searchTerm: string) => ['search-line-users', searchTerm] as const,
+  lineUserStats: () => ['line-user-stats'] as const,
+
+  // Member Details
+  memberAttendance: (memberId: string) => ['member-attendance', memberId] as const,
+  memberBilling: (memberId: string) => ['member-billing', memberId] as const,
+  memberNotes: (memberId: string) => ['member-notes', memberId] as const,
+  memberInjuries: (memberId: string) => ['member-injuries', memberId] as const,
+  memberSuspensions: (memberId: string) => ['member-suspensions', memberId] as const,
+  memberContracts: (memberId: string) => ['member-contracts', memberId] as const,
+  memberSummaryStats: (memberId: string) => ['member-summary-stats', memberId] as const,
+
+  // Members Enriched
+  membersEnrichment: (memberIds: string[]) => ['members-enrichment', memberIds] as const,
+
+  // Notifications
+  notifications: (status?: string, types?: string[], userId?: string) => ['notifications', status, types, userId] as const,
+  notificationsUnreadCount: (userId?: string) => ['notifications-unread-count', userId] as const,
+  notificationsRecent: (userId?: string, limit?: number) => ['notifications-recent', userId, limit] as const,
+
+  // Package Usage
+  memberUsageHistory: (memberId: string) => ['member-usage-history', memberId] as const,
+  packageUsageSummary: (memberPackageId: string) => ['package-usage-summary', memberPackageId] as const,
+
+  // Peak Hour Revenue
+  peakHourRevenue: () => ['peak-hour-revenue'] as const,
+
+  // Promotion Packages
+  promotionPackages: (promotionId: string | null) => ['promotion-packages', promotionId] as const,
+
+  // Recent Activity (Dashboard)
+  recentActivity: () => ['dashboard', 'recent-activity'] as const,
+
+  // Reports
+  membersAtRiskStats: () => ['members-at-risk-stats'] as const,
+  activeMembers: (dateRange?: object, filters?: object) => ['active-members', dateRange, filters] as const,
+  classCapacityByHour: (dateRange?: object, filters?: object) => ['class-capacity-by-hour', dateRange, filters] as const,
+  classCapacityOverTime: (dateRange?: object, filters?: object) => ['class-capacity-over-time', dateRange, filters] as const,
+  packageSales: (dateRange?: object, filters?: object) => ['package-sales', dateRange, filters] as const,
+  packageSalesOverTime: (dateRange?: object, filters?: object, timePeriod?: string) => ['package-sales-over-time', dateRange, filters, timePeriod] as const,
+
+  // Revenue Forecast
+  revenueForecast: () => ['revenue-forecast'] as const,
+
+  // Settings
+  settings: (section: string) => ['settings', section] as const,
+
+  // Transfer Slips (extended)
+  slipActivityLog: (slipId: string) => ['slip-activity-log', slipId] as const,
+
+  // Member attendance (check-in tracking)
+  memberAttendanceCheckin: () => ['member-attendance'] as const,
 };

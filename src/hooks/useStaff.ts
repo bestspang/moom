@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Staff = Tables<'staff'>;
 type StaffInsert = TablesInsert<'staff'>;
@@ -13,7 +14,7 @@ type StaffUpdate = TablesUpdate<'staff'>;
 export const useStaff = (status?: string, search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff', status, search],
+    queryKey: queryKeys.staff(status, search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -43,7 +44,7 @@ export const useStaff = (status?: string, search?: string) => {
 export const useStaffStats = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff-stats'],
+    queryKey: queryKeys.staffStats(),
     enabled: !!user,
     queryFn: async () => {
       const [activeRes, pendingRes, inactiveRes, terminatedRes] = await Promise.all([
@@ -71,7 +72,7 @@ export const useStaffStats = () => {
 export const useStaffMember = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff', id],
+    queryKey: queryKeys.staffMember(id),
     enabled: !!id && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,7 +94,7 @@ export const useStaffMember = (id: string) => {
 export const useStaffPositions = (staffId: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['staff-positions', staffId],
+    queryKey: queryKeys.staffPositions(staffId),
     enabled: !!staffId && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -126,8 +127,8 @@ export const useCreateStaff = () => {
       return newStaff;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       logActivity({
         event_type: 'staff_created',
         activity: `Staff member ${data.first_name} ${data.last_name} created (standalone)`,
@@ -200,8 +201,8 @@ export const useCreateStaffWithPositions = () => {
       return newStaff;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       toast.success(i18n.t('toast.staffCreated'));
     },
     onError: (error) => {
@@ -226,9 +227,9 @@ export const useUpdateStaff = () => {
       return updated;
     },
     onSuccess: (updated, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffMember(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       toast.success(i18n.t('toast.staffUpdated'));
 
       logActivity({
@@ -259,8 +260,8 @@ export const useDeleteStaff = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       toast.success(i18n.t('toast.staffDeleted'));
 
       logActivity({
@@ -290,9 +291,9 @@ export const useAddStaffPosition = () => {
       return pos;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-positions', variables.staff_id] });
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffPositions(variables.staff_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
       toast.success(i18n.t('toast.positionAdded'));
       logActivity({
         event_type: 'staff_position_added',
@@ -317,9 +318,9 @@ export const useRemoveStaffPosition = () => {
       return { id, staff_id };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-positions', result.staff_id] });
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffPositions(result.staff_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles() });
       toast.success(i18n.t('toast.positionRemoved'));
       logActivity({
         event_type: 'staff_position_removed',
@@ -363,8 +364,8 @@ export const useBulkUpdateStaffStatus = () => {
       if (error) throw error;
     },
     onSuccess: (_, { ids, status }) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       logActivity({
         event_type: 'staff_bulk_status',
         activity: `${ids.length} staff status changed to ${status}`,
@@ -384,8 +385,8 @@ export const useBulkDeleteStaff = () => {
       if (error) throw error;
     },
     onSuccess: (_, ids) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       logActivity({
         event_type: 'staff_bulk_deleted',
         activity: `${ids.length} staff deleted`,
@@ -411,8 +412,8 @@ export const useBulkDuplicateStaff = () => {
       if (error) throw error;
     },
     onSuccess: (_, rows) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
       logActivity({
         event_type: 'staff_bulk_duplicated',
         activity: `${rows.length} staff duplicated`,

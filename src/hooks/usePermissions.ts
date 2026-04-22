@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
 
@@ -77,7 +78,7 @@ export const usePermissions = () => {
   const { user, accessLevel } = useAuth();
 
   const query = useQuery({
-    queryKey: ['my-permissions', user?.id],
+    queryKey: queryKeys.myPermissions(user?.id),
     queryFn: async () => {
       if (!user) return null;
 

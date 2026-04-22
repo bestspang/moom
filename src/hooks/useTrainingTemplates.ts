@@ -127,7 +127,7 @@ export function useCreateTraining() {
       return training;
     },
     onSuccess: (training) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       toast.success(t('workouts.createSuccess'));
       logActivity({
         event_type: 'training_created',
@@ -160,7 +160,7 @@ export function useUpdateTraining() {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       logActivity({
         event_type: 'training_updated',
         activity: `Training template updated`,
@@ -197,7 +197,7 @@ export function useUpdateWorkoutItem() {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       toast.success(t('workouts.updateSuccess'));
       logActivity({
         event_type: 'workout_item_updated',
@@ -227,7 +227,7 @@ export function useDeleteWorkoutItem() {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       toast.success(t('workouts.deleteSuccess'));
       logActivity({
         event_type: 'workout_item_deleted',
@@ -256,7 +256,7 @@ export function useDeleteTraining() {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       toast.success(t('workouts.deleteTrainingSuccess'));
       logActivity({
         event_type: 'training_deleted',
@@ -284,7 +284,7 @@ export function useBulkToggleTrainings() {
       if (error) throw error;
     },
     onSuccess: (_, { ids, is_active }) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       logActivity({
         event_type: 'trainings_bulk_toggled',
         activity: `${ids.length} trainings set to ${is_active ? 'active' : 'inactive'}`,
@@ -304,7 +304,7 @@ export function useBulkDeleteTrainings() {
       if (error) throw error;
     },
     onSuccess: (_, ids) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       logActivity({
         event_type: 'trainings_bulk_deleted',
         activity: `${ids.length} trainings deleted`,
@@ -344,7 +344,7 @@ export function useBulkDuplicateTrainings() {
       }
     },
     onSuccess: (_, trainings) => {
-      qc.invalidateQueries({ queryKey: ['training-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.trainingTemplates() });
       logActivity({
         event_type: 'trainings_bulk_duplicated',
         activity: `${trainings.length} trainings duplicated`,

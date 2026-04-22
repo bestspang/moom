@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface GamificationChallenge {
   id: string;
@@ -28,7 +29,7 @@ export interface GamificationChallenge {
 
 export const useGamificationChallenges = (statusFilter?: string) => {
   return useQuery({
-    queryKey: ['gamification-challenges', statusFilter],
+    queryKey: queryKeys.gamificationChallenges(statusFilter),
     queryFn: async () => {
       let query = supabase.from('gamification_challenges').select('*').order('created_at', { ascending: false });
       if (statusFilter && statusFilter !== 'all') query = query.eq('status', statusFilter);
@@ -48,7 +49,7 @@ export const useCreateGamificationChallenge = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-challenges'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationChallenges() });
       toast.success('Challenge created');
       logActivity({ event_type: 'gamification_challenge_created', entity_type: 'gamification_challenge', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -65,7 +66,7 @@ export const useUpdateGamificationChallenge = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-challenges'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationChallenges() });
       toast.success('Challenge updated');
       logActivity({ event_type: 'gamification_challenge_updated', entity_type: 'gamification_challenge', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -81,7 +82,7 @@ export const useDeleteGamificationChallenge = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ['gamification-challenges'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationChallenges() });
       toast.success('Challenge deleted');
       logActivity({ event_type: 'gamification_challenge_deleted', entity_type: 'gamification_challenge', entity_id: id });
     },

@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { logActivity } from '@/lib/activityLogger';
 import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Database } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 type MemberStatus = Database['public']['Enums']['member_status'];
 type RiskLevel = Database['public']['Enums']['risk_level'];
@@ -129,7 +130,7 @@ export interface MemberContract {
 
 export const useMember = (id: string | undefined) => {
   return useQuery({
-    queryKey: ['member', id],
+    queryKey: queryKeys.member(id),
     queryFn: async () => {
       if (!id) throw new Error('Member ID required');
       const { data, error } = await supabase
@@ -146,7 +147,7 @@ export const useMember = (id: string | undefined) => {
 
 export const useMemberPackages = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-packages', memberId],
+    queryKey: queryKeys.memberPackages(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -163,7 +164,7 @@ export const useMemberPackages = (memberId: string | undefined) => {
 
 export const useMemberAttendance = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-attendance', memberId],
+    queryKey: queryKeys.memberAttendance(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -181,7 +182,7 @@ export const useMemberAttendance = (memberId: string | undefined) => {
 
 export const useMemberBilling = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-billing', memberId],
+    queryKey: queryKeys.memberBilling(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -198,7 +199,7 @@ export const useMemberBilling = (memberId: string | undefined) => {
 
 export const useMemberNotes = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-notes', memberId],
+    queryKey: queryKeys.memberNotes(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -215,7 +216,7 @@ export const useMemberNotes = (memberId: string | undefined) => {
 
 export const useMemberInjuries = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-injuries', memberId],
+    queryKey: queryKeys.memberInjuries(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -232,7 +233,7 @@ export const useMemberInjuries = (memberId: string | undefined) => {
 
 export const useMemberSuspensions = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-suspensions', memberId],
+    queryKey: queryKeys.memberSuspensions(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -249,7 +250,7 @@ export const useMemberSuspensions = (memberId: string | undefined) => {
 
 export const useMemberContracts = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-contracts', memberId],
+    queryKey: queryKeys.memberContracts(memberId),
     queryFn: async () => {
       if (!memberId) return [];
       const { data, error } = await supabase
@@ -267,7 +268,7 @@ export const useMemberContracts = (memberId: string | undefined) => {
 /** Compute summary stats from actual billing data */
 export const useMemberSummaryStats = (memberId: string | undefined) => {
   return useQuery({
-    queryKey: ['member-summary-stats', memberId],
+    queryKey: queryKeys.memberSummaryStats(memberId),
     queryFn: async () => {
       if (!memberId) return { totalSpent: 0, mostAttendedCategory: null as string | null };
 
@@ -323,7 +324,7 @@ export const useCreateMemberNote = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-notes', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberNotes(variables.memberId) });
       logActivity({
         event_type: 'member_note_added',
         activity: `Note added for member ${variables.memberId}`,
@@ -353,8 +354,8 @@ export const useUpdateMember = () => {
       return { oldData };
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.member(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
       logActivity({
         event_type: 'member_profile_updated',
         activity: `Profile updated for member ${variables.id}`,
@@ -388,7 +389,7 @@ export const useCreateMemberInjury = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-injuries', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberInjuries(variables.memberId) });
       logActivity({
         event_type: 'member_injury_added',
         activity: `Injury added: ${variables.injury_description}`,
@@ -415,7 +416,7 @@ export const useMarkInjuryRecovered = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-injuries', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberInjuries(variables.memberId) });
       logActivity({
         event_type: 'member_injury_recovered',
         activity: `Injury marked recovered`,
@@ -454,9 +455,9 @@ export const useCreateMemberSuspension = () => {
       if (memError) throw memError;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-suspensions', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSuspensions(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.member(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
       logActivity({
         event_type: 'member_suspended',
         activity: `Member suspended: ${variables.reason || 'No reason'}`,
@@ -497,9 +498,9 @@ export const useEndMemberSuspension = () => {
       }
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-suspensions', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSuspensions(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.member(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
       logActivity({
         event_type: 'member_suspension_lifted',
         activity: `Suspension ended for member`,
@@ -537,7 +538,7 @@ export const useCreateMemberContract = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-contracts', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberContracts(variables.memberId) });
       logActivity({
         event_type: 'member_contract_added',
         activity: `Contract added: ${variables.contract_type || 'Unknown'}`,
@@ -628,12 +629,12 @@ export const useAssignPackageToMember = () => {
       return { transactionNo: result.transaction_no, transactionId: result.transaction_id };
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['package-metrics'] });
-      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageMetrics('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBilling(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSummaryStats(variables.memberId) });
       logActivity({
         event_type: 'package_purchased',
         activity: `Package "${variables.pkg.name_en}" purchased for member (${result.transactionNo})`,
@@ -677,7 +678,7 @@ export const useUpdateMemberPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages(variables.memberId) });
       logActivity({
         event_type: 'member_package_updated',
         activity: `Member package updated`,
@@ -705,8 +706,8 @@ export const useDeleteMemberPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
       logActivity({
         event_type: 'member_package_deleted',
         activity: `Member package deleted`,
@@ -742,7 +743,7 @@ export const useActivateMemberPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-packages', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages(variables.memberId) });
       logActivity({
         event_type: 'member_package_activated',
         activity: `Member package activated`,
@@ -774,8 +775,8 @@ export const useCreateMemberBilling = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBilling(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSummaryStats(variables.memberId) });
       logActivity({
         event_type: 'member_billing_added',
         activity: `Billing added: ${variables.description} (${variables.amount})`,
@@ -802,8 +803,8 @@ export const useUpdateMemberBilling = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBilling(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSummaryStats(variables.memberId) });
       logActivity({
         event_type: 'member_billing_updated',
         activity: `Billing updated`,
@@ -831,8 +832,8 @@ export const useDeleteMemberBilling = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['member-billing', variables.memberId] });
-      queryClient.invalidateQueries({ queryKey: ['member-summary-stats', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBilling(variables.memberId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberSummaryStats(variables.memberId) });
       logActivity({
         event_type: 'member_billing_deleted',
         activity: `Billing record deleted`,

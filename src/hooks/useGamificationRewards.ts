@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface GamificationReward {
   id: string;
@@ -28,7 +29,7 @@ export type CreateGamificationReward = Omit<GamificationReward, 'id' | 'created_
 
 export const useGamificationRewards = () => {
   return useQuery({
-    queryKey: ['gamification-rewards'],
+    queryKey: queryKeys.gamificationRewards(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_rewards')
@@ -49,7 +50,7 @@ export const useCreateGamificationReward = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRewards() });
       toast.success(i18n.t('toast.rewardCreated'));
       logActivity({ event_type: 'gamification_reward_created', entity_type: 'gamification_reward', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -66,7 +67,7 @@ export const useUpdateGamificationReward = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRewards() });
       toast.success(i18n.t('toast.rewardUpdated'));
       logActivity({ event_type: 'gamification_reward_updated', entity_type: 'gamification_reward', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -82,7 +83,7 @@ export const useDeleteGamificationReward = () => {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ['gamification-rewards'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationRewards() });
       toast.success(i18n.t('toast.rewardDeleted'));
       logActivity({ event_type: 'gamification_reward_deleted', entity_type: 'gamification_reward', entity_id: id });
     },

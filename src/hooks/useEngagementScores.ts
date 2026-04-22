@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateEngagementScore, type EngagementResult } from '@/lib/engagementScore';
 import { differenceInDays } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useEngagementScores(memberIds: string[]) {
   return useQuery({
-    queryKey: ['engagement-scores', memberIds],
+    queryKey: queryKeys.engagementScores(memberIds),
     queryFn: async () => {
       if (memberIds.length === 0) return {} as Record<string, EngagementResult>;
 

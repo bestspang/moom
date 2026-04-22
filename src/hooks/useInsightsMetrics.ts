@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, format, differenceInMonths } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface InsightsOverview {
   arpu: number;
@@ -20,7 +21,7 @@ export function useInsightsOverview() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['insights-overview'],
+    queryKey: queryKeys.insightsOverview(),
     enabled: !!user,
     queryFn: async (): Promise<InsightsOverview> => {
       const now = new Date();
@@ -129,7 +130,7 @@ export function useRevenueDaily() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['revenue-daily-30d'],
+    queryKey: queryKeys.revenueDaily30d(),
     enabled: !!user,
     queryFn: async () => {
       const now = new Date();

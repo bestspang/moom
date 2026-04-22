@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 import { startOfDay, endOfDay } from 'date-fns';
 
 export interface ActivityLogEntry {
@@ -92,7 +93,7 @@ export const useActivityLogs = ({
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['activity-logs', startDate?.toISOString(), endDate?.toISOString(), eventTypes, search, page, perPage],
+    queryKey: queryKeys.activityLogs(startDate?.toISOString(), endDate?.toISOString(), eventTypes, search, page, perPage),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase

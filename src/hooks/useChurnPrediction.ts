@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface ChurnRiskMember {
   id: string;
@@ -16,7 +17,7 @@ export interface ChurnRiskMember {
  */
 export function useChurnPrediction() {
   return useQuery({
-    queryKey: ['churn-prediction'],
+    queryKey: queryKeys.churnPrediction(),
     queryFn: async () => {
       const now = new Date();
       const d30 = new Date(now.getTime() - 30 * 86_400_000).toISOString();

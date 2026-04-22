@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface CouponTemplate {
   id: string;
@@ -24,7 +25,7 @@ export type CreateCouponTemplate = Omit<CouponTemplate, 'id' | 'created_at' | 'u
 
 export const useGamificationCoupons = () =>
   useQuery({
-    queryKey: ['gamification-coupon-templates'],
+    queryKey: queryKeys.gamificationCouponTemplates(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('coupon_templates')
@@ -44,7 +45,7 @@ export const useCreateCouponTemplate = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationCouponTemplates() });
       toast.success(i18n.t('toast.couponTemplateCreated'));
       logActivity({ event_type: 'coupon_template_created', entity_type: 'coupon_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -61,7 +62,7 @@ export const useUpdateCouponTemplate = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationCouponTemplates() });
       toast.success(i18n.t('toast.couponTemplateUpdated'));
       logActivity({ event_type: 'coupon_template_updated', entity_type: 'coupon_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -77,7 +78,7 @@ export const useDeleteCouponTemplate = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['gamification-coupon-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationCouponTemplates() });
       toast.success(i18n.t('toast.couponTemplateDeleted'));
       logActivity({ event_type: 'coupon_template_deleted', entity_type: 'coupon_template', entity_id: variables, metadata: {} });
     },

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Member = Database['public']['Tables']['members']['Row'];
 
@@ -16,7 +17,7 @@ export interface EnrichedMember extends Member {
  */
 export const useMembersEnrichment = (memberIds: string[]) => {
   return useQuery({
-    queryKey: ['members-enrichment', memberIds],
+    queryKey: queryKeys.membersEnrichment(memberIds),
     queryFn: async () => {
       if (memberIds.length === 0) return {};
 

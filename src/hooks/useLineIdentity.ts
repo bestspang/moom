@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 type OwnerType = 'member' | 'lead' | 'staff';
 
@@ -29,7 +30,7 @@ export interface LineIdentity {
 export const useLineIdentity = (ownerType: OwnerType, ownerId: string | undefined) => {
   const col = ownerColumn(ownerType);
   return useQuery({
-    queryKey: ['line-identity', ownerType, ownerId],
+    queryKey: queryKeys.lineIdentity(ownerType, ownerId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('line_users')
@@ -90,7 +91,7 @@ export const useRequestLineLink = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['line-identity', variables.ownerType, variables.ownerId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineIdentity(variables.ownerType, variables.ownerId) });
       toast.success(i18n.t('toast.lineLinkSent'));
       logActivity({ event_type: 'line_link_requested', metadata: { owner_type: variables.ownerType, owner_id: variables.ownerId } });
     },
@@ -114,8 +115,8 @@ export const useUnlinkLineIdentity = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['line-identity', variables.ownerType, variables.ownerId] });
-      queryClient.invalidateQueries({ queryKey: ['line-users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineIdentity(variables.ownerType, variables.ownerId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lineUsers() });
       toast.success(i18n.t('toast.lineUnlinked'));
       logActivity({ event_type: 'line_unlinked', metadata: { owner_type: variables.ownerType, owner_id: variables.ownerId } });
     },

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 
@@ -76,7 +77,7 @@ export const useGenerateQRToken = () => {
       return data as CheckinQRToken;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['active-qr-token'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.activeQrToken(null) });
       logActivity({
         event_type: 'checkin_qr_generated',
         activity: 'Check-in QR token generated',
@@ -141,8 +142,8 @@ export const useValidateQRToken = () => {
       return { token: tokenData, memberId: effectiveMemberId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['active-qr-token'] });
-      queryClient.invalidateQueries({ queryKey: ['check-ins'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.activeQrToken(null) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkIns('') });
       logActivity({
         event_type: 'checkin_qr_validated',
         activity: 'Check-in via QR code successful',
@@ -160,7 +161,7 @@ export const useValidateQRToken = () => {
 // Get active (unused, unexpired) QR token for a member
 export const useActiveQRToken = (memberId: string | null, locationId?: string) => {
   return useQuery({
-    queryKey: ['active-qr-token', memberId, locationId],
+    queryKey: queryKeys.activeQrToken(memberId, locationId),
     queryFn: async () => {
       if (!memberId) return undefined;
       let query = supabase
@@ -188,7 +189,7 @@ export const useActiveQRToken = (memberId: string | null, locationId?: string) =
 // Fetch token info (read-only, no mark as used) for redemption page
 export const useTokenInfo = (token: string | null) => {
   return useQuery({
-    queryKey: ['token-info', token],
+    queryKey: queryKeys.tokenInfo(token),
     queryFn: async () => {
       if (!token) return null;
       const { data, error } = await supabase

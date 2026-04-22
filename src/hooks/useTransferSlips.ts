@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -30,7 +31,7 @@ export const useTransferSlipsList = (filters: TransferSlipFilters) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['transfer-slips', filters],
+    queryKey: queryKeys.transferSlips(filters),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -69,7 +70,7 @@ export const useTransferSlipStats = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['transfer-slip-stats'],
+    queryKey: queryKeys.transferSlipStats(),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -92,7 +93,7 @@ export const useTransferSlipDetail = (id: string | null) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['transfer-slip-detail', id],
+    queryKey: queryKeys.transferSlipDetail(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -122,7 +123,7 @@ export const useSlipActivityLog = (slipId: string | null) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['slip-activity-log', slipId],
+    queryKey: queryKeys.slipActivityLog(slipId),
     enabled: !!user && !!slipId,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -160,11 +161,11 @@ export const useApproveSlip = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
-      queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
       toast.success(i18n.t('toast.slipApproved'));
     },
     onError: (error) => {
@@ -221,10 +222,10 @@ export const useRejectSlip = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
       toast.success(i18n.t('toast.slipRejected'));
     },
     onError: (error) => {
@@ -298,11 +299,11 @@ export const useVoidSlip = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfer-slips'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transfer-slip-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['slip-activity-log'] });
-      queryClient.invalidateQueries({ queryKey: ['finance-transactions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
       toast.success(i18n.t('toast.slipVoided'));
     },
     onError: (error) => {

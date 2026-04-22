@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 import { subMonths, startOfMonth, endOfMonth, format, getDay, getHours, parseISO } from 'date-fns';
 
 // Revenue by month (last 6 months)
 export function useRevenueByMonth() {
   return useQuery({
-    queryKey: ['analytics-revenue-by-month'],
+    queryKey: queryKeys.analyticsRevenueByMonth(),
     queryFn: async () => {
       const now = new Date();
       const sixMonthsAgo = format(startOfMonth(subMonths(now, 5)), 'yyyy-MM-dd');
@@ -45,7 +46,7 @@ export function useRevenueByMonth() {
 // Member growth by month (last 6 months)
 export function useMemberGrowth() {
   return useQuery({
-    queryKey: ['analytics-member-growth'],
+    queryKey: queryKeys.analyticsMemberGrowth(),
     queryFn: async () => {
       const now = new Date();
       const sixMonthsAgo = format(startOfMonth(subMonths(now, 5)), 'yyyy-MM-dd');
@@ -99,7 +100,7 @@ export function useMemberGrowth() {
 // Class fill rate heatmap — day of week × hour
 export function useClassFillRate() {
   return useQuery({
-    queryKey: ['analytics-class-fill-rate'],
+    queryKey: queryKeys.analyticsClassFillRate(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedule')
@@ -140,7 +141,7 @@ export function useClassFillRate() {
 // Lead conversion funnel
 export function useLeadFunnel() {
   return useQuery({
-    queryKey: ['analytics-lead-funnel'],
+    queryKey: queryKeys.analyticsLeadFunnel(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')

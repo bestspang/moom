@@ -107,8 +107,8 @@ export const useCreateRoom = () => {
       return newRoom;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rooms() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roomStats() });
       logActivity({
         event_type: 'room_created',
         activity: `Room "${data.name}" created`,
@@ -147,8 +147,8 @@ export const useUpdateRoom = () => {
       return updated;
     },
     onSuccess: (updated, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rooms() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roomStats() });
       logActivity({
         event_type: 'room_updated',
         activity: `Room "${updated.name}" updated`,
@@ -179,8 +179,8 @@ export const useDeleteRoom = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['room-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rooms() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roomStats() });
       logActivity({
         event_type: 'room_deleted',
         activity: `Room deleted`,

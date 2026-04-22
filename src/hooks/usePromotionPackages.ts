@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import type { Tables } from '@/integrations/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 type Package = Tables<'packages'>;
 
@@ -23,7 +24,7 @@ export const usePromotionPackages = (
   legacyPackageIds?: string[] | null,
 ) => {
   return useQuery({
-    queryKey: ['promotion-packages', promotionId],
+    queryKey: queryKeys.promotionPackages(promotionId),
     queryFn: async () => {
       if (!promotionId) return [] as (Package & { discount_override?: number | null; max_sale_amount?: number | null })[];
 
@@ -70,7 +71,7 @@ export const useAddPromotionPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.promotionPackages(vars.promotionId) });
       toast.success(i18n.t('toast.packageAdded'));
       logActivity({ event_type: 'promotion_package_added', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
     },
@@ -94,7 +95,7 @@ export const useRemovePromotionPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.promotionPackages(vars.promotionId) });
       toast.success(i18n.t('toast.packageRemoved'));
       logActivity({ event_type: 'promotion_package_removed', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
     },
@@ -132,7 +133,7 @@ export const useUpdatePromotionPackage = () => {
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['promotion-packages', vars.promotionId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.promotionPackages(vars.promotionId) });
       toast.success(i18n.t('toast.packageUpdated'));
       logActivity({ event_type: 'promotion_package_updated', metadata: { promotion_id: vars.promotionId, package_id: vars.packageId } });
     },

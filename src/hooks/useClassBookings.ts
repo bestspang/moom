@@ -106,8 +106,8 @@ export const useCreateBooking = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-bookings', variables.scheduleId] });
-      queryClient.invalidateQueries({ queryKey: ['member-bookings', variables.memberId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings(variables.scheduleId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBookings(variables.memberId) });
       logActivity({
         event_type: 'booking_created',
         activity: `Booking created for schedule`,
@@ -165,8 +165,8 @@ export const useCancelBooking = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBookings('') });
       logActivity({
         event_type: 'booking_cancelled',
         activity: `Booking cancelled`,
@@ -276,14 +276,14 @@ export const useMarkAttendance = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['package-usage'] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-checkins'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBookings('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberAttendanceCheckin() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.gymCheckins('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
       logActivity({
         event_type: 'attendance_marked',
         activity: `Attendance marked as ${variables.status}`,
@@ -394,14 +394,14 @@ export const useBatchMarkAttendance = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['member-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['package-usage'] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-checkins'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberBookings('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberAttendanceCheckin() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.gymCheckins('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
       logActivity({
         event_type: 'attendance_marked',
         activity: `Batch attendance marked as ${variables.status} for ${variables.bookingIds.length} bookings`,
@@ -496,7 +496,7 @@ export const useJoinWaitlist = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-waitlist', variables.scheduleId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classWaitlist(variables.scheduleId) });
       toast.success(i18n.t('toast.addedToWaitlist'));
     },
     onError: (error: Error) => {
@@ -531,7 +531,7 @@ export const useLeaveWaitlist = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['class-waitlist', data.schedule_id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classWaitlist(data.schedule_id) });
       toast.success(i18n.t('toast.removedFromWaitlist'));
     },
     onError: (error) => {
@@ -585,8 +585,8 @@ export const usePromoteFromWaitlist = () => {
       return booking;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-waitlist', variables.scheduleId] });
-      queryClient.invalidateQueries({ queryKey: ['class-bookings', variables.scheduleId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classWaitlist(variables.scheduleId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings(variables.scheduleId) });
       logActivity({
         event_type: 'waitlist_promoted',
         activity: `Member promoted from waitlist to booking`,

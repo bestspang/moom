@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type GoalType = 'revenue' | 'new_members' | 'retention' | 'checkins';
 
@@ -23,7 +24,7 @@ export interface GoalWithProgress extends Goal {
 
 export function useGoals() {
   return useQuery({
-    queryKey: ['goals'],
+    queryKey: queryKeys.goals(),
     queryFn: async () => {
       const now = new Date().toISOString().slice(0, 10);
 
@@ -101,7 +102,7 @@ export function useCreateGoal() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['goals'] });
+      qc.invalidateQueries({ queryKey: queryKeys.goals() });
       logActivity({
         event_type: 'goal_created',
         activity: 'Goal created',
@@ -122,7 +123,7 @@ export function useDeleteGoal() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['goals'] });
+      qc.invalidateQueries({ queryKey: queryKeys.goals() });
       logActivity({
         event_type: 'goal_deleted',
         activity: 'Goal deleted',

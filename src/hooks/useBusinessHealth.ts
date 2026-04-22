@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface BusinessHealthData {
@@ -18,7 +19,7 @@ export function useBusinessHealth() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['business-health'],
+    queryKey: queryKeys.businessHealth(),
     enabled: !!user,
     queryFn: async (): Promise<BusinessHealthData> => {
       const now = new Date();

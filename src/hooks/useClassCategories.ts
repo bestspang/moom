@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from '@/lib/queryKeys';
 
 type ClassCategory = Tables<'class_categories'>;
 type ClassCategoryInsert = TablesInsert<'class_categories'>;
@@ -17,7 +18,7 @@ export type ClassCategoryWithCount = ClassCategory & {
 export const useClassCategories = (search?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['class-categories', search],
+    queryKey: queryKeys.classCategories(search),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase
@@ -43,7 +44,7 @@ export const useClassCategories = (search?: string) => {
 export const useClassCategory = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['class-categories', id],
+    queryKey: queryKeys.classCategory(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,7 +62,7 @@ export const useClassCategory = (id: string) => {
 export const useCategoryClasses = (categoryId: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['class-categories', categoryId, 'classes'],
+    queryKey: queryKeys.categoryClasses(categoryId),
     enabled: !!user && !!categoryId,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -91,7 +92,7 @@ export const useCreateClassCategory = () => {
       return newCategory;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['class-categories'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classCategories() });
       logActivity({
         event_type: 'class_category_created',
         activity: `Class category "${data.name}" created`,
@@ -122,8 +123,8 @@ export const useUpdateClassCategory = () => {
       return updated;
     },
     onSuccess: (updated, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['class-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['class-categories', variables.id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classCategories() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classCategory(variables.id) });
       logActivity({
         event_type: 'class_category_updated',
         activity: `Class category "${updated.name}" updated`,
@@ -154,7 +155,7 @@ export const useDeleteClassCategory = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['class-categories'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classCategories() });
       logActivity({
         event_type: 'class_category_deleted',
         activity: `Class category deleted`,

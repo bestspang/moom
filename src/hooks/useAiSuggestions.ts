@@ -59,7 +59,7 @@ export function useApproveSuggestion() {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiSuggestions() });
       logActivity({
         event_type: 'ai_suggestion_approved',
         activity: 'AI suggestion approved',
@@ -88,7 +88,7 @@ export function useRejectSuggestion() {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiSuggestions() });
       logActivity({
         event_type: 'ai_suggestion_rejected',
         activity: 'AI suggestion rejected',
@@ -120,7 +120,7 @@ export function useApplySuggestion() {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-suggestions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiSuggestions() });
       logActivity({
         event_type: 'ai_suggestion_applied',
         activity: 'AI suggestion applied',

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { queryKeys } from '@/lib/queryKeys';
 
 type TableName =
   | 'schedule'
@@ -123,9 +124,9 @@ export function useRealtimeSync() {
             const record = (payload.new as Record<string, unknown>) || (payload.old as Record<string, unknown>);
             const scheduledDate = record?.scheduled_date as string | undefined;
             if (scheduledDate) {
-              queryClient.invalidateQueries({ queryKey: ['schedule', scheduledDate] });
-              queryClient.invalidateQueries({ queryKey: ['schedule-stats', scheduledDate] });
-              queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+              queryClient.invalidateQueries({ queryKey: queryKeys.schedule(scheduledDate) });
+              queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats(scheduledDate) });
+              queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
               return;
             }
           }

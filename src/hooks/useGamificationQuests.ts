@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface QuestTemplate {
   id: string;
@@ -29,7 +30,7 @@ export type CreateQuestTemplate = Omit<QuestTemplate, 'id' | 'created_at' | 'upd
 
 export const useGamificationQuests = () =>
   useQuery({
-    queryKey: ['gamification-quest-templates'],
+    queryKey: queryKeys.gamificationQuestTemplates(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('quest_templates')
@@ -50,7 +51,7 @@ export const useCreateQuestTemplate = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationQuestTemplates() });
       toast.success(i18n.t('toast.questTemplateCreated'));
       logActivity({ event_type: 'quest_template_created', entity_type: 'quest_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -67,7 +68,7 @@ export const useUpdateQuestTemplate = () => {
       return data;
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationQuestTemplates() });
       toast.success(i18n.t('toast.questTemplateUpdated'));
       logActivity({ event_type: 'quest_template_updated', entity_type: 'quest_template', entity_id: data?.id, metadata: { name_en: data?.name_en } });
     },
@@ -83,7 +84,7 @@ export const useDeleteQuestTemplate = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['gamification-quest-templates'] });
+      qc.invalidateQueries({ queryKey: queryKeys.gamificationQuestTemplates() });
       toast.success(i18n.t('toast.questTemplateDeleted'));
       logActivity({ event_type: 'quest_template_deleted', entity_type: 'quest_template', entity_id: variables, metadata: {} });
     },

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface Expense {
   id: string;
@@ -25,7 +26,7 @@ export function useExpenses(filters: ExpenseFilters) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['expenses', filters.startDate?.toISOString(), filters.endDate?.toISOString()],
+    queryKey: queryKeys.expenses(filters.startDate?.toISOString(), filters.endDate?.toISOString()),
     enabled: !!user,
     queryFn: async () => {
       let query = supabase.from('expenses').select('*');
@@ -58,7 +59,7 @@ export function useCreateExpense() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses() });
       toast.success(i18n.t('toast.expenseCreated'));
     },
     onError: () => {
@@ -76,7 +77,7 @@ export function useDeleteExpense() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses() });
       toast.success(i18n.t('toast.expenseDeleted'));
     },
     onError: () => {

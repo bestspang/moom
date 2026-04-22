@@ -225,8 +225,8 @@ export function useCreateSchedule() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats('') });
       logActivity({
         event_type: 'schedule_created',
         activity: `Schedule created for ${data.scheduled_date}`,
@@ -257,8 +257,8 @@ export function useUpdateSchedule() {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats('') });
       logActivity({
         event_type: 'schedule_updated',
         activity: `Schedule updated`,
@@ -287,8 +287,8 @@ export function useDeleteSchedule() {
       if (error) throw error;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats('') });
       logActivity({
         event_type: 'schedule_deleted',
         activity: `Schedule deleted`,
@@ -350,7 +350,7 @@ export function useCreateScheduleValidated() {
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.schedule(variables.p_scheduled_date) });
-      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats('') });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
       logActivity({
         event_type: 'schedule_created',
@@ -440,12 +440,12 @@ export function useCancelSchedule() {
       return scheduleId;
     },
     onSuccess: (scheduleId) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['class-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
-      queryClient.invalidateQueries({ queryKey: ['package-usage'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleStats('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classBookings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage('') });
       logActivity({
         event_type: 'schedule_cancelled',
         activity: 'Schedule cancelled with all bookings — sessions refunded',

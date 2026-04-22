@@ -249,8 +249,8 @@ export const useUpdateClass = () => {
     onSuccess: ({ updated, oldData }, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.classes() });
       queryClient.invalidateQueries({ queryKey: queryKeys.classStats() });
-      queryClient.invalidateQueries({ queryKey: ['class-performance'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.classPerformance('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schedule('') });
       logActivity({
         event_type: 'class_updated',
         activity: `Class "${updated.name}" updated`,

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Types based on database schema
 type UsageType = 'checkin' | 'booking' | 'pt_session' | 'adjustment';
@@ -23,7 +24,7 @@ interface PackageUsageLedger {
 // Fetch usage history for a member package
 export const usePackageUsageHistory = (memberPackageId: string) => {
   return useQuery({
-    queryKey: ['package-usage', memberPackageId],
+    queryKey: queryKeys.packageUsage(memberPackageId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('package_usage_ledger')
@@ -44,7 +45,7 @@ export const usePackageUsageHistory = (memberPackageId: string) => {
 // Fetch all usage history for a member (across all packages)
 export const useMemberUsageHistory = (memberId: string) => {
   return useQuery({
-    queryKey: ['member-usage-history', memberId],
+    queryKey: queryKeys.memberUsageHistory(memberId),
     queryFn: async () => {
       // First get all member packages
       const { data: packages, error: packagesError } = await supabase
@@ -146,8 +147,8 @@ export const useRecordUsage = () => {
       return ledgerEntry;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage(variables.memberPackageId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
       logActivity({
         event_type: 'package_usage_recorded',
         activity: `Package usage recorded: ${variables.usageType} (${variables.deltaSessions} sessions)`,
@@ -224,8 +225,8 @@ export const useRefundUsage = () => {
       return ledgerEntry;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage(variables.memberPackageId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
       logActivity({
         event_type: 'package_sessions_refunded',
         activity: `Package sessions refunded: ${variables.sessions} sessions`,
@@ -298,8 +299,8 @@ export const useAdjustBalance = () => {
       return ledgerEntry;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['package-usage', variables.memberPackageId] });
-      queryClient.invalidateQueries({ queryKey: ['member-packages'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageUsage(variables.memberPackageId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages('') });
       logActivity({
         event_type: 'package_balance_adjusted',
         activity: `Package balance adjusted to ${variables.newBalance} sessions`,
@@ -319,7 +320,7 @@ export const useAdjustBalance = () => {
 // Get usage summary for a package
 export const usePackageUsageSummary = (memberPackageId: string) => {
   return useQuery({
-    queryKey: ['package-usage-summary', memberPackageId],
+    queryKey: queryKeys.packageUsageSummary(memberPackageId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('package_usage_ledger')

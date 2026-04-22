@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface GamificationAuditEntry {
   id: string;
@@ -17,7 +18,7 @@ export interface GamificationAuditEntry {
 
 export const useGamificationAudit = (opts?: { flaggedOnly?: boolean; limit?: number }) => {
   return useQuery({
-    queryKey: ['gamification-audit', opts?.flaggedOnly],
+    queryKey: queryKeys.gamificationAudit(opts?.flaggedOnly),
     queryFn: async () => {
       let query = supabase
         .from('gamification_audit_log')
@@ -34,7 +35,7 @@ export const useGamificationAudit = (opts?: { flaggedOnly?: boolean; limit?: num
 
 export const useGamificationTrainerTiers = () => {
   return useQuery({
-    queryKey: ['gamification-trainer-tiers'],
+    queryKey: queryKeys.gamificationTrainerTiers(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_trainer_tiers')
@@ -48,7 +49,7 @@ export const useGamificationTrainerTiers = () => {
 
 export const useGamificationSeasons = () => {
   return useQuery({
-    queryKey: ['gamification-seasons'],
+    queryKey: queryKeys.gamificationSeasons(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gamification_seasons')

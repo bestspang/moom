@@ -42,7 +42,7 @@ export const useLeads = (search?: string, status?: string) => {
 export const useLead = (id: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['leads', id],
+    queryKey: queryKeys.leadDetail(id),
     enabled: !!user && !!id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -72,7 +72,7 @@ export const useCreateLead = () => {
       return newLead;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads() });
       logActivity({
         event_type: 'lead_created',
         activity: `Lead "${data.first_name} ${data.last_name || ''}" created`,
@@ -103,7 +103,7 @@ export const useUpdateLead = () => {
       return updated;
     },
     onSuccess: (updated, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads() });
       logActivity({
         event_type: 'lead_updated',
         activity: `Lead "${updated.first_name} ${updated.last_name || ''}" updated`,
@@ -133,7 +133,7 @@ export const useDeleteLead = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads() });
       logActivity({
         event_type: 'lead_deleted',
         activity: `Lead deleted`,
@@ -162,8 +162,8 @@ export const useConvertLeadToMember = () => {
       return { leadId, memberId };
     },
     onSuccess: ({ leadId, memberId }) => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members() });
       logActivity({
         event_type: 'lead_converted',
         activity: `Lead converted to member`,

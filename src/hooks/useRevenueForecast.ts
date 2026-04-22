@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface RevenueForecastData {
   lastMonth: number;
@@ -10,7 +11,7 @@ export interface RevenueForecastData {
 
 export function useRevenueForecast() {
   return useQuery({
-    queryKey: ['revenue-forecast'],
+    queryKey: queryKeys.revenueForecast(),
     queryFn: async (): Promise<RevenueForecastData> => {
       const now = new Date();
       const thisMonthStart = format(startOfMonth(now), 'yyyy-MM-dd');

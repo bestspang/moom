@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { subDays } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface PackageMetrics {
   soldThisWeek: number;
@@ -11,7 +12,7 @@ export interface PackageMetrics {
 
 export const usePackageMetrics = (packageId: string) => {
   return useQuery({
-    queryKey: ['package-metrics', packageId],
+    queryKey: queryKeys.packageMetrics(packageId),
     queryFn: async (): Promise<PackageMetrics> => {
       const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
