@@ -380,19 +380,13 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    // Verify caller identity
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Verify caller identity (typed user-scoped client)
+    const userClient = createUserDb(authHeader);
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    // Service client for writes
-    const db = createClient(supabaseUrl, serviceKey);
+    // Service client for writes (typed service-role client)
+    const db: Db = createDb();
 
     const body: GamificationEventRequest = await req.json();
     const { event_type, idempotency_key, metadata } = body;
