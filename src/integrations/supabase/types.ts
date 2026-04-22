@@ -4729,6 +4729,31 @@ export type Database = {
         }
         Returns: Json
       }
+      process_slip_approval: {
+        Args: {
+          p_activation_date: string
+          p_amount_ex_vat: number
+          p_amount_gross: number
+          p_amount_vat: number
+          p_expiry_date: string
+          p_idempotency_key: string
+          p_location_id: string
+          p_member_id: string
+          p_note: string
+          p_package_id: string
+          p_package_name_snapshot: string
+          p_package_type: string
+          p_payment_method: string
+          p_sessions_total: number
+          p_slip_id: string
+          p_sold_to_contact: string
+          p_sold_to_name: string
+          p_staff_id: string
+          p_transaction_no: string
+          p_vat_rate: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       access_level:
