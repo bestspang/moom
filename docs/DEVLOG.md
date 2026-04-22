@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-04-22 (pass 2) — Deep audit: idempotency + storage policy hardening
+
+### What was found
+After the morning's enum fixes, a second pass surfaced 2 real-but-quieter risks the linter / runtime hadn't tripped yet:
+
+1. **Stripe webhook race window.** `process_stripe_payment` did the right thing inside the RPC (FOR UPDATE lock + idempotent on `transactions.status='paid'`), but `member_billing` had no DB-level guarantee. Two concurrent webhook retries arriving microseconds apart could both pass the "is there already a billing row?" check and double-insert. Pure DB problem, no app code change needed.
+2. **`slip-images` bucket was world-listable.** Bucket was `public: true` (intentional, so signed URLs in admin/member UI keep working), but the SELECT policy was `USING (bucket_id = 'slip-images')` — i.e. any anonymous client could `list()` every slip filename. Slips contain bank refs, member names, amounts.
+
+Plus 1 papercut on the diagnostic surface:
+
+3. **`smoke_test_payment_flow()` blocked SQL Editor.** Authz check used `has_min_access_level(auth.uid(), …)`; from the SQL Editor / service-role context `auth.uid()` is null → always FORBIDDEN. Owners couldn't run their own diagnostic.
+
+### Fixes (3 migrations, all additive)
+1. **Partial unique index** on `member_billing(transaction_id) WHERE transaction_id IS NOT NULL` — closes the Stripe retry race at the DB layer. Pre-flight confirmed 0 existing duplicates.
+2. **Tightened `slip-images` SELECT policy** — now requires `has_min_access_level(level_1_minimum)` (staff) OR ownership match via `transfer_slips.member_id = get_my_member_id(auth.uid())`. Bucket stays `public:true` so existing URLs in dashboards keep rendering; only enumeration is closed.
+3. **`smoke_test_payment_flow()`** — auth guard now allows `auth.uid() IS NULL` (SQL Editor / service-role) while still blocking authenticated non-managers.
+
+### Guardrails added
+`AI_GUARDRAILS.md`:
+- **Rule 9** — Storage bucket policy verification (never ship `USING (bucket_id = 'X')` on a public bucket without an ownership clause).
+- **Rule 10** — Webhook idempotency must be DB-level (unique index), not app-level (race-prone).
+
+### Verified
+- `smoke_test_payment_flow()` returns ok for all 4 enum casts + lists all 4 RPCs present.
+- `idx_member_billing_unique_transaction` exists.
+- New policy `Slip images readable by staff or owner` active; old policy dropped.
+
+### Not changed
+- Stripe webhook edge function — fix is DB-side only, callers unchanged.
+- Frontend — admin/member slip preview still uses the same public URLs.
+- `gamification_rewards` / `quest_templates` empty tables — known empty, UI handles empty state, business decision to seed in production.
+- Bucket `public` flag stays true (flipping would invalidate every existing slip URL).
+
+---
+
 ## 2026-04-22 (later) — Hot-fix: Atomic-RPC enum mismatch (P0 revenue path)
 
 ### What broke
