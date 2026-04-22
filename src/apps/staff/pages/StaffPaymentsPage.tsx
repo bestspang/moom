@@ -8,7 +8,7 @@ import { EmptyState } from '@/apps/shared/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { CreditCard, CheckCircle, XCircle, ImageIcon } from 'lucide-react';
+import { CreditCard, CheckCircle, XCircle, ImageIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
@@ -149,13 +149,17 @@ export default function StaffPaymentsPage() {
                     variant="outline"
                     className="border-destructive/30 text-destructive"
                     onClick={handleReject}
-                    disabled={rejectSlip.isPending}
+                    disabled={rejectSlip.isPending || approveSlip.isPending}
                   >
-                    <XCircle className="h-4 w-4 mr-1.5" />
+                    {rejectSlip.isPending
+                      ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      : <XCircle className="h-4 w-4 mr-1.5" />}
                     Reject
                   </Button>
-                  <Button onClick={handleApprove} disabled={approveSlip.isPending}>
-                    <CheckCircle className="h-4 w-4 mr-1.5" />
+                  <Button onClick={handleApprove} disabled={approveSlip.isPending || rejectSlip.isPending}>
+                    {approveSlip.isPending
+                      ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      : <CheckCircle className="h-4 w-4 mr-1.5" />}
                     Approve
                   </Button>
                 </div>

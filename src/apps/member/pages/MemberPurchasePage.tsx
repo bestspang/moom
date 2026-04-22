@@ -6,7 +6,7 @@ import { Section } from '@/apps/shared/components/Section';
 import { QueryError } from '@/apps/shared/components/QueryError';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Check, CreditCard, Smartphone, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, Smartphone, Building2, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
@@ -189,6 +189,7 @@ export default function MemberPurchasePage() {
 
           <div className="px-4 pb-8">
             <Button className="w-full" onClick={handlePurchase} disabled={checkoutLoading || !memberId}>
+              {checkoutLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {checkoutLoading ? t('member.processing') : t('member.payAmount', { amount: pkg.price.toLocaleString() })}
             </Button>
           </div>

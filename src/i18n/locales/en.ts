@@ -2256,6 +2256,7 @@ export default {
     // RewardDropCard
     rewardClaimed: 'Reward claimed! 🎉',
     rewardClaimFailed: 'Failed to claim reward',
+    reactionFailed: 'Failed to update reaction',
     limitedLabel: 'Limited',
     soldOut: 'Sold Out',
     levelRequired: 'Level {{level}} Required',

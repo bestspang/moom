@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Zap, Flame } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 
 interface Props {
   squadId: string;
@@ -55,6 +56,7 @@ export function SquadActivityFeed({ squadId }: Props) {
       });
       queryClient.invalidateQueries({ queryKey: ['squad-feed-reactions'] });
     },
+    onError: () => toast.error(t('member.reactionFailed')),
   });
 
   const handleToggle = useCallback((auditLogId: string) => {
