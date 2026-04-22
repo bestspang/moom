@@ -60,7 +60,21 @@
 
 ## Quick Regression Checks
 
-- [ ] Frontend build passes (`npm run build`)
+- [ ] Frontend build passes (`bun run build`)
 - [ ] No TypeScript errors in edge functions
 - [ ] Old records still render after schema changes
 - [ ] Realtime subscriptions still work (check-in counter, etc.)
+
+---
+
+## 🛡️ AI Change Verification Gate (run before marking any AI-driven change DONE)
+
+Every code change produced by an AI session must pass these 5 checks. If any fails, **revert and re-plan**.
+
+- [ ] **Build green** — `bun run build` exits 0 (catches type/import regressions)
+- [ ] **Working features in the touched file still work** — manually click through the unrelated UI/handlers in the same file/component
+- [ ] **No PROTECTED_FILES touched without approval** — cross-check the diff against `PROTECTED_FILES.md` (Tier 1 = never; Tier 2 = needs approval)
+- [ ] **Mutations have `logActivity()`** — every `useMutation` `onSuccess` calls `logActivity({event_type, ...})`
+- [ ] **i18n parity** — `node scripts/compare-i18n.mjs` reports `✅ All EN keys exist in TH!` and counts match
+
+> See `AI_GUARDRAILS.md` (root) for the full pre-edit checklist that prevents these failures from being introduced in the first place.
