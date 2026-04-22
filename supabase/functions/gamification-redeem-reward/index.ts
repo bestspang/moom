@@ -154,175 +154,83 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors })
     }
 
-    // 1) Idempotency check
-    const { data: existingRedemption } = await db
-      .from("reward_redemptions")
-      .select("id, status")
-      .eq("idempotency_key", idempotency_key)
-      .maybeSingle();
-
-    if (existingRedemption) {
-      return new Response(JSON.stringify({ status: "already_processed", redemption_id: existingRedemption.id }), { status: 200, headers: cors });
-    }
-
-    // 2) Get reward
-    const { data: reward } = await db
-      .from("gamification_rewards")
-      .select("*")
-      .eq("id", reward_id)
-      .single();
-
-    if (!reward) return new Response(JSON.stringify({ error: "Reward not found" }), { status: 404, headers: cors });
-
-    // 3) Check active
-    if (!reward.is_active) return new Response(JSON.stringify({ error: "Reward is not active" }), { status: 400, headers: cors });
-
-    // 4) Check date window
-    const now = new Date();
-    if (reward.available_from && new Date(reward.available_from) > now) {
-      return new Response(JSON.stringify({ error: "Reward not yet available" }), { status: 400, headers: cors });
-    }
-    if (reward.available_until && new Date(reward.available_until) < now) {
-      return new Response(JSON.stringify({ error: "Reward has expired" }), { status: 400, headers: cors });
-    }
-
-    // 5) Get member profile
-    const { data: profile } = await db
-      .from("member_gamification_profiles")
-      .select("*")
-      .eq("member_id", member_id)
-      .single();
-
-    if (!profile) return new Response(JSON.stringify({ error: "Member has no gamification profile" }), { status: 400, headers: cors });
-
-    // 6) Check level requirement
-    if (reward.level_required && profile.current_level < reward.level_required) {
-      return new Response(JSON.stringify({ error: "Level requirement not met", required: reward.level_required, current: profile.current_level }), { status: 400, headers: cors });
-    }
-
-    // 7) Check points balance (pre-flight; actual atomic debit below)
-    if (profile.available_points < reward.points_cost) {
-      return new Response(JSON.stringify({ error: "Insufficient points", required: reward.points_cost, available: profile.available_points }), { status: 400, headers: cors });
-    }
-
-    // 8) Check stock (pre-flight; actual atomic decrement via UPDATE WHERE below)
-    if (!reward.is_unlimited) {
-      const available = (reward.stock || 0) - (reward.redeemed_count || 0);
-      if (available <= 0) {
-        return new Response(JSON.stringify({ error: "Reward out of stock" }), { status: 400, headers: cors });
-      }
-    }
-
-    // 9) Anti-abuse: per-member limit (max 3 of same reward per day)
-    const dayStart = new Date();
-    dayStart.setUTCHours(0, 0, 0, 0);
-    const { count: todayCount } = await db
-      .from("reward_redemptions")
-      .select("id", { count: "exact", head: true })
-      .eq("member_id", member_id)
-      .eq("reward_id", reward_id)
-      .gte("created_at", dayStart.toISOString())
-      .neq("status", "rolled_back")
-      .neq("status", "cancelled");
-
-    if ((todayCount ?? 0) >= 3) {
-      return new Response(JSON.stringify({ error: "Daily redemption limit reached for this reward" }), { status: 400, headers: cors });
-    }
-
-    // 10) ATOMIC points debit — UPDATE only if balance is still sufficient (prevents double-spending)
-    const { count: debitCount, error: debitErr } = await db
-      .from("member_gamification_profiles")
-      .update({ available_points: profile.available_points - reward.points_cost })
-      .eq("member_id", member_id)
-      .gte("available_points", reward.points_cost)
-      .select("member_id", { count: "exact", head: true });
-
-    if (debitErr) throw debitErr;
-    if ((debitCount ?? 0) === 0) {
-      // Another concurrent request already spent these points
-      return new Response(JSON.stringify({ error: "Insufficient points (concurrent request)" }), { status: 400, headers: cors });
-    }
-
-    // ATOMIC stock decrement — only if stock > redeemed_count (unlimited rewards skip this)
-    if (!reward.is_unlimited) {
-      const { count: stockCount, error: stockErr } = await db
-        .from("gamification_rewards")
-        .update({ redeemed_count: (reward.redeemed_count || 0) + 1 })
-        .eq("id", reward_id)
-        .lt("redeemed_count", reward.stock || 0)
-        .select("id", { count: "exact", head: true });
-
-      if (stockErr) {
-        // Roll back point debit before returning error
-        await db.from("member_gamification_profiles").update({
-          available_points: profile.available_points,
-        }).eq("member_id", member_id);
-        throw stockErr;
-      }
-      if ((stockCount ?? 0) === 0) {
-        // Stock ran out between pre-flight check and this atomic update — roll back debit
-        await db.from("member_gamification_profiles").update({
-          available_points: profile.available_points,
-        }).eq("member_id", member_id);
-        return new Response(JSON.stringify({ error: "Reward out of stock (concurrent request)" }), { status: 400, headers: cors });
-      }
-    } else {
-      // Still track redeemed_count for unlimited rewards
-      await db.from("gamification_rewards").update({
-        redeemed_count: (reward.redeemed_count || 0) + 1,
-      }).eq("id", reward_id);
-    }
-
-    const newAvailable = profile.available_points - reward.points_cost;
-    const { data: redemption, error: redemptionErr } = await db
-      .from("reward_redemptions")
-      .insert({
-        reward_id,
-        member_id,
-        points_spent: reward.points_cost,
-        status: "pending",
-        idempotency_key,
-      })
-      .select()
-      .single();
-
-    if (redemptionErr) throw redemptionErr;
-
-    // Points ledger debit
-    await db.from("points_ledger").insert({
-      member_id,
-      event_type: "reward_redeemed",
-      delta: -reward.points_cost,
-      balance_after: newAvailable,
-      redemption_id: redemption.id,
-      idempotency_key: `pts:redeem:${idempotency_key}`,
-      metadata: { reward_id, reward_name: reward.name_en },
+    // ATOMIC: All checks (idempotency, balance, stock, level, daily limit)
+    // and writes (deduct points, decrement stock, insert redemption + ledger + audit)
+    // happen inside a single Postgres transaction with row-level locks.
+    const { data: rpcResult, error: rpcErr } = await db.rpc("process_redeem_reward", {
+      p_member_id: member_id,
+      p_reward_id: reward_id,
+      p_idempotency_key: idempotency_key,
     });
 
-    // NOTE: profile points and reward redeemed_count already updated atomically above (see step 10)
+    if (rpcErr) {
+      console.error("process_redeem_reward RPC error:", rpcErr);
+      return new Response(JSON.stringify({ error: rpcErr.message || "Internal server error" }), {
+        status: 500,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
 
-    // Audit
-    await db.from("gamification_audit_log").insert({
-      member_id,
-      event_type: "reward_redeemed",
-      action_key: "redeem_reward",
-      xp_delta: 0,
-      points_delta: -reward.points_cost,
-      metadata: { reward_id, redemption_id: redemption.id, reward_name: reward.name_en },
-      flagged: false,
-    });
+    const result = rpcResult as {
+      success: boolean;
+      idempotent?: boolean;
+      redemption_id?: string;
+      points_spent?: number;
+      available_points?: number;
+      reward_name?: string;
+      error_code?: string;
+      required?: number;
+      available?: number;
+      current?: number;
+    } | null;
 
-    // Notification
-    await db.from("event_outbox").insert({
-      event_type: "gamification.reward_redeemed",
-      payload: { member_id, reward_id, redemption_id: redemption.id, reward_name: reward.name_en, points_spent: reward.points_cost },
-    });
+    if (!result || !result.success) {
+      const code = result?.error_code || "UNKNOWN";
+      const statusMap: Record<string, number> = {
+        REWARD_NOT_FOUND: 404,
+        PROFILE_NOT_FOUND: 400,
+        REWARD_INACTIVE: 400,
+        NOT_YET_AVAILABLE: 400,
+        EXPIRED: 400,
+        OUT_OF_STOCK: 400,
+        DAILY_LIMIT_REACHED: 400,
+        LEVEL_TOO_LOW: 400,
+        INSUFFICIENT_POINTS: 400,
+      };
+      return new Response(
+        JSON.stringify({ error: code, details: result }),
+        { status: statusMap[code] || 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (result.idempotent) {
+      return new Response(
+        JSON.stringify({ status: "already_processed", redemption_id: result.redemption_id }),
+        { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fire-and-forget notification (outside the atomic block)
+    try {
+      await db.from("event_outbox").insert({
+        event_type: "gamification.reward_redeemed",
+        payload: {
+          member_id,
+          reward_id,
+          redemption_id: result.redemption_id,
+          reward_name: result.reward_name,
+          points_spent: result.points_spent,
+        },
+      });
+    } catch (notifErr) {
+      console.warn("[gamification-redeem-reward] Notification insert failed (non-blocking):", notifErr);
+    }
 
     return new Response(JSON.stringify({
       status: "redeemed",
-      redemption_id: redemption.id,
-      points_spent: reward.points_cost,
-      available_points: newAvailable,
+      redemption_id: result.redemption_id,
+      points_spent: result.points_spent,
+      available_points: result.available_points,
     }), { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
 
   } catch (err) {

@@ -4684,6 +4684,76 @@ export type Database = {
         Returns: Json
       }
       next_transaction_number: { Args: never; Returns: string }
+      process_package_sale: {
+        Args: {
+          p_activation_date: string
+          p_amount: number
+          p_amount_ex_vat: number
+          p_amount_gross: number
+          p_amount_vat: number
+          p_coupon_discount: number
+          p_coupon_wallet_id: string
+          p_currency: string
+          p_discount_amount: number
+          p_expiry_date: string
+          p_idempotency_key: string
+          p_location_id: string
+          p_member_id: string
+          p_notes: string
+          p_order_name: string
+          p_package_id: string
+          p_package_name_snapshot: string
+          p_paid_at: string
+          p_payment_method: string
+          p_promotion_discount: number
+          p_promotion_id: string
+          p_promotion_usage_count: number
+          p_sessions_total: number
+          p_sold_to_contact: string
+          p_sold_to_name: string
+          p_source_ref: string
+          p_source_type: string
+          p_staff_id: string
+          p_transaction_id: string
+          p_transaction_no: string
+          p_type: string
+          p_vat_rate: number
+        }
+        Returns: Json
+      }
+      process_redeem_reward: {
+        Args: {
+          p_idempotency_key: string
+          p_member_id: string
+          p_reward_id: string
+        }
+        Returns: Json
+      }
+      process_slip_approval: {
+        Args: {
+          p_activation_date: string
+          p_amount_ex_vat: number
+          p_amount_gross: number
+          p_amount_vat: number
+          p_expiry_date: string
+          p_idempotency_key: string
+          p_location_id: string
+          p_member_id: string
+          p_note: string
+          p_package_id: string
+          p_package_name_snapshot: string
+          p_package_type: string
+          p_payment_method: string
+          p_sessions_total: number
+          p_slip_id: string
+          p_sold_to_contact: string
+          p_sold_to_name: string
+          p_staff_id: string
+          p_transaction_no: string
+          p_vat_rate: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       access_level:
