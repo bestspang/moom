@@ -1,105 +1,145 @@
 
 
-# 🛡️ Phase 1 — Security Critical (Revised after re-audit)
+# 🛡️ Phase 2 + 3 + 4 — Compact Final Sweep + AI Regression Hardening
 
-## Status Re-check (สำคัญ — scope ลดลงครึ่งหนึ่ง)
+## ✅ Re-audit ผลจริง (สถานะ Sprint 2-3 ดีกว่าที่คิด — scope หดเหลือ 30%)
 
-หลังตรวจ codebase จริงพบว่า **5 จาก 8 ของ Sprint 1 เสร็จไปแล้ว** ระหว่าง Phase 0:
-
-| # | Issue | สถานะจริง |
+| Item ที่วางแผนไว้ | สถานะจริง | Action |
 |---|---|---|
-| S1-1 | CRON_SECRET null bypass (`auto-notifications`, `evaluate-tiers-daily`) | ✅ **แก้แล้ว** — มี `cronSecret &&` guard |
-| S1-2 | `sync-gamification-config` RBAC | ✅ **แก้แล้ว** — มี `has_min_access_level` |
-| S1-3 | `gamification-redeem-reward` TOCTOU | ⚠️ **ยังไม่ atomic** — มี RBAC แต่ไม่มี SELECT FOR UPDATE |
-| S1-4 | `gamification-assign-quests` ownership | ✅ **แก้แล้ว** — มี manager check |
-| S1-5 | `gamification-issue-coupon` ownership | ✅ **แก้แล้ว** — มี manager check |
-| S1-6 | Ghost `profiles` table refs | ✅ **แก้แล้ว** — ไม่มี ref เหลือ |
-| S1-7 | `sell-package` non-atomic | ❌ **ยังไม่ทำ** — ต้องสร้าง RPC |
-| S1-8 | `approve-slip` + `stripe-webhook` non-atomic | ⚠️ **ครึ่งทาง** — `stripe-webhook` มี `process_stripe_payment` แล้ว, `approve-slip` ยัง |
+| S2-1 `slip_file_url` fix | ✅ **ใช้ถูกแล้ว** ทั้ง 4 จุดใน `StaffPaymentsPage.tsx` | Skip |
+| S2-2 `logActivity()` ใน 9 hooks | ✅ **ครบทุก hook** ที่มี useMutation | Skip |
+| S2-4/S2-5 delete + onError mutations | ✅ มี logActivity แล้ว | Skip |
+| S2-6 `auto-notifications` paginate | ⚠️ ของรอง — defer |
+| S3-1 Coming Soon 5 จุด | ⚠️ **เหลือ 1 จุด** (`MemberRunClubPage.tsx`) — ของจริงเป็น `<Card>` พร้อม `opacity-60 pointer-events-none` แล้ว | Verify pattern |
+| S3-2 `MemberCheckInPage` MobilePageHeader | ✅ ทุก member page มี header | Skip |
+| **S2-3 TH i18n missing** | ❌ **80 keys ขาด** (gamification admin labels) | **DO** |
+| `sell-package` / `approve-slip` ใช้ RPC ใหม่ | ✅ ใช้ `process_package_sale` + `process_slip_approval` แล้ว | ✅ Phase 1 done |
 
-**เหลือจริง 3 ข้อ:** S1-3, S1-7, S1-8 (approve-slip)
-
----
-
-## ทำอะไรใน Phase 1
-
-### Fix 1 — `process_redeem_reward` atomic RPC (แก้ S1-3)
-
-**Root cause:** `gamification-redeem-reward` ทำ 6 ขั้นตอน (check balance → check stock → deduct points → decrement stock → insert redemption → log) แบบไม่ atomic → race condition double-spend ได้
-
-**Fix:**
-- สร้าง migration `process_redeem_reward(p_member_id, p_reward_id)` RPC ที่:
-  - `SELECT ... FOR UPDATE` ทั้ง `member_gamification_profiles` และ `gamification_rewards` (lock rows)
-  - Check balance + stock ภายใน transaction
-  - Deduct + decrement + insert ในช็อตเดียว
-  - Return `{ success, redemption_id }` หรือ error code
-- Refactor edge function ให้เรียก RPC แทน 6 queries — เก็บ logic ที่เหลือ (notification, response envelope) ไว้เดิม
-
-### Fix 2 — `process_sell_package` atomic RPC (แก้ S1-7)
-
-**Root cause:** `sell-package` insert `transactions` + `member_packages` + อัปเดต `members` แยกกัน — fail กลางทาง = state inconsistent
-
-**Fix:**
-- สร้าง migration `process_sell_package(p_member_id, p_package_id, p_amount, p_payment_method, p_idempotency_key, p_discount_amount, p_processed_by)` ที่ wrap ทุก write ใน 1 transaction พร้อม idempotency check (`SELECT 1 FROM transactions WHERE idempotency_key = ...`)
-- Refactor `sell-package/index.ts` เรียก RPC อย่างเดียว, เก็บ CORS + auth check + gamification fire-and-forget event ไว้เดิม
-
-### Fix 3 — `approve-slip` ใช้ RPC (แก้ S1-8 ส่วนที่ยังเหลือ)
-
-**Root cause:** `approve-slip` ทำ insert `transactions` + create `member_packages` + update `transfer_slips.status` แยก — slip approve แล้วแต่ package ไม่ออก = ลูกค้าจ่ายแล้วใช้ไม่ได้
-
-**Fix:**
-- ใช้ `process_sell_package` RPC ที่สร้างใน Fix 2 (re-use เดียวกัน)
-- เพิ่ม wrapper `process_approve_slip(p_slip_id, p_approved_by)` ที่เรียก `process_sell_package` ภายใน + update `transfer_slips.status='approved'` ใน transaction เดียว
+**เหลือทำจริง 3 อย่าง:**
+1. เติม TH translation 80 keys (gamification admin)
+2. Verify `MemberRunClubPage` Coming Soon pattern ตรง policy
+3. **AI Regression Prevention layer** (สำคัญสุด — root cause ที่ user ขอ)
 
 ---
 
-## ⚠️ สิ่งที่ตั้งใจ "ไม่ทำ" ใน Phase นี้
+## 🎯 What this plan ships
 
-- ❌ ไม่ rewrite edge function ทั้งไฟล์ — เปลี่ยนเฉพาะส่วน DB write เป็น RPC call (minimal diff)
-- ❌ ไม่แตะ CORS / auth guard / response envelope (working — ห้ามตามกฎ)
-- ❌ ไม่ touch `stripe-webhook` ซ้ำ (มี `process_stripe_payment` ทำงานอยู่แล้ว)
-- ❌ ไม่เพิ่ม unit test (out-of-scope — verify ด้วย smoke test)
+### Part A — i18n Sync (TH 80 keys)
+
+เติม TH translations ที่ขาดทั้งหมด 80 keys ในไฟล์ `src/i18n/locales/th.ts` — กลุ่มหลักคือ gamification admin (rules, badges, challenges, levels, rewards, tier management):
+
+- **Categories:** categoryAccess, categoryEvent, categoryMerch, categoryPackageBooster, categoryPerk
+- **Tiers:** bronze, silver, gold, platinum (diamond/black มีแล้ว)
+- **Quest goals:** goalActionKey, goalActionKeyHint, goalTypeActionCount, goalTypeClassCount, goalTypeStreak, goalTypeXpThreshold
+- **Empty states:** noBadges/Desc, noChallenges/Desc, noFlags/Desc, noLevels/Desc, noRewards/Desc, noTiers/Desc
+- **Stats labels:** activeChallenges, activeProfiles, activeRewards, activeRules, avgMemberLevel, coinInCirculation, economyHealth, flaggedActivity, flaggedEvents, questCompletion, questsAssigned, recentActivity, totalBadges, totalCoinEarned, totalCoinSpent, totalRedemptions, totalUnits, totalXpDistributed, xpDistributed
+- **Form labels:** action, color, cooldown, displayPriority, label, labelEn, labelTh, levelNumber, maxDay, minScore, points, pointsCost, rewardBadge, rewardPoints, rewardXp, sectionBasic, sectionGoal, sectionReward, sectionSchedule, stock, tierNameEn, tierNameTh, trainerType, unlimitedStock
+- **Misc:** addLevel, addTier, draft, economySummary, editLevel, freelance, inHouse, noDescription, questTemplates, systemConfig
+
+### Part B — Coming Soon Verification
+
+Verify `src/apps/member/pages/MemberRunClubPage.tsx` ใช้ pattern ที่ถูก: `opacity-60 pointer-events-none`, ไม่มี chevron, ไม่มี toast (ถ้าผิดจะแก้)
+
+### Part C — AI Regression Prevention Layer (root cause fix)
+
+สร้าง 3 ไฟล์ + 1 memory เพื่อบังคับ AI ใน session ถัดๆ ไป **ไม่แก้ของที่ทำงานอยู่**:
+
+#### 1. `AI_GUARDRAILS.md` (root)
+Mandatory checklist ที่ AI **ต้องอ่านก่อนแก้โค้ด** — บังคับผ่าน CLAUDE.md reference:
+```
+ก่อนแก้โค้ด AI ต้องทำ:
+1. อ่านไฟล์เป้าหมาย "ทั้งไฟล์" — ห้ามเดาจาก memory
+2. ระบุ blast radius — grep หาคนที่ import / call function นี้
+3. Classify scope: WORKING / PARTIAL / BROKEN — ห้ามแตะ WORKING
+4. Minimal diff only — ทุกบรรทัดต้อง trace กลับไปหา task ของ user ได้
+5. ห้ามแก้ field/property/import ที่ไม่อยู่ใน scope task
+6. ถ้าจะแตะ PROTECTED_FILES → STOP, ขอ approval
+7. หลังแก้: smoke test feature เดิมในไฟล์นั้นยังทำงาน
+```
+
+#### 2. `PROTECTED_FILES.md` (root)
+รายการไฟล์ที่ห้าม AI แก้โดยไม่ขอ approval:
+- `src/integrations/supabase/{client,types}.ts` (auto-generated)
+- `src/components/ui/*` (shadcn primitives)
+- `src/contexts/AuthContext.tsx`
+- `src/apps/shared/hostname.ts` (surface routing)
+- `src/App.tsx` route table
+- `src/hooks/useRealtimeSync.ts` (only ADD tables, never remove)
+- `supabase/migrations/*.sql` ที่ deploy แล้ว
+- `supabase/config.toml` project-level
+- `.env`
+
+#### 3. Update `CLAUDE.md` Section 9
+เพิ่ม `AI_GUARDRAILS.md` + `PROTECTED_FILES.md` ใน "MUST READ every session" tier — ทำให้ทุก AI session โหลดอัตโนมัติ
+
+#### 4. Memory: `mem://ai-regression-prevention`
+สรุป pattern: "Verify before modify" + reference ไป AI_GUARDRAILS.md — auto-loaded ทุก session ผ่าน mem://index.md
+
+#### 5. Update `docs/SMOKE_TEST.md`
+เพิ่ม section "AI Change Verification (5-step gate before marking done)":
+- ✅ `bun run build` เขียว
+- ✅ Feature เดิมในไฟล์ที่แก้ยังทำงาน (manual click test)
+- ✅ ไม่มีไฟล์ใน PROTECTED_FILES.md ถูกแตะ
+- ✅ ทุก mutation ที่แก้มี `logActivity()`
+- ✅ TH/EN i18n ตรงกัน (no missing keys)
 
 ---
 
-## Files ที่จะแตะ
+## ⚠️ Phase 4 (Docs sync) — Inline กับ Part C
+
+Update เฉพาะที่จำเป็น (ไม่ทำใหญ่):
+- **`docs/DEVLOG.md`** — append Phase 0+1+2 entry (typed client factory, 3 atomic RPCs, TH i18n, AI guardrails)
+- **`docs/CONTRACTS.md`** — เพิ่ม 3 RPCs ใหม่ (`process_redeem_reward`, `process_package_sale`, `process_slip_approval`) ใน "Database Key Tables" section
+- **ไม่แตะ:** PROJECT_MEMORY, INTEGRATION_NOTES, data-contract*.md (ของเดิมยังถูก)
+
+---
+
+## 📦 Files Touched (minimal diff)
 
 ```
+แก้:
+  src/i18n/locales/th.ts         — เติม 80 keys (additive only, ไม่แก้ key เดิม)
+  CLAUDE.md                       — section 9 เพิ่ม 2 references
+  docs/DEVLOG.md                  — append entry
+  docs/CONTRACTS.md               — เพิ่ม 3 RPCs
+  docs/SMOKE_TEST.md              — เพิ่ม "AI Change Verification" section
+
 สร้างใหม่:
-  supabase/migrations/<ts>_atomic_redeem_reward.sql
-  supabase/migrations/<ts>_atomic_sell_package.sql
-  supabase/migrations/<ts>_atomic_approve_slip.sql
+  AI_GUARDRAILS.md                — root level checklist
+  PROTECTED_FILES.md              — root level do-not-touch list
+  mem://ai-regression-prevention  — memory rule
 
-แก้ minimal:
-  supabase/functions/gamification-redeem-reward/index.ts  — replace 6-step block with rpc call
-  supabase/functions/sell-package/index.ts                — replace write block with rpc call
-  supabase/functions/approve-slip/index.ts                — replace write block with rpc call
+Verify only (อาจไม่แก้):
+  src/apps/member/pages/MemberRunClubPage.tsx — confirm Coming Soon pattern
 ```
 
-**Protected files ที่จะไม่แตะ:** `_shared/db.ts`, `_shared/database.types.ts`, integrations/supabase/*, ui/*, AuthContext
+**Protected files NOT touched:** ทุกไฟล์ใน `PROTECTED_FILES.md`, edge functions, migrations, routes, AuthContext
 
 ---
 
-## Regression Checklist (ก่อน mark Phase 1 done)
+## 🛡️ Regression Checklist (after change)
 
 1. ✅ `bun run build` เขียว
-2. ✅ Edge function deploy logs ทั้ง 3 functions = success
-3. ✅ Smoke test:
-   - Member redeem reward สำเร็จ (XP balance ลด, stock ลด, redemption row ขึ้น)
-   - Member redeem reward ที่ stock=0 → reject พร้อม error code `OUT_OF_STOCK`
-   - Staff sell package → transaction + member_package + member.last_purchase_at ครบ
-   - Slip approve → transaction + package + slip.status=approved (ดูใน admin TransferSlips page)
-4. ✅ DEVLOG entry บันทึก 3 fixes + reason
-5. ✅ ไม่มี protected file ถูกแตะ
+2. ✅ TH/EN parity: `grep -c keys` ทั้ง 2 ไฟล์เท่ากัน (≥ 2196)
+3. ✅ Member/Admin Gamification admin pages: ไม่มี raw English key visible (สลับ TH)
+4. ✅ MemberRunClubPage: Coming Soon ไม่ trigger toast / navigation
+5. ✅ AI_GUARDRAILS.md + PROTECTED_FILES.md exist และอ้างอิงใน CLAUDE.md
+6. ✅ DEVLOG entry ใหม่บันทึก Phase 0+1+2 ครบ
 
 ---
 
-## ขั้นตอนถัดไปหลัง Phase 1 ปิด
+## 🚦 Why this is the FINAL phase (รอบนี้)
 
-- **Phase 2** — S2-1 (slip_file_url 1 line), S2-2 (logActivity ใน 9 hooks), S2-3 (TH translations 75 keys)
-- **Phase 3** — UX critical (5 stub buttons, MobilePageHeader fix, i18n hardcoded)
-- **Phase 4** — Docs sync (DEVLOG, CONTRACTS, INTEGRATION_NOTES)
-- **AI Guardrails** — สร้าง `AI_GUARDRAILS.md` + `PROTECTED_FILES.md` + `mem://ai-regression-prevention`
+หลัง phase นี้ระบบจะเป็น stable + documented + AI-resistant:
+- **Code:** edge functions atomic, build เขียว, ไม่มี broken UI
+- **Docs:** DEVLOG + CONTRACTS sync, smoke test มี AI gate
+- **Defense:** AI_GUARDRAILS + PROTECTED_FILES + memory rule = AI session ถัดไปถูกบังคับให้ verify ก่อน modify
 
-**Approve เพื่อเริ่ม Phase 1:** ผมจะเริ่มจาก migration `process_redeem_reward` ก่อน (chunk เล็กสุด, low blast radius), verify deploy, แล้วทำ `process_sell_package` + `process_approve_slip` ตามลำดับ
+**สิ่งที่ defer (ไม่ทำรอบนี้ — scope creep):**
+- ❌ S3-4 Migrate 473 inline query keys → dedicated round
+- ❌ S2-6 auto-notifications paginate → ไม่ urgent (cron 1x/day)
+- ❌ Refactor folder structure
+- ❌ DB enum rename `class_attended` → `class_attend` (legacy values, non-breaking)
+
+**Approve เพื่อเริ่ม:** ผมจะทำ Part A (TH i18n) ก่อนเป็น chunk แรก, verify build เขียว, แล้วทำ Part B+C ตามลำดับในรอบเดียว
 
