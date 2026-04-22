@@ -67,6 +67,23 @@ A whole class of P0 outages comes from AI guessing enum names from column names.
 
 Do **not** assume `transactions.status` uses an enum named `transaction_status` just because the column is `status`. Always confirm `udt_name` first.
 
+### 9. Verify storage bucket policies BEFORE creating or exposing public buckets
+A public storage bucket with a broad SELECT policy lets **any anonymous client list every file in it**, even if individual URLs were meant to be opaque. Before you `INSERT INTO storage.buckets (..., public, ...)` or write a `storage.objects` SELECT policy:
+1. Query existing public buckets:
+   ```sql
+   SELECT id, name, public FROM storage.buckets WHERE public = true;
+   ```
+2. Inspect every SELECT policy on `storage.objects` that matches a public bucket. The `USING` clause **must** include an ownership check (e.g. `has_min_access_level(auth.uid(), …)` for staff, or a join back to the owning row). Never ship a `USING (bucket_id = 'X')`-only policy on a public bucket.
+3. If the bucket holds sensitive artifacts (slips, IDs, contracts), prefer signed URLs + `public = false`. Tightening the SELECT policy is the minimum acceptable fix when flipping `public` would break existing URLs.
+
+### 10. Idempotency for webhook handlers — DB-level, not app-level
+Application-level "already processed?" checks lose to race conditions when a provider (Stripe, LINE, etc.) retries a webhook. Any handler that inserts side-effect rows (billing, entitlements, ledger entries) **must** be backed by a DB unique constraint or partial unique index on the natural key (`transaction_id`, `event_id`, etc.). Pattern:
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS idx_<table>_unique_<key>
+  ON public.<table> (<key>) WHERE <key> IS NOT NULL;
+```
+Combine with `FOR UPDATE` row locking inside the SECURITY DEFINER RPC. Without the index, two concurrent retries can both pass the "already exists?" check and double-insert.
+
 ---
 
 ## Common AI Anti-Patterns (do not do these)
