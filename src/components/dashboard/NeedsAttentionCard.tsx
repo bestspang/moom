@@ -68,7 +68,7 @@ const NeedsAttentionCard = () => {
                       variant="link"
                       size="sm"
                       className="text-primary p-0 h-auto text-xs"
-                      onClick={() => navigate('/announcements')}
+                      onClick={() => navigate('/announcement')}
                     >
                       {t('dashboardExtra.remindAll')}
                     </Button>
@@ -222,7 +222,7 @@ const NeedsAttentionCard = () => {
                       variant="link"
                       size="sm"
                       className="text-primary p-0 h-auto text-xs"
-                      onClick={() => navigate('/announcements')}
+                      onClick={() => navigate('/announcement')}
                     >
                       {t('dashboardExtra.reachOut')}
                     </Button>
