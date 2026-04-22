@@ -139,18 +139,25 @@
 
 ---
 
-## 🟢 SPRINT 4 — P3 Low (Polish + Performance)
+## 🟢 SPRINT 4 — P3 Low (Polish + Performance) ✅ COMPLETE
 
-### S4-1: Add DB Indexes for Performance
-- `member_packages.member_id` — missing index
-- `activity_logs.created_at` — missing index for time-range queries
-- `class_schedules.start_time` — missing index for schedule queries
+### S4-1: Add DB Indexes for Performance ✅
+- `member_packages.member_id` — migration added
+- `activity_logs.created_at` — migration added
+- `class_schedules.start_time` — migration added
+- File: `supabase/migrations/20260422064900_add_performance_indexes.sql`
 
-### S4-2: Export Buttons in Reports/Insights
-- Replace `disabled` stubs with real CSV export functionality
+### S4-2: Export Buttons in Reports/Insights ✅
+- MemberPackageUsage report page — full CSV export
+- MemberPackageAtRisk report page — full CSV export
+- ClassCategoryPopularity report page — full CSV export
+- ClassPopularity report page — full CSV export
+- Enabled in Reports.tsx and Insights.tsx (removed disabled stubs)
+- Routes registered in App.tsx
 
-### S4-3: Document Coming Soon stubs with issue refs
-- Add `// TODO(#123): implement feature` comments
+### S4-3: Document Coming Soon stubs ✅
+- All 4 disabled stubs replaced with real routes
+- i18n keys added to en.ts and th.ts
 
 ---
 
