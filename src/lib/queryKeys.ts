@@ -190,6 +190,10 @@ export const queryKeys = {
   classCapacityOverTime: (dateRange?: object, filters?: object) => ['class-capacity-over-time', dateRange, filters] as const,
   packageSales: (dateRange?: object, filters?: object) => ['package-sales', dateRange, filters] as const,
   packageSalesOverTime: (dateRange?: object, filters?: object, timePeriod?: string) => ['package-sales-over-time', dateRange, filters, timePeriod] as const,
+  memberPackageUsage: (dateRange?: object, filters?: object) => ['member-package-usage', dateRange, filters] as const,
+  memberPackageAtRisk: (filters?: object) => ['member-package-at-risk', filters] as const,
+  classCategoryPopularity: (dateRange?: object, filters?: object) => ['class-category-popularity', dateRange, filters] as const,
+  classPopularity: (dateRange?: object, filters?: object) => ['class-popularity', dateRange, filters] as const,
 
   // Revenue Forecast
   revenueForecast: () => ['revenue-forecast'] as const,

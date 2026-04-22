@@ -50,6 +50,10 @@ import ClassCapacityByHour from "./pages/reports/ClassCapacityByHour";
 import ClassCapacityOverTime from "./pages/reports/ClassCapacityOverTime";
 import PackageSales from "./pages/reports/PackageSales";
 import PackageSalesOverTime from "./pages/reports/PackageSalesOverTime";
+import MemberPackageUsage from "./pages/reports/MemberPackageUsage";
+import MemberPackageAtRisk from "./pages/reports/MemberPackageAtRisk";
+import ClassCategoryPopularity from "./pages/reports/ClassCategoryPopularity";
+import ClassPopularity from "./pages/reports/ClassPopularity";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import SettingsGeneral from "./pages/settings/SettingsGeneral";
@@ -269,6 +273,10 @@ const App = () => (
                   <Route path="report/class/capacity-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCapacityOverTime /></ProtectedRoute>} />
                   <Route path="report/package/sales" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSales /></ProtectedRoute>} />
                   <Route path="report/package/sales-over-time" element={<ProtectedRoute minAccessLevel="level_2_operator"><PackageSalesOverTime /></ProtectedRoute>} />
+                  <Route path="report/member/package-usage" element={<ProtectedRoute minAccessLevel="level_2_operator"><MemberPackageUsage /></ProtectedRoute>} />
+                  <Route path="report/member/package-at-risk" element={<ProtectedRoute minAccessLevel="level_2_operator"><MemberPackageAtRisk /></ProtectedRoute>} />
+                  <Route path="report/class/category-popularity" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassCategoryPopularity /></ProtectedRoute>} />
+                  <Route path="report/class/popularity" element={<ProtectedRoute minAccessLevel="level_2_operator"><ClassPopularity /></ProtectedRoute>} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="coming-soon" element={<ComingSoon />} />

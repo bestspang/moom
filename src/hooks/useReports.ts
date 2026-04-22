@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays, format, eachDayOfInterval, startOfWeek, startOfMonth, startOfYear, getDay, getHours } from 'date-fns';
+import { differenceInDays, format, eachDayOfInterval, startOfWeek, startOfMonth, startOfYear, getDay, getHours, addDays } from 'date-fns';
 import { queryKeys } from '@/lib/queryKeys';
 
 export type RiskLevel = 'high' | 'medium' | 'low';
@@ -711,6 +711,324 @@ export function usePackageSalesOverTime(
           unitsSold: d.units,
           revenue: d.revenue * 1000, // Convert back from chart scale
         }));
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// ── Member Package Usage ──
+
+export interface PackageUsageRow {
+  memberName: string;
+  packageName: string;
+  packageType: string;
+  sessionsUsed: number;
+  sessionsTotal: number;
+  usagePercent: number;
+  expiryDate: string;
+  status: string;
+}
+
+export interface PackageUsageStats {
+  totalActivePackages: number;
+  avgUsagePercent: number;
+  fullyUsed: number;
+  neverUsed: number;
+}
+
+export function useMemberPackageUsage(
+  filters: { packageType: string; status: string }
+) {
+  return useQuery({
+    queryKey: queryKeys.memberPackageUsage(undefined, filters),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('member_packages')
+        .select(`
+          id,
+          sessions_used,
+          sessions_total,
+          expires_at,
+          status,
+          packages!inner(name_en, type),
+          members!inner(first_name, last_name)
+        `)
+        .not('status', 'eq', 'cancelled');
+
+      if (error) throw error;
+
+      let rows: PackageUsageRow[] = (data || []).map((mp: any) => {
+        const sessionsUsed = mp.sessions_used ?? 0;
+        const sessionsTotal = mp.sessions_total ?? 0;
+        const usagePercent = sessionsTotal > 0 ? Math.round((sessionsUsed / sessionsTotal) * 100) : 0;
+        return {
+          memberName: `${mp.members?.first_name ?? ''} ${mp.members?.last_name ?? ''}`.trim(),
+          packageName: mp.packages?.name_en ?? '',
+          packageType: mp.packages?.type ?? '',
+          sessionsUsed,
+          sessionsTotal,
+          usagePercent,
+          expiryDate: mp.expires_at ? format(new Date(mp.expires_at), 'd MMM yyyy') : '-',
+          status: mp.status ?? '',
+        };
+      });
+
+      if (filters.packageType !== 'all') {
+        rows = rows.filter((r) => r.packageType === filters.packageType);
+      }
+      if (filters.status !== 'all') {
+        rows = rows.filter((r) => r.status === filters.status);
+      }
+
+      const stats: PackageUsageStats = {
+        totalActivePackages: rows.length,
+        avgUsagePercent: rows.length > 0 ? Math.round(rows.reduce((s, r) => s + r.usagePercent, 0) / rows.length) : 0,
+        fullyUsed: rows.filter((r) => r.usagePercent >= 100).length,
+        neverUsed: rows.filter((r) => r.usagePercent === 0).length,
+      };
+
+      const chartData = [
+        { name: '0–25%', value: rows.filter((r) => r.usagePercent <= 25).length },
+        { name: '26–50%', value: rows.filter((r) => r.usagePercent > 25 && r.usagePercent <= 50).length },
+        { name: '51–75%', value: rows.filter((r) => r.usagePercent > 50 && r.usagePercent <= 75).length },
+        { name: '76–99%', value: rows.filter((r) => r.usagePercent > 75 && r.usagePercent < 100).length },
+        { name: '100%', value: rows.filter((r) => r.usagePercent >= 100).length },
+      ];
+
+      return { stats, chartData, tableData: rows };
+    },
+  });
+}
+
+// ── Member Package At Risk ──
+
+export interface PackageAtRiskRow {
+  memberName: string;
+  packageName: string;
+  packageType: string;
+  sessionsRemaining: number;
+  daysUntilExpiry: number;
+  riskLevel: 'high' | 'medium' | 'low';
+  expiryDate: string;
+}
+
+export interface PackageAtRiskStats {
+  highRisk: number;
+  mediumRisk: number;
+  lowRisk: number;
+  totalAtRisk: number;
+}
+
+export function useMemberPackageAtRisk(filters: { packageType: string; riskLevel: string }) {
+  return useQuery({
+    queryKey: queryKeys.memberPackageAtRisk(filters),
+    queryFn: async () => {
+      const cutoffDate = format(addDays(new Date(), 30), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('member_packages')
+        .select(`
+          id,
+          sessions_used,
+          sessions_total,
+          expires_at,
+          status,
+          packages!inner(name_en, type),
+          members!inner(first_name, last_name)
+        `)
+        .eq('status', 'active')
+        .lte('expires_at', cutoffDate);
+
+      if (error) throw error;
+
+      let rows: PackageAtRiskRow[] = (data || []).map((mp: any) => {
+        const sessionsTotal = mp.sessions_total ?? 0;
+        const sessionsUsed = mp.sessions_used ?? 0;
+        const sessionsRemaining = sessionsTotal > 0 ? sessionsTotal - sessionsUsed : 999;
+        const expiresAt = mp.expires_at ? new Date(mp.expires_at) : null;
+        const daysUntilExpiry = expiresAt
+          ? Math.ceil((expiresAt.getTime() - Date.now()) / 86400000)
+          : 999;
+
+        let riskLevel: 'high' | 'medium' | 'low' = 'low';
+        if (sessionsRemaining <= 1 || daysUntilExpiry <= 7) riskLevel = 'high';
+        else if (sessionsRemaining <= 3 || daysUntilExpiry <= 14) riskLevel = 'medium';
+
+        return {
+          memberName: `${mp.members?.first_name ?? ''} ${mp.members?.last_name ?? ''}`.trim(),
+          packageName: mp.packages?.name_en ?? '',
+          packageType: mp.packages?.type ?? '',
+          sessionsRemaining: sessionsRemaining === 999 ? 0 : sessionsRemaining,
+          daysUntilExpiry: daysUntilExpiry === 999 ? 0 : daysUntilExpiry,
+          riskLevel,
+          expiryDate: expiresAt ? format(expiresAt, 'd MMM yyyy') : '-',
+        };
+      });
+
+      if (filters.packageType !== 'all') {
+        rows = rows.filter((r) => r.packageType === filters.packageType);
+      }
+      if (filters.riskLevel !== 'all') {
+        rows = rows.filter((r) => r.riskLevel === filters.riskLevel);
+      }
+
+      const stats: PackageAtRiskStats = {
+        highRisk: rows.filter((r) => r.riskLevel === 'high').length,
+        mediumRisk: rows.filter((r) => r.riskLevel === 'medium').length,
+        lowRisk: rows.filter((r) => r.riskLevel === 'low').length,
+        totalAtRisk: rows.length,
+      };
+
+      return { stats, tableData: rows };
+    },
+  });
+}
+
+// ── Class Category Popularity ──
+
+export interface ClassCategoryRow {
+  category: string;
+  totalClasses: number;
+  totalBookings: number;
+  avgCapacityPercent: number;
+  totalAttendees: number;
+}
+
+export interface ClassCategoryStats {
+  topCategory: string;
+  totalCategories: number;
+  avgFillRate: number;
+  totalBookings: number;
+}
+
+export function useClassCategoryPopularity(dateRange: { start?: Date; end?: Date }) {
+  return useQuery({
+    queryKey: queryKeys.classCategoryPopularity(dateRange),
+    queryFn: async () => {
+      const { data: schedules, error } = await supabase
+        .from('class_schedules')
+        .select(`
+          id,
+          capacity,
+          start_time,
+          classes!inner(category, name_en),
+          class_bookings(id, status)
+        `)
+        .gte('start_time', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('start_time', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      if (error) throw error;
+
+      const categoryMap = new Map<string, { totalClasses: number; totalBookings: number; totalCapacity: number; totalAttendees: number }>();
+
+      (schedules || []).forEach((s: any) => {
+        const category = s.classes?.category ?? 'Uncategorized';
+        const confirmedBookings = (s.class_bookings || []).filter((b: any) => b.status === 'confirmed' || b.status === 'attended').length;
+        const existing = categoryMap.get(category) || { totalClasses: 0, totalBookings: 0, totalCapacity: 0, totalAttendees: 0 };
+        existing.totalClasses += 1;
+        existing.totalBookings += confirmedBookings;
+        existing.totalCapacity += s.capacity ?? 0;
+        existing.totalAttendees += confirmedBookings;
+        categoryMap.set(category, existing);
+      });
+
+      const tableData: ClassCategoryRow[] = Array.from(categoryMap.entries())
+        .map(([category, val]) => ({
+          category,
+          totalClasses: val.totalClasses,
+          totalBookings: val.totalBookings,
+          avgCapacityPercent: val.totalCapacity > 0 ? Math.round((val.totalBookings / val.totalCapacity) * 100) : 0,
+          totalAttendees: val.totalAttendees,
+        }))
+        .sort((a, b) => b.totalBookings - a.totalBookings);
+
+      const chartData = tableData.slice(0, 8).map((r) => ({ name: r.category, value: r.totalBookings }));
+      const totalBookings = tableData.reduce((s, r) => s + r.totalBookings, 0);
+
+      const stats: ClassCategoryStats = {
+        topCategory: tableData[0]?.category ?? '-',
+        totalCategories: tableData.length,
+        avgFillRate: tableData.length > 0 ? Math.round(tableData.reduce((s, r) => s + r.avgCapacityPercent, 0) / tableData.length) : 0,
+        totalBookings,
+      };
+
+      return { stats, chartData, tableData };
+    },
+    enabled: !!dateRange.start && !!dateRange.end,
+  });
+}
+
+// ── Class Popularity ──
+
+export interface ClassPopularityRow {
+  className: string;
+  category: string;
+  totalSchedules: number;
+  totalBookings: number;
+  avgCapacityPercent: number;
+  totalAttendees: number;
+}
+
+export interface ClassPopularityStats {
+  topClass: string;
+  totalClasses: number;
+  avgFillRate: number;
+  totalBookings: number;
+}
+
+export function useClassPopularity(dateRange: { start?: Date; end?: Date }) {
+  return useQuery({
+    queryKey: queryKeys.classPopularity(dateRange),
+    queryFn: async () => {
+      const { data: schedules, error } = await supabase
+        .from('class_schedules')
+        .select(`
+          id,
+          capacity,
+          start_time,
+          classes!inner(name_en, category),
+          class_bookings(id, status)
+        `)
+        .gte('start_time', format(dateRange.start!, 'yyyy-MM-dd'))
+        .lte('start_time', format(dateRange.end!, 'yyyy-MM-dd') + 'T23:59:59');
+
+      if (error) throw error;
+
+      const classMap = new Map<string, { category: string; totalSchedules: number; totalBookings: number; totalCapacity: number; totalAttendees: number }>();
+
+      (schedules || []).forEach((s: any) => {
+        const className = s.classes?.name_en ?? 'Unknown';
+        const category = s.classes?.category ?? '-';
+        const confirmedBookings = (s.class_bookings || []).filter((b: any) => b.status === 'confirmed' || b.status === 'attended').length;
+        const existing = classMap.get(className) || { category, totalSchedules: 0, totalBookings: 0, totalCapacity: 0, totalAttendees: 0 };
+        existing.totalSchedules += 1;
+        existing.totalBookings += confirmedBookings;
+        existing.totalCapacity += s.capacity ?? 0;
+        existing.totalAttendees += confirmedBookings;
+        classMap.set(className, existing);
+      });
+
+      const tableData: ClassPopularityRow[] = Array.from(classMap.entries())
+        .map(([className, val]) => ({
+          className,
+          category: val.category,
+          totalSchedules: val.totalSchedules,
+          totalBookings: val.totalBookings,
+          avgCapacityPercent: val.totalCapacity > 0 ? Math.round((val.totalBookings / val.totalCapacity) * 100) : 0,
+          totalAttendees: val.totalAttendees,
+        }))
+        .sort((a, b) => b.totalBookings - a.totalBookings);
+
+      const chartData = tableData.slice(0, 10).map((r) => ({ name: r.className, value: r.totalBookings }));
+      const totalBookings = tableData.reduce((s, r) => s + r.totalBookings, 0);
+
+      const stats: ClassPopularityStats = {
+        topClass: tableData[0]?.className ?? '-',
+        totalClasses: tableData.length,
+        avgFillRate: tableData.length > 0 ? Math.round(tableData.reduce((s, r) => s + r.avgCapacityPercent, 0) / tableData.length) : 0,
+        totalBookings,
+      };
 
       return { stats, chartData, tableData };
     },
