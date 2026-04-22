@@ -41,7 +41,7 @@ function AttendeeSheet({ cls, open, onClose }: { cls: ScheduleItem | null; open:
     enabled: !!cls?.id && open,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('bookings')
+        .from('class_bookings')
         .select('id, status, members(first_name, last_name)')
         .eq('schedule_id', cls!.id)
         .neq('status', 'cancelled');

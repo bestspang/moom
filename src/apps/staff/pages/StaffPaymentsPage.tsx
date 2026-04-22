@@ -128,16 +128,16 @@ export default function StaffPaymentsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('staff.paymentsTitle')}</span>
-                  <span className="font-semibold text-foreground">฿{Number(selectedSlip.amount ?? 0).toLocaleString()}</span>
+                  <span className="font-semibold text-foreground">฿{Number(selectedSlip.amount_thb ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span className={`font-medium ${statusColor(selectedSlip.status)}`}>{selectedSlip.status}</span>
                 </div>
-                {selectedSlip.slip_date && (
+                {selectedSlip.slip_datetime && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date</span>
-                    <span>{format(parseISO(selectedSlip.slip_date), 'd MMM yyyy', { locale: dateLocale })}</span>
+                    <span>{format(parseISO(selectedSlip.slip_datetime), 'd MMM yyyy', { locale: dateLocale })}</span>
                   </div>
                 )}
               </div>
