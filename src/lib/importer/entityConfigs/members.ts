@@ -176,7 +176,7 @@ async function upsertRows(
             }
           }
         }
-        const { error } = await supabase.from('members').update(memberData).eq('id', matchId);
+        const { error } = await supabase.from('members').update(memberData as never).eq('id', matchId);
         if (error) throw error;
         result.updated++;
         logActivity({

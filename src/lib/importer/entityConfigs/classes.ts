@@ -87,7 +87,7 @@ async function upsertRows(
         .maybeSingle();
 
       if (existing) {
-        const { error } = await supabase.from('classes').update(record).eq('id', existing.id);
+        const { error } = await supabase.from('classes').update(record as never).eq('id', existing.id);
         if (error) throw error;
         result.updated++;
       } else {

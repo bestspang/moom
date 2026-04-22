@@ -26,7 +26,10 @@ export interface QuestTemplate {
   updated_at: string;
 }
 
-export type CreateQuestTemplate = Omit<QuestTemplate, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuestTemplate = Omit<QuestTemplate, 'id' | 'created_at' | 'updated_at' | 'badge_reward_id' | 'coupon_reward_template_id'> & {
+  badge_reward_id?: string | null;
+  coupon_reward_template_id?: string | null;
+};
 
 export const useGamificationQuests = () =>
   useQuery({

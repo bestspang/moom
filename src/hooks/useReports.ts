@@ -907,12 +907,12 @@ export function useClassCategoryPopularity(dateRange: { start?: Date; end?: Date
     queryKey: queryKeys.classCategoryPopularity(dateRange),
     queryFn: async () => {
       const { data: schedules, error } = await supabase
-        .from('class_schedules')
+        .from('schedule')
         .select(`
           id,
           capacity,
           start_time,
-          classes!inner(category, name_en),
+          classes!inner(category_id, name),
           class_bookings(id, status)
         `)
         .gte('start_time', format(dateRange.start!, 'yyyy-MM-dd'))
@@ -923,7 +923,7 @@ export function useClassCategoryPopularity(dateRange: { start?: Date; end?: Date
       const categoryMap = new Map<string, { totalClasses: number; totalBookings: number; totalCapacity: number; totalAttendees: number }>();
 
       (schedules || []).forEach((s: any) => {
-        const category = s.classes?.category ?? 'Uncategorized';
+        const category = s.classes?.category_id ?? 'Uncategorized';
         const confirmedBookings = (s.class_bookings || []).filter((b: any) => b.status === 'confirmed' || b.status === 'attended').length;
         const existing = categoryMap.get(category) || { totalClasses: 0, totalBookings: 0, totalCapacity: 0, totalAttendees: 0 };
         existing.totalClasses += 1;
@@ -982,12 +982,12 @@ export function useClassPopularity(dateRange: { start?: Date; end?: Date }) {
     queryKey: queryKeys.classPopularity(dateRange),
     queryFn: async () => {
       const { data: schedules, error } = await supabase
-        .from('class_schedules')
+        .from('schedule')
         .select(`
           id,
           capacity,
           start_time,
-          classes!inner(name_en, category),
+          classes!inner(name, category_id),
           class_bookings(id, status)
         `)
         .gte('start_time', format(dateRange.start!, 'yyyy-MM-dd'))

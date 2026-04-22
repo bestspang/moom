@@ -392,7 +392,7 @@ export const ImportMembersDialog = ({ open, onOpenChange, initialFile }: ImportM
 
         if (matchId) {
           // Update
-          const { error } = await supabase.from('members').update(memberData).eq('id', matchId);
+          const { error } = await supabase.from('members').update(memberData as never).eq('id', matchId);
           if (error) throw error;
           importResult.updated++;
 

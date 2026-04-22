@@ -220,7 +220,7 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
       if (extraNotes.length > 0) tx.notes = extraNotes.join(' | ');
 
       if (matchId) {
-        const { error } = await supabase.from('transactions').update(tx).eq('id', matchId);
+        const { error } = await supabase.from('transactions').update(tx as never).eq('id', matchId);
         if (error) throw error;
         result.updated++;
         logActivity({ event_type: 'transaction_updated', activity: `Transaction ${txId} updated via CSV import`, entity_type: 'transaction', entity_id: matchId, new_value: { ...tx, _source: 'csv_import' } });

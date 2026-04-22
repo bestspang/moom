@@ -155,7 +155,7 @@ const Reports = () => {
               buttonText={r.buttonText}
               buttonVariant={r.buttonVariant}
               onClick={r.onClick}
-              disabled={'disabled' in r ? r.disabled : undefined}
+              disabled={'disabled' in r ? Boolean((r as any).disabled) : undefined}
               icon={r.icon}
               accentColor={r.accentColor}
             />
@@ -170,7 +170,7 @@ const Reports = () => {
               buttonText={r.buttonText}
               buttonVariant={r.buttonVariant}
               onClick={r.onClick}
-              disabled={'disabled' in r ? r.disabled : undefined}
+              disabled={'disabled' in r ? Boolean((r as any).disabled) : undefined}
               icon={r.icon}
               accentColor={r.accentColor}
             />

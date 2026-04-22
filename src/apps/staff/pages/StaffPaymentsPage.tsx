@@ -18,9 +18,9 @@ import { useApproveSlip, useRejectSlip } from '@/hooks/useTransferSlips';
 
 type Slip = {
   id: string;
-  amount: number | null;
+  amount_thb: number | null;
   status: string | null;
-  slip_date: string | null;
+  slip_datetime: string | null;
   member_id: string | null;
   slip_file_url?: string | null;
   members: { first_name: string; last_name: string | null } | null;
@@ -40,11 +40,11 @@ export default function StaffPaymentsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transfer_slips')
-        .select('id, amount, status, slip_date, member_id, slip_file_url, members(first_name, last_name)')
+        .select('id, amount_thb, status, slip_datetime, member_id, slip_file_url, members(first_name, last_name)')
         .order('created_at', { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data ?? []) as Slip[];
+      return (data ?? []) as unknown as Slip[];
     },
     enabled: !!user,
   });
@@ -88,8 +88,8 @@ export default function StaffPaymentsPage() {
               <ListCard
                 key={s.id}
                 title={memberName(s)}
-                subtitle={s.slip_date ? format(parseISO(s.slip_date), 'd MMM yyyy', { locale: dateLocale }) : undefined}
-                meta={`฿${Number(s.amount ?? 0).toLocaleString()}`}
+                subtitle={s.slip_datetime ? format(parseISO(s.slip_datetime), 'd MMM yyyy', { locale: dateLocale }) : undefined}
+                meta={`฿${Number(s.amount_thb ?? 0).toLocaleString()}`}
                 trailing={
                   <span className={`text-xs font-medium ${statusColor(s.status)}`}>
                     {s.status}
@@ -128,16 +128,16 @@ export default function StaffPaymentsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('staff.paymentsTitle')}</span>
-                  <span className="font-semibold text-foreground">฿{Number(selectedSlip.amount ?? 0).toLocaleString()}</span>
+                  <span className="font-semibold text-foreground">฿{Number(selectedSlip.amount_thb ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span className={`font-medium ${statusColor(selectedSlip.status)}`}>{selectedSlip.status}</span>
                 </div>
-                {selectedSlip.slip_date && (
+                {selectedSlip.slip_datetime && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date</span>
-                    <span>{format(parseISO(selectedSlip.slip_date), 'd MMM yyyy', { locale: dateLocale })}</span>
+                    <span>{format(parseISO(selectedSlip.slip_datetime), 'd MMM yyyy', { locale: dateLocale })}</span>
                   </div>
                 )}
               </div>

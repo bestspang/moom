@@ -348,7 +348,7 @@ export const useUpdateMember = () => {
     mutationFn: async ({ id, data, oldData }: { id: string; data: Partial<Member>; oldData?: Partial<Member> }) => {
       const { error } = await supabase
         .from('members')
-        .update(data)
+        .update(data as never)
         .eq('id', id);
       if (error) throw error;
       return { oldData };
