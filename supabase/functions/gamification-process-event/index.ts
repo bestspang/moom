@@ -14,7 +14,7 @@ interface GamificationEventRequest {
 // ---------- Identity Resolution ----------
 
 async function resolveMemberId(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   body: GamificationEventRequest
 ): Promise<{ member_id: string; location_id: string | null } | null> {
   // Case 1: Direct member_id from Admin App
@@ -79,7 +79,7 @@ const GUARDRAIL_DEFAULTS: GuardrailMap = {
   REFERRAL_REWARD_POINTS_DEFAULT: "200",
 };
 
-async function getGuardrails(db: ReturnType<typeof createClient>): Promise<GuardrailMap> {
+async function getGuardrails(db: Db): Promise<GuardrailMap> {
   try {
     const { data } = await db
       .from("economy_guardrails")
@@ -108,7 +108,7 @@ function g(guardrails: GuardrailMap, key: string): number {
 
 // ---------- Core Logic Helpers ----------
 
-async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: string) {
+async function findMatchingRule(db: Db, eventType: string) {
   const { data: rules } = await db
     .from("gamification_rules")
     .select("*")
@@ -119,7 +119,7 @@ async function findMatchingRule(db: ReturnType<typeof createClient>, eventType: 
 }
 
 async function checkCooldown(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   cooldownMinutes: number
@@ -136,7 +136,7 @@ async function checkCooldown(
 }
 
 async function checkDailyLimit(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   maxPerDay: number
@@ -156,7 +156,7 @@ async function checkDailyLimit(
   return { exceeded: c >= maxPerDay, count: c };
 }
 
-async function getOrCreateProfile(db: ReturnType<typeof createClient>, memberId: string) {
+async function getOrCreateProfile(db: Db, memberId: string) {
   let { data: profile } = await db
     .from("member_gamification_profiles")
     .select("*")
@@ -175,7 +175,7 @@ async function getOrCreateProfile(db: ReturnType<typeof createClient>, memberId:
   return profile;
 }
 
-async function updateStreak(db: ReturnType<typeof createClient>, memberId: string, currentLongest: number) {
+async function updateStreak(db: Db, memberId: string, currentLongest: number) {
   const today = new Date().toISOString().split("T")[0];
   const { data: streak } = await db
     .from("streak_snapshots")
@@ -224,7 +224,7 @@ async function updateStreak(db: ReturnType<typeof createClient>, memberId: strin
 }
 
 async function checkLevelUp(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   totalXp: number,
   currentLevel: number,
   memberId?: string,
@@ -265,7 +265,7 @@ async function checkLevelUp(
 }
 
 async function processChallenges(
-  db: ReturnType<typeof createClient>,
+  db: Db,
   memberId: string,
   eventType: string,
   xpDelta: number,
