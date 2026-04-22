@@ -127,7 +127,7 @@ export const useUpdatePromotionPackage = () => {
 
       const { error } = await supabase
         .from('promotion_packages')
-        .update(update)
+        .update(update as never)
         .eq('promotion_id', promotionId)
         .eq('package_id', packageId);
       if (error) throw error;

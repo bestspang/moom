@@ -25,7 +25,12 @@ export interface GamificationReward {
   updated_at: string;
 }
 
-export type CreateGamificationReward = Omit<GamificationReward, 'id' | 'created_at' | 'updated_at'>;
+export type CreateGamificationReward = Omit<GamificationReward, 'id' | 'created_at' | 'updated_at' | 'redeemed_count' | 'available_from' | 'available_until' | 'linked_package_id'> & {
+  redeemed_count?: number;
+  available_from?: string | null;
+  available_until?: string | null;
+  linked_package_id?: string | null;
+};
 
 export const useGamificationRewards = () => {
   return useQuery({

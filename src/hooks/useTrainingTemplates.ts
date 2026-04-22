@@ -155,7 +155,7 @@ export function useUpdateTraining() {
 
       const { error } = await supabase
         .from('training_templates')
-        .update(updates)
+        .update(updates as never)
         .eq('id', input.id);
       if (error) throw error;
     },

@@ -212,7 +212,7 @@ export const useMarkAttendance = () => {
 
       const { data, error } = await supabase
         .from('class_bookings')
-        .update(updates)
+        .update(updates as never)
         .eq('id', bookingId)
         .select(`
           *,
@@ -331,7 +331,7 @@ export const useBatchMarkAttendance = () => {
 
       const { data, error } = await supabase
         .from('class_bookings')
-        .update(updates)
+        .update(updates as never)
         .in('id', bookingIds)
         .select(`
           *,

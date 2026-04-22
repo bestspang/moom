@@ -109,7 +109,7 @@ async function upsertRows(rows: ImportRow[], _qc: any, setProgress: (p: number) 
       }
 
       if (matchId) {
-        const { error } = await supabase.from('packages').update(pkg).eq('id', matchId);
+        const { error } = await supabase.from('packages').update(pkg as never).eq('id', matchId);
         if (error) throw error;
         result.updated++;
         logActivity({ event_type: 'package_updated', activity: `Package ${pkg.name_en} updated via CSV import`, entity_type: 'package', entity_id: matchId, new_value: { ...pkg, _source: 'csv_import' } });

@@ -322,7 +322,7 @@ export const ImportLeadsDialog = ({ open, onOpenChange, initialFile }: ImportLea
         }
 
         if (matchId) {
-          const { error } = await supabase.from('leads').update(leadData).eq('id', matchId);
+          const { error } = await supabase.from('leads').update(leadData as never).eq('id', matchId);
           if (error) throw error;
           importResult.updated++;
           logActivity({
