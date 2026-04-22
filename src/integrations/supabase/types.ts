@@ -4767,6 +4767,7 @@ export type Database = {
         }
         Returns: Json
       }
+      smoke_test_payment_flow: { Args: never; Returns: Json }
     }
     Enums: {
       access_level:
