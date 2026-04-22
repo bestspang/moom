@@ -4754,6 +4754,19 @@ export type Database = {
         }
         Returns: Json
       }
+      process_stripe_payment: {
+        Args: {
+          p_amount: number
+          p_expiry_date: string
+          p_member_id: string
+          p_package_id: string
+          p_package_name: string
+          p_sessions_total: number
+          p_stripe_session_id: string
+          p_transaction_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       access_level:
