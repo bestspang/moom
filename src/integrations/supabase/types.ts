@@ -4684,6 +4684,14 @@ export type Database = {
         Returns: Json
       }
       next_transaction_number: { Args: never; Returns: string }
+      process_redeem_reward: {
+        Args: {
+          p_idempotency_key: string
+          p_member_id: string
+          p_reward_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       access_level:
