@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Section } from '@/apps/shared/components/Section';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,14 @@ import { useTranslation } from 'react-i18next';
 
 export default function MemberUploadSlipPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const packageId = searchParams.get('packageId');
+  const amountParam = Number(searchParams.get('amount'));
+  const defaultAmount = Number.isFinite(amountParam) && amountParam > 0 ? amountParam : undefined;
 
   const uploadSlipSchema = z.object({
     amount: z.number({ required_error: t('validation.required') }).positive(t('validation.mustBePositive')),
@@ -32,7 +36,7 @@ export default function MemberUploadSlipPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<UploadSlipForm>({
     resolver: zodResolver(uploadSlipSchema),
     defaultValues: {
-      amount: undefined as unknown as number,
+      amount: defaultAmount ?? (undefined as unknown as number),
       bank_name: '',
       transfer_date: new Date().toISOString().split('T')[0],
     },
@@ -65,6 +69,7 @@ export default function MemberUploadSlipPage() {
       amount: data.amount,
       bank_name: data.bank_name,
       transfer_date: data.transfer_date,
+      package_id: packageId,
       file: selectedFile ?? undefined,
     }),
     onSuccess: () => {
@@ -87,6 +92,13 @@ export default function MemberUploadSlipPage() {
 
       <Section className="mb-6">
         <div className="space-y-4">
+          {packageId && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <p className="text-sm font-medium text-foreground">{t('member.transferReviewPending')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('member.uploadSlipToContinue')}</p>
+            </div>
+          )}
+
           {/* File upload area */}
           <input
             ref={fileInputRef}

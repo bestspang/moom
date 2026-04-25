@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSettings, useUpdateSetting, getSettingValue } from '@/hooks/useSettings';
 import { useLocations } from '@/hooks/useLocations';
 import { cn } from '@/lib/utils';
-import { Pencil, MapPin, AlertCircle } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { SettingsLayout } from '@/components/settings';
 import { Link } from 'react-router-dom';
 import {
@@ -17,12 +17,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 type Section = 'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin';
 
@@ -130,9 +124,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm" disabled className="opacity-50">
-                    {t('settings.general.specifyBankAccount')}
-                  </Button>
+                  <Badge variant="outline">{t('settings.general.manualConfigRequired')}</Badge>
                 </div>
               ))}
             </AccordionContent>
@@ -154,9 +146,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm" disabled className="opacity-50">
-                    {t('settings.general.setupStripe')}
-                  </Button>
+                  <Badge variant="secondary">{t('settings.general.paymentUnavailable')}</Badge>
                 </div>
               ))}
             </AccordionContent>
@@ -178,9 +168,7 @@ const SettingsGeneral = () => {
                     />
                     <span className="text-sm">{location.name}</span>
                   </div>
-                  <Button variant="outline" size="sm" disabled className="opacity-50">
-                    {t('settings.general.setupStripe')}
-                  </Button>
+                  <Badge variant="secondary">{t('settings.general.paymentUnavailable')}</Badge>
                 </div>
               ))}
             </AccordionContent>
@@ -196,16 +184,7 @@ const SettingsGeneral = () => {
               {locations?.map((location) => (
                 <div key={location.id} className="flex items-center justify-between py-2 border-t">
                   <span className="text-sm">{location.name}</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('common.comingSoon')}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Badge variant="secondary">{t('settings.general.paymentUnavailable')}</Badge>
                 </div>
               ))}
             </AccordionContent>
@@ -283,16 +262,7 @@ const SettingsGeneral = () => {
       
       <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
         <span className="text-sm font-medium">Asia/Bangkok (GMT +07:00)</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('common.comingSoon')}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="outline">{t('settings.general.fixedTimezone')}</Badge>
       </div>
     </div>
   );
@@ -329,16 +299,7 @@ const SettingsGeneral = () => {
         <Label className="font-medium">{t('settings.general.specifyCheckinTime')}</Label>
         <div className="flex items-center justify-between">
           <span className="text-sm">{t('settings.general.anytime')}</span>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-30 cursor-not-allowed" disabled>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('common.comingSoon')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Badge variant="outline">{t('settings.general.manualConfigRequired')}</Badge>
         </div>
       </div>
     </div>

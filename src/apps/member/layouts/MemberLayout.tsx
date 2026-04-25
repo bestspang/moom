@@ -22,7 +22,7 @@ export function MemberLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/member/login" state={{ from: location }} replace />;
   }
 
   return (

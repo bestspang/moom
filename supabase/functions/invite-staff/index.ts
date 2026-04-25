@@ -96,10 +96,12 @@ Deno.serve(async (req) => {
       console.error("Failed to log activity:", logError);
     }
 
-    // TODO: Future integration point for email/LINE invitation
-
     return new Response(
-      JSON.stringify({ ok: true }),
+      JSON.stringify({
+        ok: true,
+        delivery: "pending_manual",
+        message: "Staff status was set to pending. Email or LINE delivery is not configured yet.",
+      }),
       { status: 200, headers: { ...dynamicCors, "Content-Type": "application/json" } }
     );
   } catch (error) {

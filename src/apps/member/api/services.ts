@@ -326,6 +326,7 @@ export async function uploadTransferSlip(data: {
   amount: number;
   bank_name: string;
   transfer_date: string;
+  package_id?: string | null;
   file?: File;
 }): Promise<void> {
   let slipUrl: string | null = null;
@@ -364,13 +365,25 @@ export async function uploadTransferSlip(data: {
   const memberId = identity?.admin_entity_id;
   if (!memberId) throw new Error('Member identity not found');
 
-  const { data: rpcResult, error } = await supabase.rpc('member_upload_slip', {
+  const basePayload = {
     p_member_id: memberId,
     p_amount: data.amount,
     p_bank_name: data.bank_name,
     p_transfer_date: data.transfer_date,
     p_slip_url: slipUrl,
+  };
+
+  const invokeUploadSlip = (payload: Record<string, unknown>) =>
+    (supabase.rpc as (...args: any[]) => Promise<{ data: unknown; error: Error | null }>)('member_upload_slip', payload);
+
+  let { data: rpcResult, error } = await invokeUploadSlip({
+    ...basePayload,
+    p_package_id: data.package_id ?? null,
   });
+
+  if (error && data.package_id && error.message?.includes('p_package_id')) {
+    ({ data: rpcResult, error } = await invokeUploadSlip(basePayload));
+  }
 
   if (error) throw error;
 

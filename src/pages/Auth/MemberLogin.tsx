@@ -79,7 +79,7 @@ const MemberLogin: React.FC = () => {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/member`,
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {

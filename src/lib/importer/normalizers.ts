@@ -3,7 +3,7 @@ export function parseDate(val: string): string | null {
   // ISO
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
   // DD/MM/YYYY or DD-MM-YYYY
-  const m1 = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  const m1 = val.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (m1) return `${m1[3]}-${m1[2].padStart(2, '0')}-${m1[1].padStart(2, '0')}`;
   // "5 MAR 2026" or "5 MAR 2026, 08:46"
   const m2 = val.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})/);
@@ -55,7 +55,7 @@ export function parseBool(val: string): boolean {
 
 export function parseCurrency(val: string): number | null {
   if (!val || val === '-') return null;
-  const cleaned = val.replace(/[^0-9.\-]/g, '');
+  const cleaned = val.replace(/[^0-9.-]/g, '');
   const num = parseFloat(cleaned);
   return isNaN(num) ? null : num;
 }

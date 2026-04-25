@@ -336,6 +336,8 @@ export const useRemoveStaffPosition = () => {
 };
 
 export const useInviteStaff = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ staff_id, email }: { staff_id: string; email?: string }) => {
       const { data, error } = await supabase.functions.invoke('invite-staff', {
@@ -344,6 +346,11 @@ export const useInviteStaff = () => {
       
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.staffStats() });
+      toast.success(i18n.t('toast.inviteQueued'));
     },
     onError: (error) => {
       toast.error(i18n.t('toast.inviteFailed'));

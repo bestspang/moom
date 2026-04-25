@@ -1587,6 +1587,9 @@ export default {
       promptPayFee: '1.65% + ฿10 ต่อการคืนเงิน',
       taxInvoice: 'ใบกำกับภาษี',
       taxInvoiceDesc: 'ข้อมูลบริษัทสำหรับออกใบกำกับภาษี',
+      manualConfigRequired: 'ต้องตั้งค่าด้วยตนเอง',
+      paymentUnavailable: 'ยังไม่พร้อมใช้งาน',
+      fixedTimezone: 'กำหนดไว้แล้ว',
       
       // Empty state
       noLocations: 'ยังไม่มีสาขา',
@@ -1626,6 +1629,7 @@ export default {
       waitlist: 'รายชื่อผู้รอเรียก',
       cancellation: 'การยกเลิก',
       noshow: 'การไม่เข้าคลาส',
+      readOnly: 'อ่านอย่างเดียว',
       
       // Booking section
       bookingAdvanceDesc: 'กำหนดระยะเวลาที่สมาชิกสามารถเริ่มจองคลาสล่วงหน้าได้',
@@ -2357,6 +2361,11 @@ export default {
     continueToPayment: 'ไปชำระเงิน',
     processing: 'กำลังดำเนินการ...',
     payAmount: 'จ่าย {{amount}}฿',
+    unavailable: 'ยังไม่พร้อมใช้งาน',
+    uploadSlipForAmount: 'อัปโหลดสลิป {{amount}}฿',
+    transferReviewDescription: 'การโอนเงินจะให้ทีมงานตรวจสอบหลังอัปโหลดสลิป ส่วนบัตรและพร้อมเพย์จะเปิดใช้เมื่อการตั้งค่า Stripe/PromptPay พร้อม',
+    transferReviewPending: 'รอตรวจสอบการโอนเงิน',
+    uploadSlipToContinue: 'อัปโหลดสลิป แล้วทีมงานจะอนุมัติแพ็กเกจหลังตรวจสอบการชำระเงิน',
     paymentMethod: 'วิธีชำระเงิน',
     price: 'ราคา',
     sessionsCount: '{{n}} เซสชัน',
@@ -2580,8 +2589,10 @@ export default {
     pending: 'รอดำเนินการ',
     unlinked: 'ยังไม่เชื่อมต่อ',
     linkLine: 'เชื่อมต่อ LINE',
+    requestLineLink: 'ขอเชื่อมต่อ LINE',
     unlinkLine: 'ยกเลิกการเชื่อมต่อ',
     linkRequested: 'คำขอเชื่อมต่อรอดำเนินการ — รอการเชื่อมต่อ LINE OAuth',
+    pendingOnly: 'ตอนนี้เป็นการสร้างคำขอรอดำเนินการเท่านั้น จนกว่าจะเปิดใช้งาน LINE OAuth',
     comingSoon: 'LINE OAuth กำลังจะมาเร็วๆ นี้ ตั้งสถานะเป็นรอดำเนินการ',
   },
 
@@ -2766,6 +2777,7 @@ export default {
     staffDeleteFailed: 'ไม่สามารถลบพนักงาน',
     positionAdded: 'เพิ่มตำแหน่งแล้ว',
     positionRemoved: 'ลบตำแหน่งแล้ว',
+    inviteQueued: 'บันทึกคำเชิญไว้แล้ว การส่งจริงรอการตั้งค่าอีเมลหรือ LINE',
     inviteFailed: 'ไม่สามารถส่งคำเชิญ',
 
     roomCreated: 'สร้างห้องสำเร็จ',

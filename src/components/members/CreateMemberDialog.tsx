@@ -91,7 +91,9 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
     const timeout = setTimeout(() => {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...formValues, _step: currentStep }));
-      } catch {}
+      } catch {
+        // Ignore localStorage failures; draft persistence is best-effort.
+      }
     }, 500);
     return () => clearTimeout(timeout);
   }, [formValues, open, currentStep]);
@@ -118,7 +120,9 @@ export const CreateMemberDialog: React.FC<CreateMemberDialogProps> = ({
           if (_step) setCurrentStep(_step);
           toast({ title: t('leads.draftRestored') });
         }
-      } catch {}
+      } catch {
+        // Ignore malformed or unavailable draft data.
+      }
     } else {
       setCurrentStep(1);
       setStepError('');

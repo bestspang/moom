@@ -98,11 +98,11 @@ export const LineIdentityCard: React.FC<LineIdentityCardProps> = ({ ownerType, o
                     disabled={requestLink.isPending}
                   >
                     <Link2 className="h-4 w-4 mr-1" />
-                    {t('line.linkLine')}
+                    {t('line.requestLineLink')}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t('line.comingSoon')}</p>
+                  <p>{t('line.pendingOnly')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

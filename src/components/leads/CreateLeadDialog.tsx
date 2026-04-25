@@ -129,7 +129,9 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
     const timeout = setTimeout(() => {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(formValues));
-      } catch {}
+      } catch {
+        // Ignore localStorage failures; draft persistence is best-effort.
+      }
     }, 500);
     return () => clearTimeout(timeout);
   }, [formValues, open]);
@@ -146,7 +148,9 @@ export const CreateLeadDialog: React.FC<CreateLeadDialogProps> = ({
           });
           toast.info(t('leads.draftRestored'));
         }
-      } catch {}
+      } catch {
+        // Ignore malformed or unavailable draft data.
+      }
     }
   }, [open, setValue, t]);
 

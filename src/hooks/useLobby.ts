@@ -27,7 +27,7 @@ export function useCheckIns(date: Date, search: string = '') {
     queryKey: queryKeys.checkIns(dateStr, search),
     enabled: !!user,
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from('member_attendance')
         .select(`
           *,

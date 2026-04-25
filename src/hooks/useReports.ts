@@ -516,7 +516,7 @@ export function usePackageSales(
     queryKey: queryKeys.packageSales(dateRange, filters),
     queryFn: async () => {
       // Query paid transactions with package info
-      let query = supabase
+      const query = supabase
         .from('transactions')
         .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
         .eq('status', 'paid')
@@ -613,7 +613,7 @@ export function usePackageSalesOverTime(
   return useQuery({
     queryKey: queryKeys.packageSalesOverTime(dateRange, filters, timePeriod),
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from('transactions')
         .select('amount, package_id, paid_at, packages!inner(name_en, type, categories)')
         .eq('status', 'paid')

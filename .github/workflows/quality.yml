@@ -1,0 +1,36 @@
+name: Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Build, Test, Lint, i18n
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Test
+        run: bun run test
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Check i18n parity
+        run: node scripts/compare-i18n.mjs

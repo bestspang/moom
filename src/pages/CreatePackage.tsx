@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Infinity, Timer, User, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, Infinity as InfinityIcon, Timer, User, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -258,7 +258,7 @@ const CreatePackage = () => {
   };
 
   const packageTypes = [
-    { type: 'unlimited' as const, icon: Infinity, title: t('packages.unlimited'), description: t('packages.create.unlimitedDesc') },
+    { type: 'unlimited' as const, icon: InfinityIcon, title: t('packages.unlimited'), description: t('packages.create.unlimitedDesc') },
     { type: 'session' as const, icon: Timer, title: t('packages.session'), description: t('packages.create.sessionDesc') },
     { type: 'pt' as const, icon: User, title: t('packages.pt'), description: t('packages.create.ptDesc') },
   ];

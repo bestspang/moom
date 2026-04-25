@@ -595,7 +595,7 @@ Deno.serve(async (req) => {
     }).eq("member_id", member_id);
 
     // 10.5) CHECK BADGE UNLOCKS (condition-based)
-    let newBadgeIds: string[] = [];
+    const newBadgeIds: string[] = [];
     try {
       const { data: allBadges } = await db
         .from("gamification_badges")

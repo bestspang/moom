@@ -78,7 +78,6 @@ const StaffDetails = () => {
 
   const handleResendInvitation = async () => {
     await inviteStaff.mutateAsync({ staff_id: id!, email: staff.email || undefined });
-    toast.success(t('staff.invitationSent'));
   };
 
   const handleAddPosition = async () => {

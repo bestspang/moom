@@ -1589,6 +1589,9 @@ export default {
       promptPayFee: '1.65% + ฿10 per refund',
       taxInvoice: 'Tax invoice',
       taxInvoiceDesc: 'Company information for tax invoice generation.',
+      manualConfigRequired: 'Manual setup required',
+      paymentUnavailable: 'Unavailable',
+      fixedTimezone: 'Fixed',
       
       // Empty state
       noLocations: 'No locations configured',
@@ -1628,6 +1631,7 @@ export default {
       waitlist: 'Waitlist',
       cancellation: 'Cancellation',
       noshow: 'No-show',
+      readOnly: 'Read-only',
       
       // Booking section
       bookingAdvanceDesc: 'Specify the period of time in advance that members can start booking a class',
@@ -2359,6 +2363,11 @@ export default {
     continueToPayment: 'Continue to Payment',
     processing: 'Processing...',
     payAmount: 'Pay {{amount}}฿',
+    unavailable: 'Unavailable',
+    uploadSlipForAmount: 'Upload slip for {{amount}}฿',
+    transferReviewDescription: 'Bank transfer is reviewed by staff after you upload a slip. Card and PromptPay will be enabled after Stripe/PromptPay setup is ready.',
+    transferReviewPending: 'Bank transfer review',
+    uploadSlipToContinue: 'Upload your slip and staff will approve the package after payment verification.',
     paymentMethod: 'Payment Method',
     price: 'Price',
     sessionsCount: '{{n}} sessions',
@@ -2582,8 +2591,10 @@ export default {
     pending: 'Pending',
     unlinked: 'Not linked',
     linkLine: 'Link LINE',
+    requestLineLink: 'Request LINE link',
     unlinkLine: 'Unlink',
     linkRequested: 'Link request pending — waiting for LINE OAuth integration.',
+    pendingOnly: 'This only creates a pending link request until LINE OAuth is enabled.',
     comingSoon: 'LINE OAuth integration coming soon. This sets the status to pending.',
   },
 
@@ -2775,6 +2786,7 @@ export default {
     staffDeleteFailed: 'Failed to delete staff member',
     positionAdded: 'Position added',
     positionRemoved: 'Position removed',
+    inviteQueued: 'Invitation queued. Delivery is pending email or LINE setup.',
     inviteFailed: 'Failed to send invitation',
 
     // Rooms

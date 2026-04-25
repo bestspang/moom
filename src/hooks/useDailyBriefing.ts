@@ -59,7 +59,11 @@ export function useDailyBriefing(stats: BriefingStats | undefined) {
   });
 
   const dismiss = useCallback(() => {
-    try { localStorage.setItem(getDismissKey(), '1'); } catch {}
+    try {
+      localStorage.setItem(getDismissKey(), '1');
+    } catch {
+      // Ignore localStorage failures; dismissal still applies for this session.
+    }
     setDismissed(true);
   }, []);
 

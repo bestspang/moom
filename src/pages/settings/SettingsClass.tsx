@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { useSettings, getSettingValue } from '@/hooks/useSettings';
 import { SettingsLayout } from '@/components/settings';
 import {
@@ -78,21 +78,7 @@ const SettingsClass = () => {
       </div>
       <div className="flex items-center gap-2 group">
         <span className="text-sm font-medium">{value}</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-30 cursor-not-allowed"
-                disabled
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('common.comingSoon')}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="outline">{t('settings.class.readOnly')}</Badge>
       </div>
     </div>
   );
