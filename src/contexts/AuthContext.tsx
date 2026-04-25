@@ -179,11 +179,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Note: Staff and user_roles records are now created automatically
       // via database trigger (handle_new_user) for security
       // signup_surface determines whether a staff or member record is created
+      const emailRedirectTo = signupSurface === 'member'
+        ? `${window.location.origin}/member`
+        : window.location.origin;
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo,
           data: {
             first_name: firstName,
             last_name: lastName,

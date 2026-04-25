@@ -382,7 +382,7 @@ const MemberLogin: React.FC = () => {
 
           <p className="text-center text-sm text-muted-foreground mt-4">
             {t('auth.noAccount')}{' '}
-            <Link to="/signup" className="text-primary hover:underline font-medium">{t('auth.signUp')}</Link>
+            <Link to="/member/signup" className="text-primary hover:underline font-medium">{t('auth.signUp')}</Link>
           </p>
         </CardContent>
       </Card>

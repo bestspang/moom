@@ -72,7 +72,7 @@ const MemberSignup: React.FC = () => {
         toast({ variant: 'destructive', title: t('auth.signupFailed'), description: error.message });
       } else {
         toast({ title: t('auth.signupSuccess'), description: t('auth.checkEmail') });
-        navigate('/login');
+        navigate('/member/login');
       }
     } finally {
       setIsLoading(false);
@@ -83,7 +83,7 @@ const MemberSignup: React.FC = () => {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/member`,
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {
@@ -344,7 +344,7 @@ const MemberSignup: React.FC = () => {
 
           <p className="text-center text-sm text-muted-foreground mt-4">
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-primary hover:underline font-medium">{t('auth.login')}</Link>
+            <Link to="/member/login" className="text-primary hover:underline font-medium">{t('auth.login')}</Link>
           </p>
         </CardContent>
       </Card>

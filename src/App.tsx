@@ -161,6 +161,7 @@ const App = () => (
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/member/login" element={<MemberLogin />} />
+                <Route path="/member/signup" element={<MemberSignup />} />
                 <Route path="/signup" element={detectSurface() === 'admin' ? <Navigate to="/login" replace /> : <MemberSignup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
