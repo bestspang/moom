@@ -1,26 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
-
-const ALLOWED_ORIGINS = [
-  "https://admin.moom.fit",
-  "https://member.moom.fit",
-  "https://moom.lovable.app",
-];
-
-function isAllowedOrigin(origin: string): boolean {
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  return /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin);
-}
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+import { canAccessMember } from "../_shared/authz.ts";
+import { createDb, createUserDb, getCorsHeaders } from "../_shared/db.ts";
 
 /**
  * Assigns daily/weekly quests to a member.
@@ -38,17 +17,11 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createUserDb(authHeader);
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const db = createClient(supabaseUrl, serviceKey);
+    const db = createDb();
     const body = await req.json().catch(() => ({}));
     const period = body.period || "daily";
     const memberId = body.member_id;
@@ -57,15 +30,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "member_id required" }), { status: 400, headers: cors });
     }
 
-    // Ownership check: caller must be admin/manager or the member themselves
-    const { data: memberRow } = await db.from('members').select('user_id').eq('id', memberId).single();
-    const isOwnMember = memberRow?.user_id === user.id;
-    const { data: hasManagerAccess } = await db.rpc('has_min_access_level', {
-      _user_id: user.id,
-      _min_level: 'level_3_manager',
-    });
-    if (!isOwnMember && !hasManagerAccess) {
-      return new Response(JSON.stringify({ error: 'Forbidden: manager role or own member required' }), { status: 403, headers: cors });
+    const canAssign = await canAccessMember(db, user.id, memberId, "level_3_manager");
+    if (!canAssign) {
+      return new Response(JSON.stringify({ error: "Forbidden: manager role or own member required" }), { status: 403, headers: cors });
     }
 
     const now = new Date();

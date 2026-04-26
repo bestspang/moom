@@ -1,3 +1,4 @@
+import { canAccessMember, hasInternalServiceRoleAuth } from "../_shared/authz.ts";
 import { createDb, createUserDb, getCorsHeaders, type Db } from "../_shared/db.ts";
 
 interface GamificationEventRequest {
@@ -380,10 +381,15 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    // Verify caller identity (typed user-scoped client)
-    const userClient = createUserDb(authHeader);
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+    const isInternalServiceRole = hasInternalServiceRoleAuth(authHeader);
+    let userId: string | null = null;
+    if (!isInternalServiceRole) {
+      // Verify caller identity (typed user-scoped client)
+      const userClient = createUserDb(authHeader);
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      userId = user.id;
+    }
 
     // Service client for writes (typed service-role client)
     const db: Db = createDb();
@@ -403,16 +409,13 @@ Deno.serve(async (req) => {
 
     const { member_id, location_id } = identity;
 
-    // Verify caller owns this member OR is staff (using has_min_access_level RPC — profiles table does not exist)
-    const { data: memberRow } = await db.from('members').select('user_id').eq('id', member_id).single()
-    const { data: hasStaffAccess } = await db.rpc('has_min_access_level', {
-      _user_id: user.id,
-      _min_level: 'level_1_minimum',
-    })
-    const isOwnMember = memberRow?.user_id === user.id
-    const isStaff = !!hasStaffAccess
-    if (!isOwnMember && !isStaff) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors })
+    if (!isInternalServiceRole) {
+      const canProcess = userId
+        ? await canAccessMember(db, userId, member_id, "level_1_minimum")
+        : false;
+      if (!canProcess) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors })
+      }
     }
 
     // 1) IDEMPOTENCY CHECK

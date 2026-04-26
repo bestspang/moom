@@ -1,26 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
-
-const ALLOWED_ORIGINS = [
-  "https://admin.moom.fit",
-  "https://member.moom.fit",
-  "https://moom.lovable.app",
-];
-
-function isAllowedOrigin(origin: string): boolean {
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  return /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin);
-}
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+import { canAccessMember } from "../_shared/authz.ts";
+import { createDb, createUserDb, getCorsHeaders } from "../_shared/db.ts";
 
 interface RedeemRequest {
   reward_id: string;
@@ -42,17 +21,11 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createUserDb(authHeader);
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
 
-    const db = createClient(supabaseUrl, serviceKey);
+    const db = createDb();
     const url = new URL(req.url);
     const action = url.searchParams.get("action") || "redeem";
 
@@ -142,16 +115,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: cors });
     }
 
-    // Verify caller owns this member OR is staff
-    const { data: memberRow } = await db.from('members').select('user_id').eq('id', member_id).single()
-    const { data: hasStaffAccess } = await db.rpc('has_min_access_level', {
-      _user_id: user.id,
-      _min_level: 'level_1_minimum',
-    })
-    const isOwnMember = memberRow?.user_id === user.id
-    const isStaff = !!hasStaffAccess
-    if (!isOwnMember && !isStaff) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors })
+    const canRedeem = await canAccessMember(db, user.id, member_id, "level_1_minimum");
+    if (!canRedeem) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors })
     }
 
     // ATOMIC: All checks (idempotency, balance, stock, level, daily limit)

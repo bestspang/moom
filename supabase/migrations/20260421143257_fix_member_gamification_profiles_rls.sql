@@ -3,11 +3,18 @@
 -- Replace with a scoped policy: members can only see their own profile, staff can see all.
 
 DROP POLICY IF EXISTS "Members can read gamification profiles" ON member_gamification_profiles;
+DROP POLICY IF EXISTS "Staff can read all gamification profiles" ON member_gamification_profiles;
 
 CREATE POLICY "member_gamification_profiles_member_select" ON member_gamification_profiles
-  FOR SELECT USING (
-    member_id = get_my_member_id()
-    OR EXISTS (
-      SELECT 1 FROM profiles WHERE user_id = auth.uid() AND access_level IN ('level_1_minimum','level_2_operator','level_3_manager','level_4_master')
+  FOR SELECT TO authenticated USING (
+    member_id = public.get_my_member_id(auth.uid())
+    OR (
+      public.has_min_access_level(auth.uid(), 'level_1_minimum'::public.access_level)
+      AND EXISTS (
+        SELECT 1
+        FROM public.user_roles ur
+        WHERE ur.user_id = auth.uid()
+          AND ur.role <> 'member'::public.app_role
+      )
     )
   );
