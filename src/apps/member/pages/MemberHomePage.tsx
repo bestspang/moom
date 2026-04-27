@@ -228,10 +228,25 @@ export default function MemberHomePage() {
         />
       </Section>
 
+      {/* --- 3.5 Today snapshot strip (V1 widget) --- */}
+      <Section className="mb-3">
+        <TodaySnapshotStrip
+          todayBookingsCount={todayBookings.length}
+          checkedIn={!!todayCheckin?.checkedIn}
+        />
+      </Section>
+
       {/* --- 4. Mood check-in (UI shell, localStorage) --- */}
       <Section className="mb-3">
         <MoodCheckinStrip />
       </Section>
+
+      {/* --- 4.5 Friends pulse (V1 widget — hidden if no squad/activity) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <FriendsPulseCard memberId={memberId} />
+        </Section>
+      )}
 
       {/* --- 5. Quick tiles (4 nav shortcuts) --- */}
       <Section className="mb-3">
