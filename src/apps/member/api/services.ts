@@ -374,7 +374,7 @@ export async function uploadTransferSlip(data: {
   };
 
   const invokeUploadSlip = (payload: Record<string, unknown>) =>
-    (supabase.rpc as (...args: any[]) => Promise<{ data: unknown; error: Error | null }>)('member_upload_slip', payload);
+    (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>)('member_upload_slip', payload);
 
   let { data: rpcResult, error } = await invokeUploadSlip({
     ...basePayload,
