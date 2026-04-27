@@ -1899,6 +1899,18 @@ export default {
     moodStrong: 'พร้อม',
     moodFire: 'ไฟลุก',
     change: 'เปลี่ยน',
+    // V1 widgets
+    streakDays: '🔥 สตรีค {{n}} วัน',
+    streakNextMilestone: 'อีก {{n}} วันถึง {{milestone}} วัน',
+    streakBest: 'สถิติสูงสุด',
+    snapshotClassesToday: 'คลาสวันนี้',
+    snapshotCheckin: 'เช็คอิน',
+    snapshotCheckedIn: 'เรียบร้อย',
+    snapshotNotYet: 'ยัง',
+    snapshotXpToday: 'XP วันนี้',
+    friendsPulseTitle: 'เพื่อนกำลังขยับ',
+    friendsPulseSub: '{{n}} กิจกรรมล่าสุดในกลุ่ม',
+    featuredNextClass: 'คลาสถัดไปของคุณ',
     // Wellness tip
     dailyTip: 'เคล็ดลับวันนี้',
     viewMoreTips: 'ดูเพิ่มเติม',

@@ -1,6 +1,23 @@
-# 🎨 Member V2 — Schedule + Rewards Refresh (รอบต่อจาก Home)
+# 🎨 Member Home V1 — Widget Pass (warm visual + 3 new widgets)
 
-ทำต่อตาม plan ที่ approve ไว้แล้วใน `.lovable/plan.md` — เหลือ **2 หน้า**: Schedule + Rewards. รอบนี้ **ไม่แตะ data layer เลย**, refresh เฉพาะ UI ตาม V2 design.
+ตาม mockup `MOOM_Member_App_v1-2.html` (SVG thumbnail) — เน้น **เพิ่ม widget เข้าไป**, ไม่ลบของเดิม. คุณบอกว่าถ้าไม่ชอบจะลบทีหลัง.
+
+---
+
+## 🔍 อ่าน mockup ออกมาเป็น design language
+
+จาก SVG preview (ไม่สามารถ unpack React bundle ได้, แต่ thumbnail บอก intent ครบ):
+
+| Element | Mockup | สถานะปัจจุบัน |
+|---|---|---|
+| Warm cream background `#fafaf7` | ✅ | ❌ ใช้ neutral |
+| Orange gradient hero `#ff7a1a→#ff9d4a` | ✅ | ✅ NextUpCard มี |
+| Decorative circle on hero (top-right) | ✅ | ❌ ยังไม่มี |
+| 5 mood circles | ✅ | ✅ MoodCheckinStrip (5 emojis) |
+| 4 quick tiles | ✅ | ✅ QuickTilesGrid |
+| Clean white list rows | ✅ | ✅ ListCard |
+| 1 highlighted/featured row (orange tint) | ✅ | ❌ ยังไม่มี — **เพิ่ม** |
+| Bottom nav 4 dots | ✅ | ✅ MemberBottomNav |
 
 ---
 
@@ -8,144 +25,176 @@
 
 | Module | Status | Action |
 |---|---|---|
-| `MemberSchedulePage.tsx` | WORKING (basic chips + grouped list) | **Refresh** — เพิ่ม sticky search + date strip |
-| `MemberRewardsPage.tsx` | WORKING (balance + grid + history) | **Refresh** — เพิ่ม gradient hero + 3 tabs |
-| `fetchSchedule`, `fetchMyBookings`, `fetchMomentumProfile`, `fetchRewards`, `fetchPointsHistory`, `fetchMyRedemptions`, `fetchMyBadges` | WORKING | **No change** ใช้ของเดิมทุกตัว |
-| `useGamificationBadges` | WORKING | **Reuse** ใน Badges tab |
-| Routes ใน `App.tsx` | WORKING | **No change** |
+| `MemberHomePage.tsx` | WORKING | **Insert widgets** (additive) |
+| `NextUpCard.tsx` | WORKING | **Polish** — add decorative circle, warm-up gradient |
+| `MoodCheckinStrip.tsx` | WORKING | **No change** |
+| `QuickTilesGrid.tsx` | WORKING | **No change** |
+| ทุก data hook (`useQuery`) | WORKING | **No change** ใช้ของเดิม |
+| New widgets (4) | NEW | **Create** |
 
 ## 🛡️ ต้องรักษาไว้ (must-preserve)
 
-- query keys ทั้งหมด (`['member-schedule']`, `['momentum-profile']`, `['gamification-rewards-member']`, `['my-redemptions']`, `['points-history']`, `['my-badges']`)
-- redeem flow ใน `RewardDropCard` (server handles all logic)
-- empty / loading / error states ของเดิม
-- `MobilePageHeader` pattern + i18n keys ที่มีอยู่
-- Realtime invalidation behavior
-- Date locale via `useDateLocale()`
+- ทุก query key + useQuery block เดิม
+- Onboarding flow + `localStorage` dismissal
+- NextUpCard 3 states (has-booking / no-booking / checked-in)
+- Momentum card, Daily bonus, Almost There nudge
+- Active packages with urgency colors
+- Referral + Suggested class cards
+- All routes ใน `App.tsx`
+- I18n EN+TH ทุก key เดิม
 
-## 🐛 ที่จริงๆควรแก้
+---
 
-ไม่มี bug — เป็นการเสริม UX ตาม design V2 ที่ user approve ไว้แล้ว
+## 🆕 Widgets ที่จะเพิ่ม (4 ตัว — ทั้งหมด wire กับ data จริง)
+
+### Widget 1 — `StreakStripCard` (ใหม่)
+**ทำไม:** mockup มี "highlighted orange row" + เรามี `currentStreak` data จาก `momentumProfile` พร้อมใช้
+**ตำแหน่ง:** ใต้ Greeting, เหนือ NextUpCard
+**แสดง:** 🔥 streak counter + "next milestone" + flame icon
+**Data:** `momentumProfile.currentStreak` + `longestStreak` (มีอยู่แล้ว)
+**Function จริง?:** ✅ มี — `fetchMomentumProfile` คืน `current_streak`/`longest_streak`
+**Empty state:** ถ้า streak = 0 → ซ่อน widget (ไม่บังคับโชว์)
+
+### Widget 2 — `TodaySnapshotStrip` (ใหม่)
+**ทำไม:** mockup เน้น "day at a glance" + ข้อมูลทั้งหมดมีพร้อม
+**ตำแหน่ง:** ใต้ NextUpCard
+**แสดง:** 3 mini-stats inline:
+- 📅 จำนวน class วันนี้ (`todayBookings.length`)
+- ✅ check-in แล้ว/ยัง (`todayCheckin.checkedIn`)
+- ⚡ XP วันนี้ (placeholder `0` ถ้าไม่มี — UI shell เหมือน WellnessTipCard)
+**Function จริง?:** ⚠️ "XP วันนี้" ยังไม่มี endpoint dedicated — แสดงเป็น `momentumProfile.totalXp` วันนี้แทน หรือ mark "Coming Soon" ตาม guardrail
+
+### Widget 3 — `FriendsPulseCard` (ใหม่ — UI shell + real data ถ้ามี squad)
+**ทำไม:** quick tile "เพื่อน" route ไป `/member/squad` แล้ว แต่หน้าหลักยังไม่ tease activity
+**ตำแหน่ง:** ใต้ Mood, เหนือ Quick tiles
+**แสดง:** "เพื่อน 3 คนเช็คอินวันนี้" + avatar stack (max 3)
+**Function จริง?:** ✅ บางส่วน — `SquadActivityFeed.tsx` มีอยู่ใน `features/momentum/` ใช้ data จริง. **Reuse** logic นั้นแบบย่อ. ถ้าไม่มี squad → ซ่อน widget
+**Fallback:** ถ้า fetch fail/empty → ไม่แสดง (graceful)
+
+### Widget 4 — `FeaturedClassRow` (ใหม่ — orange-tinted highlight row)
+**ทำไม:** mockup มี orange-tint row ชัดเจน — pattern "today's pick"
+**ตำแหน่ง:** หัว "Next Up" section, เป็น row แรก (ถ้ามี class แนะนำ)
+**แสดง:** ListCard variant ที่ background = `bg-primary/10 border-primary/30`
+**Logic:** `upcomingBookings[0]` + flag แสดง "⭐ คลาสถัดไปของคุณ" — ใช้ booking ของเดิมแค่ restyle row แรก
+**Function จริง?:** ✅ ใช้ `fetchMyBookings` ของเดิม ไม่มี endpoint ใหม่
+
+---
+
+## 🎨 Visual polish (minimal)
+
+- `NextUpCard`: เพิ่ม decorative circle absolute top-right (`absolute top-4 right-4 h-12 w-12 rounded-full bg-white/20`) ตาม mockup
+- ไม่แตะ background สี global (`#fafaf7` cream) — รอ user feedback. ถ้าชอบค่อยเปลี่ยน CSS variable รอบหน้า
 
 ---
 
 ## 🔧 Minimal-diff plan
 
-### 1. `MemberSchedulePage.tsx` — sticky search + date strip
-
-**Layout (V2):**
-```text
-┌──────────────────────────────┐
-│ MobilePageHeader (เหมือนเดิม)│
-├──────────────────────────────┤  ← STICKY (top-0 z-20 bg-background)
-│ 🔍 Search input              │
-│ [Mon 4][Tue 5][Wed 6]…(scroll)│
-│ [All][Cardio][Strength]…     │
-│ ◯ My bookings only           │
-├──────────────────────────────┤
-│ Grouped class list (เดิม)    │
-└──────────────────────────────┘
+### Files ใหม่ (4)
+```
+src/apps/member/components/StreakStripCard.tsx        (~50 lines)
+src/apps/member/components/TodaySnapshotStrip.tsx     (~60 lines, "Coming Soon" badge ตาม guardrail)
+src/apps/member/components/FriendsPulseCard.tsx       (~70 lines, reuse fetcher)
+src/apps/member/components/FeaturedBookingRow.tsx     (~40 lines, restyle ListCard)
 ```
 
-**Logic ใหม่ (client-only filter, ไม่แตะ query):**
-- `searchQuery` state → filter `className` หรือ `trainerName` (case-insensitive, includes)
-- `selectedDate` state → default = today, click chip filters `scheduledDate === selectedDate`; click ซ้ำ → reset เป็น "all dates"
-- `myBookingsOnly` toggle → ใช้ `fetchMyBookings(memberId)` ที่มีอยู่แล้ว, filter `data` ให้เหลือเฉพาะ schedule_id ที่ตรง booking
-- **Date strip**: 7 วัน เริ่มจากวันนี้ — `Array.from({length: 7}, (_, i) => addDays(today, i))`. แสดง `EEE` + วันที่. Active = `bg-primary text-primary-foreground`
-- ใช้ `class_categories` จาก data เดิม (ไม่ fetch เพิ่ม) — `categoryFilters` เดิมยังทำงาน
-
-**Files:**
-- `src/apps/member/pages/MemberSchedulePage.tsx` — rewrite return JSX, **เก็บ `useQuery` block เดิม**
-- `src/apps/member/components/ScheduleDateStrip.tsx` (ใหม่) — pure presentational, props: `dates: Date[]`, `selected: Date | null`, `onSelect`
-- `src/i18n/locales/{en,th}.ts` — keys ใหม่: `searchClasses`, `myBookingsOnly`, `today`, `tomorrow`, `noResultsForSearch`
-
-### 2. `MemberRewardsPage.tsx` — gradient hero + 3 tabs
-
-**Layout (V2):**
-```text
-┌──────────────────────────────┐
-│ MobilePageHeader             │
-├──────────────────────────────┤
-│ 💰 Gradient hero balance     │  (orange→pink, lg shadow)
-│   1,250 coins                │
-│   Tier badge | Lvl 7         │
-│   "✨ แลกได้ 5 รายการ"        │  (count rewards where cost <= balance)
-├──────────────────────────────┤
-│ [Rewards][History][Badges]   │  (Tabs from shadcn)
-├──────────────────────────────┤
-│ Tab content                  │
-└──────────────────────────────┘
+### Files แก้ (3)
+```
+src/apps/member/pages/MemberHomePage.tsx    (insert 4 widget slots, ~20 lines เพิ่ม)
+src/apps/member/components/NextUpCard.tsx   (เพิ่ม decorative circle, ~3 lines)
+src/i18n/locales/{en,th}.ts                 (~12 keys ใหม่)
 ```
 
-**Tabs:**
-- **Rewards** (default) → existing `RewardDropCard` grid
-- **History** → existing points history list (move out of bottom)
-- **Badges** → ใช้ `BadgeGrid` ที่มีอยู่แล้ว (`memberId`); ถ้าไม่มี badge → "ทำเควสต์เพื่อปลดล็อก"
-
-**Logic:**
-- เพิ่ม `useState<'rewards' | 'history' | 'badges'>('rewards')`
-- คำนวณ `redeemableCount = rewards?.filter(r => r.pointsCost <= profile.availablePoints && profile.level >= r.levelRequired).length ?? 0`
-
-**Files:**
-- `src/apps/member/pages/MemberRewardsPage.tsx` — restructure return JSX, ใช้ `Tabs` จาก `@/components/ui/tabs` (มีอยู่แล้ว). **คง `useQuery` ทั้ง 4 ตัวเดิม**
-- `src/i18n/locales/{en,th}.ts` — keys ใหม่: `rewardsTab`, `historyTab`, `badgesTab`, `redeemableNow`, `unlockBadgesHint`
+### ลำดับ render ใหม่ (additive)
+```
+1. Greeting + Mascot                   (เดิม)
+2. StreakStrip                         🆕 (ถ้า streak > 0)
+3. Onboarding                          (เดิม)
+4. NextUpCard + decorative circle      ✏️ polish
+5. TodaySnapshotStrip                  🆕
+6. Mood                                (เดิม)
+7. FriendsPulseCard                    🆕 (ถ้ามี squad activity)
+8. QuickTilesGrid                      (เดิม)
+9. Announcement                        (เดิม)
+10. DailyBonus + Momentum              (เดิม)
+11. Almost There                       (เดิม)
+12. WellnessTip                        (เดิม)
+13. Next Up section:                   (เดิม)
+    - FeaturedBookingRow (row แรก)    🆕 highlight
+    - ListCard rows ที่เหลือ
+14. Active packages                    (เดิม)
+15. Referral + Suggested               (เดิม)
+```
 
 ---
 
-## 🚦 Defer (ตั้งใจ ตามเดิม)
+## ✅ Function reality-check (ตามที่ user ขอ "เช็คดีๆ")
 
-- Daily Spin
-- Mood backend persistence  
-- Wellness tips dynamic
-- Featured reward banner (รอ `is_featured` flag จริง — column ยังไม่มีใน `gamification_rewards`)
-
----
-
-## ✅ Regression checklist
-
-1. `bun run build` ต้องเขียว
-2. Schedule page → กรอง category เดิมยังทำงาน
-3. Schedule page → search "yoga" → list filter ตาม
-4. Schedule page → คลิก date chip → list เหลือเฉพาะวันนั้น
-5. Schedule page → toggle "My bookings only" → เห็นเฉพาะ class ที่จองไว้
-6. Schedule page → คลิก class card → navigate `/member/schedule/:id` (เดิม)
-7. Rewards page → balance + tier + level แสดงถูก
-8. Rewards page → tab "ประวัติ" → history list เหมือนเดิม
-9. Rewards page → tab "แบดจ์" → ใช้ `BadgeGrid` แสดง badges
-10. Rewards page → redeem flow ยังทำงาน (ไม่แตะ `RewardDropCard`)
-11. EN + TH translation ครบทุก key ใหม่
-12. Mobile 360–414px → no horizontal scroll, no clipped text
+| Widget | Data hook | มีจริง? | ถ้าไม่มี → ทำอะไร |
+|---|---|---|---|
+| StreakStripCard | `momentumProfile.currentStreak` | ✅ มี | — |
+| TodaySnapshot: วันนี้กี่คลาส | `todayBookings.length` (compute) | ✅ มี | — |
+| TodaySnapshot: check-in แล้ว | `todayCheckin.checkedIn` | ✅ มี | — |
+| TodaySnapshot: XP วันนี้ | ❌ ไม่มี endpoint | — | แสดง icon + "Coming Soon" badge ตาม policy `opacity-60 pointer-events-none` |
+| FriendsPulseCard | `fetchSquadActivity` ใน `momentum/api.ts` | ✅ ตรวจแล้วมี `SquadActivityFeed` | reuse fetcher; ถ้า empty → ซ่อน |
+| FeaturedBookingRow | `bookings[0]` | ✅ ใช้ของเดิม | — |
 
 ---
 
-## 📦 Files touched
+## 🚦 Defer (ตั้งใจ)
+
+- เปลี่ยน background เป็น cream `#fafaf7` global → รอ user approve รอบถัดไป (touches `index.css` — blast radius)
+- Bottom nav restyle → ไม่ใช่ home scope
+- Avatar pill ใน header → ต้องเปลี่ยน MobilePageHeader — defer
+
+---
+
+## 📋 Regression checklist
+
+1. `bun run build` เขียว
+2. หน้า `/member` render ครบ ไม่มี layout shift
+3. Onboarding ยังโผล่/ซ่อนตาม localStorage เดิม
+4. NextUpCard 3 states ยังทำงาน (book today, no book, checked in)
+5. Mood pick + persist ยังทำงาน
+6. Quick tiles 4 ปุ่ม navigate ถูก
+7. Streak strip โผล่เฉพาะ `streak > 0`
+8. Friends pulse โผล่เฉพาะมี squad activity (ไม่มี → ซ่อนสนิท)
+9. Featured booking row ใช้ `bookings[0]` — ถ้าไม่มี booking → ไม่ render
+10. Today snapshot — XP slot โชว์ "Coming Soon" + opacity-60 pointer-events-none
+11. EN + TH key ครบ (run `bun scripts/compare-i18n.mjs` ถ้าต้องการ)
+12. Mobile 360–414px — ไม่มี horizontal scroll, ไม่ clip text
+
+---
+
+## 📦 Files touched สรุป
 
 ```
-แก้ (2):
-  src/apps/member/pages/MemberSchedulePage.tsx    (return JSX rewrite)
-  src/apps/member/pages/MemberRewardsPage.tsx     (return JSX rewrite + Tabs)
-  src/i18n/locales/en.ts                          (+ ~10 strings)
-  src/i18n/locales/th.ts                          (+ ~10 strings)
+ใหม่ (4):
+  src/apps/member/components/StreakStripCard.tsx
+  src/apps/member/components/TodaySnapshotStrip.tsx
+  src/apps/member/components/FriendsPulseCard.tsx
+  src/apps/member/components/FeaturedBookingRow.tsx
 
-สร้างใหม่ (1):
-  src/apps/member/components/ScheduleDateStrip.tsx (pure presentational)
+แก้ (3):
+  src/apps/member/pages/MemberHomePage.tsx        (+ ~25 lines)
+  src/apps/member/components/NextUpCard.tsx       (+ 3 lines: decorative circle)
+  src/i18n/locales/en.ts                          (+ ~12 keys)
+  src/i18n/locales/th.ts                          (+ ~12 keys)
 
-ไม่แตะ (PROTECTED / WORKING):
-  - All `useQuery` calls + query keys
-  - fetchSchedule, fetchRewards, fetchPointsHistory, fetchMyRedemptions, fetchMyBadges
-  - RewardDropCard (redeem mutation untouched)
-  - BadgeGrid (reuse as-is)
-  - MobilePageHeader, Section, FilterChips
-  - App.tsx routes
+ไม่แตะ (PROTECTED):
+  - All useQuery + query keys
+  - All API services + fetchers
   - Auth, RLS, edge functions
+  - App.tsx routes
+  - DB schema
+  - shadcn/ui components
 ```
 
 ---
 
 ## 📝 Doc updates
 
-- Append entry to `docs/DEVLOG.md`: "Member V2 — Schedule + Rewards refresh (continuation of V2 home redesign)"
+- Append `docs/DEVLOG.md`: "Member Home V1 widget pass — Streak/Snapshot/Friends/Featured"
 
 ---
 
-**Approve → ผม implement Schedule ก่อน (เพิ่ม component ใหม่ 1 ตัว), verify build; แล้ว Rewards (refactor JSX อย่างเดียว) ตามมา. Total ~2 file edits + 1 file new + i18n.**
+**Approve → ผม implement 4 widgets + insert ใน HomePage + i18n + decorative polish ครั้งเดียว, verify `bun run build`. ถ้าไม่ชอบ widget ไหน คุณบอกชื่อมา ผมลบ component file + slot 1 บรรทัดออกใน 1 รอบ.**

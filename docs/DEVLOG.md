@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-04-27 — Member Home V1 widget pass
+
+Additive UI refresh per `MOOM_Member_App_v1-2.html` mockup. **No data layer changes**, no removed widgets.
+
+**Added (4 components):**
+- `StreakStripCard` — orange highlight strip, hidden when `currentStreak === 0`. Reuses `momentumProfile.currentStreak` / `longestStreak`.
+- `TodaySnapshotStrip` — 3 mini-stats (today's classes / check-in status / XP). XP slot is "Coming Soon" with `opacity-60 pointer-events-none` per guardrail (no per-day XP endpoint yet).
+- `FriendsPulseCard` — squad activity tease. Reuses `fetchMySquad` + `fetchSquadActivityFeed`. Hidden when no squad / empty feed.
+- `FeaturedBookingRow` — primary-tinted highlight row for `upcomingBookings[0]` in the Next Up section.
+
+**Polish:**
+- `NextUpCard` — added 2 decorative white circles (top-right) matching mockup.
+
+**i18n:** +12 keys in EN + TH (streak, snapshot, friendsPulse, featuredNextClass).
+
+**Verification:** `bun run build` ✅, no query keys touched, no API services touched.
+
+---
+
+
 ## 2026-04-27 — Member V2: Schedule + Rewards refresh (continuation)
 
 **Scope:** Frontend-only UI refresh. Zero data layer changes.

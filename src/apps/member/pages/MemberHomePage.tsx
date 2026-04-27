@@ -35,6 +35,11 @@ import { QuickTilesGrid } from '../components/QuickTilesGrid';
 import { MoodCheckinStrip } from '../components/MoodCheckinStrip';
 import { WellnessTipCard } from '../components/WellnessTipCard';
 import { MascotIllustration } from '../components/MascotIllustration';
+// V1 widget pass (additive — wired to existing data)
+import { StreakStripCard } from '../components/StreakStripCard';
+import { TodaySnapshotStrip } from '../components/TodaySnapshotStrip';
+import { FriendsPulseCard } from '../components/FriendsPulseCard';
+import { FeaturedBookingRow } from '../components/FeaturedBookingRow';
 
 function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
@@ -143,6 +148,17 @@ export default function MemberHomePage() {
         <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
       </div>
 
+      {/* --- 1.5 Streak strip (V1 widget) --- */}
+      {momentumProfile && momentumProfile.currentStreak > 0 && (
+        <Section className="mb-3">
+          <StreakStripCard
+            currentStreak={momentumProfile.currentStreak}
+            longestStreak={momentumProfile.longestStreak}
+            onClick={() => navigate('/member/momentum')}
+          />
+        </Section>
+      )}
+
       {/* --- 2. Onboarding (legacy: shown when incomplete) --- */}
       {!allOnboardingDone && !onboardingDismissed && (
         <Section className="mb-3">
@@ -212,10 +228,25 @@ export default function MemberHomePage() {
         />
       </Section>
 
+      {/* --- 3.5 Today snapshot strip (V1 widget) --- */}
+      <Section className="mb-3">
+        <TodaySnapshotStrip
+          todayBookingsCount={todayBookings.length}
+          checkedIn={!!todayCheckin?.checkedIn}
+        />
+      </Section>
+
       {/* --- 4. Mood check-in (UI shell, localStorage) --- */}
       <Section className="mb-3">
         <MoodCheckinStrip />
       </Section>
+
+      {/* --- 4.5 Friends pulse (V1 widget — hidden if no squad/activity) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <FriendsPulseCard memberId={memberId} />
+        </Section>
+      )}
 
       {/* --- 5. Quick tiles (4 nav shortcuts) --- */}
       <Section className="mb-3">
@@ -321,7 +352,18 @@ export default function MemberHomePage() {
           />
         ) : (
           <div className="space-y-2">
-            {upcomingBookings.slice(0, 2).map((booking) => (
+            {/* Featured first booking — V1 highlight row */}
+            {upcomingBookings[0] && (
+              <FeaturedBookingRow
+                className={upcomingBookings[0].schedule.className}
+                date={upcomingBookings[0].schedule.date}
+                startTime={upcomingBookings[0].schedule.startTime}
+                endTime={upcomingBookings[0].schedule.endTime}
+                trainerName={upcomingBookings[0].schedule.trainerName}
+                onClick={() => navigate(`/member/bookings/${upcomingBookings[0].id}`)}
+              />
+            )}
+            {upcomingBookings.slice(1, 2).map((booking) => (
               <ListCard
                 key={booking.id}
                 title={booking.schedule.className}

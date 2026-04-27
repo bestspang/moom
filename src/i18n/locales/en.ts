@@ -1901,6 +1901,18 @@ export default {
     moodStrong: 'Strong',
     moodFire: 'On fire',
     change: 'Change',
+    // V1 widgets
+    streakDays: '🔥 {{n}}-day streak',
+    streakNextMilestone: '{{n}} days to {{milestone}}-day milestone',
+    streakBest: 'Best',
+    snapshotClassesToday: 'Today',
+    snapshotCheckin: 'Check-in',
+    snapshotCheckedIn: 'Done',
+    snapshotNotYet: 'Pending',
+    snapshotXpToday: 'XP today',
+    friendsPulseTitle: 'Friends are moving',
+    friendsPulseSub: '{{n}} recent squad activities',
+    featuredNextClass: 'Your next class',
     // Wellness tip
     dailyTip: 'Daily tip',
     viewMoreTips: 'View more',

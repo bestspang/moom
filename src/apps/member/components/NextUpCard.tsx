@@ -98,6 +98,9 @@ export function NextUpCard({
       <div className="absolute -top-6 -right-4 opacity-15 rotate-[-15deg] pointer-events-none">
         <PrimaryIcon size={130} strokeWidth={1.5} />
       </div>
+      {/* Mockup decorative circle (top-right) */}
+      <div className="absolute top-3 right-3 h-12 w-12 rounded-full bg-white/15 pointer-events-none" />
+      <div className="absolute top-5 right-5 h-8 w-8 rounded-full bg-white/10 pointer-events-none" />
 
       <div className="relative">
         <div className="text-[10px] font-extrabold tracking-[0.08em] uppercase opacity-90">
