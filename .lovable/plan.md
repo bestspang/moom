@@ -1,110 +1,158 @@
+# 🎨 Member App V2 — UI/UX Refresh (Surgical, Per-Page)
 
-
-# 🔍 Deep Audit Pass 3 — เจอจริง 1 จุด (P1), ตัด False Alarms 5 จุด
-
-ตรวจ **DB linter, smoke test, cron, RLS, storage, edge function CORS, route mapping, postgres error logs** — ระบบสะอาดมาก หลัง 3 รอบที่แก้ไป **เหลือบั๊กจริงเพียง 1 จุด** + ข้อสังเกต UX 1 ข้อ
+นำ Design ใหม่จาก `MOOM_Member_App_v1.html` มาใช้กับ Member App **โดยใช้ data จริงเท่าที่มี** และวาง UI shell สำหรับ feature ใหม่แบบชัดเจน (มี ribbon "เร็วๆ นี้") ตามกฎ `live-ui-action-policy`
 
 ---
 
-## ✅ False Alarms (ตรวจซ้ำแล้วไม่ใช่บั๊ก)
+## ✅ Audit: Feature ที่มี vs ไม่มีจริง (Verified)
 
-| สิ่งที่ดูเหมือนพัง | ผลตรวจจริง |
-|---|---|
-| 4 edge functions hardcode `Access-Control-Allow-Origin: admin.moom.fit` | **False alarm** — ตรวจ runtime: ทุกตัวใช้ `dynamicCors` ที่ override เป็น `responseOrigin` ทั้ง OPTIONS + response. `corsHeaders` คือ default fallback เท่านั้น ✅ |
-| `stripe-webhook` static CORS | **ตั้งใจ** — Stripe คือ caller (server-to-server), browser CORS ไม่บังคับ ✅ |
-| `to="/location"`, `/trainer/badges`, `/notifications`, `/profile` | mapped ครบใน App.tsx (admin nested + trainer nested) ✅ |
-| Linter | `No linter issues found` ✅ |
-| Smoke test payment flow | enums + RPCs ครบ 4 ตัว ผ่านหมด ✅ |
-| Duplicate roles / cron jobs | 0 duplicate, cron ตัวเดียว ✅ |
-
----
-
-## ❌ บั๊กจริงรอบนี้ (1 issue)
-
-### 🔴 P1 — `useRecentActivity` ส่ง 500 ทุก 30 วินาทีบน Admin Dashboard
-
-**หลักฐาน (Postgres logs):** `column packages_1.name does not exist` — ขึ้นซ้ำ **9 ครั้งใน 5 นาทีล่าสุด** ที่ผมตรวจ — ทุก 30 วินาที (refetchInterval ของ hook นี้)
-
-**ไฟล์:** `src/hooks/useRecentActivity.ts:38`
-```ts
-.select('id, created_at, amount, member:members(first_name, last_name), package:packages(name)')
-                                                                                          ^^^^ column ไม่มีอยู่
-```
-DB จริง: `packages.name_en` + `packages.name_th` (ตาม i18n policy) — ไม่มี `packages.name`
-
-**Impact ที่ user เห็น:**
-- Admin Dashboard → "Live Activity" feed ส่วน purchase ไม่ขึ้นเลย (transactions array = empty หลัง error)
-- Console เต็มไปด้วย 400 จาก PostgREST ทุก 30 วิ
-- Network tab ตอน user เปิด dashboard ทิ้งไว้ → request fail ตลอด → กิน quota PostgREST + bandwidth
-
-**Fix (3 บรรทัดเดียว):**
-1. เปลี่ยน select เป็น `package:packages(name_en, name_th)`
-2. เปลี่ยน consumer (line 66): `(t.package as any)?.name` → `(t.package as any)?.name_th || (t.package as any)?.name_en`
-3. ไม่แตะส่วนอื่น
-
-**Why this is P1, not P0:** Dashboard ยังโหลดได้ (check-ins ส่วนแสดงผลถูก) — แค่ purchases section ของ Live Activity ว่าง + log noise
+| Element ใน design V2 | มีใน app แล้ว? | Source |
+|---|---|---|
+| Greeting + time-based | ✅ มี | `getTimeGreeting()` |
+| Onboarding checklist | ✅ มี | `localStorage moom-onboarding-dismissed` |
+| Next Up booking card | ✅ มี | `TodayCard` + `fetchMyBookings` |
+| Momentum / Level / XP | ✅ มี | `MomentumCard`, `useMomentumProfile` |
+| Status Tier badge | ✅ มี | `StatusTierBadge`, `fetchMemberStatusTier` |
+| Daily Quests | ✅ มี | `QuestHub` + `useGamificationQuests` |
+| Active Packages w/ urgency | ✅ มี | `MemberHomePage` activePackages |
+| Referral | ✅ มี | `ReferralCard` |
+| Suggested classes | ✅ มี | `SuggestedClassCard` |
+| Streak flame | ✅ มี | `StreakFlame` |
+| Badges grid | ✅ มี | `BadgeGrid`, `useGamificationBadges` |
+| Rewards catalog | ✅ มี | `MemberRewardsPage` + `useGamificationRewards` |
+| Schedule + filter | ✅ มี | `MemberSchedulePage` |
+| Squad / Friends activity | ✅ มี | `SquadActivityFeed`, `MemberSquadPage` |
+| Coupons | ✅ มี | `MemberCouponsPage` |
+| **Mood check-in** (5 emoji) | ❌ **ไม่มี** | — design only |
+| **Mascot "Moomu"** | ❌ **ไม่มี** | — design only |
+| **Wellness Tip** card | ❌ **ไม่มี** | — design only |
+| **Daily Spin** wheel | ❌ **ไม่มี** | — design only |
+| **NEXT UP card 3 states** (no-booking / checked-in) | ⚠️ **มีแค่ has-booking** | TodayCard renders only when booking exists |
+| **Quick Tile 4-grid** (book/history/friends/rewards) | ⚠️ มีแค่ 2 ปุ่ม | only check-in + book |
+| **Sticky search + date strip** ใน Schedule | ⚠️ มีแค่ tabs ธรรมดา | needs upgrade |
+| **Achievement teaser** | ❌ ไม่มี | design only |
 
 ---
 
-## 💡 ข้อสังเกต UX (ไม่ใช่บั๊ก, ไม่แก้รอบนี้)
+## 🎯 Scope (3 หน้า, surgical)
 
-- `gamification_rewards` + `gamification_challenges` table ว่าง (0 rows) — ทำให้ Member App หน้า Rewards / Challenges แสดง empty state ตลอด → **เป็น business decision ที่เจ้าของต้อง seed เอง**, ไม่ใช่บั๊ก
-- ตัดสินใจ **ไม่** seed อัตโนมัติเพราะ: (1) seed data ที่ไม่ถูกใจ owner = work รื้อ, (2) ขัดกฎ "no speculative changes"
+### 1. **MemberHomePage** — รื้อ visual hierarchy ตาม V2
+
+**เก็บไว้ทั้งหมด** (data + logic):
+- Greeting, onboarding checklist, latestAnnouncement
+- TodayCard (booking), MomentumCard, DailyBonusCard
+- ActivePackages, ReferralCard, SuggestedClassCard
+
+**เปลี่ยน visual + เพิ่ม shell**:
+1. **`NextUpCard`** (ใหม่) — hero gradient card 3 states:
+   - `has-booking` → ใช้ data จาก `nextTodayBooking` (มีอยู่)
+   - `no-booking` → ใช้ `upcomingBookings.length === 0` 
+   - `checked-in-today` → ตรวจจาก `member_attendance` วันนี้ (เพิ่ม query เล็กๆ ใน `services.ts`)
+   - แทนที่ส่วน "Quick actions" + "TodayCard" รวมเป็นการ์ดเดียว
+2. **`QuickTilesGrid`** (ใหม่) — 4 tiles: จองคลาส / ประวัติ / เพื่อน / รางวัล
+   - จองคลาส → `/member/schedule` ✅
+   - ประวัติ → `/member/attendance` ✅ (มี route)
+   - เพื่อน → `/member/squad` ✅ (มี route)
+   - รางวัล → `/member/rewards` ✅
+3. **`MoodCheckinStrip`** (ใหม่, **UI shell only**) — 5 emoji, state เก็บใน `localStorage` (`moom-mood-${todayStr}`) — ไม่ส่ง backend, เพราะยังไม่มี table. มี subtle "บันทึกในเครื่อง" microcopy
+4. **`WellnessTipCard`** (ใหม่, **UI shell**) — แสดง tip สุ่มจาก array hardcoded 6 tips (TH); ribbon "เร็วๆ นี้" ที่มุม + `pointer-events-none` บน CTA "ดูเพิ่ม"
+5. **`MascotIllustration`** (ใหม่) — inline SVG 64x64 จาก design (ไม่ใช้ image; pure SVG path); decorative only
+6. **`MomentumStrip`** (compact) — option เพิ่มเติม สำหรับเวอร์ชัน collapsed ของ MomentumCard
+
+**ไม่แก้** :
+- `useMemberSession`, query keys, realtime sync
+- Onboarding storage key, dismissal logic
+- `MomentumCard`, `DailyBonusCard` ภายใน
 
 ---
 
-## 🛡️ Prevention Layer ใหม่ (เพิ่ม Rule 11)
+### 2. **MemberSchedulePage** — เพิ่ม sticky search + date strip
 
-เพิ่มเข้า `AI_GUARDRAILS.md`:
+**เก็บ**: data fetching, booking mutations
+**เพิ่ม**:
+- Sticky header (search input + location selector chip)
+- Horizontal date strip (7 วัน, scrollable)
+- Filter chips (cardio/strength/mobility/combat/all) — **map กับ class_categories จริง** ที่มี (ใช้ `useClassCategories` ที่มีอยู่)
+- "My bookings only" toggle
+- Class card visual ใหม่ (filled bar, capacity indicator)
 
-> **Rule 11 — Verify column names before .select() chains.** ทุก Supabase `.select('col1, rel:table(col2)')` ต้องเช็คชื่อคอลัมน์จริงผ่าน:
-> ```sql
-> SELECT column_name FROM information_schema.columns WHERE table_name='<t>' AND table_schema='public';
-> ```
-> โดยเฉพาะตารางที่มี i18n columns (`name_en`/`name_th`, `description_en`/`description_th`) — ห้ามอนุมาน `.name` จาก naming convention. โต๊ะ MOOM ที่มีคู่ i18n: `packages, classes, class_categories, gamification_rewards, gamification_challenges, gamification_badges, gamification_levels, gamification_rules, gamification_seasons, gamification_trainer_tiers, level_benefits, coupon_templates, announcements`.
+---
 
-**ทำไม Rule นี้สำคัญ:** บั๊กนี้หลุดมาเพราะ AI session ก่อนหน้าเขียน `packages(name)` โดยอนุมาน — เป็นความผิดประเภทเดียวกับ enum bugs ที่เจอใน pass ก่อน (อนุมาน schema จากชื่อ)
+### 3. **MemberRewardsPage** — Refresh visual
+
+**เก็บ**: `useGamificationRewards` data + redeem flow
+**เพิ่ม**:
+- Hero coin balance card (gradient orange)
+- Tab navigation: แลกของรางวัล / ประวัติ / แบดจ์ (3 tabs; badges ใช้ `useGamificationBadges`)
+- Featured reward banner (ถ้ามี `is_featured` flag)
+- Category chips
+- "แลกได้ตอนนี้ N รายการ" indicator (จำนวน rewards ที่ `cost <= balance`)
+
+---
+
+## 🛡️ Stability Guarantees
+
+1. **Zero data layer changes** — ใช้ hooks/queries เดิมทุกตัว; เพิ่มแค่ 1 query เล็ก (`hasCheckedInToday`) ใน `services.ts`
+2. **Mood + Wellness + Mascot = pure UI shells** — ไม่มี Supabase call, ไม่มี mutation; mood เก็บใน localStorage
+3. **Coming Soon ribbons** ตาม `live-ui-action-policy`:
+   - `WellnessTipCard` "ดูเพิ่ม" → `opacity-60 pointer-events-none` + ribbon "เร็วๆ นี้"
+   - Daily Spin (ตัดออก ไม่ใส่ใน V1 รีลีสนี้ — กลัว expectation)
+4. **Routes ทั้งหมดมีอยู่แล้ว** — ไม่ต้องแก้ `App.tsx`
+5. **Translation** — ทุก string ใหม่ใส่ `t()` + เพิ่มเข้า `src/i18n/locales/{en,th}.ts`
+6. **Visual tokens** — ใช้ semantic Tailwind classes (`primary`, `muted-foreground`, ฯลฯ) ไม่ hardcode HSL values; design tokens ใหม่จาก V2 (orange brand, status tier colors) อยู่ใน Tailwind theme อยู่แล้ว
 
 ---
 
 ## 📦 Files Touched
 
 ```
-แก้ (surgical, 3 lines):
-  src/hooks/useRecentActivity.ts — select i18n cols + consumer
+แก้:
+  src/apps/member/pages/MemberHomePage.tsx       (rewrite layout, keep all data hooks)
+  src/apps/member/pages/MemberSchedulePage.tsx   (add sticky search + date strip)
+  src/apps/member/pages/MemberRewardsPage.tsx    (add tabs + hero balance card)
+  src/apps/member/api/services.ts                (+1 query: hasCheckedInToday)
+  src/i18n/locales/en.ts                         (+ ~20 strings)
+  src/i18n/locales/th.ts                         (+ ~20 strings)
 
-แก้ (docs):
-  AI_GUARDRAILS.md  — เพิ่ม Rule 11 (column verification)
-  docs/DEVLOG.md    — append "Deep audit pass 3" + table ของ i18n columns
+สร้างใหม่:
+  src/apps/member/components/NextUpCard.tsx           (3-state hero)
+  src/apps/member/components/QuickTilesGrid.tsx       (4-tile nav)
+  src/apps/member/components/MoodCheckinStrip.tsx     (UI shell, localStorage)
+  src/apps/member/components/WellnessTipCard.tsx      (UI shell, hardcoded tips)
+  src/apps/member/components/MascotIllustration.tsx   (inline SVG)
+  src/apps/member/components/MomentumStripCompact.tsx (compact alt of MomentumCard)
 
-ไม่แตะ:
-  - Routes (false alarms)
-  - Edge functions (CORS ทำงานถูก)
-  - DB schema / RLS / storage / migrations
-  - tier-1 protected files
-  - useRecentActivity ส่วน check-ins (WORKING — ใช้ first_name/last_name ถูก)
+ไม่แตะ (PROTECTED / WORKING):
+  - All hooks in src/hooks/
+  - MomentumCard, DailyBonusCard, QuestHub, BadgeGrid (working)
+  - MemberLayout, MemberBottomNav, MemberHeader
+  - Routes / App.tsx
+  - Auth, RLS, edge functions
 ```
 
 ---
 
 ## ✅ Regression Checklist
 
-1. ✅ Diff = 3 บรรทัด (1 select + 1 consumer + ข้อความ comment)
-2. ✅ ก่อน apply: ยืนยัน `packages` มี `name_en` + `name_th` ✓ (ตรวจจาก information_schema แล้ว)
-3. ✅ `bun run build` ต้องเขียว
-4. ✅ Manual: เปิด `/` (Dashboard), รอ 30 วิ → Live Activity feed มี purchase items + console ไม่มี 400 อีก
-5. ✅ Postgres logs: หลัง deploy รอ 5 นาที → ต้องไม่มี `column packages_1.name does not exist` อีก
-6. ✅ `useRecentActivity` consumer (`LiveActivityFeed`) ยัง render ได้ทั้งกรณี `name_th=null` (fallback `name_en`)
-7. ✅ ไม่แตะ refetchInterval, queryKey, type signature → blast radius = 0
+1. ✅ `bun run build` ต้องเขียว
+2. ✅ Member Home → ยังเห็น booking, momentum, packages, referral ครบ
+3. ✅ NextUpCard fallback ถูก state (no-booking) ตอนยังไม่จอง
+4. ✅ Mood check-in → กดแล้วเก็บใน localStorage; refresh ยังเห็น
+5. ✅ Schedule → search filter ทำงานจริง (filter list)
+6. ✅ Rewards → tab "แบดจ์" โหลด badges จาก `useGamificationBadges`
+7. ✅ ทุก translation key มีทั้ง EN + TH (run `bun scripts/compare-i18n.mjs` ถ้ามี)
+8. ✅ Coming Soon elements มี `opacity-60 pointer-events-none` + ribbon
+9. ✅ Mobile viewport 360-414px → no horizontal scroll, no clipped text
+10. ✅ DEVLOG entry บันทึก mapping table
 
 ---
 
 ## 🚦 Defer (ตั้งใจ)
 
-- ❌ Bundle size 3.1 MB → manualChunks → blast radius กว้าง
-- ❌ Migrate inline query keys → dedicated round
-- ❌ Seed `gamification_rewards`/`challenges` → business decision
-- ❌ `auto-notifications` paginate → ไม่ใช่ critical path
+- ❌ **Daily Spin** — ต้องมี table + cron job + reward grants → BIG; ไม่ใส่รอบนี้
+- ❌ **Mood check-in → backend** — ต้อง table `member_mood_log` + analytics → ทำเป็น dedicated round
+- ❌ **Wellness Tips dynamic** — ต้องมี content table หรือ AI generate → ใช้ hardcoded ก่อน
+- ❌ **Achievement teaser** dynamic — ต้องมี logic match badge progress → ใช้ static placeholder
+- ❌ Profile / CheckIn / Bookings detail pages — รอ feedback หลังเห็น Home/Schedule/Rewards ก่อน
 
-**Approve → ผมจะ apply 3-line fix + update Rule 11 ในรอบเดียว, verify ผ่าน Postgres log polling ใน 5 นาที**
-
+**Approve → ผม implement Home page ก่อน (largest impact, most components new), verify build + visual; แล้ว Schedule + Rewards ตามลำดับ**
