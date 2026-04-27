@@ -1970,6 +1970,11 @@ export default {
     pointsHistory: 'ประวัติคะแนน',
     noPointsYet: 'ยังไม่มีคะแนน',
     noPointsHint: 'รับ Coin ได้จากการเช็คอินและทำชาเลนจ์',
+    rewardsTab: 'แลกของรางวัล',
+    historyTab: 'ประวัติ',
+    badgesTab: 'แบดจ์',
+    redeemableNow: 'แลกได้ตอนนี้ {{n}} รายการ',
+    unlockBadgesHint: 'ทำเควสต์และชาเลนจ์ให้สำเร็จเพื่อปลดล็อกแบดจ์ใหม่',
     // Profile
     profile: 'โปรไฟล์',
     editProfile: 'แก้ไขโปรไฟล์',
@@ -2189,6 +2194,10 @@ export default {
     spotsLabel: '{{current}}/{{max}} ที่',
     bookButton: 'จอง',
     fullLabel: 'เต็ม',
+    searchClasses: 'ค้นหาคลาสหรือเทรนเนอร์',
+    myBookingsOnly: 'เฉพาะที่ฉันจอง',
+    todayShort: 'วันนี้',
+    noResultsForSearch: 'ไม่พบผลลัพธ์',
     // Attendance page
     attendance: 'การเข้าร่วม',
     attendanceSubtitle: 'ประวัติการเช็คอิน',
