@@ -1983,7 +1983,7 @@ export default {
     securityLogin: 'Security & Login',
     notifications: 'Notifications',
     support: 'Support',
-    comingSoon: 'Coming soon',
+    // (comingSoon defined above in member.* section)
     runClub: 'Run Club',
     moreMenu: 'More',
     comingSoonRunClub: 'Coming Soon',
@@ -2007,10 +2007,7 @@ export default {
     dayTerm: '{{n}} day term',
     purchase: 'Purchase',
     popular: 'Popular',
-    // Greetings
-    goodMorning: 'Good morning',
-    goodAfternoon: 'Good afternoon',
-    goodEvening: 'Good evening',
+    // (Greetings defined above in member.* section)
     // Event labels (rewards history)
     eventCheckin: 'Check-in',
     eventQuest: 'Quest',
