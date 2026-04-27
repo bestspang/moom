@@ -36,6 +36,7 @@ interface BriefingData {
 
 export function useDailyBriefing(stats: BriefingStats | undefined) {
   const { language } = useLanguage();
+  const { session } = useAuth();
   const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem(getDismissKey()) === '1'; } catch { return false; }
@@ -54,9 +55,18 @@ export function useDailyBriefing(stats: BriefingStats | undefined) {
         source: data?.source || 'unknown',
       } as BriefingData;
     },
-    enabled: !!stats && !dismissed,
+    // Wait for auth session to be hydrated before invoking — otherwise the edge
+    // function rejects with 401 (no Authorization header / stale token).
+    enabled: !!stats && !dismissed && !!session?.access_token,
     staleTime: 30 * 60 * 1000,
-    retry: 1,
+    // Don't retry auth/permission failures — they won't fix themselves and just spam logs.
+    retry: (failureCount, err: any) => {
+      const msg = String(err?.message || err?.context?.status || '');
+      if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized') || msg.includes('Forbidden')) {
+        return false;
+      }
+      return failureCount < 1;
+    },
   });
 
   const dismiss = useCallback(() => {
