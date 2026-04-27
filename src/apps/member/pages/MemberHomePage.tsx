@@ -142,6 +142,10 @@ export default function MemberHomePage() {
           {statusTier && statusTier.currentTier !== 'bronze' && (
             <div className="mt-2">
               <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
+            </div>
+          )}
+        </div>
+        <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
       </div>
 
       {/* --- 1.5 Streak strip (V1 widget) --- */}
@@ -154,10 +158,6 @@ export default function MemberHomePage() {
           />
         </Section>
       )}
-          )}
-        </div>
-        <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
-      </div>
 
       {/* --- 2. Onboarding (legacy: shown when incomplete) --- */}
       {!allOnboardingDone && !onboardingDismissed && (
