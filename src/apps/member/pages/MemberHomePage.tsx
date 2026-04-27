@@ -35,6 +35,11 @@ import { QuickTilesGrid } from '../components/QuickTilesGrid';
 import { MoodCheckinStrip } from '../components/MoodCheckinStrip';
 import { WellnessTipCard } from '../components/WellnessTipCard';
 import { MascotIllustration } from '../components/MascotIllustration';
+// V1 widget pass (additive — wired to existing data)
+import { StreakStripCard } from '../components/StreakStripCard';
+import { TodaySnapshotStrip } from '../components/TodaySnapshotStrip';
+import { FriendsPulseCard } from '../components/FriendsPulseCard';
+import { FeaturedBookingRow } from '../components/FeaturedBookingRow';
 
 function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
