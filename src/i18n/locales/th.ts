@@ -1981,7 +1981,7 @@ export default {
     securityLogin: 'ความปลอดภัยและการเข้าสู่ระบบ',
     notifications: 'การแจ้งเตือน',
     support: 'ช่วยเหลือ',
-    comingSoon: 'เร็วๆ นี้',
+    // (comingSoon defined above in member.* section)
     runClub: 'Run Club',
     moreMenu: 'เพิ่มเติม',
     comingSoonRunClub: 'เร็วๆ นี้',
@@ -2005,10 +2005,7 @@ export default {
     dayTerm: '{{n}} วัน',
     purchase: 'ซื้อ',
     popular: 'ยอดนิยม',
-    // Greetings
-    goodMorning: 'สวัสดีตอนเช้า',
-    goodAfternoon: 'สวัสดีตอนบ่าย',
-    goodEvening: 'สวัสดีตอนเย็น',
+    // (Greetings defined above in member.* section)
     // Event labels (rewards history)
     eventCheckin: 'เช็คอิน',
     eventQuest: 'เควส',
