@@ -1972,6 +1972,11 @@ export default {
     pointsHistory: 'Points History',
     noPointsYet: 'No points yet',
     noPointsHint: 'Earn Coin by checking in and completing challenges',
+    rewardsTab: 'Rewards',
+    historyTab: 'History',
+    badgesTab: 'Badges',
+    redeemableNow: '{{n}} rewards within reach',
+    unlockBadgesHint: 'Complete quests and challenges to unlock more badges',
     // Profile
     profile: 'Profile',
     editProfile: 'Edit Profile',
@@ -2191,6 +2196,10 @@ export default {
     spotsLabel: '{{current}}/{{max}} spots',
     bookButton: 'Book',
     fullLabel: 'Full',
+    searchClasses: 'Search class or trainer',
+    myBookingsOnly: 'My bookings only',
+    todayShort: 'Today',
+    noResultsForSearch: 'No matching classes',
     // Attendance page
     attendance: 'Attendance',
     attendanceSubtitle: 'Your check-in history',

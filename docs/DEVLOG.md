@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-04-27 — Member V2: Schedule + Rewards refresh (continuation)
+
+**Scope:** Frontend-only UI refresh. Zero data layer changes.
+
+**MemberSchedulePage:**
+- Added sticky filter zone: search input (class/trainer fuzzy match), 7-day horizontal date strip (`ScheduleDateStrip` new), category chips (kept), "My bookings only" toggle.
+- Capacity bar (1px) on each class card with color severity: primary < 80% < yellow < 100% destructive.
+- All filtering is client-side; reuses existing `['member-schedule']` and `['member-bookings']` queries.
+
+**MemberRewardsPage:**
+- Gradient hero balance card (primary→orange) with tier badge, level chip, and "X rewards within reach" pill (computed from existing `rewards` + `profile`).
+- 3 tabs (Rewards / History / Badges) using existing `Tabs` primitive. Reuses `RewardDropCard`, `BadgeGrid`. Redeem flow untouched.
+
+**i18n:** Added EN+TH keys (`searchClasses`, `myBookingsOnly`, `todayShort`, `noResultsForSearch`, `rewardsTab`, `historyTab`, `badgesTab`, `redeemableNow`, `unlockBadgesHint`).
+
+**Verification:** `bun run build` ✅ 18s. No regressions in queries, mutations, or routes.
+
+---
+
+
 ## 2026-04-22 (pass 3) — Live Activity feed: i18n column mismatch fix
 
 ### What was found
