@@ -142,7 +142,18 @@ export default function MemberHomePage() {
           {statusTier && statusTier.currentTier !== 'bronze' && (
             <div className="mt-2">
               <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
-            </div>
+      </div>
+
+      {/* --- 1.5 Streak strip (V1 widget) --- */}
+      {momentumProfile && momentumProfile.currentStreak > 0 && (
+        <Section className="mb-3">
+          <StreakStripCard
+            currentStreak={momentumProfile.currentStreak}
+            longestStreak={momentumProfile.longestStreak}
+            onClick={() => navigate('/member/momentum')}
+          />
+        </Section>
+      )}
           )}
         </div>
         <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
