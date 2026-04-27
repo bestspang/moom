@@ -443,3 +443,34 @@ export async function fetchMyAttendance(memberId: string): Promise<AttendanceRec
     className: row.schedule?.class?.name ?? null,
   }));
 }
+
+// ─── Today's Check-in Status (lightweight) ───
+// Used by HomePage to switch the NextUp hero card into the "checked-in" state.
+export async function fetchTodayCheckin(memberId: string): Promise<{ checkedIn: boolean; checkInTime: string | null }> {
+  if (!memberId) return { checkedIn: false, checkInTime: null };
+
+  // Bangkok day-bucket — check-ins are stored as UTC timestamptz, so we compare
+  // against today's start in local time, expressed as ISO.
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('member_attendance')
+    .select('id, check_in_time')
+    .eq('member_id', memberId)
+    .gte('check_in_time', startOfDay.toISOString())
+    .order('check_in_time', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    // Non-fatal — Home page falls back to has-booking / no-booking states
+    console.error('[fetchTodayCheckin] error:', error);
+    return { checkedIn: false, checkInTime: null };
+  }
+
+  return {
+    checkedIn: !!data,
+    checkInTime: data?.check_in_time ?? null,
+  };
+}
