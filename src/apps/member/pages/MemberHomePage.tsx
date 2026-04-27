@@ -352,7 +352,18 @@ export default function MemberHomePage() {
           />
         ) : (
           <div className="space-y-2">
-            {upcomingBookings.slice(0, 2).map((booking) => (
+            {/* Featured first booking — V1 highlight row */}
+            {upcomingBookings[0] && (
+              <FeaturedBookingRow
+                className={upcomingBookings[0].schedule.className}
+                date={upcomingBookings[0].schedule.date}
+                startTime={upcomingBookings[0].schedule.startTime}
+                endTime={upcomingBookings[0].schedule.endTime}
+                trainerName={upcomingBookings[0].schedule.trainerName}
+                onClick={() => navigate(`/member/bookings/${upcomingBookings[0].id}`)}
+              />
+            )}
+            {upcomingBookings.slice(1, 2).map((booking) => (
               <ListCard
                 key={booking.id}
                 title={booking.schedule.className}
