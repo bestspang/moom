@@ -112,12 +112,6 @@ export default function MemberHomePage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayBookings = upcomingBookings.filter((b) => b.schedule.date === todayStr);
   const nextTodayBooking = todayBookings[0];
-  const subtitle =
-    todayBookings.length > 0
-      ? todayBookings.length > 1
-        ? t('member.bookingsTodayPlural').replace('{{count}}', String(todayBookings.length))
-        : t('member.bookingsToday').replace('{{count}}', String(todayBookings.length))
-      : t('member.readyToTrain');
 
   // Onboarding step completion
   const step1Done = true;
