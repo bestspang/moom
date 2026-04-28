@@ -40,12 +40,16 @@ import { StreakStripCard } from '../components/StreakStripCard';
 import { TodaySnapshotStrip } from '../components/TodaySnapshotStrip';
 import { FriendsPulseCard } from '../components/FriendsPulseCard';
 import { FeaturedBookingRow } from '../components/FeaturedBookingRow';
+// V2 visual refresh widgets
+import { DailySpinCard } from '../components/DailySpinCard';
+import { QuestSummaryCard } from '../components/QuestSummaryCard';
+import { AlmostUnlockedBadgeCard } from '../components/AlmostUnlockedBadgeCard';
 
 function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return t('member.goodMorning');
-  if (hour < 17) return t('member.goodAfternoon');
-  return t('member.goodEvening');
+  if (hour < 12) return t('member.greetingMorning');
+  if (hour < 17) return t('member.greetingAfternoon');
+  return t('member.greetingEvening');
 }
 
 export default function MemberHomePage() {
@@ -108,12 +112,6 @@ export default function MemberHomePage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayBookings = upcomingBookings.filter((b) => b.schedule.date === todayStr);
   const nextTodayBooking = todayBookings[0];
-  const subtitle =
-    todayBookings.length > 0
-      ? todayBookings.length > 1
-        ? t('member.bookingsTodayPlural').replace('{{count}}', String(todayBookings.length))
-        : t('member.bookingsToday').replace('{{count}}', String(todayBookings.length))
-      : t('member.readyToTrain');
 
   // Onboarding step completion
   const step1Done = true;
@@ -132,20 +130,22 @@ export default function MemberHomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 pb-2">
-      {/* --- 1. Greeting + Mascot --- */}
-      <div className="px-4 pt-3 pb-3 flex items-center gap-3">
+      {/* --- 1. Greeting + Mascot (V2 — bigger lion + tagline) --- */}
+      <div className="px-4 pt-4 pb-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground leading-tight">
-            {greeting}{firstName ? `, ${firstName}` : ''}
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+            {greeting}{firstName ? ` ${firstName}!` : '!'}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('member.mascotTagline')}
+          </p>
           {statusTier && statusTier.currentTier !== 'bronze' && (
             <div className="mt-2">
               <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
             </div>
           )}
         </div>
-        <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
+        <MascotIllustration size={80} mood={hasProgressed ? 'fire' : 'cheer'} />
       </div>
 
       {/* --- 1.5 Streak strip (V1 widget) --- */}
@@ -236,6 +236,11 @@ export default function MemberHomePage() {
         />
       </Section>
 
+      {/* --- 3.6 Daily Spin (V2 — UI shell, Coming Soon) --- */}
+      <Section className="mb-3">
+        <DailySpinCard />
+      </Section>
+
       {/* --- 4. Mood check-in (UI shell, localStorage) --- */}
       <Section className="mb-3">
         <MoodCheckinStrip />
@@ -284,7 +289,19 @@ export default function MemberHomePage() {
         <MomentumCard memberId={memberId} />
       </Section>
 
-      {/* --- 8. Almost There nudge --- */}
+      {/* --- 7.5 Quest summary (V2 — เควสวันนี้) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <QuestSummaryCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* --- 7.6 Almost unlocked badge teaser (V2) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <AlmostUnlockedBadgeCard memberId={memberId} />
+        </Section>
+      )}
       {momentumProfile &&
         (() => {
           const currentLevelXP = xpForLevel(momentumProfile.level - 1);

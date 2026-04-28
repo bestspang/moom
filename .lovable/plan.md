@@ -1,200 +1,156 @@
-# 🎨 Member Home V1 — Widget Pass (warm visual + 3 new widgets)
+## ทำไมหน้าจริงไม่เหมือนภาพ
 
-ตาม mockup `MOOM_Member_App_v1-2.html` (SVG thumbnail) — เน้น **เพิ่ม widget เข้าไป**, ไม่ลบของเดิม. คุณบอกว่าถ้าไม่ชอบจะลบทีหลัง.
+หน้า Member Home มี **componentครบทุกตัวแล้ว** แต่ใช้ design language แบบ "minimal-flat" (border บาง, radius เล็ก, สี neutral) ขณะที่ม็อคอัพใช้ **"warm-pastel-card" style**: การ์ดใหญ่, gradient ส้ม/เหลือง/ม่วงพาสเทล, chip-pill เด่น, mascot สิงโตน่ารัก, progress bar ตัวหนาสีเขียว.
 
----
-
-## 🔍 อ่าน mockup ออกมาเป็น design language
-
-จาก SVG preview (ไม่สามารถ unpack React bundle ได้, แต่ thumbnail บอก intent ครบ):
-
-| Element | Mockup | สถานะปัจจุบัน |
-|---|---|---|
-| Warm cream background `#fafaf7` | ✅ | ❌ ใช้ neutral |
-| Orange gradient hero `#ff7a1a→#ff9d4a` | ✅ | ✅ NextUpCard มี |
-| Decorative circle on hero (top-right) | ✅ | ❌ ยังไม่มี |
-| 5 mood circles | ✅ | ✅ MoodCheckinStrip (5 emojis) |
-| 4 quick tiles | ✅ | ✅ QuickTilesGrid |
-| Clean white list rows | ✅ | ✅ ListCard |
-| 1 highlighted/featured row (orange tint) | ✅ | ❌ ยังไม่มี — **เพิ่ม** |
-| Bottom nav 4 dots | ✅ | ✅ MemberBottomNav |
+ผมจะ **ไม่เปลี่ยน data flow / hooks / routes** ใดๆ — แตะเฉพาะ "ผิวนอก" (markup + tailwind classes) ของการ์ดที่เห็นในม็อคอัพ และเพิ่ม 2 widget ใหม่ที่ยังขาด.
 
 ---
 
-## 📋 Affected modules + status
+## สิ่งที่จะแก้ (ทั้งหมดเป็น additive / visual-only)
 
-| Module | Status | Action |
-|---|---|---|
-| `MemberHomePage.tsx` | WORKING | **Insert widgets** (additive) |
-| `NextUpCard.tsx` | WORKING | **Polish** — add decorative circle, warm-up gradient |
-| `MoodCheckinStrip.tsx` | WORKING | **No change** |
-| `QuickTilesGrid.tsx` | WORKING | **No change** |
-| ทุก data hook (`useQuery`) | WORKING | **No change** ใช้ของเดิม |
-| New widgets (4) | NEW | **Create** |
+### 1. Greeting block — ภาพที่ 1 (เย็นนี้พร้อมลุย! Kongphop)
+- **MascotIllustration.tsx**: เปลี่ยนสิงโต SVG (หัวกลม, แผงคอส้ม, หูเล็ก, หน้ายิ้ม) แทนหมีปัจจุบัน — ขนาดใหญ่ขึ้นเป็น 80px
+- Heading ใหญ่ขึ้น `text-3xl font-extrabold`, sub-line "Moomu พร้อมซ้อมกับคุณแล้ว 💪"
+- เพิ่ม time-based prefix: "เย็นนี้พร้อมลุย!" / "เช้านี้พร้อมลุย!" / "บ่ายนี้พร้อมลุย!" (i18n keys ใหม่)
 
-## 🛡️ ต้องรักษาไว้ (must-preserve)
+### 2. MoodCheckinStrip — ภาพที่ 1 (วันนี้รู้สึกยังไง?)
+- เปลี่ยนเป็นการ์ดใหญ่ `rounded-2xl` border พาสเทล
+- Title `text-base font-extrabold` (เลิกใช้ uppercase 11px)
+- Mood แต่ละอันเป็น **ช่อง tile แยก** `bg-muted/40 rounded-xl p-3` มี emoji ใหญ่ + label ไทย ใต้ emoji (ปัจจุบัน label ซ่อนอยู่ใน aria-label เท่านั้น)
+- เปลี่ยน 5 mood จาก [low, ok, good, strong, fire] → ใช้ emoji ตามม็อคอัพ: 😴 เหนื่อย / 😐 เฉยๆ / 🙂 ดี / 💪 พร้อม / 🔥 ไฟลุก
+- เก็บ logic localStorage เดิม
 
-- ทุก query key + useQuery block เดิม
-- Onboarding flow + `localStorage` dismissal
-- NextUpCard 3 states (has-booking / no-booking / checked-in)
-- Momentum card, Daily bonus, Almost There nudge
-- Active packages with urgency colors
-- Referral + Suggested class cards
-- All routes ใน `App.tsx`
-- I18n EN+TH ทุก key เดิม
+### 3. Quest List Card (ใหม่) — ภาพที่ 2 ส่วนบน "เควสวันนี้"
+- สร้าง **`QuestSummaryCard.tsx`** ใหม่ — wrapper รอบ data จาก `fetchMyQuests` (ที่มีอยู่ใน `features/momentum/api`)
+- Header: target icon + "เควสวันนี้" + sub "สำเร็จ 2/4 · รับได้อีก +50 XP" + **ring progress** วงกลมตัวเลข + chevron expand
+- Each quest row: ชื่อเควส (strikethrough ถ้า completed) + **XP pill ส้ม** `+20` + **Coin pill เหลือง** + ratio "0/45" + progress bar ตัวหนาเขียว/เทา
+- Insert ใน HomePage section หลัง MomentumCard (ปัจจุบัน MomentumCard มี QuestHub แบบลายลึก — เก็บไว้แต่ใช้ summary card แทนการแสดงเต็มที่ home)
+- **ไม่ลบ QuestHub** — ยังใช้ในหน้า /member/momentum
 
----
+### 4. "ใกล้ปลดล็อก" Badge Teaser (ใหม่) — ภาพที่ 2 การ์ดม่วง-ชมพู
+- สร้าง **`AlmostUnlockedBadgeCard.tsx`**
+- Gradient pastel ม่วง→ชมพู `from-purple-100 to-pink-100`, border `border-purple-200`
+- Trophy icon ในกล่อง gradient เข้ม + dot สีส้ม top-right
+- Title "ใกล้ปลดล็อก" + ชื่อแบดจ์ + subtitle progress
+- **Data source**: ดึงจาก existing `fetchUpcomingMilestones` (มีอยู่แล้ว) → แสดงตัวที่ progress สูงสุด
+- ซ่อนถ้าไม่มี milestone
 
-## 🆕 Widgets ที่จะเพิ่ม (4 ตัว — ทั้งหมด wire กับ data จริง)
+### 5. WellnessTipCard — ภาพที่ 2 การ์ดเขียวอ่อน
+- Restyle: gradient พาสเทลเขียว `from-emerald-50 to-teal-50` border `border-emerald-200`
+- Icon: emoji 🧘 ในกล่อง gradient (แทน Lightbulb)
+- Tag pill เล็กสีเขียว "เคล็ดลับเวลเนส · หายใจ" บนสุด แทน "DAILY TIP" uppercase
+- Title ตัวหนาดำใหญ่ "หายใจลึกๆ 5 ครั้งก่อนเริ่มคลาส"
+- เก็บ Coming Soon ribbon (ตาม policy live-ui-action-policy)
 
-### Widget 1 — `StreakStripCard` (ใหม่)
-**ทำไม:** mockup มี "highlighted orange row" + เรามี `currentStreak` data จาก `momentumProfile` พร้อมใช้
-**ตำแหน่ง:** ใต้ Greeting, เหนือ NextUpCard
-**แสดง:** 🔥 streak counter + "next milestone" + flame icon
-**Data:** `momentumProfile.currentStreak` + `longestStreak` (มีอยู่แล้ว)
-**Function จริง?:** ✅ มี — `fetchMomentumProfile` คืน `current_streak`/`longest_streak`
-**Empty state:** ถ้า streak = 0 → ซ่อน widget (ไม่บังคับโชว์)
+### 6. FriendsPulseCard — ภาพที่ 2 การ์ดล่าง "4 คน เช็คอินวันนี้"
+- เพิ่ม **avatar circles สีต่างกัน** (gradient เขียว/ฟ้า/ม่วง/ส้ม) แทนวงเดียวสีเหมือนกัน — ใช้ hash ของ member id เลือกสี
+- Title ตัวหนาใหญ่ "4 คน เช็คอินวันนี้ 💪"
+- Subtitle เล็ก "เพื่อนคุณอยู่ในสาขา…" (ใช้ location_name ถ้ามี / fallback "วันนี้")
+- เปลี่ยน layout: avatar stack ซ้าย, text ขวา (ตอนนี้กลับด้าน)
 
-### Widget 2 — `TodaySnapshotStrip` (ใหม่)
-**ทำไม:** mockup เน้น "day at a glance" + ข้อมูลทั้งหมดมีพร้อม
-**ตำแหน่ง:** ใต้ NextUpCard
-**แสดง:** 3 mini-stats inline:
-- 📅 จำนวน class วันนี้ (`todayBookings.length`)
-- ✅ check-in แล้ว/ยัง (`todayCheckin.checkedIn`)
-- ⚡ XP วันนี้ (placeholder `0` ถ้าไม่มี — UI shell เหมือน WellnessTipCard)
-**Function จริง?:** ⚠️ "XP วันนี้" ยังไม่มี endpoint dedicated — แสดงเป็น `momentumProfile.totalXp` วันนี้แทน หรือ mark "Coming Soon" ตาม guardrail
+### 7. ReferralCard — ภาพที่ 2 การ์ดส้มอ่อนล่างสุด
+- Restyle: bg `bg-orange-50` border `border-orange-200` (แทน bg-card)
+- Icon gift ในกล่อง `bg-orange-100 text-orange-600`
+- Title ตัวหนาใหญ่ "ชวนเพื่อน รับแต้ม!" + sub "แชร์โค้ด ทั้งคู่ได้ 200 Coin"
+- ปุ่ม "แชร์" สีขาว `bg-white border-orange-200 text-orange-700` มี Copy icon
+- เก็บ logic copy/share เดิม 100%
 
-### Widget 3 — `FriendsPulseCard` (ใหม่ — UI shell + real data ถ้ามี squad)
-**ทำไม:** quick tile "เพื่อน" route ไป `/member/squad` แล้ว แต่หน้าหลักยังไม่ tease activity
-**ตำแหน่ง:** ใต้ Mood, เหนือ Quick tiles
-**แสดง:** "เพื่อน 3 คนเช็คอินวันนี้" + avatar stack (max 3)
-**Function จริง?:** ✅ บางส่วน — `SquadActivityFeed.tsx` มีอยู่ใน `features/momentum/` ใช้ data จริง. **Reuse** logic นั้นแบบย่อ. ถ้าไม่มี squad → ซ่อน widget
-**Fallback:** ถ้า fetch fail/empty → ไม่แสดง (graceful)
+### 8. Daily Spin Card (ใหม่ — placeholder) — ภาพที่ 3
+- สร้าง **`DailySpinCard.tsx`** — gradient warm `from-amber-400 to-orange-500`
+- Gift box 🎁 ในวงกลม dashed border ขาว
+- Tag "DAILY SPIN" uppercase ขาว + title "หมุนรับรางวัลฟรี" + sub "วันละ 1 ครั้ง"
+- ปุ่มขาว "หมุน!" — **disabled + opacity-60 pointer-events-none + Coming Soon badge** ตาม live-ui-action-policy (ยังไม่มี backend daily-spin)
+- Insert บน HomePage หลัง NextUpCard (เป็น hook ดึงดูดสายตา)
+- หมายเหตุใน DEVLOG: feature นี้ยังเป็น UI shell, ต้องเพิ่ม `daily_spins` table + edge function `gamification-daily-spin` ภายหลัง
 
-### Widget 4 — `FeaturedClassRow` (ใหม่ — orange-tinted highlight row)
-**ทำไม:** mockup มี orange-tint row ชัดเจน — pattern "today's pick"
-**ตำแหน่ง:** หัว "Next Up" section, เป็น row แรก (ถ้ามี class แนะนำ)
-**แสดง:** ListCard variant ที่ background = `bg-primary/10 border-primary/30`
-**Logic:** `upcomingBookings[0]` + flag แสดง "⭐ คลาสถัดไปของคุณ" — ใช้ booking ของเดิมแค่ restyle row แรก
-**Function จริง?:** ✅ ใช้ `fetchMyBookings` ของเดิม ไม่มี endpoint ใหม่
-
----
-
-## 🎨 Visual polish (minimal)
-
-- `NextUpCard`: เพิ่ม decorative circle absolute top-right (`absolute top-4 right-4 h-12 w-12 rounded-full bg-white/20`) ตาม mockup
-- ไม่แตะ background สี global (`#fafaf7` cream) — รอ user feedback. ถ้าชอบค่อยเปลี่ยน CSS variable รอบหน้า
-
----
-
-## 🔧 Minimal-diff plan
-
-### Files ใหม่ (4)
+### 9. i18n keys ใหม่ (en + th)
 ```
-src/apps/member/components/StreakStripCard.tsx        (~50 lines)
-src/apps/member/components/TodaySnapshotStrip.tsx     (~60 lines, "Coming Soon" badge ตาม guardrail)
-src/apps/member/components/FriendsPulseCard.tsx       (~70 lines, reuse fetcher)
-src/apps/member/components/FeaturedBookingRow.tsx     (~40 lines, restyle ListCard)
-```
-
-### Files แก้ (3)
-```
-src/apps/member/pages/MemberHomePage.tsx    (insert 4 widget slots, ~20 lines เพิ่ม)
-src/apps/member/components/NextUpCard.tsx   (เพิ่ม decorative circle, ~3 lines)
-src/i18n/locales/{en,th}.ts                 (~12 keys ใหม่)
-```
-
-### ลำดับ render ใหม่ (additive)
-```
-1. Greeting + Mascot                   (เดิม)
-2. StreakStrip                         🆕 (ถ้า streak > 0)
-3. Onboarding                          (เดิม)
-4. NextUpCard + decorative circle      ✏️ polish
-5. TodaySnapshotStrip                  🆕
-6. Mood                                (เดิม)
-7. FriendsPulseCard                    🆕 (ถ้ามี squad activity)
-8. QuickTilesGrid                      (เดิม)
-9. Announcement                        (เดิม)
-10. DailyBonus + Momentum              (เดิม)
-11. Almost There                       (เดิม)
-12. WellnessTip                        (เดิม)
-13. Next Up section:                   (เดิม)
-    - FeaturedBookingRow (row แรก)    🆕 highlight
-    - ListCard rows ที่เหลือ
-14. Active packages                    (เดิม)
-15. Referral + Suggested               (เดิม)
+member.greetingEvening   → "เย็นนี้พร้อมลุย!" / "Ready for tonight!"
+member.greetingMorning   → "เช้านี้พร้อมลุย!" / "Ready this morning!"
+member.greetingAfternoon → "บ่ายนี้พร้อมลุย!" / "Ready this afternoon!"
+member.mascotTagline     → "Moomu พร้อมซ้อมกับคุณแล้ว 💪"
+member.mood.tired/ok/good/ready/onfire → ป้ายไทย
+member.questsToday       → "เควสวันนี้"
+member.questsProgress    → "สำเร็จ {{done}}/{{total}} · รับได้อีก +{{xp}} XP"
+member.almostUnlocked    → "ใกล้ปลดล็อก"
+member.dailySpinTitle    → "หมุนรับรางวัลฟรี"
+member.dailySpinSub      → "วันละ 1 ครั้ง"
+member.dailySpinCta      → "หมุน!"
+member.referralBigTitle  → "ชวนเพื่อน รับแต้ม!"
+member.referralBigSub    → "แชร์โค้ด ทั้งคู่ได้ 200 Coin"
+member.checkedInToday    → "{{n}} คน เช็คอินวันนี้ 💪"
 ```
 
 ---
 
-## ✅ Function reality-check (ตามที่ user ขอ "เช็คดีๆ")
+## สิ่งที่จะ **ไม่** แตะ
 
-| Widget | Data hook | มีจริง? | ถ้าไม่มี → ทำอะไร |
-|---|---|---|---|
-| StreakStripCard | `momentumProfile.currentStreak` | ✅ มี | — |
-| TodaySnapshot: วันนี้กี่คลาส | `todayBookings.length` (compute) | ✅ มี | — |
-| TodaySnapshot: check-in แล้ว | `todayCheckin.checkedIn` | ✅ มี | — |
-| TodaySnapshot: XP วันนี้ | ❌ ไม่มี endpoint | — | แสดง icon + "Coming Soon" badge ตาม policy `opacity-60 pointer-events-none` |
-| FriendsPulseCard | `fetchSquadActivity` ใน `momentum/api.ts` | ✅ ตรวจแล้วมี `SquadActivityFeed` | reuse fetcher; ถ้า empty → ซ่อน |
-| FeaturedBookingRow | `bookings[0]` | ✅ ใช้ของเดิม | — |
+- `MemberHomePage.tsx` data hooks, query keys, navigation handlers
+- `fetchMyBookings / fetchMyPackages / fetchMomentumProfile / fetchMyQuests`
+- DB schema (ไม่มี migration)
+- `NextUpCard`, `TodaySnapshotStrip`, `QuickTilesGrid`, `StreakStripCard`, `MomentumCard`, `DailyBonusCard`, `FeaturedBookingRow`, `AlmostThereCard` — ทำงานดีอยู่แล้ว
+- routes, edge functions, RLS
 
 ---
 
-## 🚦 Defer (ตั้งใจ)
-
-- เปลี่ยน background เป็น cream `#fafaf7` global → รอ user approve รอบถัดไป (touches `index.css` — blast radius)
-- Bottom nav restyle → ไม่ใช่ home scope
-- Avatar pill ใน header → ต้องเปลี่ยน MobilePageHeader — defer
-
----
-
-## 📋 Regression checklist
-
-1. `bun run build` เขียว
-2. หน้า `/member` render ครบ ไม่มี layout shift
-3. Onboarding ยังโผล่/ซ่อนตาม localStorage เดิม
-4. NextUpCard 3 states ยังทำงาน (book today, no book, checked in)
-5. Mood pick + persist ยังทำงาน
-6. Quick tiles 4 ปุ่ม navigate ถูก
-7. Streak strip โผล่เฉพาะ `streak > 0`
-8. Friends pulse โผล่เฉพาะมี squad activity (ไม่มี → ซ่อนสนิท)
-9. Featured booking row ใช้ `bookings[0]` — ถ้าไม่มี booking → ไม่ render
-10. Today snapshot — XP slot โชว์ "Coming Soon" + opacity-60 pointer-events-none
-11. EN + TH key ครบ (run `bun scripts/compare-i18n.mjs` ถ้าต้องการ)
-12. Mobile 360–414px — ไม่มี horizontal scroll, ไม่ clip text
-
----
-
-## 📦 Files touched สรุป
+## ลำดับการ render หน้า Home หลังแก้
 
 ```
-ใหม่ (4):
-  src/apps/member/components/StreakStripCard.tsx
-  src/apps/member/components/TodaySnapshotStrip.tsx
-  src/apps/member/components/FriendsPulseCard.tsx
-  src/apps/member/components/FeaturedBookingRow.tsx
-
-แก้ (3):
-  src/apps/member/pages/MemberHomePage.tsx        (+ ~25 lines)
-  src/apps/member/components/NextUpCard.tsx       (+ 3 lines: decorative circle)
-  src/i18n/locales/en.ts                          (+ ~12 keys)
-  src/i18n/locales/th.ts                          (+ ~12 keys)
-
-ไม่แตะ (PROTECTED):
-  - All useQuery + query keys
-  - All API services + fetchers
-  - Auth, RLS, edge functions
-  - App.tsx routes
-  - DB schema
-  - shadcn/ui components
+1. Greeting + Lion mascot (refreshed)
+2. StreakStripCard (เดิม, hide if 0)
+3. Onboarding (เดิม, hide if done)
+4. NextUpCard (เดิม)
+5. TodaySnapshotStrip (เดิม)
+6. DailySpinCard (ใหม่ — UI shell)
+7. MoodCheckinStrip (refreshed — tile layout)
+8. FriendsPulseCard (refreshed — colored avatars)
+9. QuickTilesGrid (เดิม)
+10. Announcement (เดิม)
+11. DailyBonusCard (เดิม)
+12. MomentumCard (เดิม)
+13. QuestSummaryCard (ใหม่ — เควสวันนี้)
+14. AlmostUnlockedBadgeCard (ใหม่)
+15. AlmostThereCard / level nudge (เดิม)
+16. WellnessTipCard (refreshed — green pastel)
+17. Next Up bookings list (เดิม)
+18. Active packages (เดิม)
+19. ReferralCard (refreshed — orange)
+20. Suggested class (เดิม)
 ```
 
 ---
 
-## 📝 Doc updates
+## Files
 
-- Append `docs/DEVLOG.md`: "Member Home V1 widget pass — Streak/Snapshot/Friends/Featured"
+**สร้างใหม่ (3)**
+- `src/apps/member/components/QuestSummaryCard.tsx`
+- `src/apps/member/components/AlmostUnlockedBadgeCard.tsx`
+- `src/apps/member/components/DailySpinCard.tsx`
+
+**แก้ไข (6)**
+- `src/apps/member/components/MascotIllustration.tsx` — สิงโต SVG
+- `src/apps/member/components/MoodCheckinStrip.tsx` — tile layout + ป้ายไทย
+- `src/apps/member/components/WellnessTipCard.tsx` — green pastel + emoji
+- `src/apps/member/components/FriendsPulseCard.tsx` — colored avatars + new layout
+- `src/apps/member/features/referral/ReferralCard.tsx` — orange pastel skin
+- `src/apps/member/pages/MemberHomePage.tsx` — insert 3 widgets, refresh greeting block, render order
+- `src/i18n/locales/en.ts`, `src/i18n/locales/th.ts` — keys ใหม่
+- `docs/DEVLOG.md` — log entry "Member Home V2 visual refresh + Daily Spin shell"
 
 ---
 
-**Approve → ผม implement 4 widgets + insert ใน HomePage + i18n + decorative polish ครั้งเดียว, verify `bun run build`. ถ้าไม่ชอบ widget ไหน คุณบอกชื่อมา ผมลบ component file + slot 1 บรรทัดออกใน 1 รอบ.**
+## Regression Checklist (จะ verify หลัง implement)
+
+- [ ] `bun run build` ผ่าน
+- [ ] Mood pick → save localStorage `moom-mood-YYYY-MM-DD` ยังทำงาน
+- [ ] Referral copy/share modal ยังเปิดและคัดลอก URL ถูก (`/signup?ref=`)
+- [ ] FriendsPulseCard ยัง hide เมื่อไม่มี squad / feed ว่าง
+- [ ] Quest summary ดึง data จาก `fetchMyQuests` ไม่ duplicate กับ QuestHub
+- [ ] AlmostUnlocked hide เมื่อไม่มี milestone ใกล้
+- [ ] DailySpin ปุ่มกดไม่ได้จริง (opacity-60 pointer-events-none) + มี "Coming Soon" badge
+- [ ] No new English-only strings — ทุกข้อความผ่าน i18n
+- [ ] Lion mascot SVG render ที่ 64–80px ไม่เพี้ยน
+
+---
+
+ถ้า approve ผมจะ implement ครั้งเดียวทั้งหมด แล้ว verify build. ถ้าอยากเอาออก/ปรับชิ้นไหน บอกชื่อ widget ผมเอาออก 1 file + 1 slot บรรทัดใน HomePage.

@@ -2,6 +2,37 @@
 
 ---
 
+## 2026-04-28 — Member Home V2 visual refresh (mockup parity)
+
+Visual-only refresh to bring Member Home in line with the 3 uploaded mockups
+(greeting/lion, mood card, quest list, almost-unlocked, daily-spin, friends pulse,
+referral). **No data hooks, query keys, routes, or RLS touched.**
+
+**Refreshed (5 existing components):**
+- `MascotIllustration` — replaced bear SVG with friendly lion (orange mane, cream face, sparkle eyes). Default size 80.
+- `MoodCheckinStrip` — large card, 5 mood tiles in a grid with emoji + label below (was: round emoji buttons hiding label). Mood keys re-enumerated to `tired/ok/good/ready/onfire`.
+- `WellnessTipCard` — emerald-pastel gradient card, emoji icon (rotates by day), keeps Coming-Soon ribbon.
+- `FriendsPulseCard` — colored avatar stack (HSL hash per member id), bold title "{n} friends checked in today 💪".
+- `ReferralCard` — orange-pastel skin, white "Share" pill button, bigger title.
+
+**Added (3 widgets):**
+- `DailySpinCard` — gradient amber/orange card, dashed-ring gift icon, **"Spin!" button is disabled with Coming Soon badge** (no `daily_spins` table yet, per live-ui-action-policy).
+- `QuestSummaryCard` — wrapper around existing `fetchMyQuests`. Header has ring-progress + "{done}/{total}" + remaining XP. Each row: name (strikethrough if completed) + XP/Coin pills + progress bar (orange / emerald when done). Tapping → `/member/momentum`.
+- `AlmostUnlockedBadgeCard` — purple-pink gradient teaser. Reuses `fetchAllBadges` + `fetchMyBadges` + `fetchMomentumProfile` to compute the closest unearned badge. Hidden when nothing is in progress.
+
+**Page changes (`MemberHomePage.tsx`):**
+- Greeting now uses time-based "{Ready this morning/afternoon/evening!}" + tagline "Moomu is ready to train with you 💪". Mascot bumped to 80px.
+- Removed unused `subtitle` variable.
+- Inserted: DailySpin (after TodaySnapshot), QuestSummary + AlmostUnlocked (after MomentumCard).
+
+**i18n:** +20 keys in EN + TH under `member.*` (greetings, mascot, mood.*, quests, almostUnlocked, dailySpin*, referralBig*, friendsPulseSubAt, wellnessTipTag, checkedInTodayCount).
+
+**Verification:** `bun run build` ✅. All Coming-Soon CTAs are `opacity-60 pointer-events-none` per guardrail. No mutation hooks touched, no realtime subscriptions added.
+
+**TODO (future, not in this pass):** backend for Daily Spin (`daily_spins` table + `gamification-daily-spin` edge fn).
+
+---
+
 ## 2026-04-27 — Member Home V1 widget pass
 
 Additive UI refresh per `MOOM_Member_App_v1-2.html` mockup. **No data layer changes**, no removed widgets.

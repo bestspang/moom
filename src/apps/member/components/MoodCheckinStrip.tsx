@@ -1,22 +1,21 @@
 /**
- * MoodCheckinStrip — UI shell for daily mood check-in.
+ * MoodCheckinStrip — Daily mood check-in (V2 tile layout).
  *
  * STORAGE: localStorage only — backend table not yet implemented.
  * Key: `moom-mood-${YYYY-MM-DD}` → mood key (string)
  *
- * When backed by a future `member_mood_log` table, swap the storage layer
- * for a Supabase mutation. The UI contract stays the same.
+ * V2 redesign: large card, tile-style mood pickers with emoji + label below.
  */
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const MOODS = [
-  { key: 'low', emoji: '😩', labelKey: 'member.moodLow' },
-  { key: 'ok', emoji: '😐', labelKey: 'member.moodOk' },
-  { key: 'good', emoji: '🙂', labelKey: 'member.moodGood' },
-  { key: 'strong', emoji: '😎', labelKey: 'member.moodStrong' },
-  { key: 'fire', emoji: '🔥', labelKey: 'member.moodFire' },
+  { key: 'tired', emoji: '😴', labelKey: 'member.mood.tired' },
+  { key: 'ok', emoji: '😐', labelKey: 'member.mood.ok' },
+  { key: 'good', emoji: '🙂', labelKey: 'member.mood.good' },
+  { key: 'ready', emoji: '💪', labelKey: 'member.mood.ready' },
+  { key: 'onfire', emoji: '🔥', labelKey: 'member.mood.onfire' },
 ] as const;
 
 type MoodKey = typeof MOODS[number]['key'];
@@ -39,54 +38,50 @@ export function MoodCheckinStrip() {
     try {
       localStorage.setItem(todayKey(), key);
     } catch {
-      // localStorage unavailable (private mode) — silently ignore
+      // ignore
     }
   };
 
-  if (picked) {
-    const m = MOODS.find((x) => x.key === picked);
-    return (
-      <div className="rounded-xl border border-border bg-card px-3.5 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl leading-none">{m?.emoji}</span>
-          <div className="min-w-0">
-            <div className="text-[11px] font-bold text-foreground">
-              {t('member.moodToday')}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              {m && t(m.labelKey)}
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => {
-            try { localStorage.removeItem(todayKey()); } catch {}
-            setPicked(null);
-          }}
-          className="text-[11px] font-semibold text-primary px-2 py-1 rounded hover:bg-primary/5"
-        >
-          {t('member.change')}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-xl border border-border bg-card px-3.5 py-2.5">
-      <div className="text-[11px] font-bold text-foreground mb-1.5">
-        {t('member.moodPrompt')}
-      </div>
-      <div className="flex items-center justify-between gap-1">
-        {MOODS.map((m) => (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-extrabold text-foreground">
+          {t('member.moodPrompt')}
+        </h3>
+        {picked && (
           <button
-            key={m.key}
-            onClick={() => handlePick(m.key)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-xl hover:border-primary hover:bg-primary/5 active:scale-95 transition-all"
-            aria-label={t(m.labelKey)}
+            onClick={() => {
+              try { localStorage.removeItem(todayKey()); } catch {}
+              setPicked(null);
+            }}
+            className="text-xs font-semibold text-primary px-2 py-1 rounded hover:bg-primary/5"
           >
-            {m.emoji}
+            {t('member.change')}
           </button>
-        ))}
+        )}
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {MOODS.map((m) => {
+          const isPicked = picked === m.key;
+          return (
+            <button
+              key={m.key}
+              onClick={() => handlePick(m.key)}
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-xl py-2.5 px-1 transition-all active:scale-95 ${
+                isPicked
+                  ? 'bg-primary/10 ring-2 ring-primary'
+                  : 'bg-muted/50 hover:bg-muted'
+              }`}
+              aria-label={t(m.labelKey)}
+              aria-pressed={isPicked}
+            >
+              <span className="text-2xl leading-none">{m.emoji}</span>
+              <span className="text-[10px] font-medium text-foreground/80 leading-none">
+                {t(m.labelKey)}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
