@@ -1,5 +1,5 @@
 /**
- * FriendsPulseCard — Compact "your squad is moving" tease.
+ * FriendsPulseCard — V2 redesign: colored avatar stack + bold title.
  *
  * Reuses existing fetchers:
  *   - fetchMySquad(memberId)              → resolve squadId
@@ -8,19 +8,25 @@
  * Hidden when:
  *   - member is not in a squad
  *   - feed is empty
- *   - any fetch fails (graceful, no error UI)
  *
- * Tap navigates to /member/squad (existing route).
+ * Tap navigates to /member/squad.
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Users, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchMySquad, fetchSquadActivityFeed } from '../features/momentum/api';
 
 interface FriendsPulseCardProps {
   memberId: string;
+}
+
+// Stable color per member id (HSL hue from simple hash)
+function avatarColorFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+  return `hsl(${h} 70% 55%)`;
 }
 
 export function FriendsPulseCard({ memberId }: FriendsPulseCardProps) {
@@ -38,14 +44,14 @@ export function FriendsPulseCard({ memberId }: FriendsPulseCardProps) {
 
   const { data: feed } = useQuery({
     queryKey: ['member-squad-pulse', squadId],
-    queryFn: () => fetchSquadActivityFeed(squadId!, 5),
+    queryFn: () => fetchSquadActivityFeed(squadId!, 10),
     enabled: !!squadId,
     staleTime: 60 * 1000,
   });
 
   if (!squad || !feed || feed.length === 0) return null;
 
-  // Distinct members in the recent slice (max 3 avatars)
+  // Distinct members (max 4 avatars)
   const seen = new Set<string>();
   const movers: { id: string; initial: string }[] = [];
   for (const row of feed) {
@@ -54,37 +60,41 @@ export function FriendsPulseCard({ memberId }: FriendsPulseCardProps) {
     seen.add(id);
     const name: string = (row as any).first_name ?? (row as any).firstName ?? '?';
     movers.push({ id, initial: name.charAt(0).toUpperCase() });
-    if (movers.length >= 3) break;
+    if (movers.length >= 4) break;
   }
 
   if (movers.length === 0) return null;
+
+  const locationName = (squad as any)?.location_name ?? (squad as any)?.locationName ?? null;
+  const subtitle = locationName
+    ? t('member.friendsPulseSubAt').replace('{{name}}', locationName)
+    : t('member.friendsPulseSub').replace('{{n}}', String(feed.length));
 
   return (
     <button
       type="button"
       onClick={() => navigate('/member/squad')}
-      className="w-full flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-left active:scale-[0.99] transition-transform"
+      className="w-full flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left active:scale-[0.99] transition-transform"
     >
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-        <Users className="h-4 w-4 text-accent-foreground" strokeWidth={2.4} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[11px] font-bold text-foreground leading-tight">
-          {t('member.friendsPulseTitle')}
-        </div>
-        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-          {t('member.friendsPulseSub').replace('{{n}}', String(feed.length))}
-        </div>
-      </div>
-      <div className="flex -space-x-1.5 flex-shrink-0">
+      {/* avatar stack */}
+      <div className="flex -space-x-2 flex-shrink-0">
         {movers.map((m) => (
           <div
             key={m.id}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold border-2 border-card"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white text-xs font-extrabold border-2 border-card shadow-sm"
+            style={{ backgroundColor: avatarColorFor(m.id) }}
           >
             {m.initial}
           </div>
         ))}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-extrabold text-foreground leading-tight">
+          {t('member.checkedInToday').replace('{{n}}', String(movers.length))}
+        </div>
+        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+          {subtitle}
+        </div>
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
     </button>
