@@ -295,7 +295,19 @@ export default function MemberHomePage() {
         <MomentumCard memberId={memberId} />
       </Section>
 
-      {/* --- 8. Almost There nudge --- */}
+      {/* --- 7.5 Quest summary (V2 — เควสวันนี้) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <QuestSummaryCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* --- 7.6 Almost unlocked badge teaser (V2) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <AlmostUnlockedBadgeCard memberId={memberId} />
+        </Section>
+      )}
       {momentumProfile &&
         (() => {
           const currentLevelXP = xpForLevel(momentumProfile.level - 1);
