@@ -90,7 +90,7 @@ export function FriendsPulseCard({ memberId }: FriendsPulseCardProps) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-extrabold text-foreground leading-tight">
-          {t('member.checkedInToday').replace('{{n}}', String(movers.length))}
+          {t('member.checkedInTodayCount').replace('{{n}}', String(movers.length))}
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
           {subtitle}
