@@ -40,12 +40,16 @@ import { StreakStripCard } from '../components/StreakStripCard';
 import { TodaySnapshotStrip } from '../components/TodaySnapshotStrip';
 import { FriendsPulseCard } from '../components/FriendsPulseCard';
 import { FeaturedBookingRow } from '../components/FeaturedBookingRow';
+// V2 visual refresh widgets
+import { DailySpinCard } from '../components/DailySpinCard';
+import { QuestSummaryCard } from '../components/QuestSummaryCard';
+import { AlmostUnlockedBadgeCard } from '../components/AlmostUnlockedBadgeCard';
 
 function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return t('member.goodMorning');
-  if (hour < 17) return t('member.goodAfternoon');
-  return t('member.goodEvening');
+  if (hour < 12) return t('member.greetingMorning');
+  if (hour < 17) return t('member.greetingAfternoon');
+  return t('member.greetingEvening');
 }
 
 export default function MemberHomePage() {
