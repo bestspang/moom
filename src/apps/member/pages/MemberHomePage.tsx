@@ -242,6 +242,11 @@ export default function MemberHomePage() {
         />
       </Section>
 
+      {/* --- 3.6 Daily Spin (V2 — UI shell, Coming Soon) --- */}
+      <Section className="mb-3">
+        <DailySpinCard />
+      </Section>
+
       {/* --- 4. Mood check-in (UI shell, localStorage) --- */}
       <Section className="mb-3">
         <MoodCheckinStrip />
