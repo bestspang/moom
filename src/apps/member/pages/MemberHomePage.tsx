@@ -228,32 +228,9 @@ export default function MemberHomePage() {
         />
       </Section>
 
-      {/* --- 3.5 Today snapshot strip (V1 widget) --- */}
-      <Section className="mb-3">
-        <TodaySnapshotStrip
-          todayBookingsCount={todayBookings.length}
-          checkedIn={!!todayCheckin?.checkedIn}
-        />
-      </Section>
+      {/* ═══════════ MOCKUP ORDER (ดันขึ้น) ═══════════ */}
 
-      {/* --- 3.6 Daily Spin (V2 — UI shell, Coming Soon) --- */}
-      <Section className="mb-3">
-        <DailySpinCard />
-      </Section>
-
-      {/* --- 4. Mood check-in (UI shell, localStorage) --- */}
-      <Section className="mb-3">
-        <MoodCheckinStrip />
-      </Section>
-
-      {/* --- 4.5 Friends pulse (V1 widget — hidden if no squad/activity) --- */}
-      {memberId && (
-        <Section className="mb-3">
-          <FriendsPulseCard memberId={memberId} />
-        </Section>
-      )}
-
-      {/* --- 5. Quick tiles (4 nav shortcuts) --- */}
+      {/* --- 5. Quick tiles (จองคลาส / ประวัติ / เพื่อน / รางวัล) --- */}
       <Section className="mb-3">
         <QuickTilesGrid
           upcomingCount={upcomingBookings.length}
@@ -261,7 +238,60 @@ export default function MemberHomePage() {
         />
       </Section>
 
-      {/* --- 6. Compact announcement --- */}
+      {/* --- 6. Quest summary (เควสวันนี้ + ring) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <QuestSummaryCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* --- 7. Almost unlocked badge (ใกล้ปลดล็อก ม่วง-ชมพู) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <AlmostUnlockedBadgeCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* --- 8. Wellness tip (เคล็ดลับเวลเนส เขียว) --- */}
+      <Section className="mb-3">
+        <WellnessTipCard />
+      </Section>
+
+      {/* --- 9. Friends pulse (4 คน เช็คอินวันนี้) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <FriendsPulseCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* --- 10. Referral (ชวนเพื่อน รับแต้ม! ส้ม) --- */}
+      {memberId && (
+        <Section className="mb-3">
+          <ReferralCard memberId={memberId} />
+        </Section>
+      )}
+
+      {/* ═══════════ MORE (เดิมทั้งหมด — เลื่อนลง) ═══════════ */}
+
+      {/* --- 11. Today snapshot strip --- */}
+      <Section className="mb-3">
+        <TodaySnapshotStrip
+          todayBookingsCount={todayBookings.length}
+          checkedIn={!!todayCheckin?.checkedIn}
+        />
+      </Section>
+
+      {/* --- 12. Mood check-in (UI shell, localStorage) --- */}
+      <Section className="mb-3">
+        <MoodCheckinStrip />
+      </Section>
+
+      {/* --- 13. Daily Spin (V2 — UI shell, Coming Soon) --- */}
+      <Section className="mb-3">
+        <DailySpinCard />
+      </Section>
+
+      {/* --- 14. Compact announcement --- */}
       {(allOnboardingDone || onboardingDismissed) && latestAnnouncement && (
         <Section className="mb-3">
           <div className="rounded-lg bg-accent/50 border border-border p-3">
@@ -281,7 +311,7 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* --- 7. Daily bonus + Momentum --- */}
+      {/* --- 15. Daily bonus + Momentum --- */}
       <Section className="mb-3">
         <DailyBonusCard />
       </Section>
@@ -289,19 +319,7 @@ export default function MemberHomePage() {
         <MomentumCard memberId={memberId} />
       </Section>
 
-      {/* --- 7.5 Quest summary (V2 — เควสวันนี้) --- */}
-      {memberId && (
-        <Section className="mb-3">
-          <QuestSummaryCard memberId={memberId} />
-        </Section>
-      )}
-
-      {/* --- 7.6 Almost unlocked badge teaser (V2) --- */}
-      {memberId && (
-        <Section className="mb-3">
-          <AlmostUnlockedBadgeCard memberId={memberId} />
-        </Section>
-      )}
+      {/* --- 16. Almost there level nudge --- */}
       {momentumProfile &&
         (() => {
           const currentLevelXP = xpForLevel(momentumProfile.level - 1);
