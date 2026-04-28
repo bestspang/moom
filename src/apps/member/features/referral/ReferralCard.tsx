@@ -56,42 +56,46 @@ export function ReferralCard({ memberId }: ReferralCardProps) {
     return <Skeleton className="h-24 rounded-xl" />;
   }
 
+  const hasStats = !!stats?.totalCompleted;
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={() => navigate('/member/referral')}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/member/referral'); }}
-      className="flex w-full items-center gap-3 rounded-xl bg-card p-4 shadow-sm border border-border hover:bg-accent/50 transition-colors text-left cursor-pointer"
+      className="flex w-full items-center gap-3 rounded-2xl p-4 text-left cursor-pointer
+                 bg-orange-50 dark:bg-orange-500/10
+                 border border-orange-200 dark:border-orange-500/30
+                 active:scale-[0.99] transition-transform"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-        <Gift className="h-5 w-5 text-primary" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 dark:bg-orange-500/20 flex-shrink-0">
+        <Gift className="h-6 w-6 text-orange-600 dark:text-orange-400" strokeWidth={2.4} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">{t('member.referralCardTitle')}</p>
-        <p className="text-xs text-muted-foreground">
-          {stats?.totalCompleted
+        <p className="text-base font-extrabold text-foreground leading-tight">
+          {t('member.referralBigTitle')}
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+          {hasStats
             ? t('member.referralCardStats', {
-                count: stats.totalCompleted,
-                s: stats.totalCompleted > 1 ? 's' : '',
-                coins: stats.totalPointsEarned,
+                count: stats!.totalCompleted,
+                s: stats!.totalCompleted > 1 ? 's' : '',
+                coins: stats!.totalPointsEarned,
               })
-            : t('member.referralCardHint')}
+            : t('member.referralBigSub')}
         </p>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCopy();
-          }}
-          className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
-        >
-          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? t('member.referralCopied') : t('member.referralShare')}
-        </button>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleCopy();
+        }}
+        className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-card px-3 py-2 text-xs font-extrabold text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-500/40 shadow-sm hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? t('member.referralCopied') : t('member.referralShare')}
+      </button>
     </div>
   );
 }
