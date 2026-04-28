@@ -351,10 +351,7 @@ export default function MemberHomePage() {
           );
         })()}
 
-      {/* --- 9. Wellness tip (UI shell, Coming Soon CTA) --- */}
-      <Section className="mb-3">
-        <WellnessTipCard />
-      </Section>
+      {/* (Wellness tip ย้ายขึ้นไปอยู่ใน Mockup Order ด้านบนแล้ว) */}
 
       {/* --- 10. Next Up bookings list --- */}
       <Section
@@ -454,12 +451,7 @@ export default function MemberHomePage() {
         </Section>
       )}
 
-      {/* --- 12. Referral + Suggested --- */}
-      {memberId && (
-        <Section className="mb-3">
-          <ReferralCard memberId={memberId} />
-        </Section>
-      )}
+      {/* --- 17. Suggested class (Referral ย้ายขึ้นไปอยู่ใน Mockup Order ด้านบนแล้ว) --- */}
       {memberId && (
         <Section className="mb-6">
           <SuggestedClassCard memberId={memberId} />
