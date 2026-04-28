@@ -136,20 +136,22 @@ export default function MemberHomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 pb-2">
-      {/* --- 1. Greeting + Mascot --- */}
-      <div className="px-4 pt-3 pb-3 flex items-center gap-3">
+      {/* --- 1. Greeting + Mascot (V2 — bigger lion + tagline) --- */}
+      <div className="px-4 pt-4 pb-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground leading-tight">
-            {greeting}{firstName ? `, ${firstName}` : ''}
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+            {greeting}{firstName ? ` ${firstName}!` : '!'}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('member.mascotTagline')}
+          </p>
           {statusTier && statusTier.currentTier !== 'bronze' && (
             <div className="mt-2">
               <StatusTierBadge tier={statusTier.currentTier as StatusTier} size="sm" />
             </div>
           )}
         </div>
-        <MascotIllustration size={64} mood={hasProgressed ? 'fire' : 'cheer'} />
+        <MascotIllustration size={80} mood={hasProgressed ? 'fire' : 'cheer'} />
       </div>
 
       {/* --- 1.5 Streak strip (V1 widget) --- */}
