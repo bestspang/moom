@@ -1,0 +1,6 @@
+body{margin:0;padding:14px;font-family:'Anuphan','LINE Seed Sans TH','IBM Plex Sans Thai',system-ui,sans-serif;font-size:13px;color:hsl(0 0% 15%);background:#fff;-webkit-font-smoothing:antialiased}
+.card{width:672px}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:hsl(0 0% 45%)}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;color:hsl(0 0% 30%)}
+.row{display:flex;align-items:center;gap:12px}
+.stack{display:flex;flex-direction:column;gap:8px}

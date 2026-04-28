@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOOM Admin — UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;700&display=swap">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:'Anuphan','IBM Plex Sans Thai',system-ui,sans-serif;font-size:13px;
+       background:hsl(220 20% 98%);color:hsl(222 28% 12%);-webkit-font-smoothing:antialiased;height:100%;
+       letter-spacing:-0.005em}
+  #root{height:100vh;display:flex;overflow:hidden}
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:hsl(220 14% 85%);border-radius:9999px}
+  ::-webkit-scrollbar-thumb:hover{background:hsl(220 14% 70%)}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes admin-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="Theme.jsx"></script>
+<script type="text/babel" src="Modern.jsx"></script>
+<script type="text/babel" src="Schedule.jsx"></script>
+<script type="text/babel" src="Analytics.jsx"></script>
+<script type="text/babel" src="Gamification.jsx"></script>
+<script type="text/babel" src="GamificationB.jsx"></script>
+<script type="text/babel" src="Packages.jsx"></script>
+<script type="text/babel" src="Finance.jsx"></script>
+<script type="text/babel" src="Lobby.jsx"></script>
+<script type="text/babel" src="Promos.jsx"></script>
+<script type="text/babel" src="Trainers.jsx"></script>
+<script type="text/babel" src="Leads.jsx"></script>
+<script type="text/babel" src="Branding.jsx"></script>
+<script type="text/babel" src="Classes.jsx"></script>
+<script type="text/babel" src="ClassesMain.jsx"></script>
+<script type="text/babel" src="Categories.jsx"></script>
+<script type="text/babel" src="Rooms.jsx"></script>
+<script type="text/babel" src="Programs.jsx"></script>
+<script type="text/babel" src="Announcements.jsx"></script>
+<script type="text/babel" src="Settings.jsx"></script>
+
+<script type="text/babel">
+  const { useState } = React;
+
+  const PAGE_META = {
+    dashboard: { crumb: 'แดชบอร์ด', title: 'สวัสดีตอนเย็น, Kongphop', subtitle: 'อาทิตย์, 19 เมษายน 2026 · นี่คือภาพรวมยิมของคุณวันนี้' },
+    lobby:     { crumb: 'ล็อบบี้', title: 'ล็อบบี้', subtitle: 'สมาชิกที่กำลังอยู่ในสถานที่ตอนนี้' },
+    schedule:  { crumb: 'ตารางเรียน', title: 'ตารางเรียน', subtitle: 'วันนี้ · 5 คลาส · 67 จอง' },
+    members:   { crumb: 'สมาชิก', title: 'สมาชิก', subtitle: '247 active · 18 trial · 12 expired' },
+    leads:     { crumb: 'ลีด', title: 'ลีด', subtitle: '12 ลีดใหม่สัปดาห์นี้' },
+    packages:  { crumb: 'แพ็คเกจ', title: 'แพ็คเกจ & แผน' },
+    finance:   { crumb: 'การเงิน', title: 'การเงิน' },
+    analytics: { crumb: 'วิเคราะห์', title: 'วิเคราะห์ธุรกิจ' },
+    gami:      { crumb: 'Gamification', title: 'Gamification' },
+    promos:    { crumb: 'โปรโมชั่น', title: 'โปรโมชั่น' },
+    trainers:  { crumb: 'เทรนเนอร์', title: 'เทรนเนอร์ & โค้ช' },
+    classes:   { crumb: 'รายการคลาส', title: 'รายการคลาส' },
+    categories:{ crumb: 'หมวดหมู่คลาส', title: 'หมวดหมู่คลาส' },
+    rooms:     { crumb: 'ผังห้อง', title: 'ผังห้อง' },
+    announcements: { crumb: 'ประกาศ', title: 'ประกาศ' },
+    roles:    { crumb: 'บทบาท', title: 'บทบาท' },
+    branches: { crumb: 'สาขา', title: 'สาขา' },
+    activity: { crumb: 'บันทึกกิจกรรม', title: 'บันทึกกิจกรรม' },
+    settings: { crumb: 'ตั้งค่า', title: 'ตั้งค่า' },
+  };
+
+  function Dashboard() {
+    return (
+      <div style={{ padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1400, margin: '0 auto' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: adminTokens.black, letterSpacing: '-.02em' }}>
+            สวัสดีตอนเย็น, Kongphop <span style={{ fontSize: 22 }}>👋</span>
+          </h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: adminTokens.muted }}>
+            อาทิตย์, 19 เมษายน 2026 · นี่คือภาพรวมยิมของคุณวันนี้
+          </p>
+        </div>
+
+        {/* Hero: live pulse full-width */}
+        <LivePulseCard/>
+
+        {/* KPI strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+          <KpiCardV2 label="รายได้วันนี้"    value="฿18,420" delta="+8%"   accent="orange"  icon={aIcons.cash}/>
+          <KpiCardV2 label="สมาชิก Active" value="247"     delta="+12"   accent="teal"    icon={aIcons.users}/>
+          <KpiCardV2 label="คลาสวันนี้"     value="5"       suffix="3 เต็ม"                accent="info"    icon={aIcons.cal}/>
+          <KpiCardV2 label="อัตรา Churn"    value="3.2%"    delta="-0.4%" accent="pink"    icon={aIcons.trendD}/>
+        </div>
+
+        {/* Row: chart + activity */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+          <RevenueChart/>
+          <ActivityFeed/>
+        </div>
+
+        {/* Quick actions */}
+        <div>
+          <SectionHeaderA title="การกระทำด่วน" subtitle="เริ่มงานที่ใช้บ่อยที่สุด"/>
+          <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+            <QuickActionTile icon={aIcons.userOne} label="เพิ่มสมาชิก"   sublabel="สร้างโปรไฟล์ใหม่"    accent="orange"/>
+            <QuickActionTile icon={aIcons.qr}      label="เช็คอินด่วน"   sublabel="สแกน QR หรือเบอร์" accent="teal"/>
+            <QuickActionTile icon={aIcons.cal}     label="เพิ่มคลาส"      sublabel="สร้างคลาสใหม่"      accent="info"/>
+            <QuickActionTile icon={aIcons.gift}    label="สร้างโปร"       sublabel="โปรโมชั่นใหม่"      accent="pink"/>
+          </div>
+        </div>
+
+        {/* Schedule + attention */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+          <ClassScheduleV2/>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <HealthCard/>
+            <AttentionCard/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function SchedulePage() {
+    return <SchedulePageV2/>;
+  }
+
+  function MembersPage() {
+    return (
+      <div style={{ padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1400, margin: '0 auto' }}>
+        <PageHeader title="สมาชิก" subtitle="247 active · 18 trial · 12 expired">
+          <HeaderBtnV2 icon={aIcons.bar}>Export</HeaderBtnV2>
+          <HeaderBtnV2 icon={aIcons.plus} primary>เพิ่มสมาชิก</HeaderBtnV2>
+        </PageHeader>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+          <KpiCardV2 label="Active"         value="247"    accent="teal"    icon={aIcons.users}/>
+          <KpiCardV2 label="ใหม่เดือนนี้"    value="18"     delta="+6"      accent="orange"  icon={aIcons.userOne}/>
+          <KpiCardV2 label="อัตรา Churn"    value="3.2%"   delta="-0.4%"  accent="info"    icon={aIcons.trendD}/>
+          <KpiCardV2 label="Tier เฉลี่ย"    value="Gold"                    accent="pink"    icon={aIcons.star}/>
+        </div>
+        <MembersTableV2/>
+      </div>
+    );
+  }
+
+  function GenericPage({ page }) {
+    const meta = PAGE_META[page] || { title: page, subtitle: 'หน้านี้ยังไม่ได้สร้างในชุด UI นี้' };
+    return (
+      <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
+        <PageHeader title={meta.title} subtitle={meta.subtitle}>
+          <HeaderBtnV2 icon={aIcons.plus} primary>ใหม่</HeaderBtnV2>
+        </PageHeader>
+        <div style={{ marginTop: 20, background: adminTokens.surface, border: `1px dashed ${adminTokens.border}`,
+                      borderRadius: adminTokens.r3, padding: 60, textAlign: 'center' }}>
+          <div style={{ fontSize: 14, color: adminTokens.muted }}>
+            สร้างหน้านี้ได้เมื่อมีเนื้อหา — ชุด UI นี้เน้นที่ Dashboard / Schedule / Members
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function App() {
+    const [page, setPage] = useState(() => localStorage.getItem('moom-admin-page') || 'dashboard');
+    React.useEffect(() => { localStorage.setItem('moom-admin-page', page); }, [page]);
+    const meta = PAGE_META[page] || { crumb: page };
+    return (
+      <>
+        <ModernSidebar page={page} setPage={setPage}/>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: adminTokens.bg }}>
+          <ModernTopBar breadcrumb={meta.crumb}/>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {page === 'dashboard' && <Dashboard/>}
+            {page === 'schedule'  && <SchedulePage/>}
+            {page === 'members'   && <MembersPage/>}
+            {page === 'analytics' && <AnalyticsPageV2/>}
+            {page === 'gami' && <GamificationPageV2/>}
+            {page === 'packages' && <PackagesPageV2/>}
+            {page === 'finance' && <FinancePageV2/>}
+            {page === 'lobby' && <LobbyPageV2/>}
+            {page === 'promos' && <PromosPageV2/>}
+            {page === 'trainers' && <TrainersPageV2/>}
+            {page === 'leads' && <LeadsPageV2/>}
+            {page === 'branding' && <BrandingPage/>}
+            {page === 'classes' && <ClassesPage/>}
+            {page === 'categories' && <CategoriesPage/>}
+            {page === 'rooms' && <RoomsPage/>}
+            {page === 'programs' && <ProgramsPage/>}
+            {page === 'announcements' && <AnnouncementsPage/>}
+            {page === 'roles' && <RolesPage/>}
+            {page === 'branches' && <BranchesPage/>}
+            {page === 'activity' && <ActivityLogPage/>}
+            {page === 'settings' && <SettingsPage/>}
+            {!['dashboard','schedule','members','analytics','gami','packages','finance','lobby','promos','trainers','leads','branding','classes','categories','rooms','programs','announcements','roles','branches','activity','settings'].includes(page) && <GenericPage page={page}/>}
+          </div>
+        </div>
+      </>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

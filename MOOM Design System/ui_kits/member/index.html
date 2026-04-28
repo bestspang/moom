@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOOM Member — UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LINE+Seed+Sans+TH:wght@400;500;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;700&display=swap">
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:'LINE Seed Sans TH','IBM Plex Sans Thai',system-ui,sans-serif;
+    font-size:13px;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, hsl(25 95% 53% / 0.18), transparent 60%),
+      radial-gradient(900px 500px at 90% 110%, hsl(210 70% 55% / 0.15), transparent 60%),
+      linear-gradient(180deg, hsl(222 40% 10%), hsl(222 32% 16%));
+    color:hsl(220 20% 8%);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; gap:40px;
+  }
+  .stage{display:flex; flex-direction:column; align-items:center; gap:14px}
+  .phone{
+    width:390px; height:810px;
+    background:hsl(30 10% 98%);
+    border-radius:40px;
+    overflow:hidden; position:relative;
+    box-shadow:0 24px 60px rgba(0,0,0,.35), 0 0 0 8px hsl(220 20% 8%), 0 0 0 9px hsl(220 15% 20%);
+    display:flex; flex-direction:column;
+  }
+  .phone-body{flex:1; overflow-y:auto; overflow-x:hidden}
+  .phone-body::-webkit-scrollbar{width:0}
+  .caption{font-size:12px; color:hsl(30 8% 78%); font-weight:500}
+  @keyframes scan{0%,100%{top:15%}50%{top:85%}}
+  @keyframes flame-flicker{
+    0%,100%{transform:scaleY(1) scaleX(1) rotate(-1deg)}
+    25%{transform:scaleY(1.08) scaleX(0.96) rotate(1deg)}
+    50%{transform:scaleY(0.95) scaleX(1.04) rotate(-1deg)}
+    75%{transform:scaleY(1.05) scaleX(0.98) rotate(1deg)}
+  }
+  @keyframes pulse-dot{0%,100%{transform:scale(1);box-shadow:0 0 0 0 hsl(25 95% 53% / 0.6)}50%{transform:scale(1.15);box-shadow:0 0 0 6px hsl(25 95% 53% / 0)}}
+  @keyframes confetti{
+    0%  {transform:translateY(0) rotate(0);opacity:1}
+    100%{transform:translateY(500px) rotate(var(--rot));opacity:0}
+  }
+  button{font-family:inherit}
+
+  /* Tweaks panel */
+  .tweaks{
+    position:fixed; right:20px; top:20px; width:260px;
+    background:#fff; border:1px solid hsl(30 10% 89%); border-radius:14px;
+    padding:14px; z-index:50;
+    box-shadow:0 12px 32px rgba(0,0,0,.15);
+    display:none;
+  }
+  .tweaks.on{display:block}
+  .tweaks h3{margin:0 0 10px; font-size:13px; font-weight:800; color:hsl(220 20% 8%)}
+  .tweaks .row{display:flex; align-items:center; justify-content:space-between; margin:6px 0}
+  .tweaks label{font-size:11px; color:hsl(220 15% 25%); font-weight:600}
+  .tweaks button{
+    border:1px solid hsl(30 10% 89%); background:#fff; padding:3px 8px;
+    border-radius:9999px; font-size:10px; font-weight:700; cursor:pointer;
+  }
+  .tweaks button.on{background:hsl(25 95% 53%); color:#fff; border-color:hsl(25 95% 53%)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="Tokens.jsx"></script>
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="Gamify.jsx"></script>
+<script type="text/babel" src="Screens.jsx"></script>
+<script type="text/babel" src="HomeFun.jsx"></script>
+<script type="text/babel" src="Flows.jsx"></script>
+<script type="text/babel" src="ScreensV2.jsx"></script>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "uxVersion": "v2",
+    "homeVersion": "fun",
+    "mascot": true,
+    "mood": true,
+    "spin": true,
+    "friends": true,
+    "wellness": true,
+    "achievement": true,
+    "confetti": true
+  }/*EDITMODE-END*/;
+
+  function App() {
+    const [screen, setScreen]   = useState(() => localStorage.getItem('moom-member-screen') || 'home');
+    const [tier, setTier]       = useState(() => localStorage.getItem('moom-member-tier') || 'starter');
+    const [statusTier, setStatusTier] = useState(() => localStorage.getItem('moom-member-status') || 'bronze');
+    const [tweaks, setTweaks]   = useState(TWEAK_DEFAULTS);
+    const [editMode, setEditMode] = useState(false);
+
+    useEffect(() => { localStorage.setItem('moom-member-screen', screen); }, [screen]);
+    useEffect(() => { localStorage.setItem('moom-member-tier', tier); }, [tier]);
+    useEffect(() => { localStorage.setItem('moom-member-status', statusTier); }, [statusTier]);
+
+    useEffect(() => {
+      const onMsg = (e) => {
+        if (!e.data) return;
+        if (e.data.type === '__activate_edit_mode')   setEditMode(true);
+        if (e.data.type === '__deactivate_edit_mode') setEditMode(false);
+      };
+      window.addEventListener('message', onMsg);
+      window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      return () => window.removeEventListener('message', onMsg);
+    }, []);
+
+    const setTweak = (k, v) => {
+      setTweaks(t => {
+        const next = { ...t, [k]: v };
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+        return next;
+      });
+    };
+
+    return (
+      <div className="stage">
+        <div className="phone">
+          <TopBar name="KS" unread={1}/>
+          <div className="phone-body">
+            {screen === 'home' && tweaks.uxVersion === 'v2' && (
+              <HomeScreenV2 setScreen={setScreen} tier={tier} statusTier={statusTier}
+                            gamifyFeatures={tweaks}/>
+            )}
+            {screen === 'home' && tweaks.uxVersion !== 'v2' && tweaks.homeVersion === 'fun' && (
+              <HomeScreenFun setScreen={setScreen} tier={tier} statusTier={statusTier}
+                             gamifyFeatures={tweaks}/>
+            )}
+            {screen === 'home' && tweaks.uxVersion !== 'v2' && tweaks.homeVersion === 'classic' && (
+              <HomeScreen setScreen={setScreen} tier={tier} statusTier={statusTier}/>
+            )}
+            {screen === 'schedule' && tweaks.uxVersion === 'v2' && (
+              <ScheduleScreenV2 onOpenClass={() => setScreen('classDetail')}/>
+            )}
+            {screen === 'schedule' && tweaks.uxVersion !== 'v2' && (
+              <ScheduleScreen onOpenClass={() => setScreen('classDetail')}/>
+            )}
+            {screen === 'classDetail' && <ClassDetailScreen onBack={() => setScreen('schedule')}/>}
+            {screen === 'checkin'     && <CheckinFlow onDone={() => setScreen('home')}/>}
+            {screen === 'rewards' && tweaks.uxVersion === 'v2' && (
+              <RewardsScreenV2 statusTier={statusTier} onRedeem={() => setScreen('redeem')}/>
+            )}
+            {screen === 'rewards' && tweaks.uxVersion !== 'v2' && (
+              <RewardsScreen statusTier={statusTier} onRedeem={() => setScreen('redeem')}/>
+            )}
+            {screen === 'redeem'      && <RewardRedeemScreen onBack={() => setScreen('rewards')}/>}
+            {screen === 'profile' && tweaks.uxVersion === 'v2' && (
+              <ProfileScreenV2 tier={tier} setTier={setTier}
+                               statusTier={statusTier} setStatusTier={setStatusTier}/>
+            )}
+            {screen === 'profile' && tweaks.uxVersion !== 'v2' && (
+              <ProfileScreen tier={tier} setTier={setTier}
+                             statusTier={statusTier} setStatusTier={setStatusTier}/>
+            )}
+          </div>
+          <BottomNav screen={screen} onChange={setScreen}/>
+        </div>
+        <div className="caption">MOOM Member · Fun & Wellness · LINE Seed Sans TH</div>
+
+        {/* Tweaks */}
+        <div className={`tweaks ${editMode ? 'on' : ''}`}>
+          <h3>Tweaks</h3>
+          <div className="row">
+            <label>UX VERSION</label>
+            <div style={{display:'flex', gap:4}}>
+              {['v2','v1'].map(v => (
+                <button key={v} className={tweaks.uxVersion===v?'on':''}
+                        onClick={() => setTweak('uxVersion', v)}>{v}</button>
+              ))}
+            </div>
+          </div>
+          <div className="row">
+            <label>HOME (V1)</label>
+            <div style={{display:'flex', gap:4}}>
+              {['fun','classic'].map(v => (
+                <button key={v} className={tweaks.homeVersion===v?'on':''}
+                        onClick={() => setTweak('homeVersion', v)}>{v}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{height:1, background:'hsl(30 10% 89%)', margin:'10px 0'}}/>
+          <div style={{fontSize:9, fontWeight:800, color:'hsl(220 10% 46%)',
+                       letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6}}>
+            Gamify features
+          </div>
+          {[
+            ['mascot',     'Mascot (Moomu)'],
+            ['mood',       'Mood check-in'],
+            ['spin',       'Daily spin'],
+            ['friends',    'Friends activity'],
+            ['wellness',   'Wellness tip'],
+            ['achievement','Achievement teaser'],
+            ['confetti',   'Confetti on check-in'],
+          ].map(([k, label]) => (
+            <div className="row" key={k}>
+              <label>{label}</label>
+              <button className={tweaks[k]?'on':''} onClick={() => setTweak(k, !tweaks[k])}>
+                {tweaks[k] ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          ))}
+          <div style={{height:1, background:'hsl(30 10% 89%)', margin:'10px 0'}}/>
+          <div className="row">
+            <label>MOMENTUM TIER</label>
+          </div>
+          <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
+            {Object.keys(MOMENTUM_TIERS).map(t => (
+              <button key={t} className={tier===t?'on':''} onClick={() => setTier(t)}
+                      style={{textTransform:'capitalize'}}>{t}</button>
+            ))}
+          </div>
+          <div className="row" style={{marginTop:10}}>
+            <label>STATUS TIER</label>
+          </div>
+          <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
+            {Object.keys(STATUS_TIERS).map(t => (
+              <button key={t} className={statusTier===t?'on':''} onClick={() => setStatusTier(t)}>
+                {STATUS_TIERS[t].en}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

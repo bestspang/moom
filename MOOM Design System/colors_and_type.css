@@ -1,0 +1,228 @@
+/* MOOM Design System — Colors & Type
+ * Source of truth: github.com/bestspang/moom/src/index.css
+ * Fonts (per-surface):
+ *   Admin (desktop):  Anuphan — Cadson Demak, dashboard-grade
+ *   Member (LIFF):    LINE Seed Sans TH — LINE-native, gamified-friendly
+ *   Fallback:         IBM Plex Sans Thai (glyph coverage safety net)
+ * Loaded with &display=swap and preconnect to Google Fonts for fast paint.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=LINE+Seed+Sans+TH:wght@400;500;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ================================================================
+   * BRAND COLORS — MOOM orange, warm off-white system
+   * Source: github.com/bestspang/mmember/src/index.css (ground truth)
+   * ================================================================ */
+  --moom-orange:         hsl(25 95% 53%);   /* primary CTA, brand */
+  --moom-orange-hover:   hsl(25 95% 48%);
+  --moom-orange-soft:    hsl(25 95% 53% / 0.08);
+  --moom-black:          hsl(220 20% 8%);   /* logo black, body text — deep blue-black */
+  --moom-cream:          hsl(30 12% 93%);   /* secondary surface — warm off-white */
+  --moom-cream-deep:     hsl(30 10% 89%);   /* borders */
+  --moom-accent:         hsl(25 40% 95%);   /* tinted orange surface for cards */
+
+  /* ================================================================
+   * SEMANTIC — maps to shadcn/Tailwind tokens (HSL values, wrap w/ hsl())
+   * ================================================================ */
+  --primary:             25 95% 53%;
+  --primary-foreground:  0 0% 100%;
+  --primary-hover:       25 95% 48%;
+
+  /* Status family — matches repo --status-* */
+  --status-success:      152 55% 42%;
+  --status-warning:      38 92% 50%;
+  --status-info:         210 70% 55%;
+  --status-danger:       0 65% 52%;
+
+  /* Back-compat aliases */
+  --accent-teal:         152 55% 42%;
+  --accent-teal-light:   152 55% 92%;
+  --accent-teal-foreground: 0 0% 100%;
+  --destructive:         0 65% 52%;
+  --destructive-light:   0 65% 95%;
+  --destructive-foreground: 0 0% 100%;
+  --warning:             38 92% 50%;
+  --warning-light:       38 92% 92%;
+  --warning-foreground:  38 92% 20%;
+  --success:             152 55% 42%;
+  --success-light:       152 55% 92%;
+  --success-foreground:  0 0% 100%;
+
+  /* Surfaces — warm off-white, not pure white */
+  --background:          30 10% 98%;
+  --foreground:          220 20% 8%;
+  --card:                0 0% 100%;
+  --card-foreground:     220 20% 8%;
+  --muted:               30 8% 95%;
+  --muted-foreground:    220 10% 46%;
+  --secondary:           30 12% 93%;
+  --secondary-foreground: 220 20% 8%;
+  --accent:              25 40% 95%;
+  --accent-foreground:   25 80% 35%;
+  --border:              30 10% 89%;
+  --input:               30 10% 89%;
+  --ring:                25 95% 53%;
+
+  --surface-elevated:    0 0% 100%;
+  --surface-sunken:      30 12% 96%;
+
+  --sidebar-background:  220 20% 8%;        /* admin sidebar — dark */
+  --sidebar-foreground:  30 10% 95%;
+  --sidebar-border:      220 15% 16%;
+  --sidebar-accent:      25 40% 16%;
+  --sidebar-accent-foreground: 25 80% 65%;
+
+  /* Text scale */
+  --text-dark:           0 0% 20%;
+  --text-medium:         0 0% 40%;
+  --text-light:          0 0% 60%;
+
+  /* ================================================================
+   * GAMIFICATION — Momentum, Tiers, Rarity
+   * Momentum tier ladder: starter → regular → dedicated → elite → champion → legend
+   * (6 tiers, matches repo TIER_CONFIG)
+   * ================================================================ */
+  --momentum-flame:      25 95% 53%;
+  --momentum-flame-glow: 38 92% 50%;
+  --xp-bar:              25 95% 53%;
+  --xp-bar-glow:         32 95% 58%;
+
+  --tier-starter:        220 10% 60%;
+  --tier-regular:        25 80% 50%;
+  --tier-dedicated:      210 70% 55%;
+  --tier-elite:          280 65% 55%;
+  --tier-champion:       38 92% 50%;
+  --tier-legend:         45 93% 47%;
+
+  --rarity-common:       220 10% 60%;
+  --rarity-rare:         210 70% 55%;
+  --rarity-epic:         280 65% 55%;
+  --rarity-legendary:    45 93% 47%;
+
+  /* Status tier — separate reward-program ladder (Bronze → Black) */
+  --status-tier-bronze:   30 50% 45%;
+  --status-tier-silver:  210 10% 65%;
+  --status-tier-gold:     45 85% 50%;
+  --status-tier-platinum:200 15% 75%;
+  --status-tier-diamond: 195 80% 65%;
+  --status-tier-black:   220 20% 15%;
+
+  /* Dual-reward tokens — every action pays in XP (⚡) + RP coins (🎁) */
+  --reward-xp:           25 95% 53%;         /* same as primary — XP lives in flame family */
+  --reward-xp-soft:      25 95% 53% / 0.1;
+  --reward-rp:           38 92% 50%;         /* warm gold for Reward Points (coins) */
+  --reward-rp-soft:      38 92% 50% / 0.12;
+
+  --coach-rising:        220 10% 60%;
+  --coach-established:    25 80% 50%;
+  --coach-senior:        210 70% 55%;
+  --coach-master:        280 65% 55%;
+  --coach-elite:          45 93% 47%;
+
+  --partner-new:         220 10% 60%;
+  --partner-verified:     25 80% 50%;
+  --partner-preferred:   210 70% 55%;
+  --partner-premium:      45 93% 47%;
+
+  /* ================================================================
+   * RADIUS, SHADOWS, SPACING
+   * ================================================================ */
+  /* Radius — MOOM runs notably rounded. Base is 12px, not 8. */
+  --radius:              0.75rem;     /* 12px — base for cards / inputs */
+  --radius-sm:           0.5rem;      /*  8px — compact */
+  --radius-md:           0.625rem;    /* 10px */
+  --radius-lg:           0.75rem;     /* 12px */
+  --radius-xl:           1rem;        /* 16px — xl cards */
+  --radius-2xl:          1.25rem;     /* 20px — hero cards (momentum) */
+  --radius-badge:        9999px;      /* pill badges */
+  --radius-full:         9999px;
+
+  --shadow-sm:           0 1px 2px 0 hsl(220 20% 8% / 0.04);
+  --shadow-md:           0 2px 8px -2px hsl(220 20% 8% / 0.08);
+  --shadow-lg:           0 8px 24px -4px hsl(220 20% 8% / 0.12);
+  --shadow-soft:         0 1px 3px 0 hsl(220 20% 8% / 0.06);
+
+  /* Density: MOOM runs TIGHT. Base body text is 13px. */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  /* ================================================================
+   * TYPE
+   * ================================================================ */
+  /* Per-surface stacks — components should prefer these over --font-sans. */
+  --font-admin:   'Anuphan', 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+  --font-member:  'LINE Seed Sans TH', 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+
+  /* Generic fallback (marketing, shared surfaces, docs). */
+  --font-sans:    var(--font-admin);
+  --font-display: var(--font-admin);
+  --font-mono:    ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Scope helpers: add class .surface-admin / .surface-member on the root container. */
+
+  /* Scale — notably small. Body = 13px, not 16. */
+  --fs-xs:   10px;   /* micro labels, badges */
+  --fs-sm:   12px;   /* captions */
+  --fs-base: 13px;   /* body — DEFAULT */
+  --fs-md:   14px;   /* emphasized body */
+  --fs-lg:   16px;   /* card titles */
+  --fs-xl:   18px;   /* section titles */
+  --fs-2xl:  20px;   /* page titles */
+  --fs-3xl:  24px;   /* hero numbers */
+  --fs-4xl:  30px;   /* landing heroes */
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.3;
+  --lh-normal: 1.5;
+
+  --fw-normal:    400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+}
+
+.dark {
+  --background:         222.2 84% 4.9%;
+  --foreground:         210 40% 98%;
+  --card:               222.2 84% 4.9%;
+  --muted:              217.2 32.6% 17.5%;
+  --muted-foreground:   215 20.2% 65.1%;
+  --border:             217.2 32.6% 17.5%;
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-accent:     240 3.7% 15.9%;
+  --shadow-sm:          0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:          0 2px 8px rgba(0,0,0,0.4);
+  --shadow-lg:          0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* ================================================================
+ * SEMANTIC TYPE
+ * ================================================================ */
+.surface-admin  { font-family: var(--font-admin); }
+.surface-member { font-family: var(--font-member); }
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 { font: var(--fw-bold) var(--fs-3xl)/var(--lh-tight) var(--font-display); letter-spacing: -0.01em; }
+h2 { font: var(--fw-semibold) var(--fs-2xl)/var(--lh-tight) var(--font-display); letter-spacing: -0.005em; }
+h3 { font: var(--fw-semibold) var(--fs-xl)/var(--lh-snug) var(--font-display); }
+h4 { font: var(--fw-semibold) var(--fs-lg)/var(--lh-snug) var(--font-sans); }
+h5 { font: var(--fw-semibold) var(--fs-md)/var(--lh-snug) var(--font-sans); }
+h6 { font: var(--fw-semibold) var(--fs-base)/var(--lh-snug) var(--font-sans); text-transform: uppercase; letter-spacing: 0.04em; }
+
+p     { font-size: var(--fs-base); line-height: var(--lh-normal); }
+small { font-size: var(--fs-sm); color: hsl(var(--muted-foreground)); }
+code  { font-family: var(--font-mono); font-size: var(--fs-sm); background: hsl(var(--muted)); padding: 1px 6px; border-radius: var(--radius-sm); }
+
+.text-display  { font: var(--fw-bold) var(--fs-4xl)/var(--lh-tight) var(--font-display); letter-spacing: -0.015em; }
+.text-kpi      { font: var(--fw-bold) var(--fs-3xl)/1 var(--font-sans); font-variant-numeric: tabular-nums; }
+.text-eyebrow  { font: var(--fw-semibold) var(--fs-xs)/1 var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: hsl(var(--muted-foreground)); }
+.text-muted    { color: hsl(var(--muted-foreground)); }

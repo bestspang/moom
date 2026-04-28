@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOOM · Font Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&family=Anuphan:wght@300;400;500;600;700&family=Bai+Jamjuree:wght@300;400;500;600;700&family=LINE+Seed+Sans+TH:wght@400;500;700;800&family=Prompt:wght@300;400;500;600;700;800&family=Kanit:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:hsl(36 33% 94%);color:hsl(0 0% 15%);padding:32px;
+       -webkit-font-smoothing:antialiased;font-family:'IBM Plex Sans Thai',sans-serif}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1.t{font-size:28px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{font-size:13px;color:hsl(0 0% 40%);margin-bottom:28px;max-width:640px;line-height:1.55}
+  .card{background:#fff;border:1px solid hsl(0 0% 88%);border-radius:12px;padding:22px;
+        box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:14px}
+  .card.recommend{border-left:4px solid hsl(32 100% 50%)}
+  .meta{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .name{font-size:18px;font-weight:700}
+  .tag{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+       padding:3px 8px;border-radius:9999px}
+  .tag.rec{background:hsl(32 100% 50%);color:#fff}
+  .tag.cur{background:hsl(168 75% 43%);color:#fff}
+  .tag.alt{background:hsl(210 20% 92%);color:hsl(0 0% 30%)}
+  .notes{font-size:12px;color:hsl(0 0% 40%);line-height:1.55;margin:8px 0 14px}
+  .notes b{color:hsl(0 0% 15%)}
+  .spec{border-top:1px dashed hsl(0 0% 88%);padding-top:14px}
+  .row{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:baseline;padding:4px 0}
+  .row .l{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:hsl(0 0% 55%)}
+  .kpi{font-weight:700;font-variant-numeric:tabular-nums}
+  .eyebrow{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:hsl(0 0% 45%)}
+  .chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;
+        background:hsl(210 20% 96%);color:hsl(0 0% 30%);margin-right:4px;margin-bottom:4px}
+  .swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
+  .sw{text-align:center;font-size:10px;color:hsl(0 0% 45%)}
+  .sw .n{font-size:26px;line-height:1;margin-bottom:2px}
+  .bi{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bi b{display:block;font-size:10px;color:hsl(0 0% 45%);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+  h2.sec{font-size:14px;font-weight:700;margin:32px 0 10px;color:hsl(0 0% 30%);text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1 class="t">Font Exploration for MOOM</h1>
+<p class="sub">Alternatives to the current IBM Plex Sans Thai + Inter pairing. All free on Google Fonts, all with strong Thai coverage, tabular numerals, and weights 300–700+. Each specimen shows TH, EN, a KPI number, and the micro-eyebrow label at real MOOM scale (13px base).</p>
+
+<h2 class="sec">Current</h2>
+
+<div class="card" style="font-family:'IBM Plex Sans Thai','Inter',sans-serif">
+  <div class="meta">
+    <div class="name">IBM Plex Sans Thai + Inter</div>
+    <span class="tag cur">Current</span>
+    <span class="chip">Modern tech</span><span class="chip">Bilingual pair</span><span class="chip">Mono-ish</span>
+  </div>
+  <div class="notes">The current choice. <b>Strong:</b> warm, technical, legible at 13px. Thai is cleanly designed, Latin (Inter) is a modern default. <b>Weak:</b> the TH + Latin metrics don't always align — Plex Thai runs slightly taller than Inter; tabular numerals differ between the two families. Inter is extremely overused in the tech/SaaS space.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:700;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส สตูดิโอ และเทรนเนอร์</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+    <div class="row"><span class="l">Eyebrow</span><span class="eyebrow">REVENUE TODAY · สมาชิกใหม่ · STATUS TIER</span></div>
+  </div>
+</div>
+
+<h2 class="sec">Top recommendations</h2>
+
+<div class="card recommend" style="font-family:'LINE Seed Sans TH',sans-serif">
+  <div class="meta">
+    <div class="name">LINE Seed Sans Thai</div>
+    <span class="tag rec">★ Strongest fit</span>
+    <span class="chip">LINE-native</span><span class="chip">Friendly</span><span class="chip">Free commercial</span>
+  </div>
+  <div class="notes">Designed by LINE specifically for their ecosystem. <b>Why it fits MOOM:</b> the member app is a LINE LIFF mini-app — the app already lives inside LINE on every Thai user's phone. Using LINE Seed makes the product feel native on the platform. Rounded terminals add warmth to the gamified member surface without becoming childish. Thai and Latin glyphs are drawn as one family with identical metrics. Weights 400/500/700/800 — fewer than Plex but all you need. Works at tight 13px.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:800;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:700">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส สตูดิโอ และเทรนเนอร์</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+    <div class="row"><span class="l">Eyebrow</span><span class="eyebrow">REVENUE TODAY · สมาชิกใหม่ · STATUS TIER</span></div>
+  </div>
+</div>
+
+<div class="card recommend" style="font-family:'Anuphan',sans-serif">
+  <div class="meta">
+    <div class="name">Anuphan</div>
+    <span class="tag rec">★ Upgrade pick</span>
+    <span class="chip">Cadson Demak</span><span class="chip">Dashboard-grade</span><span class="chip">Single family</span>
+  </div>
+  <div class="notes">From Cadson Demak — Thailand's top type foundry. <b>Why it fits MOOM:</b> single family covers TH + Latin with genuinely matched metrics, weights 100–800. Calm, modern, professional — nails the admin dashboard register without feeling corporate. Thai is contemporary (not traditional loop-terminal style), Latin is clean and neutral. <b>One family to replace two.</b> This is the quiet upgrade — it won't announce itself but everything will feel more resolved.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:700;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส สตูดิโอ และเทรนเนอร์</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+    <div class="row"><span class="l">Eyebrow</span><span class="eyebrow">REVENUE TODAY · สมาชิกใหม่ · STATUS TIER</span></div>
+  </div>
+</div>
+
+<div class="card recommend" style="font-family:'Bai Jamjuree',sans-serif">
+  <div class="meta">
+    <div class="name">Bai Jamjuree</div>
+    <span class="tag rec">★ Distinctive</span>
+    <span class="chip">Warm geometric</span><span class="chip">Bold brand voice</span>
+  </div>
+  <div class="notes">Also from Cadson Demak. <b>Why it fits MOOM:</b> more personality than Anuphan — slight humanist warmth in the Latin, confident Thai. If the brand wants to sound a little more alive (the gamified side of MOOM), this carries that energy without becoming a display font. Excellent at both KPI sizes and 13px body. Single TH+Latin family.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:700;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส สตูดิโอ และเทรนเนอร์</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+    <div class="row"><span class="l">Eyebrow</span><span class="eyebrow">REVENUE TODAY · สมาชิกใหม่ · STATUS TIER</span></div>
+  </div>
+</div>
+
+<h2 class="sec">Solid alternatives</h2>
+
+<div class="card" style="font-family:'Noto Sans Thai',sans-serif">
+  <div class="meta">
+    <div class="name">Noto Sans Thai</div>
+    <span class="tag alt">Safe default</span>
+    <span class="chip">Google · universal</span>
+  </div>
+  <div class="notes">Google's own Thai font, widely deployed. <b>Strong:</b> rock-solid legibility, 9 weights, ubiquitous caching so it loads fast almost everywhere. <b>Weak:</b> very neutral — no brand voice. Best as a fallback, not a hero.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส สตูดิโอ</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+  </div>
+</div>
+
+<div class="card" style="font-family:'Sarabun',sans-serif">
+  <div class="meta">
+    <div class="name">Sarabun</div>
+    <span class="tag alt">Thai-first</span>
+    <span class="chip">Gov-trusted</span><span class="chip">Narrow Latin</span>
+  </div>
+  <div class="notes">The Thai government's official font. <b>Strong:</b> beautifully drawn loop-terminal Thai, feels traditionally correct. <b>Weak:</b> Latin is narrower and feels like a companion, not an equal. Use if Thai audience is primary and the brand wants to feel rooted in Thailand.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Body</span><span style="font-size:13px">MOOM — all-in-one fitness management · ระบบจัดการครบวงจรสำหรับฟิตเนส</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+  </div>
+</div>
+
+<div class="card" style="font-family:'Prompt',sans-serif">
+  <div class="meta">
+    <div class="name">Prompt</div>
+    <span class="tag alt">Bold display</span>
+    <span class="chip">Geometric</span><span class="chip">Attention-grabby</span>
+  </div>
+  <div class="notes">Very popular in Thai UI right now. <b>Strong:</b> strong geometric construction, reads as confident and modern. <b>Weak:</b> a little impersonal; at 13px body it can feel stiff. Consider using it only for headings while keeping body text in a warmer companion (e.g. Anuphan).</div>
+  <div class="spec">
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:700;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+  </div>
+</div>
+
+<div class="card" style="font-family:'Kanit',sans-serif">
+  <div class="meta">
+    <div class="name">Kanit</div>
+    <span class="tag alt">Sporty display</span>
+    <span class="chip">Condensed-ish</span><span class="chip">Energetic</span>
+  </div>
+  <div class="notes">Very popular across Thai fitness/sports brands. <b>Strong:</b> muscular, kinetic, feels like workout gear. <b>Weak:</b> that same energy makes it tiring at body-text sizes — it wants to shout. Use for the gamified member surface's big numbers + tier labels, not the admin's dense tables.</div>
+  <div class="spec">
+    <div class="row"><span class="l">Thai</span><span style="font-size:20px;font-weight:600">ฟิตเนสที่จัดการได้ในมือเดียว</span></div>
+    <div class="row"><span class="l">Hero</span><span style="font-size:30px;font-weight:700;letter-spacing:-.015em">Your gym, gamified.</span></div>
+    <div class="row"><span class="l">KPI</span><span class="kpi" style="font-size:26px">฿128,400 · Lv 7 · 2,840 XP</span></div>
+  </div>
+</div>
+
+<h2 class="sec">Side-by-side · the KPI numeral</h2>
+<p class="sub" style="margin-bottom:10px">Where MOOM shows off — dashboard tiles, XP counters, finance. Watch the tabular alignment + numeral personality.</p>
+<div class="card" style="padding:24px">
+  <div class="swatches">
+    <div class="sw"><div class="n" style="font-family:'IBM Plex Sans Thai',sans-serif;font-weight:700">฿128,400</div>Plex (current)</div>
+    <div class="sw"><div class="n" style="font-family:'LINE Seed Sans TH',sans-serif;font-weight:800">฿128,400</div>LINE Seed</div>
+    <div class="sw"><div class="n" style="font-family:'Anuphan',sans-serif;font-weight:700">฿128,400</div>Anuphan</div>
+    <div class="sw"><div class="n" style="font-family:'Bai Jamjuree',sans-serif;font-weight:700">฿128,400</div>Bai Jamjuree</div>
+    <div class="sw"><div class="n" style="font-family:'Kanit',sans-serif;font-weight:700">฿128,400</div>Kanit</div>
+  </div>
+</div>
+
+<h2 class="sec">Recommendation</h2>
+<div class="card" style="font-family:'Anuphan',sans-serif">
+  <div style="font-size:16px;font-weight:600;margin-bottom:8px">Pick one of two paths:</div>
+  <div style="font-size:13px;line-height:1.6;color:hsl(0 0% 30%)">
+    <p><b style="color:hsl(0 0% 15%)">A · Replace both with Anuphan.</b> One family, matched metrics, dashboard-grade, Thai foundry. This is the highest-quality baseline with the fewest moving parts. Use weights 400/500/600/700. Keep the 13px body scale.</p>
+    <p><b style="color:hsl(0 0% 15%)">B · Split by surface: LINE Seed on member app, Anuphan on admin.</b> The member app becomes platform-native inside LINE, the admin stays calm and data-forward. Ship both by routing font-family at the app-shell level. Slightly more ops, much stronger brand story.</p>
+    <p style="margin-top:14px;color:hsl(0 0% 45%)">Keep IBM Plex Sans Thai as a fallback after either — the glyph compatibility is a safety net.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
