@@ -89,17 +89,18 @@ const Schedule = () => {
         ) : undefined}
       />
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      {/* DS toolbar card — date + search */}
+      <div className="mb-4 rounded-xl border border-border bg-card shadow-sm p-3 flex flex-col md:flex-row md:items-center gap-3">
         <DatePicker date={selectedDate} onChange={setSelectedDate} />
         <SearchBar
           placeholder={t('schedule.searchPlaceholder')}
           value={searchQuery}
           onChange={setSearchQuery}
-          className="md:max-w-xs"
+          className="md:max-w-xs md:ml-auto"
         />
       </div>
 
-      {/* Stats */}
+      {/* Stats — DS KPI chip variant */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {statsLoading ? (
           <>
@@ -111,24 +112,28 @@ const Schedule = () => {
         ) : (
           <>
             <StatCard
+              variant="ds-chip"
               title={t('schedule.classes')}
               value={stats?.classesCount || 0}
               comparison={{ value: stats?.classesCountDiff || 0, label: t('dashboard.comparedToYesterday') }}
               color="teal"
             />
             <StatCard
+              variant="ds-chip"
               title={t('schedule.personalTraining')}
               value={stats?.ptCount || 0}
               comparison={{ value: stats?.ptCountDiff || 0 }}
               color="orange"
             />
             <StatCard
+              variant="ds-chip"
               title={t('schedule.avgCapacity')}
               value={`${stats?.avgCapacity || 0}%`}
               comparison={{ value: stats?.avgCapacityDiff || 0 }}
               color="blue"
             />
             <StatCard
+              variant="ds-chip"
               title={t('schedule.cancellations')}
               value={stats?.cancellations || 0}
               comparison={{ value: stats?.cancellationsDiff || 0 }}
