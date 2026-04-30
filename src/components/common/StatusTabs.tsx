@@ -14,28 +14,13 @@ interface StatusTabsProps {
   onChange: (key: string) => void;
 }
 
+/**
+ * DS-aligned segmented chip group (mirrors MOOM Admin UI Kit toolbar chips).
+ * Active = white surface on tinted track + bold weight + count badge in primary tint.
+ */
 export const StatusTabs = ({ tabs, activeTab, onChange }: StatusTabsProps) => {
-  const getColorClasses = (color: StatusTab['color'], isActive: boolean) => {
-    if (isActive) {
-      return 'bg-primary text-primary-foreground';
-    }
-
-    switch (color) {
-      case 'teal':
-        return 'text-accent-teal';
-      case 'orange':
-        return 'text-primary';
-      case 'red':
-        return 'text-destructive';
-      case 'gray':
-        return 'text-muted-foreground';
-      default:
-        return 'text-foreground';
-    }
-  };
-
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
+    <div className="inline-flex flex-wrap gap-1 p-1 mb-4 rounded-xl bg-muted/60 border border-border">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
         return (
@@ -43,13 +28,23 @@ export const StatusTabs = ({ tabs, activeTab, onChange }: StatusTabsProps) => {
             key={tab.key}
             onClick={() => onChange(tab.key)}
             className={cn(
-              'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
-              'border border-border hover:bg-accent',
-              isActive && 'border-primary',
-              getColorClasses(tab.color, isActive)
+              'inline-flex items-center gap-2 h-8 px-3 rounded-lg text-xs font-bold transition-all',
+              isActive
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            {tab.label} ({tab.count})
+            <span>{tab.label}</span>
+            <span
+              className={cn(
+                'inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full text-[10px] font-extrabold tabular-nums',
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-border/60 text-muted-foreground'
+              )}
+            >
+              {tab.count}
+            </span>
           </button>
         );
       })}
