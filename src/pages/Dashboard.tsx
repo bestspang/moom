@@ -130,11 +130,12 @@ const Dashboard = () => {
         ) : (
           <>
             <StatCard
+              variant="ds-chip"
               title={t('dashboard.allCheckinsToday')}
               value={stats?.checkinsToday || 0}
               subtitle={t('dashboardExtra.mainLocation')}
               color="teal"
-              icon={<DoorOpen className="h-5 w-5" />}
+              icon={<DoorOpen className="h-4 w-4" />}
               trend={trends?.checkins7d}
               comparison={
                 checkinVsLastWeek !== undefined
@@ -144,27 +145,30 @@ const Dashboard = () => {
               onClick={() => navigate('/lobby')}
             />
             <StatCard
+              variant="ds-chip"
               title={t('dashboard.currentlyInClass')}
               value={stats?.currentlyInClass || 0}
               subtitle={t('dashboardExtra.attendees')}
               color="orange"
-              icon={<Dumbbell className="h-5 w-5" />}
+              icon={<Dumbbell className="h-4 w-4" />}
               onClick={() => navigate('/calendar')}
             />
             <StatCard
+              variant="ds-chip"
               title={t('dashboard.classesScheduledToday')}
               value={stats?.classesToday || 0}
               color="blue"
-              icon={<CalendarCheck className="h-5 w-5" />}
+              icon={<CalendarCheck className="h-4 w-4" />}
               trend={trends?.classes7d}
               onClick={() => navigate('/calendar')}
             />
             {can('finance', 'read') && (
               <StatCard
+                variant="ds-chip"
                 title={t('dashboardExtra.revenueToday')}
                 value={formatCurrency(stats?.todayRevenue || 0)}
                 color="magenta"
-                icon={<Banknote className="h-5 w-5" />}
+                icon={<Banknote className="h-4 w-4" />}
                 comparison={
                   revenueVsLastWeek !== undefined
                     ? { value: revenueVsLastWeek, label: `vs ${lastDayName}` }
@@ -174,11 +178,12 @@ const Dashboard = () => {
               />
             )}
             <StatCard
+              variant="ds-chip"
               title={t('dashboardExtra.activeMembers')}
               value={stats?.activeMembers || 0}
               subtitle={t('dashboardExtra.members')}
               color="blue"
-              icon={<Users className="h-5 w-5" />}
+              icon={<Users className="h-4 w-4" />}
               onClick={() => navigate('/members')}
             />
           </>
