@@ -23,3 +23,9 @@ export { getCategoryVisual } from './CategoryIcon';
 
 export { applyBrandTokens, readBrandToken } from './BrandTokens';
 export type { BrandToken, BrandTokenValues } from './BrandTokens';
+
+export { LivePulseCard } from './LivePulseCard';
+export type { LivePulseCardProps } from './LivePulseCard';
+
+export { RevenueAreaChart } from './RevenueAreaChart';
+export type { RevenueAreaChartProps, RevenueRange } from './RevenueAreaChart';
