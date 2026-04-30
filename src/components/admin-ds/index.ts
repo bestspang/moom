@@ -10,4 +10,16 @@ export type { AdminKpiCardProps, AdminKpiAccent } from './AdminKpiCard';
 export { AdminCard } from './AdminCard';
 export type { AdminCardProps } from './AdminCard';
 
+export { AdminToolbar } from './AdminToolbar';
+export type { AdminToolbarProps } from './AdminToolbar';
+
+export { AdminStatusDot } from './AdminStatusDot';
+export type { AdminStatusDotProps, AdminStatusTone } from './AdminStatusDot';
+
+export { AdminAvatar } from './AdminAvatar';
+export type { AdminAvatarProps } from './AdminAvatar';
+
 export { getCategoryVisual } from './CategoryIcon';
+
+export { applyBrandTokens, readBrandToken } from './BrandTokens';
+export type { BrandToken, BrandTokenValues } from './BrandTokens';
