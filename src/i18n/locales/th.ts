@@ -104,6 +104,13 @@ export default {
     people: 'บุคคล',
     business: 'ธุรกิจ',
     gamification: 'Gamification',
+    home: 'หน้าหลัก',
+    gym: 'ยิม',
+    comms: 'สื่อสาร',
+    org: 'องค์กร',
+    settingsGroup: 'ตั้งค่า',
+    trainers: 'เทรนเนอร์',
+    branding: 'แบรนด์ยิม',
   },
 
   // Roadmap

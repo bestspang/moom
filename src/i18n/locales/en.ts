@@ -104,6 +104,13 @@ export default {
     people: 'People',
     business: 'Business',
     gamification: 'Gamification',
+    home: 'Home',
+    gym: 'Gym',
+    comms: 'Comms',
+    org: 'Organization',
+    settingsGroup: 'Settings',
+    trainers: 'Trainers',
+    branding: 'Gym Branding',
   },
 
   // Roadmap

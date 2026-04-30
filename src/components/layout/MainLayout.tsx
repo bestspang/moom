@@ -32,7 +32,7 @@ const MainLayoutInner = () => {
         id="main-content"
         className={cn(
           'pt-14 min-h-screen transition-[padding] duration-200 ease-out motion-reduce:transition-none',
-          collapsed ? 'lg:pl-[68px]' : 'lg:pl-[220px]',
+          collapsed ? 'lg:pl-[68px]' : 'lg:pl-[252px]',
         )}
       >
         <div
