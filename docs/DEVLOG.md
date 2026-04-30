@@ -1,6 +1,31 @@
 # Development Log — MOOM Fitness Platform
 
 ---
+## 2026-04-30 — Admin UI alignment with MOOM Design System (Phase 3)
+
+**Goal:** Visually align admin pages with `MOOM Design System/ui_kits/admin/*` (Theme.jsx + Components.jsx). Logic, hooks, RLS, routes, realtime, and i18n untouched.
+
+**Changes (visual only):**
+- `src/index.css` — Scoped DS slate palette under `.surface-admin` only (page bg `220 20% 98%`, borders `220 16% 90%`, muted `220 10% 46%`, foreground `222 28% 12%`). Member/Trainer/Staff surfaces unaffected.
+- `src/components/common/PageHeader.tsx` — Upgraded to DS sizing (22px / extrabold / tracking-tight title + 13px muted subtitle, right action slot). Added `subtitle` prop; `updatedAt` kept for back-compat. **Single change auto-restyles 30+ admin pages** (Lobby, Finance, Members, Leads, Schedule, Packages, Promotions, Insights, Analytics, Reports, Classes, ClassCategories, Rooms, WorkoutList, Staff, Announcements, Settings, Locations, Roles, ActivityLog, TransferSlips, Notifications, Profile, MemberDetails, StaffDetails, ClassDetails, PromotionDetails, RoomDetails, ClassCategoryDetails, RoleEditor, CreateClass, CreatePackage, CreatePromotion).
+- `src/components/dashboard/DashboardWelcome.tsx` — Hero title bumped to DS `text-[26px]` extrabold + 13px subtitle.
+- `src/pages/PackageDetails.tsx` — Inline `<h1>` aligned to DS sizing.
+- **New** `src/components/admin-ds/` — Opt-in DS wrappers for future admin layouts: `AdminPageHeader`, `AdminSectionHeader`, `AdminKpiCard` (DS `KpiCardV2` parity: tinted icon chip + delta pill + 28px tabular value), `AdminCard`. No existing page replaced; available for incremental adoption.
+
+**DS screens deferred (no current admin page; documented for future work, NOT created as empty pages per user instruction):**
+- DS `Branding.jsx` — dedicated branding workspace; current Settings has no equivalent section yet.
+- DS `Programs.jsx` — programs/training-program shell distinct from `WorkoutList`.
+- DS `GamificationB.jsx` — alternate gamification dashboard variant; existing `gamification/*` pages keep current structure.
+
+**Preserved (zero regression):**
+- All `useQuery`/`useMutation` hooks, `logActivity()` calls, permission gates, dialogs, table columns, row actions, badges, empty states, skeletons, route links, realtime subscriptions, i18n keys.
+- Dark mode (DS scope only re-declares light tokens; `.dark .surface-admin` keeps existing dark palette).
+- shadcn `ui/*` primitives untouched. `AuthContext`, `hostname.ts`, `App.tsx` route table, `useRealtimeSync` untouched. No DB / RLS / edge-function changes. No new dependencies.
+
+**Smoke checklist (manual):** Dashboard renders, KPI strip + Goal/Health/Forecast/Schedule/Activity/Briefing rows intact · Members table sort/search · Lobby check-in dialog · Finance transactions + slip review · Leads pipeline · Settings tabs.
+
+---
+
 
 ## 2026-04-28 — Member Home V2 visual refresh (mockup parity)
 
