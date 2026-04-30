@@ -6,15 +6,16 @@ import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { cn } from '@/lib/utils';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { SidebarCollapseProvider, useSidebarCollapse } from './sidebar/useSidebarCollapse';
 
-export const MainLayout = () => {
+const MainLayoutInner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useRealtimeSync();
   const location = useLocation();
+  const { collapsed } = useSidebarCollapse();
 
   return (
     <div className="surface-admin min-h-screen bg-background">
-      {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
@@ -30,8 +31,8 @@ export const MainLayout = () => {
       <main
         id="main-content"
         className={cn(
-          'pt-14 min-h-screen transition-all duration-300',
-          'lg:pl-[200px]'
+          'pt-14 min-h-screen transition-[padding] duration-200 ease-out motion-reduce:transition-none',
+          collapsed ? 'lg:pl-[68px]' : 'lg:pl-[220px]',
         )}
       >
         <div
@@ -46,3 +47,9 @@ export const MainLayout = () => {
     </div>
   );
 };
+
+export const MainLayout = () => (
+  <SidebarCollapseProvider>
+    <MainLayoutInner />
+  </SidebarCollapseProvider>
+);

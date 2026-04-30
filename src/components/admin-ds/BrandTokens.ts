@@ -21,7 +21,12 @@ export type BrandToken =
   | '--accent-foreground'
   | '--radius'
   | '--shadow-md'
-  | '--font-admin';
+  | '--font-admin'
+  | '--sidebar-background'
+  | '--sidebar-foreground'
+  | '--sidebar-accent'
+  | '--sidebar-accent-foreground'
+  | '--sidebar-subtle';
 
 export type BrandTokenValues = Partial<Record<BrandToken, string>>;
 
