@@ -88,40 +88,27 @@ const Lobby = () => {
         breadcrumbs={[{ label: t('lobby.title') }]}
       />
 
-      {/* Filters — stack on mobile */}
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <DatePicker
-            date={selectedDate}
-            onChange={setSelectedDate}
-            showNavigation={false}
-          />
-          <SearchBar
-            placeholder={t('lobby.searchPlaceholder')}
-            value={search}
-            onChange={setSearch}
-            className="flex-1 max-w-md"
-          />
-        </div>
+      {/* DS toolbar card — date + search + actions */}
+      <div className="mb-6 rounded-xl border border-border bg-card shadow-sm p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+        <DatePicker
+          date={selectedDate}
+          onChange={setSelectedDate}
+          showNavigation={false}
+        />
+        <SearchBar
+          placeholder={t('lobby.searchPlaceholder')}
+          value={search}
+          onChange={setSearch}
+          className="flex-1 min-w-[200px] max-w-md"
+        />
         {can('lobby', 'write') && (
-          <div className="flex items-center gap-2 sm:hidden">
-            <Button variant="outline" className="flex-1" onClick={() => setQrDialogOpen(true)}>
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
               <QrCode className="h-4 w-4 mr-1" />
               {t('lobby.qrCode')}
             </Button>
-            <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
+            <Button size="sm" className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              {t('lobby.checkIn')}
-            </Button>
-          </div>
-        )}
-        {can('lobby', 'write') && (
-          <div className="hidden sm:flex sm:items-center sm:gap-2 sm:self-end sm:-mt-[52px]">
-            <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
-              <QrCode className="h-4 w-4 mr-1" />
-              {t('lobby.qrCode')}
-            </Button>
-            <Button className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
               {t('lobby.checkIn')}
             </Button>
           </div>

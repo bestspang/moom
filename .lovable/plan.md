@@ -1,88 +1,173 @@
-# Admin DS Motion + Per-Page Parity (Phase 4)
+## 1. System analysis
 
-## Goal
-Continue admin DS alignment by porting **motion/animation tokens** จาก DS และตรวจหน้าทีละหน้าให้ตรงกับ DS โดยไม่แตะ logic/hooks/RLS/i18n
+- Current Phase 3/4 changes were mostly global tokens/shared components: `surface-admin`, `PageHeader`, `StatCard` `ds-chip`, and motion utilities.
+- That is why many admin pages still look almost unchanged: most existing pages render their own layout using `DataTable`, filters, tabs, cards, and page-specific markup, so global typography/color tweaks are not enough to visibly match `MOOM Design System/MOOM Admin UI Kit.html`.
+- The actual design kit has page-specific patterns in `MOOM Design System/ui_kits/admin/*.jsx`: sidebar/top header, KPI strips, toolbar cards, table/card shells, live indicators, tab/chip controls, and compact section cards.
+- Existing admin pages must be updated in place. I will not replace a page with the mock UI or dummy data.
 
-## What I found in DS
-DS ใช้ animations ชุดเล็กๆ ซ้ำกันทั่วทั้ง 17+ หน้า:
-- `admin-pulse` (1.6s ease-in-out infinite) — live indicators ใน Lobby/Schedule/Modern/Promos/Branding/Announcements
-- `admin-fade` (0.18s) — modal/sheet backdrop
-- `admin-slide-in` (0.22s cubic-bezier) — side sheets ใน Schedule/Announcements/ClassesMain/Programs/Rooms
-- `admin-pop` — modal pop-in
-- KPI hover lift (`translateY(-1px)` + shadow ลึกขึ้น) — มีใน wrapper `AdminKpiCard` แล้ว แต่ `StatCard` (ที่หน้า admin ใช้จริง) ยังไม่มี
+## 2. Problem list
 
-## Changes I will make
+1. Layout chrome still differs from DS
+   - `MainLayout`, `Sidebar`, `Header` still keep older sizing/spacing behavior in key places.
+   - DS expects 220px warm sidebar, compact 60px top header, orange icon emphasis, soft card shells, max-width admin canvas.
 
-### 1. `src/index.css` — เพิ่ม DS motion keyframes (additive, ไม่ลบของเดิม)
-```css
-@keyframes admin-pulse  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
-@keyframes admin-fade   { from{opacity:0} to{opacity:1} }
-@keyframes admin-slide-in { from{transform:translateX(100%)} to{transform:translateX(0)} }
-@keyframes admin-pop    { from{opacity:0;transform:translate(-50%,-48%) scale(.96)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-.animate-admin-pulse / .animate-admin-fade / .animate-admin-slide-in / .animate-admin-pop
-```
-+ `prefers-reduced-motion` guard
+2. Shared table/card primitives are still old
+   - `DataTable` still uses dark header rows (`bg-table-header`), while DS tables use white cards, light header background, 10px uppercase table labels, subtle row hover.
+   - This affects Members, Lobby, Packages, Finance sub-tables, Staff, Roles, Locations, Activity Log, etc.
 
-### 2. `src/components/common/StatCard.tsx` — DS KpiCardV2 parity (scoped to admin)
-ปัจจุบัน StatCard ใช้ `border-l-4` (DS เก่า). DS ใหม่ใน `Theme.jsx` (KpiCardV2) ใช้:
-- ไม่มี left bar — ใช้ tinted icon chip มุมซ้ายบนแทน
-- delta pill มุมขวาบน (success/destructive bg)
-- 28px tabular-nums value
-- hover lift `-translate-y-px` + shadow
-- soft border + rounded-xl
+3. Page-specific visual parity is incomplete
+   - Dashboard KPI got updated, but Lobby, Schedule, Packages, Finance, Leads, Analytics/Insights, Staff, Settings-like pages still need their DS wrappers/toolbars/KPI strips applied around existing data.
 
-**Approach (zero risk):** เพิ่ม CSS rules ใต้ `.surface-admin .stat-card-ds` หรือ ปรับ `StatCard` ให้ใช้ tinted-chip layout เมื่อมี `icon` prop **เฉพาะใน admin surface** (detect ผ่าน CSS scope)
-- ทาง CSS-only: เพิ่ม `.surface-admin [data-stat-card] { ... hover lift ... }`
-- ทาง TSX: เพิ่ม optional `variant?: 'default' | 'ds-chip'` prop, default คงเดิม → ไม่กระทบ member/trainer/staff
-จะใช้แบบ TSX variant prop (ปลอดภัยกว่า, ชัดเจน)
+4. Motion exists but is barely visible
+   - Admin motion utilities were added, but not applied to real live indicators, drawer/dialog entry shells, table rows, or page sections where DS uses restrained transitions.
 
-จากนั้นใน `src/pages/Dashboard.tsx` (5 KPIs) เพิ่ม `variant="ds-chip"` ให้ทั้ง 5 ใบ
+5. Existing console warning should be handled carefully
+   - There is a browser warning from `DailyBriefingCard`/`Skeleton` receiving refs. Because `src/components/ui/*` is protected, I will avoid editing shadcn primitives unless explicitly necessary; I can first try a local safe wrapper/markup fix in `DailyBriefingCard`.
 
-### 3. Live indicators ใน Dashboard — ใช้ `.animate-admin-pulse`
-ตรวจ:
-- `LiveActivityFeed`, `RecentActivityFeed` — ถ้ามี dot status ให้เปลี่ยนเป็น admin-pulse
-- `Lobby.tsx` — สมาชิกที่อยู่ในยิม dot status
-- `Schedule.tsx` — คลาสที่กำลังจัด dot status
-ตรวจก่อนแก้ ถ้าไม่มี dot ก็ข้าม
+## 3. Design
 
-### 4. Per-page audit (ทีละหน้า, อ่านก่อนแก้)
-สำหรับแต่ละหน้าที่ map กับ DS — เปิดไฟล์ DS อ่านโครง, เปิดหน้าปัจจุบัน, แก้เฉพาะ visual elements ที่ขาดหาย:
-- **Dashboard** ✅ (Phase 3 done) — เพิ่ม ds-chip KPI + live pulse
-- **Lobby** — ตรวจ live dot indicator + KPI strip
-- **Schedule** — ตรวจ class card live state + side sheet animation
-- **Members** — ตรวจ KPI strip + table row hover
-- **Leads** — ตรวจ KPI strip + status pills
-- **Finance** — ตรวจ KPI + transaction row chrome
-- **Packages / Promotions** — ตรวจ card grid spacing
-- **Insights / Analytics / Reports** — ตรวจ KPI + chart card chrome
-- **Classes / Categories / Rooms / WorkoutList** — ตรวจ list chrome
-- **Staff / Announcements** — ตรวจ list chrome + announcement live dot
-- **Settings** — ตรวจ tab/sidebar layout
-- **Gamification** — ตรวจ progress/tier visuals (ระวังของเดิมเยอะ)
+The next pass should make the app visibly match the Admin UI Kit by applying DS primitives to existing pages:
 
-**กฎ:** ถ้าหน้าเดิมไม่มี element ที่จะปรับ (เช่นไม่มี live dot) — ข้าม ไม่เพิ่มของใหม่ที่ไม่มีฟังก์ชัน
+- Create or expand `src/components/admin-ds/*` as thin presentational wrappers only.
+- Update current pages/components to use those wrappers while preserving:
+  - existing hooks (`useCheckIns`, `useScheduleByDate`, `useFinanceTransactions`, etc.)
+  - mutations and `logActivity()` behavior
+  - permission gates (`can(...)`, `ProtectedRoute`)
+  - routes and navigation
+  - i18n strings
+  - real data only, no mock datasets from the design kit
+- Use DS motion only where it maps to real UI:
+  - page/section fade-in
+  - live status dots
+  - hover transitions on rows/cards
+  - dialog/drawer entry polish if wrapper-level safe
 
-### 5. หน้าใน DS ที่ไม่มีใน app — ไม่สร้าง (ตามที่ user สั่ง)
-`Branding.jsx`, `Programs.jsx` (เฉพาะ shell), `GamificationB.jsx` — บันทึกไว้ใน DEVLOG แล้ว ไม่ทำอะไรเพิ่ม
+## 4. Plan
 
-### 6. หน้า app ที่ไม่อยู่ใน DS — ไม่แตะ
-`MemberDetails`, `StaffDetails`, `*Details`, `Create*`, `TransferSlips`, `Notifications`, `Profile`, `ActivityLog`, `Locations`, `Roles`, `RoleEditor`, `Auth/*`, `liff/*`, `CheckinDisplay`, `CheckinRedeem`, `*Preview`, `DiagnosticsDataAudit`, `ComingSoon`, `NotFound` — ปล่อยตามเดิม (จะได้ DS title styling อัตโนมัติจาก PageHeader ที่อัปแล้ว)
+### Phase 5A — Make shared admin chrome visibly DS
+Files likely touched:
+- `src/components/layout/MainLayout.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/layout/Header.tsx`
+- `src/index.css`
+- `src/components/admin-ds/*`
 
-## Order
-1. index.css — เพิ่ม admin-* keyframes + utility classes
-2. StatCard — เพิ่ม `variant="ds-chip"` (back-compat)
-3. Dashboard — apply ds-chip ให้ 5 KPIs + ตรวจ live dot
-4. Lobby — live dot pulse
-5. Schedule — live class dot pulse
-6. ตรวจหน้าอื่นทีละหน้า, แก้เฉพาะที่จำเป็น
-7. Update DEVLOG
+Work:
+- Align admin layout to DS canvas: 220px desktop sidebar, compact content container, 60px header behavior, tight spacing.
+- Style Sidebar to match Admin UI Kit:
+  - warm cream sidebar surface
+  - orange icons for inactive/group rows
+  - orange active row
+  - compact 13px labels
+  - preserve all permission filtering, badges, nav routes, group open/close state.
+- Style Header to match DS top header:
+  - white 60px header with subtle border
+  - compact icon buttons
+  - keep theme toggle, notifications, language selector, avatar dropdown, surface switcher, logout.
+- Add reusable admin wrappers:
+  - `AdminToolbarCard`
+  - `AdminSegmentedControl`/chip style wrapper where safe
+  - `AdminTableShell`/row hover classes
+  - `AdminLiveDot`
+  - optional `AdminMetricStrip` helper
 
-## Hard rules (ไม่เปลี่ยน)
-- ไม่แตะ logic/hooks/mutations/RLS/i18n/routes/realtime
-- ไม่แตะ shadcn `ui/*`, AuthContext, hostname.ts, App.tsx, useRealtimeSync
-- ไม่ลบ chip/card/column/action ที่มีอยู่
-- ไม่เพิ่ม dependency
-- DS motion scope ใต้ `.surface-admin` หรือ admin-only utility classes — member/trainer/staff ไม่กระทบ
-- StatCard variant ใหม่ default = legacy → zero regression
+### Phase 5B — Update high-impact pages in place
+Files likely touched:
+- `src/pages/Lobby.tsx`
+- `src/pages/Schedule.tsx`
+- `src/pages/Packages.tsx`
+- `src/pages/Finance.tsx`
+- selected `src/components/finance/*`
+- `src/components/common/DataTable.tsx`
 
-อนุมัติแล้วผมเริ่ม Phase 4 ทันที
+Work:
+- `DataTable`: switch admin tables from dark header to DS light header/table-card look, add row hover. Keep columns, selection, sorting, pagination, empty states intact.
+- `Lobby`: add DS live/operator hero or compact stats strip based on current real `checkInData`; add live dot only for current-day view; move filters/actions into DS toolbar card; preserve check-in and QR dialogs.
+- `Schedule`: apply DS toolbar card for date/search/view controls; apply `variant="ds-chip"` to schedule stats; improve availability cells with DS capacity bar; preserve list/timeline toggle and booking dialog.
+- `Packages`: add DS KPI strip from real `usePackageStats` + package list counts; move search/status/actions into DS toolbar card; keep bulk selection/import/export/create/details routes.
+- `Finance`: align top tabs/toolbar and overview cards with DS shells; update Finance subcomponents visually where they have matching DS screens; keep export/import/slip approval/expense flows unchanged.
+
+### Phase 5C — Second batch pages that have direct DS matches
+Files likely touched after 5B:
+- `src/pages/Leads.tsx`
+- `src/pages/Analytics.tsx` or `src/pages/Insights.tsx` depending current routing/data
+- `src/pages/Staff.tsx`
+- `src/pages/Classes.tsx`
+- `src/pages/ClassCategories.tsx`
+- `src/pages/Rooms.tsx`
+- `src/pages/Promotions.tsx`
+- `src/pages/Announcements.tsx`
+- `src/pages/Settings.tsx`, `Roles.tsx`, `Locations.tsx`, `ActivityLog.tsx` only where DS has equivalent patterns
+
+Work:
+- Update only pages that have a matching UI kit file.
+- Use existing data/table/dialog logic; do not paste mock datasets.
+- For DS pages without current product equivalents (`Branding`, `Programs`, alternate `GamificationB`), do not add live fake pages. If a placeholder is required, it will be inert/disabled per project rule, but no route will be added unless explicitly approved because `src/App.tsx` is protected.
+
+### Phase 5D — Motion and warning cleanup
+Files likely touched:
+- `src/index.css`
+- page files/components where live indicators exist
+- `src/components/dashboard/DailyBriefingCard.tsx`
+
+Work:
+- Apply `animate-admin-pulse` to real live/status dots only.
+- Apply restrained section/page entrance motion (`animate-page-enter-desktop`) consistently.
+- Add `prefers-reduced-motion` coverage for any new admin animations.
+- Fix the `DailyBriefingCard` ref warning without touching `src/components/ui/skeleton.tsx` if possible.
+
+### Phase 5E — Documentation and verification
+Files likely touched:
+- `docs/DEVLOG.md`
+- possibly `docs/SMOKE_TEST.md` only if checklist needs an Admin DS visual smoke section
+
+Verification:
+- Build/typecheck via project harness.
+- Smoke through:
+  1. Admin dashboard loads
+  2. Sidebar links still route correctly
+  3. Header notifications/avatar/language/theme still work
+  4. Lobby search/date/check-in/QR dialog still work
+  5. Schedule date/filter/list/timeline/booking dialog still work
+  6. Packages search/status/bulk/import/export/create/detail still work
+  7. Finance tabs/export/import/slip detail still work
+  8. Permission-gated buttons remain hidden for unauthorized roles
+  9. No fake buttons/routes introduced
+  10. Member/Trainer/Staff surfaces unaffected
+
+## 5. Code changes
+
+After approval I will implement in small chunks:
+
+1. Shared DS admin wrappers and chrome.
+2. Shared table/card visible update.
+3. Lobby + Schedule page parity.
+4. Packages + Finance page parity.
+5. Matched remaining pages, one group at a time.
+6. Motion application + warning cleanup.
+7. DEVLOG update.
+
+No database, auth, RLS, route-table, realtime, or generated integration files will be changed in this pass.
+
+## 6. Regression checklist
+
+Must preserve:
+- Existing business logic and all data hooks.
+- Existing mutations and audit logging.
+- Existing role/permission checks.
+- Existing i18n usage.
+- Existing routes and navigation.
+- Existing dialogs/drawers/forms.
+- Existing Member/Trainer/Staff UI.
+- No mock data copied from the UI kit into live pages.
+
+## 7. Doc updates
+
+- Append a new `docs/DEVLOG.md` entry for Phase 5 with:
+  - files touched
+  - DS screens matched
+  - functions deliberately preserved
+  - deferred screens without current equivalents
+  - verification checklist result
+
+If you approve, I’ll start with Phase 5A/5B first so the changes are immediately visible across admin pages instead of only subtle token changes.

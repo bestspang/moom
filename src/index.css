@@ -291,11 +291,29 @@
     --card: 0 0% 100%;
     --card-foreground: 222 28% 12%;
     --secondary: 220 20% 96%;
+    /* DS Admin Sidebar — warm cream with orange active (per MOOM Admin UI Kit) */
+    --sidebar-background: 28 30% 97%;
+    --sidebar-foreground: 222 28% 12%;
+    --sidebar-border: 28 20% 90%;
+    --sidebar-accent: 28 30% 92%;
+    --sidebar-accent-foreground: 222 28% 12%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* DS table header — light surface (replaces dark legacy) */
+    --table-header: 220 20% 96%;
+    --table-header-foreground: 220 10% 46%;
   }
   .dark .surface-admin {
     /* Dark mode admin keeps existing dark tokens — no override */
     --background: 222.2 84% 4.9%;
     --content-background: 222.2 84% 4.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --table-header: 220 20% 14%;
+    --table-header-foreground: 210 40% 95%;
   }
 
   .surface-member {
