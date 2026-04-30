@@ -32,7 +32,7 @@ export function StaffLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="surface-member flex min-h-screen flex-col bg-background">
       <div className="flex-1 pb-20">
         <Outlet />
       </div>
