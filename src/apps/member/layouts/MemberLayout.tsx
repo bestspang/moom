@@ -30,11 +30,11 @@ export function MemberLayout() {
       <MemberHeaderErrorBoundary>
         <MemberHeader />
       </MemberHeaderErrorBoundary>
-      <div className="flex-1 pt-14 pb-20">
+      <main className="flex-1 pt-14 pb-20 animate-page-enter" key={location.pathname}>
         <ErrorBoundary key={location.pathname}>
           <Outlet />
         </ErrorBoundary>
-      </div>
+      </main>
       <MemberBottomNav />
       <XPToast />
     </div>

@@ -129,7 +129,7 @@ export default function MemberHomePage() {
   const hasProgressed = (momentumProfile?.totalXp ?? 0) > 0;
 
   return (
-    <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 pb-2">
+    <div className="pb-2">
       {/* --- 1. Greeting + Mascot (V2 — bigger lion + tagline) --- */}
       <div className="px-4 pt-4 pb-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">

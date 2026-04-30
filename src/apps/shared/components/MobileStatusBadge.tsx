@@ -5,26 +5,27 @@ interface MobileStatusBadgeProps {
   className?: string;
 }
 
+/** DS pill badge: rounded-full, 10px uppercase, tracking 0.06em, semantic colors. */
 const STATUS_STYLES: Record<string, string> = {
-  active: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
-  booked: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
-  completed: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
-  attended: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
-  cancelled: 'bg-muted text-muted-foreground border-border',
-  no_show: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
-  pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
-  expired: 'bg-muted text-muted-foreground border-border',
-  suspended: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
-  scheduled: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+  active:    'bg-success-light text-success-foreground border-transparent dark:bg-success/20 dark:text-success',
+  booked:    'bg-accent text-accent-foreground border-transparent',
+  completed: 'bg-success-light text-success-foreground border-transparent dark:bg-success/20 dark:text-success',
+  attended:  'bg-success-light text-success-foreground border-transparent dark:bg-success/20 dark:text-success',
+  cancelled: 'bg-muted text-muted-foreground border-transparent',
+  no_show:   'bg-destructive-light text-destructive border-transparent dark:bg-destructive/20',
+  pending:   'bg-warning-light text-warning-foreground border-transparent dark:bg-warning/20 dark:text-warning',
+  expired:   'bg-muted text-muted-foreground border-transparent',
+  suspended: 'bg-destructive-light text-destructive border-transparent dark:bg-destructive/20',
+  scheduled: 'bg-accent text-accent-foreground border-transparent',
 };
 
 export function MobileStatusBadge({ status, className }: MobileStatusBadgeProps) {
-  const style = STATUS_STYLES[status] ?? 'bg-muted text-muted-foreground border-border';
+  const style = STATUS_STYLES[status] ?? 'bg-muted text-muted-foreground border-transparent';
   const label = status.replace(/_/g, ' ');
 
   return (
     <span className={cn(
-      'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize',
+      'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]',
       style,
       className
     )}>

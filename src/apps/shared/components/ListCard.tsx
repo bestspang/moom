@@ -12,7 +12,8 @@ interface ListCardProps {
   className?: string;
 }
 
-/** Reusable mobile-friendly list card */
+/** DS-aligned mobile-friendly list card.
+ * Spec: rounded-xl (12px), 1px border, shadow-sm, p-3, row-hover. */
 export function ListCard({
   title, subtitle, meta, leading, trailing,
   onClick, showChevron = true, className,
@@ -21,15 +22,15 @@ export function ListCard({
     <button
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg bg-card p-4 text-left shadow-sm transition-all',
-        onClick && 'hover:shadow-md active:scale-[0.99] cursor-pointer',
+        'flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-all',
+        onClick && 'row-hover active:scale-[0.99] cursor-pointer',
         className
       )}
     >
       {leading && <div className="flex-shrink-0">{leading}</div>}
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-foreground truncate">{title}</p>
-        {subtitle && <p className="text-xs text-foreground/70 mt-0.5 truncate">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
         {meta && <div className="text-xs text-muted-foreground mt-0.5">{meta}</div>}
       </div>
       {trailing && <div className="flex-shrink-0">{trailing}</div>}
