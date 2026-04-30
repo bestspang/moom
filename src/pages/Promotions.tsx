@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Copy } from 'lucide-react';
+import { Copy, Gift, CheckCircle2, Archive, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
+import { AdminKpiCard } from '@/components/admin-ds';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePromotions, usePromotionStats, useBulkUpdatePromotionStatus, useBulkDeletePromotions, useBulkDuplicatePromotions } from '@/hooks/usePromotions';
@@ -167,11 +168,39 @@ const Promotions = () => {
         }
       />
 
-      <div className="mb-6">
-        <SearchBar placeholder={t('promotions.searchPlaceholder')} value={search} onChange={setSearch} className="max-w-md" />
+      {/* DS KPI strip — uses real usePromotionStats counts only (no fake metrics) */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-5">
+        <AdminKpiCard
+          accent="orange"
+          icon={<Gift />}
+          label={t('common.active')}
+          value={stats?.active ?? 0}
+        />
+        <AdminKpiCard
+          accent="info"
+          icon={<CalendarClock />}
+          label={t('packages.scheduled')}
+          value={stats?.scheduled ?? 0}
+        />
+        <AdminKpiCard
+          accent="slate"
+          icon={<CheckCircle2 />}
+          label={t('packages.drafts')}
+          value={stats?.drafts ?? 0}
+        />
+        <AdminKpiCard
+          accent="slate"
+          icon={<Archive />}
+          label={t('packages.archive')}
+          value={stats?.archive ?? 0}
+        />
       </div>
 
-      <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); clearSelection(); }} />
+      {/* DS toolbar card — search + segmented status tabs */}
+      <div className="mb-5 rounded-xl border border-border bg-card shadow-sm p-3 space-y-3">
+        <SearchBar placeholder={t('promotions.searchPlaceholder')} value={search} onChange={setSearch} className="max-w-md" />
+        <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); clearSelection(); }} />
+      </div>
 
       {isLoading ? (
         <div className="space-y-3">

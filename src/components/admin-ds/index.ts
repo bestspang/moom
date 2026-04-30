@@ -9,3 +9,5 @@ export type { AdminKpiCardProps, AdminKpiAccent } from './AdminKpiCard';
 
 export { AdminCard } from './AdminCard';
 export type { AdminCardProps } from './AdminCard';
+
+export { getCategoryVisual } from './CategoryIcon';
