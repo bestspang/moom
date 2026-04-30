@@ -115,16 +115,28 @@ export function MascotIllustration({
             strokeWidth="1"
             strokeLinecap="round"
           />
-          {/* tail */}
-          <path
-            d="M82 116 q16 -2 18 8"
-            stroke={COLORS.face}
-            strokeWidth="3.5"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <circle cx="101" cy="126" r="4.5" fill={COLORS.maneInner} />
-          <circle cx="103" cy="123" r="2.8" fill={COLORS.maneOuter} />
+          {/* tail (wags when not sleeping) */}
+          <g
+            className={sleeping ? undefined : 'mascot-tail'}
+            style={
+              sleeping
+                ? undefined
+                : {
+                    transformOrigin: '82px 116px',
+                    animation: 'mascot-tail-wag 2.4s ease-in-out infinite',
+                  }
+            }
+          >
+            <path
+              d="M82 116 q16 -2 18 8"
+              stroke={COLORS.face}
+              strokeWidth="3.5"
+              fill="none"
+              strokeLinecap="round"
+            />
+            <circle cx="101" cy="126" r="4.5" fill={COLORS.maneInner} />
+            <circle cx="103" cy="123" r="2.8" fill={COLORS.maneOuter} />
+          </g>
         </g>
 
         {/* --- EARS --- */}
