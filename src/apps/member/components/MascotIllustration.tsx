@@ -79,7 +79,25 @@ export function MascotIllustration({
       {/* soft ground shadow */}
       <ellipse cx="60" cy="132" rx="30" ry="3" fill="#000" opacity="0.10" />
 
-      <g transform={`translate(0 ${bob})`}>
+      <style>{`
+        @keyframes mascot-flame-flicker {
+          0%, 100% { transform: scale(1) rotate(-2deg); opacity: 1; }
+          50% { transform: scale(1.1) rotate(2deg); opacity: 0.88; }
+        }
+        @keyframes mascot-tail-wag {
+          0%, 100% { transform: rotate(-6deg); }
+          50% { transform: rotate(8deg); }
+        }
+        @keyframes mascot-zzz-float {
+          0% { transform: translate(0, 4px); opacity: 0; }
+          30% { opacity: 0.9; }
+          100% { transform: translate(4px, -8px); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mascot-flame, .mascot-tail, .mascot-zzz { animation: none !important; }
+        }
+      `}</style>
+      <g transform={`translate(0 ${bob}) rotate(${tilt} 60 70)`}>
         {/* --- BODY (sitting) --- */}
         <g>
           <ellipse cx="60" cy="118" rx="22" ry="12" fill={COLORS.face} />
