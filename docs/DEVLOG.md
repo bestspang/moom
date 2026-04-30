@@ -341,3 +341,14 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 - The DB enum `gamification_event_type` still has legacy names (`class_attended`, `package_purchased`) — these are in `types.ts` (read-only) and don't affect runtime since emitters send plain strings
 - `activity_log` event_type still uses `package_purchased` for activity logging (not gamification) — this is intentional and separate from the gamification contract
 - Consider adding DB enum migration to rename legacy values in a future task (low priority, non-breaking)
+
+## 2026-04-30 — Phase 2: Unified Visual + Motion Language
+
+- DS card spec on ListCard/SummaryCard (rounded-xl, border, shadow-sm, p-3, row-hover).
+- Section titles use eyebrow style (10px/600/uppercase).
+- MobilePageHeader compacted to px-4 py-3, title text-lg.
+- MobileStatusBadge → semantic tokens, pill 10px uppercase.
+- Layout-level page-enter animation (fade-up) on Member/Trainer/Staff; desktop fade on Admin.
+- Removed redundant per-page animate-in on MemberHomePage.
+- New utilities in src/index.css: .animate-page-enter, .animate-page-enter-desktop, .row-hover, .text-eyebrow.
+- All gamification motion preserved.
