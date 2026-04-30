@@ -14,7 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['IBM Plex Sans Thai', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Anuphan', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif'],
+        admin: ['Anuphan', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif'],
+        member: ['LINE Seed Sans TH', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

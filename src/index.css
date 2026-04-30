@@ -1,112 +1,132 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=LINE+Seed+Sans+TH:wght@400;500;700;800&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* MOOM CLUB Design System v0.0.1 */
+/* MOOM CLUB Design System v0.1.0 — DS-aligned tokens (Phase 1) */
 
 @layer base {
   :root {
-    /* Primary Colors */
-    --primary: 32 100% 50%;
+    /* Primary — warm orange (DS) */
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 32 100% 45%;
-    
-    /* Accent Colors */
+    --primary-hover: 25 95% 48%;
+
+    /* Accent (teal — kept for back-compat with existing badges/utilities) */
     --accent-teal: 168 75% 43%;
     --accent-teal-light: 168 70% 95%;
     --accent-teal-foreground: 0 0% 100%;
-    
-    /* Semantic Colors */
-    --destructive: 0 72% 71%;
-    --destructive-light: 0 100% 95%;
+
+    /* Semantic */
+    --destructive: 0 65% 52%;
+    --destructive-light: 0 65% 95%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --warning: 38 92% 50%;
     --warning-light: 38 92% 92%;
     --warning-foreground: 38 92% 20%;
-    
-    --success: 168 75% 43%;
-    --success-light: 168 70% 95%;
+
+    --success: 152 55% 42%;
+    --success-light: 152 55% 92%;
     --success-foreground: 0 0% 100%;
-    
-    /* Background Colors */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
-    
-    --sidebar-background: 36 33% 94%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-border: 36 20% 88%;
-    --sidebar-accent: 36 33% 90%;
-    --sidebar-accent-foreground: 0 0% 20%;
-    --sidebar-primary: 32 100% 50%;
+
+    /* Surfaces — warm off-white (DS) */
+    --background: 30 10% 98%;
+    --foreground: 220 20% 8%;
+
+    /* Admin sidebar — dark (DS) */
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 30 10% 95%;
+    --sidebar-border: 220 15% 16%;
+    --sidebar-accent: 25 40% 16%;
+    --sidebar-accent-foreground: 25 80% 65%;
+    --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-ring: 32 100% 50%;
-    
-    --content-background: 0 0% 100%;
-    
+    --sidebar-ring: 25 95% 53%;
+
+    --content-background: 30 10% 98%;
+
     /* Card */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
-    
+    --card-foreground: 220 20% 8%;
+
     /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
-    
-    /* Secondary */
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 0 0% 20%;
-    
+    --popover-foreground: 220 20% 8%;
+
+    /* Secondary — warm cream (DS) */
+    --secondary: 30 12% 93%;
+    --secondary-foreground: 220 20% 8%;
+
     /* Muted */
-    --muted: 210 20% 96%;
-    --muted-foreground: 0 0% 40%;
-    
-    /* Accent (general) */
-    --accent: 210 20% 96%;
-    --accent-foreground: 0 0% 20%;
-    
+    --muted: 30 8% 95%;
+    --muted-foreground: 220 10% 46%;
+
+    /* Accent (general) — tinted orange surface */
+    --accent: 25 40% 95%;
+    --accent-foreground: 25 80% 35%;
+
+    /* Surface helpers */
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 30 12% 96%;
+
     /* Table */
-    --table-header: 220 13% 18%;
+    --table-header: 220 20% 14%;
     --table-header-foreground: 0 0% 100%;
-    
-    /* Text Colors */
+
+    /* Text */
     --text-dark: 0 0% 20%;
     --text-medium: 0 0% 40%;
     --text-light: 0 0% 60%;
-    
-    /* Border */
-    --border: 0 0% 88%;
-    --border-light: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 32 100% 50%;
-    
-    /* Radius */
-    --radius: 0.5rem;
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
 
-    /* Status colors */
+    /* Border */
+    --border: 30 10% 89%;
+    --border-light: 30 10% 89%;
+    --input: 30 10% 89%;
+    --ring: 25 95% 53%;
+
+    /* Radius — DS base 12px */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.625rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+    --radius-badge: 9999px;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(220 20% 8% / 0.04);
+    --shadow-md: 0 2px 8px -2px hsl(220 20% 8% / 0.08);
+    --shadow-lg: 0 8px 24px -4px hsl(220 20% 8% / 0.12);
+    --shadow-soft: 0 1px 3px 0 hsl(220 20% 8% / 0.06);
+
+    /* Status */
     --status-success: 152 55% 42%;
     --status-warning: 38 92% 50%;
     --status-info: 210 70% 55%;
     --status-danger: 0 65% 52%;
 
-    /* Momentum / Gamification tokens */
-    --momentum-flame: 32 100% 50%;
+    /* Momentum / Gamification */
+    --momentum-flame: 25 95% 53%;
     --momentum-flame-glow: 38 92% 50%;
+    --xp-bar: 25 95% 53%;
+    --xp-bar-glow: 32 95% 58%;
+
+    /* Legacy 4-tier keys (preserved for back-compat) */
     --tier-starter: 220 30% 50%;
     --tier-mover: 32 80% 50%;
     --tier-strong: 210 70% 55%;
     --tier-elite: 280 65% 55%;
     --tier-legend: 45 93% 47%;
-    --xp-bar: 32 100% 50%;
-    --xp-bar-glow: 38 95% 58%;
 
-    /* Rarity system */
+    /* New DS 6-tier ladder (additive) */
+    --tier-regular: 25 80% 50%;
+    --tier-dedicated: 210 70% 55%;
+    --tier-champion: 38 92% 50%;
+
+    /* Rarity */
     --rarity-common: 220 10% 60%;
     --rarity-rare: 210 70% 55%;
     --rarity-epic: 280 65% 55%;
@@ -118,7 +138,13 @@
     --status-tier-gold: 45 85% 50%;
     --status-tier-platinum: 200 15% 75%;
     --status-tier-diamond: 195 80% 65%;
-    --status-tier-black: 0 0% 15%;
+    --status-tier-black: 220 20% 15%;
+
+    /* Dual-reward tokens (XP + RP) */
+    --reward-xp: 25 95% 53%;
+    --reward-xp-soft: 25 95% 53% / 0.1;
+    --reward-rp: 38 92% 50%;
+    --reward-rp-soft: 38 92% 50% / 0.12;
 
     /* Coach levels (in-house trainer) */
     --coach-rising: 210 60% 55%;
@@ -132,6 +158,10 @@
     --partner-verified: 152 55% 42%;
     --partner-preferred: 210 70% 55%;
     --partner-premium: 45 93% 47%;
+
+    /* Per-surface font stacks */
+    --font-admin: 'Anuphan', 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+    --font-member: 'LINE Seed Sans TH', 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
   }
 
   .dark {
@@ -141,7 +171,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 32 100% 50%;
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -153,64 +183,52 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 32 100% 50%;
+    --ring: 25 95% 53%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 32 100% 50%;
+    --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 32 100% 50%;
+    --sidebar-ring: 25 95% 53%;
 
-    /* Accent teal (dark) */
     --accent-teal: 168 75% 48%;
     --accent-teal-light: 168 40% 15%;
     --accent-teal-foreground: 0 0% 100%;
 
-    /* Semantic: success (dark) */
     --success: 168 75% 48%;
     --success-light: 168 40% 15%;
     --success-foreground: 0 0% 100%;
 
-    /* Semantic: warning (dark) */
     --warning: 38 92% 55%;
     --warning-light: 38 50% 15%;
     --warning-foreground: 38 92% 90%;
 
-    /* Destructive light (dark) */
     --destructive-light: 0 50% 15%;
 
-    /* Primary hover (dark) */
-    --primary-hover: 32 100% 55%;
+    --primary-hover: 25 95% 58%;
 
-    /* Table (dark) */
     --table-header: 220 20% 14%;
     --table-header-foreground: 210 40% 95%;
 
-    /* Content background (dark) */
     --content-background: 222.2 84% 4.9%;
 
-    /* Text (dark - inverted) */
     --text-dark: 210 40% 95%;
     --text-medium: 215 20% 70%;
     --text-light: 215 15% 50%;
 
-    /* Border (dark) */
     --border-light: 217.2 32.6% 20%;
 
-    /* Shadows (dark - stronger opacity) */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
 
-    /* Status (dark) */
     --status-success: 152 55% 48%;
     --status-warning: 38 92% 55%;
     --status-info: 210 70% 60%;
     --status-danger: 0 65% 55%;
 
-    /* Status Tiers (dark - brighter for dark bg) */
     --status-tier-bronze: 30 50% 50%;
     --status-tier-silver: 210 10% 70%;
     --status-tier-gold: 45 85% 55%;
@@ -218,31 +236,30 @@
     --status-tier-diamond: 195 80% 70%;
     --status-tier-black: 0 0% 75%;
 
-    /* Momentum / Gamification tokens (dark) */
-    --momentum-flame: 32 100% 55%;
+    --momentum-flame: 25 95% 58%;
     --momentum-flame-glow: 38 92% 55%;
     --tier-starter: 220 30% 55%;
     --tier-mover: 32 80% 55%;
     --tier-strong: 210 70% 60%;
     --tier-elite: 280 65% 60%;
     --tier-legend: 45 93% 52%;
-    --xp-bar: 32 100% 55%;
-    --xp-bar-glow: 38 95% 62%;
+    --tier-regular: 25 80% 55%;
+    --tier-dedicated: 210 70% 60%;
+    --tier-champion: 38 92% 55%;
+    --xp-bar: 25 95% 58%;
+    --xp-bar-glow: 32 95% 62%;
 
-    /* Rarity system (dark) */
     --rarity-common: 220 10% 50%;
     --rarity-rare: 210 70% 60%;
     --rarity-epic: 280 65% 60%;
     --rarity-legendary: 45 93% 52%;
 
-    /* Coach levels (dark) */
     --coach-rising: 210 60% 60%;
     --coach-established: 152 55% 48%;
     --coach-senior: 32 80% 55%;
     --coach-master: 280 65% 60%;
     --coach-elite: 45 93% 52%;
 
-    /* Partner tiers (dark) */
     --partner-new: 220 10% 50%;
     --partner-verified: 152 55% 48%;
     --partner-preferred: 210 70% 60%;
@@ -256,8 +273,18 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans text-[13px];
-    font-family: 'IBM Plex Sans Thai', 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground font-sans;
+    font-family: var(--font-admin);
+  }
+
+  /* Per-surface font + density scopes (DS) */
+  .surface-admin {
+    font-family: var(--font-admin);
+  }
+
+  .surface-member {
+    font-family: var(--font-member);
+    font-size: 13px;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -332,23 +359,23 @@
   .badge-new {
     @apply bg-accent-teal text-white;
   }
-  
+
   .badge-pending {
     @apply bg-primary text-white;
   }
-  
+
   .badge-paid {
     @apply bg-accent-teal text-white;
   }
-  
+
   .badge-high-risk {
     @apply bg-destructive text-white;
   }
-  
+
   .badge-medium-risk {
     @apply bg-warning text-warning-foreground;
   }
-  
+
   .badge-low-risk {
     @apply bg-accent-teal text-white;
   }
@@ -357,11 +384,11 @@
   .status-active {
     @apply text-accent-teal;
   }
-  
+
   .status-suspended {
     @apply text-warning;
   }
-  
+
   .status-inactive {
     @apply text-muted-foreground;
   }

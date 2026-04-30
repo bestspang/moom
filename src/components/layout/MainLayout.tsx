@@ -13,7 +13,7 @@ export const MainLayout = () => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="surface-admin min-h-screen bg-background">
       {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
