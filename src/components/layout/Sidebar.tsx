@@ -127,7 +127,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       const raw = localStorage.getItem(GROUPS_KEY);
       if (raw) return JSON.parse(raw);
     } catch {}
-    return { people: true, business: true, yourgym: false };
+    return { home: true, people: true, business: true, gym: false, comms: false, org: false, settings: false };
   });
 
   React.useEffect(() => {
@@ -156,13 +156,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return true;
   };
 
-  const dailyItems: NavItem[] = [
-    { label: t('nav.dashboard'), path: '/', icon: Home, resource: 'dashboard' },
-    { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen, resource: 'lobby', badge: currentlyIn, urgent: currentlyIn > 0 },
-    { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
-  ];
-
+  // 6-group taxonomy mirrors MOOM Design System/ui_kits/admin/Modern.jsx
   const navGroups: NavGroup[] = [
+    {
+      key: 'home',
+      label: t('nav.home'),
+      icon: Home,
+      items: [
+        { label: t('nav.dashboard'), path: '/', icon: Home, resource: 'dashboard' },
+        { label: t('nav.lobby'), path: '/lobby', icon: DoorOpen, resource: 'lobby', badge: currentlyIn, urgent: currentlyIn > 0 },
+        { label: t('nav.schedule'), path: '/calendar', icon: Calendar, resource: 'schedule' },
+      ],
+    },
     {
       key: 'people',
       label: t('nav.people'),
@@ -170,6 +175,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       items: [
         { label: t('nav.members'), path: '/members', icon: Users, resource: 'members', badge: expiringCount },
         { label: t('nav.leads'), path: '/leads', icon: Star, resource: 'leads' },
+        // Trainers: same Staff page (no separate route yet); gated by staff resource + manager+
+        { label: t('nav.trainers'), path: '/admin', icon: UserCheck, minLevel: 'level_3_manager', resource: 'staff' },
       ],
     },
     {
@@ -186,8 +193,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       ],
     },
     {
-      key: 'yourgym',
-      label: t('nav.yourGym'),
+      key: 'gym',
+      label: t('nav.gym'),
       icon: Briefcase,
       minLevel: 'level_2_operator',
       items: [
@@ -195,11 +202,35 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { label: t('nav.classCategories'), path: '/class-category', icon: Grid3X3, resource: 'class_categories' },
         { label: t('nav.roomLayouts'), path: '/room', icon: LayoutGrid, resource: 'rooms' },
         { label: t('nav.workoutList'), path: '/workout-list', icon: Dumbbell, resource: 'workout_list' },
+      ],
+    },
+    {
+      key: 'comms',
+      label: t('nav.comms'),
+      icon: Megaphone,
+      items: [
+        { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
+      ],
+    },
+    {
+      key: 'org',
+      label: t('nav.org'),
+      icon: MapPin,
+      items: [
+        { label: t('nav.locations'), path: '/location', icon: MapPin, minLevel: 'level_3_manager', resource: 'locations' },
         { label: t('nav.staff'), path: '/admin', icon: UserCheck, minLevel: 'level_3_manager', resource: 'staff' },
         { label: t('nav.roles'), path: '/roles', icon: Shield, minLevel: 'level_4_master', resource: 'roles' },
-        { label: t('nav.locations'), path: '/location', icon: MapPin, minLevel: 'level_3_manager', resource: 'locations' },
-        { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
         { label: t('nav.activityLog'), path: '/activity-log', icon: FileText, resource: 'activity_log' },
+      ],
+    },
+    {
+      key: 'settings',
+      label: t('nav.settingsGroup'),
+      icon: Settings,
+      minLevel: 'level_3_manager',
+      items: [
+        // Branding page not built yet — points at existing Settings root so it doesn't 404.
+        { label: t('nav.branding'), path: '/setting/general', icon: Star, minLevel: 'level_3_manager', resource: 'settings' },
         { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
       ],
     },
@@ -211,11 +242,20 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return location.pathname.startsWith(path + '/');
   };
 
+  // Auto-open whichever group contains the active route (DS Modern.jsx parity)
+  React.useEffect(() => {
+    const host = navGroups.find(g => g.items.some(i => isActiveRoute(i.path)));
+    if (host && !openGroups[host.key]) {
+      setOpenGroups(prev => ({ ...prev, [host.key]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   const renderItem = (item: NavItem) => {
     if (!hasAccess(item.minLevel, item.resource)) return null;
     return (
       <NavItemRow
-        key={item.path}
+        key={`${item.path}-${item.label}`}
         item={item}
         active={isActiveRoute(item.path)}
         collapsed={collapsed}
@@ -258,7 +298,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
-  const widthClass = collapsed ? 'w-[68px]' : 'w-[220px]';
+  const widthClass = collapsed ? 'w-[68px]' : 'w-[252px]';
 
   return (
     <>
