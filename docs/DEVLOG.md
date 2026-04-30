@@ -352,3 +352,4 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 - Removed redundant per-page animate-in on MemberHomePage.
 - New utilities in src/index.css: .animate-page-enter, .animate-page-enter-desktop, .row-hover, .text-eyebrow.
 - All gamification motion preserved.
+- 2026-04-30 — Fix Moomu mascot to match DS (orange droplet/blob, not lion).
