@@ -311,6 +311,43 @@
     display: none;
   }
 
+  /* DS unified page-enter motion (all surfaces) */
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ds-scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-page-enter {
+    animation: fade-in-up 0.28s ease-out both;
+  }
+  .animate-page-enter-desktop {
+    animation: fade-in-up 0.2s ease-out both;
+  }
+  .animate-ds-scale-in {
+    animation: ds-scale-in 0.2s ease-out both;
+  }
+
+  /* Unified row hover (DS) */
+  .row-hover {
+    transition: background-color 0.15s ease-out;
+  }
+  .row-hover:hover {
+    background-color: hsl(var(--accent) / 0.5);
+  }
+
+  /* DS eyebrow (10px / 600 / uppercase / tracking 0.08em) */
+  .text-eyebrow {
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: hsl(var(--muted-foreground));
+  }
+
   /* Momentum animations */
   @keyframes shimmer {
     0% { background-position: -200% 0; }

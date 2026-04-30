@@ -33,9 +33,9 @@ export function StaffLayout() {
 
   return (
     <div className="surface-member flex min-h-screen flex-col bg-background">
-      <div className="flex-1 pb-20">
+      <main className="flex-1 pb-20 animate-page-enter" key={location.pathname}>
         <Outlet />
-      </div>
+      </main>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-bottom">
         <div className="mx-auto flex max-w-lg items-center justify-around py-2">
           {STAFF_NAV.map((item) => {

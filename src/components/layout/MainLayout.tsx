@@ -34,9 +34,9 @@ export const MainLayout = () => {
           'lg:pl-[200px]'
         )}
       >
-        <div 
+        <div
           key={location.pathname}
-          className="p-3 md:p-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
+          className="p-3 md:p-5 animate-page-enter-desktop"
         >
           <ErrorBoundary key={location.pathname}>
             <Outlet />

@@ -1,111 +1,148 @@
+# Phase 2 — Unify Visual + Motion Language Across All Surfaces
 
-# Phase 1 — Foundation: Tokens & Typography
+## Problem
 
-Adopt the MOOM Design System token layer (`MOOM Design System/colors_and_type.css`) into the live app. Foundation only — no widget redesigns yet.
+After Phase 1 (tokens + fonts), the surfaces still **don't look the same**:
+- Each surface uses ad-hoc card paddings, radii, shadows, and border treatments.
+- Headers (`MobilePageHeader`, `TrainerHeader`, admin page headers) have different paddings, type sizes, and eyebrow styles.
+- Badges / status pills are inconsistent (`MobileStatusBadge`, `Badge` shadcn, hand-rolled spans).
+- Motion is sporadic: only `MemberHomePage` uses `animate-in fade-in-0 slide-in-from-bottom-2`. Trainer/Staff/Admin pages enter with no transition. Hover states differ per file.
 
-## Decisions (locked from prior turn)
+## Scope
 
-- **Scope:** All surfaces (admin + member + trainer + staff) — single token layer, surface fonts switched via root scope class.
-- **Base font 13px:** Member/Trainer/Staff only. Admin keeps Tailwind default (14–16px) to avoid breaking dense desktop tables/forms in this phase.
-- **Orange shift:** Approved. `32 100% 50%` → `25 95% 53%` (warmer).
-- **Admin Modern shell (sidebar v2 / ⌘K):** Deferred to Phase 4. This phase only swaps fonts/colors on the existing admin shell.
+In-scope (surgical, additive):
+1. Add a small **DS primitive layer** in shared components — wrappers around existing patterns. No deletion.
+2. Add **6 standard motion utilities** to `tailwind.config.ts` (DS-blessed: fade-in, slide-up, scale-in, shimmer already exists, flame-flicker exists, scan-line exists).
+3. Apply page-enter animation **once at each layout root** so every page in every surface fades+slides on mount — no per-page edits.
+4. Update **`ListCard`, `Section`, `SummaryCard`, `MobileStatusBadge`, `MobilePageHeader`** to the DS spec (radius 12px, shadow-sm, border `30 10% 89%`, eyebrow 10px/600/uppercase/tracking 0.08em, hover row = `bg-accent/50`).
+5. Add **`.surface-staff`** scope (currently uses `.surface-member`, which is correct — just verify).
 
-## What changes
+Out-of-scope (defer to later phases):
+- Rewriting individual page layouts.
+- Admin Modern shell (Phase 4).
+- New gamification components.
+- Replacing shadcn primitives.
 
-### A. `src/index.css` — token rewrite
+## Affected Modules & Status
 
-1. **Replace `@import` line** to load the three DS fonts:
-   - `Anuphan` (300–800)
-   - `LINE Seed Sans TH` (400, 500, 700, 800)
-   - `IBM Plex Sans Thai` (kept as fallback for glyph coverage)
-   - Must remain strictly above `@tailwind` (per Core memory rule).
-2. **Update `:root` light tokens** to DS values:
-   - `--primary: 25 95% 53%`, `--primary-hover: 25 95% 48%`
-   - `--background: 30 10% 98%` (warm off-white)
-   - `--foreground: 220 20% 8%` (deep blue-black)
-   - `--card-foreground / popover-foreground: 220 20% 8%`
-   - `--muted: 30 8% 95%`, `--muted-foreground: 220 10% 46%`
-   - `--secondary: 30 12% 93%`, `--secondary-foreground: 220 20% 8%`
-   - `--accent: 25 40% 95%`, `--accent-foreground: 25 80% 35%`
-   - `--border / --input: 30 10% 89%`, `--ring: 25 95% 53%`
-   - `--radius: 0.75rem`
-   - **Sidebar (admin):** switch to DS dark sidebar — `--sidebar-background: 220 20% 8%`, `--sidebar-foreground: 30 10% 95%`, `--sidebar-border: 220 15% 16%`, `--sidebar-accent: 25 40% 16%`, `--sidebar-accent-foreground: 25 80% 65%`. (Big visual change — see Risks.)
-   - **Momentum/tier ladder:** add 6-tier ladder `starter / regular / dedicated / elite / champion / legend` alongside the **existing** `--tier-mover/strong/elite/legend` keys. **Keep legacy keys in place** so no consumer breaks; new code can use the new keys.
-   - Add `--reward-xp`, `--reward-xp-soft`, `--reward-rp`, `--reward-rp-soft`.
-   - Add radius scale: `--radius-sm/md/lg/xl/2xl/badge/full`.
-3. **Add font tokens + scope classes:**
-   ```css
-   --font-admin:  'Anuphan', 'IBM Plex Sans Thai', system-ui, sans-serif;
-   --font-member: 'LINE Seed Sans TH', 'IBM Plex Sans Thai', system-ui, sans-serif;
-   ```
-   Plus utility classes:
-   ```css
-   .surface-admin  { font-family: var(--font-admin); }
-   .surface-member { font-family: var(--font-member); font-size: 13px; }
-   ```
-   The `13px` is applied **only inside `.surface-member`** so admin keeps current sizing.
-4. **`body` rule:** keep current Tailwind base, but drop the hard-coded `'IBM Plex Sans Thai', 'Inter'` fallback since per-surface fonts now win via the scope classes. Keep `text-[13px]` removed from `body` (move into `.surface-member`).
-5. **`.dark` block:** keep all current dark tokens (no shift this phase).
+| Module | Status | Action |
+|---|---|---|
+| `src/index.css` motion keyframes | WORKING (shimmer/flame/scan exist) | Add `fade-in-up`, `scale-in` keyframes |
+| `tailwind.config.ts` animation map | WORKING | Add 2 new animations + standard `ease-out` durations |
+| `src/apps/shared/components/ListCard.tsx` | WORKING | Tighten to DS: `rounded-xl`, `border`, `shadow-sm`, hover `bg-accent/50`, `p-3` |
+| `src/apps/shared/components/Section.tsx` | WORKING | Eyebrow title style (10px/600/uppercase/tracking) |
+| `src/apps/shared/components/MobilePageHeader.tsx` | WORKING | Standardize padding `px-4 py-3`, title 18px/600, sticky border-b |
+| `src/apps/shared/components/MobileStatusBadge.tsx` | WORKING | Pill `rounded-full`, 10px uppercase, DS color map |
+| `src/apps/shared/components/SummaryCard.tsx` | WORKING | DS card spec + `border-l-4` accent for KPI variant |
+| `MemberLayout.tsx`, `TrainerLayout.tsx`, `StaffLayout.tsx`, `MainLayout.tsx` | WORKING | Add `<div className="animate-page-enter">` wrapper around `<Outlet/>` |
+| `MemberHomePage.tsx` per-page `animate-in` | WORKING | Remove (now redundant — handled at layout) |
+| `TrainerHeader.tsx` | WORKING | Re-skin to share `MobilePageHeader` look (font, padding) |
+| Admin `MainLayout.tsx` page-enter | NONE | Same wrapper applied — fade only, no slide (desktop) |
 
-### B. `tailwind.config.ts`
+## What Must Be Preserved
 
-- `fontFamily.sans` → `['Anuphan', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif']` (admin default; member/trainer/staff override via `.surface-member` CSS).
-- Add `fontFamily.member: ['LINE Seed Sans TH', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif']` for explicit `font-member` utility when needed.
-- No color/radius changes here — those flow through the existing `hsl(var(--*))` mappings already in place.
+- All existing component **APIs / props** (ListCard, Section, MobileStatusBadge, etc.) — only style attributes change.
+- All routes, data fetching, query keys, hook contracts.
+- Per-surface fonts: Anuphan (admin), LINE Seed Sans TH (member/trainer/staff). Already in place.
+- `MobilePageHeader` `action` slot semantics (back-nav rule from Hard Invariants).
+- Coming Soon `opacity-60 pointer-events-none` rule.
+- All gamification keyframes (`shimmer`, `flame-flicker`, `pulse-glow`, `bounce-in`, `stamp-in`).
 
-### C. Layout root scope classes (one-line each)
+## What Is Actually Broken (to fix)
 
-- `src/apps/member/layouts/MemberLayout.tsx` — add `surface-member` to root `<div>`.
-- `src/apps/trainer/layouts/TrainerLayout.tsx` — add `surface-member`.
-- `src/apps/staff/layouts/StaffLayout.tsx` — add `surface-member`.
-- `src/components/layout/MainLayout.tsx` (admin) — add `surface-admin` to its root.
+1. Cards across surfaces use different radii (`rounded-lg` vs `rounded-xl` vs `rounded-2xl`) → standardize on `rounded-xl` (12px) per DS.
+2. Section titles use mixed weights → standardize to eyebrow 10px/600/uppercase.
+3. Pages snap in without animation → add layout-level `animate-page-enter`.
+4. Trainer/Staff headers don't visually match Member header → unify to `MobilePageHeader`.
+5. Hover states inconsistent (some rows have no hover) → add `.row-hover` utility.
 
-That's the full surface-aware font + density switch — no per-component edits.
+## Technical Plan
 
-## Files touched
+### A. New keyframes (`src/index.css`)
+```css
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-page-enter        { animation: fade-in-up 0.28s ease-out both; }
+.animate-page-enter-desktop{ animation: fade-in-up 0.2s ease-out both; }
 
+/* Unified row hover */
+.row-hover { transition: background-color 0.15s ease-out; }
+.row-hover:hover { background-color: hsl(var(--accent) / 0.5); }
 ```
-src/index.css                                  (token rewrite + font import)
-tailwind.config.ts                             (fontFamily.sans + .member)
-src/apps/member/layouts/MemberLayout.tsx       (+ surface-member)
-src/apps/trainer/layouts/TrainerLayout.tsx     (+ surface-member)
-src/apps/staff/layouts/StaffLayout.tsx         (+ surface-member)
-src/components/layout/MainLayout.tsx           (+ surface-admin)
-.lovable/plan.md                               (mark Phase 1 done)
-docs/DEVLOG.md                                 (entry)
+
+### B. `tailwind.config.ts` additions
+```ts
+animation: {
+  ...,
+  "fade-in":   "fade-in-up 0.28s ease-out both",
+  "scale-in":  "scale-in 0.2s ease-out both",
+  "page-enter":"fade-in-up 0.28s ease-out both",
+}
 ```
 
-## What is preserved (zero regression contract)
+### C. Layout-level page-enter
+In each layout, wrap the content area:
+```tsx
+<main className="animate-page-enter" key={location.pathname}>
+  <Outlet />
+</main>
+```
+`key` on pathname makes the animation re-fire on route change.
 
-- All semantic token **names** (`--primary`, `--secondary`, `--card`, `--accent-teal`, `--success`, `--warning`, `--destructive`, `--status-*`, `--tier-mover/strong/elite/legend`, `--coach-*`, `--partner-*`, `--status-tier-*`, `--rarity-*`, `--xp-bar`, `--momentum-flame`, etc.) remain — only HSL values move. No consumer needs to change a className.
-- `.dark` block untouched (light-mode shift only).
-- Radius alias `--radius` change `0.5rem → 0.75rem` flows through Tailwind's `rounded-lg/md/sm` automatically — visual only, no API break.
-- Animations (`shimmer`, `flame-flicker`, `pulse-glow`, `bounce-in`, `stamp-in`, `scan-line`) untouched.
-- Shadcn UI primitives in `src/components/ui/*` not edited (PROTECTED).
-- AuthContext / hostname.ts / App.tsx routing untouched.
-- DB / RPC / edge functions untouched.
+### D. Shared component refresh — DS spec
 
-## Risks & mitigations
+`ListCard`:
+- `rounded-xl border bg-card shadow-sm p-3 row-hover`
+- Title: `text-sm font-semibold`
+- Subtitle: `text-xs text-muted-foreground`
 
-| Risk | Mitigation |
-|---|---|
-| **Admin sidebar flips from cream → near-black.** Big visual jump. | This is the DS spec; if you'd rather keep the current cream sidebar this phase, say so and we keep `--sidebar-background: 36 33% 94%` until Phase 4. **Default in this plan = adopt dark sidebar** since you approved Phase 1 wholesale. |
-| Orange hue shift may affect screenshots/marketing. | Only a small warm-up; no naming change. |
-| Member/Trainer/Staff base font drops to 13px. | Scoped via `.surface-member` only. Admin desktop stays current size. Smoke test mobile pages for line-height regressions. |
-| LINE Seed Sans TH rendering on Thai text. | IBM Plex Sans Thai stays as fallback so glyphs never go missing. |
-| Radius bump may visually clip content in tightly-padded cards. | Going from 8 → 12px is small; risk low. Will eyeball top member/admin pages. |
+`Section`:
+- Title becomes `text-eyebrow` (10px/600/uppercase/tracking-[0.08em] text-muted-foreground)
+- Action: `text-xs font-medium text-primary`
 
-## Regression checklist (post-build)
+`MobilePageHeader`:
+- `sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 py-3`
+- Title: `text-lg font-semibold` (18px)
+- Action slot: right-aligned, icon-only `size-9`
 
-1. Admin `/dashboard` renders, sidebar nav clickable, KPI cards readable.
-2. Member home renders, NextUpCard / QuickTilesGrid / quests visible — text in LINE Seed.
-3. Trainer home renders — text in LINE Seed.
-4. Staff check-in renders.
-5. Login/Signup pages render with new orange.
-6. Dark mode toggles cleanly (no broken contrast).
-7. Tier badges, XP bar, momentum flame still color-correct (legacy tokens kept).
-8. No console warnings about missing CSS variables.
+`MobileStatusBadge`:
+- `inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]`
+- Color map → DS `--status-*` tokens
 
-## Open question (one)
+`SummaryCard`:
+- Default card spec; KPI variant adds `border-l-4 border-l-primary`
 
-**Admin sidebar:** flip to DS dark sidebar (`220 20% 8%`) **now**, or keep current cream sidebar until Phase 4 (Modern shell)? Default in this plan = flip now per your "Phase 1 wholesale" approval. Reply "keep cream" if you want to defer that piece.
+### E. Trainer header alignment
+Replace `TrainerHeader` body with `MobilePageHeader` (or reskin to inherit identical paddings/fonts). Keep its props/API.
+
+### F. Remove redundant per-page `animate-in`
+Remove the `animate-in fade-in-0 slide-in-from-bottom-2 duration-300` wrapper at the top of `MemberHomePage.tsx` (now handled by layout). No other pages currently have it.
+
+## Regression Checklist
+
+- [ ] Member home/schedule/check-in/profile all enter with fade-up.
+- [ ] Trainer home/schedule/impact identical motion + header look as Member.
+- [ ] Staff home/checkin/payments same.
+- [ ] Admin pages fade in (no slide).
+- [ ] All existing badges still render with correct colors.
+- [ ] `MobilePageHeader` `action` slot unchanged (no inline back buttons added).
+- [ ] Coming Soon items still show `opacity-60 pointer-events-none`.
+- [ ] No new console errors; build passes.
+- [ ] Gamification animations (flame, shimmer, scan-line, bounce-in) still fire.
+- [ ] Dark mode unaffected.
+
+## Doc Updates
+
+- `docs/DEVLOG.md` — append "Phase 2: visual + motion unification".
+- Memory: add `[Visual Language Unified](mem://design/visual-language-phase-2)` describing the page-enter rule + DS card/header/badge spec.
+
+## Out for Approval
+
+One open question before I implement:
+- **Keep** the gamification fun-motion (flame-flicker on streak, bounce-in on XP toast) untouched, OR also unify those down to the standard fade? Default in this plan = **keep them** (they're DS-blessed for member surface only).
