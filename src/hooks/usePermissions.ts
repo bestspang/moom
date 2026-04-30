@@ -41,7 +41,7 @@ export const getDefaultPermissions = (level: AccessLevel): PermissionRow[] => {
     'dashboard', 'lobby', 'schedule', 'rooms', 'classes', 'class_categories',
     'members', 'leads', 'packages', 'promotions', 'staff', 'locations',
     'activity_log', 'announcements', 'workout_list', 'transfer_slips',
-    'finance', 'reports', 'settings', 'notifications',
+    'finance', 'reports', 'settings', 'notifications', 'gamification',
   ];
   const operatorResources: ResourceKey[] = [
     'dashboard', 'lobby', 'schedule', 'rooms', 'classes', 'class_categories',
