@@ -39,10 +39,10 @@ const DashboardWelcome: React.FC<DashboardWelcomeProps> = ({ onQuickCheckIn, sta
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {t(greetingKey)}{firstName ? `, ${firstName}` : ''} 👋
+        <h1 className="text-[26px] font-extrabold tracking-tight leading-tight">
+          {t(greetingKey)}{firstName ? `, ${firstName}` : ''} <span className="text-[22px]">👋</span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className="text-[13px] text-muted-foreground mt-1">
           {dateStr}
           {summaryParts.length > 0 && (
             <span className="ml-2 text-foreground/70">· {summaryParts.join(' · ')}</span>
