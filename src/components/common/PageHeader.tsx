@@ -10,19 +10,34 @@ interface BreadcrumbItem {
 
 interface PageHeaderProps {
   title: string;
+  /** DS subtitle line shown under the title (preferred). */
+  subtitle?: React.ReactNode;
   breadcrumbs?: BreadcrumbItem[];
+  /** Legacy: shown as "Updated <updatedAt>" if `subtitle` is not provided. */
   updatedAt?: string;
   actions?: React.ReactNode;
+  className?: string;
 }
 
+/**
+ * DS-aligned admin page header.
+ * Mirrors `PageHeader` in MOOM Design System/ui_kits/admin/Components.jsx
+ * (22px / extrabold / tracking-tight title, 13px muted subtitle, right action slot).
+ * Back-compat: `updatedAt` still works when `subtitle` is omitted.
+ */
 export const PageHeader = ({
   title,
+  subtitle,
   breadcrumbs = [],
   updatedAt,
   actions,
+  className,
 }: PageHeaderProps) => {
+  const resolvedSubtitle =
+    subtitle ?? (updatedAt ? `Updated ${updatedAt}` : null);
+
   return (
-    <div className="mb-4">
+    <div className={cn('mb-4', className)}>
       {/* Breadcrumbs */}
       {breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
@@ -45,16 +60,22 @@ export const PageHeader = ({
       )}
 
       {/* Title and actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-bold text-foreground">{title}</h1>
-          {updatedAt && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Updated {updatedAt}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-extrabold text-foreground tracking-tight leading-tight m-0">
+            {title}
+          </h1>
+          {resolvedSubtitle && (
+            <p className="text-[13px] text-muted-foreground mt-1">
+              {resolvedSubtitle}
             </p>
           )}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );
