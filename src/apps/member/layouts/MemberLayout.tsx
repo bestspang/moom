@@ -26,7 +26,7 @@ export function MemberLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="surface-member flex min-h-screen flex-col bg-background">
       <MemberHeaderErrorBoundary>
         <MemberHeader />
       </MemberHeaderErrorBoundary>
