@@ -240,9 +240,16 @@ export function MascotIllustration({
           )}
         </g>
 
-        {/* --- FIRE: little flame above head --- */}
+        {/* --- FIRE: little flame above head (flickers) --- */}
         {fire && (
-          <g transform="translate(60 16)">
+          <g
+            transform="translate(60 16)"
+            className="mascot-flame"
+            style={{
+              transformOrigin: '4px 13px',
+              animation: 'mascot-flame-flicker 1.4s ease-in-out infinite',
+            }}
+          >
             <path
               d="M0 0 c-5 5 -6 9 -2 13 c3 -1 4 -4 4 -7 c1.5 3 3 5 6 6 c3 -3 1 -8 -4 -11 c-1.5 -1 -3 -1 -4 -1 z"
               fill={COLORS.flameOuter}
@@ -254,11 +261,28 @@ export function MascotIllustration({
           </g>
         )}
 
-        {/* --- SLEEP: Zzz --- */}
+        {/* --- SLEEP: Zzz (floats up) --- */}
         {sleeping && (
           <g fill={COLORS.ink} fontFamily="system-ui" fontWeight="800">
-            <text x="92" y="40" fontSize="11" opacity="0.5">z</text>
-            <text x="99" y="30" fontSize="14">Z</text>
+            <text
+              x="92"
+              y="40"
+              fontSize="11"
+              opacity="0.5"
+              className="mascot-zzz"
+              style={{ animation: 'mascot-zzz-float 2.5s ease-out infinite' }}
+            >
+              z
+            </text>
+            <text
+              x="99"
+              y="30"
+              fontSize="14"
+              className="mascot-zzz"
+              style={{ animation: 'mascot-zzz-float 2.5s ease-out 0.8s infinite' }}
+            >
+              Z
+            </text>
           </g>
         )}
       </g>
