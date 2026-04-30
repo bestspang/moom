@@ -86,12 +86,12 @@ export function DataTable<T>({
       <div className="relative">
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-muted/30 -mx-4 px-4 md:mx-0 md:px-0">
           <div className="min-w-[600px] md:min-w-0">
-            <div className="rounded-lg border overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-table-header hover:bg-table-header">
+                  <TableRow className="bg-muted/60 hover:bg-muted/60 border-b border-border">
                     {selectable && (
-                      <TableHead className="w-12 text-table-header-foreground">
+                      <TableHead className="w-12 text-muted-foreground">
                         <Checkbox
                           checked={allSelected}
                           onCheckedChange={onSelectAll}
@@ -102,7 +102,7 @@ export function DataTable<T>({
                       <TableHead
                         key={column.key}
                         className={cn(
-                          'text-table-header-foreground font-semibold whitespace-nowrap',
+                          'text-muted-foreground font-semibold text-[10px] uppercase tracking-[0.06em] whitespace-nowrap h-10',
                           column.className
                         )}
                       >
@@ -120,7 +120,8 @@ export function DataTable<T>({
                       <TableRow
                         key={id}
                         className={cn(
-                          onRowClick && 'cursor-pointer',
+                          'transition-colors',
+                          onRowClick && 'cursor-pointer hover:bg-accent/40',
                           isSelected && 'bg-accent'
                         )}
                         onClick={() => onRowClick?.(row)}
