@@ -1,6 +1,33 @@
 # Development Log — MOOM Fitness Platform
 
 ---
+## 2026-04-30 — Admin UI alignment Phase 5 (visible chrome + shared primitives)
+
+**Goal:** Make admin pages visibly match `MOOM Design System/MOOM Admin UI Kit.html` (`ui_kits/admin/*.jsx`) — Phase 3/4 only changed global tokens, so most pages still looked unchanged. This pass updates the chrome and the shared primitives that propagate to ~all admin pages.
+
+**Visible changes:**
+- `src/index.css` — Admin sidebar tokens flipped from dark slate to **DS warm cream** (`28 30% 97%`) with orange active row + matching border/accent. Light DS table-header tokens (`220 20% 96%` / muted-foreground) override the legacy dark `--table-header`. Dark mode admin keeps original dark sidebar tokens.
+- `src/components/layout/Sidebar.tsx` — DS pattern: orange icon emphasis on inactive items, white-on-orange active row with shadow + bold weight, badge contrast on active state. All permission filtering, badges, group state, routes preserved.
+- `src/components/common/DataTable.tsx` — DS table card: rounded-xl bg-card shell, light muted header with 10px uppercase tracking labels, subtle `bg-accent/40` row hover, transition. Selection / sorting / pagination / empty states untouched.
+- `src/components/common/StatusTabs.tsx` — Replaced bordered-pill list with DS segmented chip group (white-on-tinted active chip + count badge in primary tint). Used by Packages/Members/etc. Same API.
+- `src/pages/Lobby.tsx` — Filters/actions consolidated into a single DS toolbar card. Check-in / QR dialogs unchanged.
+- `src/pages/Schedule.tsx` — DS toolbar card for date/search; stats row switched to `variant="ds-chip"` (4 KPI tiles match DS spec). List/timeline toggle, trainer filter, booking dialog preserved.
+- `src/pages/Packages.tsx` — Search wrapped in DS toolbar card. Bulk/import/export/create/details flows untouched.
+
+**Preserved (zero regression):**
+- All `useQuery`/`useMutation` hooks, `logActivity()` calls, permission gates (`can(...)`, `ProtectedRoute`).
+- Routes, realtime subscriptions, dialog/drawer behavior, i18n keys.
+- `src/components/ui/*` shadcn primitives untouched. `App.tsx` route table, `AuthContext`, `hostname.ts`, `useRealtimeSync` untouched.
+- No DB / RLS / edge-function / dependency changes. No mock data from the UI kit copied into live pages.
+
+**Why this is now visible (vs. Phase 3/4):** Sidebar repaint, table repaint, and StatusTabs repaint cascade through every admin page that uses them — Members, Lobby, Packages, Finance subviews, Staff, Roles, Locations, Activity Log, etc. Combined with the existing `surface-admin` cool-slate page background and DS `PageHeader`, the admin canvas now reads as the MOOM Admin UI Kit.
+
+**Verification:** `bunx tsc --noEmit -p tsconfig.app.json` passes. Manual smoke: dashboard, sidebar nav with permissions, lobby check-in dialog, packages bulk-select, schedule date/booking dialog.
+
+**Deferred (no current product equivalent — not added as empty pages per user instruction):** DS `Branding`, `Programs`, alternate `GamificationB`. Phase 5C will continue with Leads/Analytics/Staff/etc. on request.
+
+---
+
 ## 2026-04-30 — Admin UI alignment with MOOM Design System (Phase 3)
 
 **Goal:** Visually align admin pages with `MOOM Design System/ui_kits/admin/*` (Theme.jsx + Components.jsx). Logic, hooks, RLS, routes, realtime, and i18n untouched.
