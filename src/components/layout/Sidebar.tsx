@@ -146,10 +146,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     setOpenGroups(prev => ({ ...prev, [g]: !prev[g] }));
 
   const hasAccess = (minLevel?: AccessLevel, resource?: ResourceKey) => {
-    if (hasCustomPermissions && resource) return can(resource, 'read');
-    if (!minLevel) return true;
-    if (!accessLevel) return false;
-    return accessLevelOrder[accessLevel] >= accessLevelOrder[minLevel];
+    // Level gate (AND): user must meet the minimum role level
+    if (minLevel) {
+      if (!accessLevel) return false;
+      if (accessLevelOrder[accessLevel] < accessLevelOrder[minLevel]) return false;
+    }
+    // Resource gate (AND): respects custom DB permissions or default-by-level
+    if (resource) return can(resource, 'read');
+    return true;
   };
 
   const dailyItems: NavItem[] = [
