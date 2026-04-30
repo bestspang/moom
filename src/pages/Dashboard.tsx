@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { AdminCard, AdminSectionHeader } from '@/components/admin-ds';
 import {
   useDashboardStats,
   useHighRiskMembers,
@@ -150,7 +151,14 @@ const Dashboard = () => {
               value={stats?.currentlyInClass || 0}
               subtitle={t('dashboardExtra.attendees')}
               color="orange"
-              icon={<Dumbbell className="h-4 w-4" />}
+              icon={
+                <span className="relative inline-flex items-center justify-center">
+                  <Dumbbell className="h-4 w-4" />
+                  {(stats?.currentlyInClass ?? 0) > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-admin-pulse" />
+                  )}
+                </span>
+              }
               onClick={() => navigate('/calendar')}
             />
             <StatCard
@@ -197,18 +205,18 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <NeedsAttentionCard />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">
-                {t('dashboardExtra.todayScheduleCompact')}
-              </CardTitle>
-              <Button variant="link" size="sm" className="text-xs p-0 h-auto" asChild>
-                <Link to="/calendar">{t('dashboardExtra.viewAllSchedule')} →</Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
+        <AdminCard padded={false} className="flex flex-col">
+          <div className="px-4 pt-4 pb-2">
+            <AdminSectionHeader
+              title={t('dashboardExtra.todayScheduleCompact')}
+              action={
+                <Button variant="link" size="sm" className="text-xs p-0 h-auto" asChild>
+                  <Link to="/calendar">{t('dashboardExtra.viewAllSchedule')} →</Link>
+                </Button>
+              }
+            />
+          </div>
+          <div className="px-4 pb-4 pt-0">
             {scheduleLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
@@ -231,9 +239,10 @@ const Dashboard = () => {
                     onClick={() => navigate('/calendar')}
                     className="flex items-center gap-3 w-full text-left py-2.5 hover:bg-accent/50 rounded-md px-2 -mx-2 transition-colors"
                   >
-                    <span className="text-xs font-mono text-muted-foreground w-12 shrink-0">
+                    <span className="text-xs font-mono text-muted-foreground w-12 shrink-0 tabular-nums">
                       {item.time.split(' - ')[0]}
                     </span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" aria-hidden />
                     <span className="text-sm font-medium flex-1 truncate">
                       {item.className}
                     </span>
@@ -245,8 +254,8 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </AdminCard>
 
         <RecentActivityFeed />
       </div>

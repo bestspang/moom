@@ -1,173 +1,134 @@
-## 1. System analysis
 
-- Current Phase 3/4 changes were mostly global tokens/shared components: `surface-admin`, `PageHeader`, `StatCard` `ds-chip`, and motion utilities.
-- That is why many admin pages still look almost unchanged: most existing pages render their own layout using `DataTable`, filters, tabs, cards, and page-specific markup, so global typography/color tweaks are not enough to visibly match `MOOM Design System/MOOM Admin UI Kit.html`.
-- The actual design kit has page-specific patterns in `MOOM Design System/ui_kits/admin/*.jsx`: sidebar/top header, KPI strips, toolbar cards, table/card shells, live indicators, tab/chip controls, and compact section cards.
-- Existing admin pages must be updated in place. I will not replace a page with the mock UI or dummy data.
+# Phase 5C (revised) — Design System เป็นระบบ ไม่ใช่ hard-code
 
-## 2. Problem list
+## ทำไมตอนนี้ทุกหน้ายังเหมือนเดิม (root cause)
 
-1. Layout chrome still differs from DS
-   - `MainLayout`, `Sidebar`, `Header` still keep older sizing/spacing behavior in key places.
-   - DS expects 220px warm sidebar, compact 60px top header, orange icon emphasis, soft card shells, max-width admin canvas.
+DS tokens (orange, cream, radius 12, density 13px, font Anuphan) ถูกเขียนไว้ใน `src/index.css` ครบแล้ว และ `MainLayout` ก็แปะ class `surface-admin` ที่บังคับ `font-admin` แล้วด้วย — **แต่ทุกหน้ายังใช้ shadcn `<Card>` / `<Button>` / `<Input>` ดิบๆ ที่อ้างถึง token เดียวกัน** เลยไม่มี delta visual ให้ตามองเห็น
 
-2. Shared table/card primitives are still old
-   - `DataTable` still uses dark header rows (`bg-table-header`), while DS tables use white cards, light header background, 10px uppercase table labels, subtle row hover.
-   - This affects Members, Lobby, Packages, Finance sub-tables, Staff, Roles, Locations, Activity Log, etc.
+สิ่งที่ขาด ไม่ใช่ "การไปแก้ไขทีละหน้า" แต่คือ **DS-aware primitive layer** ที่ทุกหน้าจะ "อัตโนมัติได้หน้าตาแบบ DS" โดยไม่ต้องแก้แต่ละหน้า และ **โครงสำหรับให้หน้า "แบรนด์ยิม" override ได้ในอนาคต** (แค่ไป toggle/เปลี่ยนค่า CSS variable ไม่กี่ตัว)
 
-3. Page-specific visual parity is incomplete
-   - Dashboard KPI got updated, but Lobby, Schedule, Packages, Finance, Leads, Analytics/Insights, Staff, Settings-like pages still need their DS wrappers/toolbars/KPI strips applied around existing data.
+นี่คือเหตุผลว่าทำไมการแก้ ClassCategories + Promotions ใน Chunk 1 ถึง "ดูดี" แต่หน้าอื่นยังเหมือนเดิม — เพราะ Chunk 1 ไปแก้ที่ระดับ **page-level** ไม่ใช่ **system-level**
 
-4. Motion exists but is barely visible
-   - Admin motion utilities were added, but not applied to real live indicators, drawer/dialog entry shells, table rows, or page sections where DS uses restrained transitions.
+---
 
-5. Existing console warning should be handled carefully
-   - There is a browser warning from `DailyBriefingCard`/`Skeleton` receiving refs. Because `src/components/ui/*` is protected, I will avoid editing shadcn primitives unless explicitly necessary; I can first try a local safe wrapper/markup fix in `DailyBriefingCard`.
+## หลักการใหม่ (ที่จะใช้ตลอดทุก chunk ถัดไป)
 
-## 3. Design
+1. **Token-first** — ทุก visual decision (สี, radius, ระยะ, font weight, KPI accent) ผ่าน CSS variable เพียงชุดเดียว
+2. **Brand-tunable** — variable ที่ user เปลี่ยนได้จากหน้า "แบรนด์ยิม" จะอยู่ใน scope เดียว (`:root` overrides) เพื่อให้อนาคตทำ live preview ได้ทันที
+3. **Primitive-first** — ใช้ `AdminCard / AdminKpiCard / AdminPageHeader / AdminSectionHeader` (มีอยู่แล้ว) + เพิ่มอีก 3 ตัว ครอบคลุมทุก pattern จาก DS HTML kit
+4. **No new pages** — แก้ไฟล์เดิมเท่านั้น, ไม่สร้าง route ใหม่, ไม่แตะ logic / hook / RLS
+5. **Surgical** — diff ต้องน้อยที่สุดต่อหน้า (ส่วนใหญ่คือเปลี่ยน import + แทน wrapper)
 
-The next pass should make the app visibly match the Admin UI Kit by applying DS primitives to existing pages:
+---
 
-- Create or expand `src/components/admin-ds/*` as thin presentational wrappers only.
-- Update current pages/components to use those wrappers while preserving:
-  - existing hooks (`useCheckIns`, `useScheduleByDate`, `useFinanceTransactions`, etc.)
-  - mutations and `logActivity()` behavior
-  - permission gates (`can(...)`, `ProtectedRoute`)
-  - routes and navigation
-  - i18n strings
-  - real data only, no mock datasets from the design kit
-- Use DS motion only where it maps to real UI:
-  - page/section fade-in
-  - live status dots
-  - hover transitions on rows/cards
-  - dialog/drawer entry polish if wrapper-level safe
+## ขั้นตอน step-by-step
 
-## 4. Plan
+### Step 1 — ขยาย DS primitive layer (ครั้งเดียว, ใช้ได้ทุกหน้า)
 
-### Phase 5A — Make shared admin chrome visibly DS
-Files likely touched:
-- `src/components/layout/MainLayout.tsx`
-- `src/components/layout/Sidebar.tsx`
-- `src/components/layout/Header.tsx`
-- `src/index.css`
-- `src/components/admin-ds/*`
+ใน `src/components/admin-ds/` เพิ่ม 3 ตัว + token utility 1 ชุด:
 
-Work:
-- Align admin layout to DS canvas: 220px desktop sidebar, compact content container, 60px header behavior, tight spacing.
-- Style Sidebar to match Admin UI Kit:
-  - warm cream sidebar surface
-  - orange icons for inactive/group rows
-  - orange active row
-  - compact 13px labels
-  - preserve all permission filtering, badges, nav routes, group open/close state.
-- Style Header to match DS top header:
-  - white 60px header with subtle border
-  - compact icon buttons
-  - keep theme toggle, notifications, language selector, avatar dropdown, surface switcher, logout.
-- Add reusable admin wrappers:
-  - `AdminToolbarCard`
-  - `AdminSegmentedControl`/chip style wrapper where safe
-  - `AdminTableShell`/row hover classes
-  - `AdminLiveDot`
-  - optional `AdminMetricStrip` helper
+| ไฟล์ใหม่ | ทำอะไร |
+|---|---|
+| `BrandTokens.ts` | Single source ของ CSS var ที่ "แบรนด์ยิม" จะมา override ได้ (primary, radius, accent set) + helper `applyBrandTokens(partial)` |
+| `AdminToolbar.tsx` | wrapper สำหรับ search + filter chips + view-mode toggle (pattern ซ้ำใน Lobby/Categories/Classes/Trainers/Rooms) |
+| `AdminStatusDot.tsx` | จุดสถานะ + pulse animation (`animate-admin-pulse` มีอยู่แล้วใน index.css) — ใช้ได้ทั้ง trainer on-shift, room occupied, lead hot |
+| `AdminAvatar.tsx` | initials avatar + status dot + tier ring (ใช้ได้กับ member, trainer, staff) |
 
-### Phase 5B — Update high-impact pages in place
-Files likely touched:
-- `src/pages/Lobby.tsx`
-- `src/pages/Schedule.tsx`
-- `src/pages/Packages.tsx`
-- `src/pages/Finance.tsx`
-- selected `src/components/finance/*`
-- `src/components/common/DataTable.tsx`
+ไม่แตะ `src/components/ui/*` (shadcn primitives) — มี risk สูง
 
-Work:
-- `DataTable`: switch admin tables from dark header to DS light header/table-card look, add row hover. Keep columns, selection, sorting, pagination, empty states intact.
-- `Lobby`: add DS live/operator hero or compact stats strip based on current real `checkInData`; add live dot only for current-day view; move filters/actions into DS toolbar card; preserve check-in and QR dialogs.
-- `Schedule`: apply DS toolbar card for date/search/view controls; apply `variant="ds-chip"` to schedule stats; improve availability cells with DS capacity bar; preserve list/timeline toggle and booking dialog.
-- `Packages`: add DS KPI strip from real `usePackageStats` + package list counts; move search/status/actions into DS toolbar card; keep bulk selection/import/export/create/details routes.
-- `Finance`: align top tabs/toolbar and overview cards with DS shells; update Finance subcomponents visually where they have matching DS screens; keep export/import/slip approval/expense flows unchanged.
+### Step 2 — Dashboard (หน้าแรกตามที่ user ขอ)
 
-### Phase 5C — Second batch pages that have direct DS matches
-Files likely touched after 5B:
-- `src/pages/Leads.tsx`
-- `src/pages/Analytics.tsx` or `src/pages/Insights.tsx` depending current routing/data
-- `src/pages/Staff.tsx`
-- `src/pages/Classes.tsx`
-- `src/pages/ClassCategories.tsx`
-- `src/pages/Rooms.tsx`
-- `src/pages/Promotions.tsx`
-- `src/pages/Announcements.tsx`
-- `src/pages/Settings.tsx`, `Roles.tsx`, `Locations.tsx`, `ActivityLog.tsx` only where DS has equivalent patterns
+ไฟล์เป้า: `src/pages/Dashboard.tsx` + `src/components/dashboard/*`
 
-Work:
-- Update only pages that have a matching UI kit file.
-- Use existing data/table/dialog logic; do not paste mock datasets.
-- For DS pages without current product equivalents (`Branding`, `Programs`, alternate `GamificationB`), do not add live fake pages. If a placeholder is required, it will be inert/disabled per project rule, but no route will be added unless explicitly approved because `src/App.tsx` is protected.
+แก้แบบ surgical:
+- `<Card>` → `<AdminCard>` ใน "Today's Schedule" + รอบ section ที่ทำเอง
+- ปรับ section title style ให้ match (`AdminSectionHeader`) — ตอนนี้ใช้ `CardTitle text-base` ดิบ
+- KPI strip: ตอนนี้ใช้ `StatCard variant="ds-chip"` อยู่แล้ว → **คงไว้** (ทำงานดีแล้ว ห้ามพัง) แต่เพิ่ม subtle motion `animate-admin-pulse` บน status dot ของ "currently in class"
+- Today's Schedule list: เพิ่ม coach color dot + status dot 6px (เลียนจาก DS Lobby preview)
+- Live Activity Feed: wrap ใน AdminCard เดียวกัน (ตอนนี้ใช้ Card)
+- **ไม่แก้** `BusinessHealthCard / RevenueForecastCard / GoalProgressCard / DailyBriefingCard / NeedsAttentionCard / DashboardWelcome` — อันนี้เป็น working composite ที่ user เห็นแล้ว ห้ามพัง (มี chart/AI logic) จะแก้ที่ระดับ wrapper เท่านั้น (เปลี่ยนพื้น Card → AdminCard ถ้าจำเป็น)
 
-### Phase 5D — Motion and warning cleanup
-Files likely touched:
-- `src/index.css`
-- page files/components where live indicators exist
-- `src/components/dashboard/DailyBriefingCard.tsx`
+ผลที่ user จะเห็น: density กระชับขึ้น, card มี border + shadow แบบ DS, status dot กระพริบ, schedule row มี coach dot + fill bar แบบ DS
 
-Work:
-- Apply `animate-admin-pulse` to real live/status dots only.
-- Apply restrained section/page entrance motion (`animate-page-enter-desktop`) consistently.
-- Add `prefers-reduced-motion` coverage for any new admin animations.
-- Fix the `DailyBriefingCard` ref warning without touching `src/components/ui/skeleton.tsx` if possible.
+### Step 3 — Staff/Trainers (`/staff`)
 
-### Phase 5E — Documentation and verification
-Files likely touched:
-- `docs/DEVLOG.md`
-- possibly `docs/SMOKE_TEST.md` only if checklist needs an Admin DS visual smoke section
+- KPI strip ด้านบน: `AdminKpiCard` x4 (Total · On-shift now · PT today · Avg rating) — query เดิม, แค่ map ใหม่
+- Toolbar: search + role filter + grid/list toggle ผ่าน `AdminToolbar`
+- Roster: เปลี่ยนจาก table → grid ของ `AdminCard` มี `AdminAvatar` + role badge + status dot + spec chips
+- **คงไว้**: `useStaff`, mutation, permission gate, `StaffDetails` route
+- ถ้า role/spec ยังไม่มีในตาราง → render badge แบบ neutral (ไม่บังคับเพิ่ม schema)
 
-Verification:
-- Build/typecheck via project harness.
-- Smoke through:
-  1. Admin dashboard loads
-  2. Sidebar links still route correctly
-  3. Header notifications/avatar/language/theme still work
-  4. Lobby search/date/check-in/QR dialog still work
-  5. Schedule date/filter/list/timeline/booking dialog still work
-  6. Packages search/status/bulk/import/export/create/detail still work
-  7. Finance tabs/export/import/slip detail still work
-  8. Permission-gated buttons remain hidden for unauthorized roles
-  9. No fake buttons/routes introduced
-  10. Member/Trainer/Staff surfaces unaffected
+### Step 4 — Classes (`/classes`)
 
-## 5. Code changes
+- KPI strip: Active · Paused · Draft · Avg fill rate
+- Toolbar: search + type filter + level chips + grid/list toggle
+- Card grid: ใช้ `AdminCard` มี top accent bar (สีตาม category ผ่าน `getCategoryVisual`), coach stack, fill rate badge, rating
+- **คงไว้**: `useClasses`, `ClassDetails` drawer/page, status mutation
 
-After approval I will implement in small chunks:
+### Step 5 — Rooms (`/rooms`)
 
-1. Shared DS admin wrappers and chrome.
-2. Shared table/card visible update.
-3. Lobby + Schedule page parity.
-4. Packages + Finance page parity.
-5. Matched remaining pages, one group at a time.
-6. Motion application + warning cleanup.
-7. DEVLOG update.
+- KPI strip: Total rooms · Avg utilization · Peak hour · Conflicts
+- Card grid: room icon chip (สีของ room), capacity, equipment count, "ใช้งานสัปดาห์นี้ X คลาส", `AdminStatusDot` สำหรับ occupied
+- **เลื่อน** heatmap visual ออกไปก่อน (DS แสดงไว้ แต่เป็น feature ใหม่ที่ต้องประมวลผล data จริง — จะเสนอใน chunk แยกเมื่อ user อยาก)
+- **คงไว้**: `useRooms`, `RoomDetails`, schedule integration
 
-No database, auth, RLS, route-table, realtime, or generated integration files will be changed in this pass.
+---
 
-## 6. Regression checklist
+## ไฟล์ที่จะแตะ
 
-Must preserve:
-- Existing business logic and all data hooks.
-- Existing mutations and audit logging.
-- Existing role/permission checks.
-- Existing i18n usage.
-- Existing routes and navigation.
-- Existing dialogs/drawers/forms.
-- Existing Member/Trainer/Staff UI.
-- No mock data copied from the UI kit into live pages.
+**ใหม่ (4)**
+- `src/components/admin-ds/BrandTokens.ts`
+- `src/components/admin-ds/AdminToolbar.tsx`
+- `src/components/admin-ds/AdminStatusDot.tsx`
+- `src/components/admin-ds/AdminAvatar.tsx`
+- update `src/components/admin-ds/index.ts` (export)
 
-## 7. Doc updates
+**แก้ surgical (4 หน้า)**
+- `src/pages/Dashboard.tsx` (Step 2)
+- `src/pages/Staff.tsx` (Step 3)
+- `src/pages/Classes.tsx` (Step 4)
+- `src/pages/Rooms.tsx` (Step 5)
 
-- Append a new `docs/DEVLOG.md` entry for Phase 5 with:
-  - files touched
-  - DS screens matched
-  - functions deliberately preserved
-  - deferred screens without current equivalents
-  - verification checklist result
+**ห้ามแตะ**
+- `src/components/ui/*` (shadcn)
+- `src/contexts/AuthContext.tsx`, `src/App.tsx` (routing)
+- ทุก `src/hooks/use*.ts` (data layer)
+- `BusinessHealthCard / RevenueForecastCard / GoalProgressCard / DailyBriefingCard / NeedsAttentionCard / DashboardWelcome` (composite ที่ทำงานอยู่ดี)
+- `src/integrations/supabase/*`, migrations, RLS
 
-If you approve, I’ll start with Phase 5A/5B first so the changes are immediately visible across admin pages instead of only subtle token changes.
+---
+
+## เตรียมพร้อมหน้า "แบรนด์ยิม" ในอนาคต (ไม่ทำตอนนี้)
+
+`BrandTokens.ts` จะ expose 6 ตัวแปรหลักที่ user override ได้ทีหลัง:
+```
+--primary, --primary-hover, --accent, --radius, --font-admin, --shadow-md
+```
+หน้า Branding (DS มี `Branding.jsx`) ในอนาคตจะแค่:
+1. โหลดค่าจาก DB (ตาราง `org_branding` — เพิ่มทีหลัง)
+2. เรียก `applyBrandTokens(values)` ตอน mount
+3. live preview ใช้ `setProperty` บน `<html>` ทันที
+
+ตอนนี้แค่วาง interface ไว้ — **ยังไม่สร้างหน้าจริง ยังไม่แตะ DB** เพราะ user บอกว่าจะทำ "ในอนาคต"
+
+---
+
+## Regression checklist (จะรันท้าย Step 2 และ Step 5)
+
+- [ ] Dashboard load ไม่ error, KPI ตัวเลขเดิม, schedule item คลิกไป `/calendar` ได้
+- [ ] AI Daily Briefing ยังเรียก edge function ได้ (ไม่แตะ logic)
+- [ ] Quick check-in dialog ยังเปิดได้
+- [ ] `/staff` list ครบ จำนวนเดิม, คลิก card → StaffDetails ได้
+- [ ] `/classes` filter + status toggle (active/paused) ยัง mutate ได้
+- [ ] `/rooms` คลิก card → RoomDetails, capacity ตรง DB
+- [ ] permission gate (`can(...)`) ยังซ่อน/แสดงปุ่มถูกต้อง
+- [ ] i18n EN/TH สลับได้ทุกหน้า
+- [ ] dark mode ไม่พัง (ทุก primitive ใหม่ใช้ token, ไม่ hard-code สี)
+
+---
+
+## คำถามก่อนเริ่ม
+
+อนุมัติให้เริ่ม **Step 1 + Step 2 (DS primitive layer + Dashboard)** ในรอบนี้เลยไหมครับ? 
+
+หลังจากนั้นรออ confirm ว่า Dashboard "หน้าตาเปลี่ยนจริง" แล้วค่อยเดินหน้า Step 3–5 ต่อเนื่อง — แบบนี้จะปลอดภัยกว่าทำ 4 หน้าพร้อมกันแล้วเจอ regression ลึกๆ

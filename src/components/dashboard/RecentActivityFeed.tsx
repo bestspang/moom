@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdminCard, AdminSectionHeader } from '@/components/admin-ds';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, DoorOpen, ShoppingBag } from 'lucide-react';
@@ -14,14 +14,14 @@ const RecentActivityFeed: React.FC = () => {
   const locale = getDateLocale(language);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
-          {t('dashboardExtra.liveActivity')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
+    <AdminCard padded={false} className="flex flex-col">
+      <div className="px-4 pt-4 pb-2">
+        <AdminSectionHeader
+          icon={<Activity className="h-4 w-4" />}
+          title={t('dashboardExtra.liveActivity')}
+        />
+      </div>
+      <div className="px-4 pb-4 pt-0">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -66,8 +66,8 @@ const RecentActivityFeed: React.FC = () => {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </AdminCard>
   );
 };
 
