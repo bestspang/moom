@@ -17,12 +17,8 @@ const RecentActivityFeed: React.FC = () => {
     <AdminCard padded={false} className="flex flex-col">
       <div className="px-4 pt-4 pb-2">
         <AdminSectionHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              {t('dashboardExtra.liveActivity')}
-            </span>
-          }
+          icon={<Activity className="h-4 w-4" />}
+          title={t('dashboardExtra.liveActivity')}
         />
       </div>
       <div className="px-4 pb-4 pt-0">
