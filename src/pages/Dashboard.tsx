@@ -151,7 +151,14 @@ const Dashboard = () => {
               value={stats?.currentlyInClass || 0}
               subtitle={t('dashboardExtra.attendees')}
               color="orange"
-              icon={<Dumbbell className="h-4 w-4" />}
+              icon={
+                <span className="relative inline-flex items-center justify-center">
+                  <Dumbbell className="h-4 w-4" />
+                  {(stats?.currentlyInClass ?? 0) > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-admin-pulse" />
+                  )}
+                </span>
+              }
               onClick={() => navigate('/calendar')}
             />
             <StatCard
