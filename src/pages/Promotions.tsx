@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Copy } from 'lucide-react';
+import { Copy, Gift, CheckCircle2, Archive, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
+import { AdminKpiCard } from '@/components/admin-ds';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePromotions, usePromotionStats, useBulkUpdatePromotionStatus, useBulkDeletePromotions, useBulkDuplicatePromotions } from '@/hooks/usePromotions';
