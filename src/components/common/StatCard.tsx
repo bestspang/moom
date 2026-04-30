@@ -16,6 +16,8 @@ export interface StatCardProps {
   icon?: React.ReactNode;
   action?: React.ReactNode;
   onClick?: () => void;
+  /** 'default' = legacy left-bar look. 'ds-chip' = DS KpiCardV2 (tinted icon chip + delta pill + hover lift). Use in admin surface. */
+  variant?: 'default' | 'ds-chip';
 }
 
 /** Mini SVG sparkline — no external deps */
