@@ -41,6 +41,7 @@ export function MascotIllustration({
   className,
 }: MascotIllustrationProps) {
   const [bob, setBob] = useState(0);
+  const [tilt, setTilt] = useState(0);
 
   useEffect(() => {
     // Respect reduced motion — skip rAF loop entirely.
@@ -53,7 +54,9 @@ export function MascotIllustration({
     let raf = 0;
     const t0 = performance.now();
     const tick = (t: number) => {
-      setBob(Math.sin((t - t0) / 700) * 1.2);
+      const dt = (t - t0) / 700;
+      setBob(Math.sin(dt) * 2.5);
+      setTilt(Math.sin(dt * 0.6) * 1.5);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -76,7 +79,25 @@ export function MascotIllustration({
       {/* soft ground shadow */}
       <ellipse cx="60" cy="132" rx="30" ry="3" fill="#000" opacity="0.10" />
 
-      <g transform={`translate(0 ${bob})`}>
+      <style>{`
+        @keyframes mascot-flame-flicker {
+          0%, 100% { transform: scale(1) rotate(-2deg); opacity: 1; }
+          50% { transform: scale(1.1) rotate(2deg); opacity: 0.88; }
+        }
+        @keyframes mascot-tail-wag {
+          0%, 100% { transform: rotate(-6deg); }
+          50% { transform: rotate(8deg); }
+        }
+        @keyframes mascot-zzz-float {
+          0% { transform: translate(0, 4px); opacity: 0; }
+          30% { opacity: 0.9; }
+          100% { transform: translate(4px, -8px); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mascot-flame, .mascot-tail, .mascot-zzz { animation: none !important; }
+        }
+      `}</style>
+      <g transform={`translate(0 ${bob}) rotate(${tilt} 60 70)`}>
         {/* --- BODY (sitting) --- */}
         <g>
           <ellipse cx="60" cy="118" rx="22" ry="12" fill={COLORS.face} />
@@ -94,16 +115,28 @@ export function MascotIllustration({
             strokeWidth="1"
             strokeLinecap="round"
           />
-          {/* tail */}
-          <path
-            d="M82 116 q16 -2 18 8"
-            stroke={COLORS.face}
-            strokeWidth="3.5"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <circle cx="101" cy="126" r="4.5" fill={COLORS.maneInner} />
-          <circle cx="103" cy="123" r="2.8" fill={COLORS.maneOuter} />
+          {/* tail (wags when not sleeping) */}
+          <g
+            className={sleeping ? undefined : 'mascot-tail'}
+            style={
+              sleeping
+                ? undefined
+                : {
+                    transformOrigin: '82px 116px',
+                    animation: 'mascot-tail-wag 2.4s ease-in-out infinite',
+                  }
+            }
+          >
+            <path
+              d="M82 116 q16 -2 18 8"
+              stroke={COLORS.face}
+              strokeWidth="3.5"
+              fill="none"
+              strokeLinecap="round"
+            />
+            <circle cx="101" cy="126" r="4.5" fill={COLORS.maneInner} />
+            <circle cx="103" cy="123" r="2.8" fill={COLORS.maneOuter} />
+          </g>
         </g>
 
         {/* --- EARS --- */}
@@ -207,9 +240,16 @@ export function MascotIllustration({
           )}
         </g>
 
-        {/* --- FIRE: little flame above head --- */}
+        {/* --- FIRE: little flame above head (flickers) --- */}
         {fire && (
-          <g transform="translate(60 16)">
+          <g
+            transform="translate(60 16)"
+            className="mascot-flame"
+            style={{
+              transformOrigin: '4px 13px',
+              animation: 'mascot-flame-flicker 1.4s ease-in-out infinite',
+            }}
+          >
             <path
               d="M0 0 c-5 5 -6 9 -2 13 c3 -1 4 -4 4 -7 c1.5 3 3 5 6 6 c3 -3 1 -8 -4 -11 c-1.5 -1 -3 -1 -4 -1 z"
               fill={COLORS.flameOuter}
@@ -221,11 +261,28 @@ export function MascotIllustration({
           </g>
         )}
 
-        {/* --- SLEEP: Zzz --- */}
+        {/* --- SLEEP: Zzz (floats up) --- */}
         {sleeping && (
           <g fill={COLORS.ink} fontFamily="system-ui" fontWeight="800">
-            <text x="92" y="40" fontSize="11" opacity="0.5">z</text>
-            <text x="99" y="30" fontSize="14">Z</text>
+            <text
+              x="92"
+              y="40"
+              fontSize="11"
+              opacity="0.5"
+              className="mascot-zzz"
+              style={{ animation: 'mascot-zzz-float 2.5s ease-out infinite' }}
+            >
+              z
+            </text>
+            <text
+              x="99"
+              y="30"
+              fontSize="14"
+              className="mascot-zzz"
+              style={{ animation: 'mascot-zzz-float 2.5s ease-out 0.8s infinite' }}
+            >
+              Z
+            </text>
           </g>
         )}
       </g>
