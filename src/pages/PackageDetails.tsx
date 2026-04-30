@@ -202,7 +202,7 @@ const PackageDetails = () => {
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{packageName}</h1>
+            <h1 className="text-[22px] font-extrabold tracking-tight leading-tight">{packageName}</h1>
             <StatusBadge variant={getStatusBadgeVariant(pkg.status)}>
               {getStatusLabel(pkg.status)}
             </StatusBadge>

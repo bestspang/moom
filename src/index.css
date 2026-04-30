@@ -280,6 +280,22 @@
   /* Per-surface font + density scopes (DS) */
   .surface-admin {
     font-family: var(--font-admin);
+    /* DS Admin (Theme.jsx) — cool slate page bg + softer borders, scoped to admin only */
+    --background: 220 20% 98%;
+    --content-background: 220 20% 98%;
+    --border: 220 16% 90%;
+    --border-light: 220 16% 94%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 10% 46%;
+    --foreground: 222 28% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 28% 12%;
+    --secondary: 220 20% 96%;
+  }
+  .dark .surface-admin {
+    /* Dark mode admin keeps existing dark tokens — no override */
+    --background: 222.2 84% 4.9%;
+    --content-background: 222.2 84% 4.9%;
   }
 
   .surface-member {
