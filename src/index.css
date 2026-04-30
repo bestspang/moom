@@ -390,6 +390,35 @@
     100% { transform: scale(1) rotate(-12deg); opacity: 1; }
   }
 
+  /* DS Admin motion (ported from MOOM Design System ui_kits/admin/*) */
+  @keyframes admin-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  @keyframes admin-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes admin-slide-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes admin-pop {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  .animate-admin-pulse { animation: admin-pulse 1.6s ease-in-out infinite; }
+  .animate-admin-fade  { animation: admin-fade 0.18s ease-out both; }
+  .animate-admin-slide-in { animation: admin-slide-in 0.22s cubic-bezier(.4,0,.2,1) both; }
+  .animate-admin-pop   { animation: admin-pop 0.22s cubic-bezier(.4,0,.2,1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-admin-pulse,
+    .animate-admin-fade,
+    .animate-admin-slide-in,
+    .animate-admin-pop { animation: none !important; }
+  }
+
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
     background-size: 200% 100%;

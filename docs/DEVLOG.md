@@ -377,3 +377,23 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 - Removed redundant per-page animate-in on MemberHomePage.
 - New utilities in src/index.css: .animate-page-enter, .animate-page-enter-desktop, .row-hover, .text-eyebrow.
 - All gamification motion preserved.
+
+## 2026-04-30 — Phase 4: Admin DS Motion + KPI Parity
+
+- Ported DS admin motion tokens to `src/index.css` (additive, scoped utility classes):
+  - `@keyframes admin-pulse` (1.6s) — for live status dots (DS Lobby/Schedule/Modern/Promos/Branding/Announcements pattern)
+  - `@keyframes admin-fade` (0.18s) — modal/sheet backdrops
+  - `@keyframes admin-slide-in` (0.22s cubic-bezier) — side sheets
+  - `@keyframes admin-pop` — modal pop-in
+  - Utility classes: `.animate-admin-pulse|fade|slide-in|pop`
+  - `prefers-reduced-motion` guard included
+- `StatCard` got a new `variant="ds-chip"` prop (back-compat; default unchanged):
+  - Tinted icon chip top-left (32×32, rounded-lg)
+  - Delta pill top-right (success/destructive bg)
+  - 28px extrabold tabular-nums value
+  - Hover lift (`-translate-y-px` + shadow-md)
+  - Soft border + rounded-xl, min-h 108px
+  - Matches DS `KpiCardV2` from `Theme.jsx`
+- Applied `variant="ds-chip"` to all 5 Dashboard KPIs (Check-ins, In Class, Classes Today, Revenue, Active Members).
+- Per-page audit: confirmed Lobby/Schedule have no live-dot elements today, so no fake elements were added (per AI guardrails — no speculative UI).
+- Logic, hooks, RLS, i18n, routes, realtime: untouched. Member/Trainer/Staff surfaces: unaffected (admin-only utilities + variant defaults).

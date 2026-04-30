@@ -1,101 +1,88 @@
-# Admin UI Alignment with MOOM Design System
+# Admin DS Motion + Per-Page Parity (Phase 4)
 
 ## Goal
-Update **existing admin pages** so their visual language (header, KPI strip, cards, tables, spacing, typography, accents) matches `MOOM Design System/ui_kits/admin/*`. Keep **all data hooks, mutations, permissions, RLS, routes, realtime, activity logging, and i18n intact**. No new routes, no fake data, no removal of working features.
+Continue admin DS alignment by porting **motion/animation tokens** จาก DS และตรวจหน้าทีละหน้าให้ตรงกับ DS โดยไม่แตะ logic/hooks/RLS/i18n
 
-## Scope — Page Mapping (DS → existing admin page)
+## What I found in DS
+DS ใช้ animations ชุดเล็กๆ ซ้ำกันทั่วทั้ง 17+ หน้า:
+- `admin-pulse` (1.6s ease-in-out infinite) — live indicators ใน Lobby/Schedule/Modern/Promos/Branding/Announcements
+- `admin-fade` (0.18s) — modal/sheet backdrop
+- `admin-slide-in` (0.22s cubic-bezier) — side sheets ใน Schedule/Announcements/ClassesMain/Programs/Rooms
+- `admin-pop` — modal pop-in
+- KPI hover lift (`translateY(-1px)` + shadow ลึกขึ้น) — มีใน wrapper `AdminKpiCard` แล้ว แต่ `StatCard` (ที่หน้า admin ใช้จริง) ยังไม่มี
 
-Mapped (will visually update, behavior unchanged):
+## Changes I will make
 
-| Design System | Existing admin page | Action |
-|---|---|---|
-| Dashboard (Modern.jsx hero+KPI+chart+attention) | `src/pages/Dashboard.tsx` | Restyle hero/KPI strip/section headers; keep all 5 KPIs, Goal/Health/Forecast/Schedule/Activity/Briefing rows |
-| Lobby.jsx | `src/pages/Lobby.tsx` | Restyle header + cards |
-| Schedule.jsx | `src/pages/Schedule.tsx` | Restyle list/roster shell |
-| Members (Modern.jsx MembersTableV2) | `src/pages/Members.tsx` | Restyle KPI strip + table chrome |
-| Leads.jsx | `src/pages/Leads.tsx` | Restyle header + table |
-| Packages.jsx | `src/pages/Packages.tsx` | Restyle list/cards |
-| Promos.jsx | `src/pages/Promotions.tsx` | Restyle list/cards |
-| Finance.jsx | `src/pages/Finance.tsx` | Restyle KPI + transactions |
-| Analytics.jsx | `src/pages/Insights.tsx` (+ `Analytics.tsx`, `Reports.tsx` if same shell) | Restyle KPI + chart cards |
-| Gamification.jsx / GamificationB.jsx | `src/pages/gamification/*` (existing pages only) | Restyle headers/cards |
-| Trainers.jsx | `src/pages/Staff.tsx` (trainer staff list) | Restyle header + table |
-| Classes.jsx + ClassesMain.jsx | `src/pages/Classes.tsx` | Restyle list/cards |
-| Categories.jsx | `src/pages/ClassCategories.tsx` | Restyle |
-| Rooms.jsx | `src/pages/Rooms.tsx` | Restyle |
-| Programs.jsx | `src/pages/WorkoutList.tsx` | Restyle (closest equivalent) |
-| Announcements.jsx | `src/pages/Announcements.tsx` | Restyle |
-| Branding.jsx | `src/pages/settings/*` branding section if exists | Restyle only if a current section maps; otherwise skip |
-| Settings.jsx | `src/pages/Settings.tsx` + `src/pages/settings/*` | Restyle layout shell only |
+### 1. `src/index.css` — เพิ่ม DS motion keyframes (additive, ไม่ลบของเดิม)
+```css
+@keyframes admin-pulse  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+@keyframes admin-fade   { from{opacity:0} to{opacity:1} }
+@keyframes admin-slide-in { from{transform:translateX(100%)} to{transform:translateX(0)} }
+@keyframes admin-pop    { from{opacity:0;transform:translate(-50%,-48%) scale(.96)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+.animate-admin-pulse / .animate-admin-fade / .animate-admin-slide-in / .animate-admin-pop
+```
++ `prefers-reduced-motion` guard
 
-Not in DS — leave untouched (style only via shared primitives if they pick up token changes):
-`ActivityLog`, `Locations`, `Roles`, `RoleEditor`, `MemberDetails`, `StaffDetails`, `ClassDetails`, `ClassCategoryDetails`, `PackageDetails`, `PromotionDetails`, `RoomDetails`, `CreateClass`, `CreatePackage`, `CreatePromotion`, `TransferSlips`, `Notifications`, `Profile`, `CheckinDisplay`, `CheckinRedeem`, `MemberAppPreview`, `TrainerAppPreview`, `DiagnosticsDataAudit`, `ComingSoon`, `NotFound`, `Index`, `Auth/*`, `liff/*`, `reports/*`.
+### 2. `src/components/common/StatCard.tsx` — DS KpiCardV2 parity (scoped to admin)
+ปัจจุบัน StatCard ใช้ `border-l-4` (DS เก่า). DS ใหม่ใน `Theme.jsx` (KpiCardV2) ใช้:
+- ไม่มี left bar — ใช้ tinted icon chip มุมซ้ายบนแทน
+- delta pill มุมขวาบน (success/destructive bg)
+- 28px tabular-nums value
+- hover lift `-translate-y-px` + shadow
+- soft border + rounded-xl
 
-DS-only screens with **no current page** (e.g. dedicated Branding page, standalone Programs/Promos shell): per user instruction, add a **placeholder route entry** under a new "Coming Soon" section that links to `/coming-soon` (existing). I will **not create new functional pages** — only ensure DS screens that have no home are noted in `docs/DEVLOG.md` as "to-be-developed" with a checklist. No new sidebar items unless a navigation slot already exists.
+**Approach (zero risk):** เพิ่ม CSS rules ใต้ `.surface-admin .stat-card-ds` หรือ ปรับ `StatCard` ให้ใช้ tinted-chip layout เมื่อมี `icon` prop **เฉพาะใน admin surface** (detect ผ่าน CSS scope)
+- ทาง CSS-only: เพิ่ม `.surface-admin [data-stat-card] { ... hover lift ... }`
+- ทาง TSX: เพิ่ม optional `variant?: 'default' | 'ds-chip'` prop, default คงเดิม → ไม่กระทบ member/trainer/staff
+จะใช้แบบ TSX variant prop (ปลอดภัยกว่า, ชัดเจน)
 
-## Approach
+จากนั้นใน `src/pages/Dashboard.tsx` (5 KPIs) เพิ่ม `variant="ds-chip"` ให้ทั้ง 5 ใบ
 
-Phase 1 — Shared visual primitives (foundation, reused by all pages):
-1. Inspect DS tokens in `Theme.jsx` + `Components.jsx` (colors, radius, shadows, accents: orange/teal/info/pink).
-2. Map DS tokens onto existing CSS variables in `src/index.css` **without changing semantic names**. Only adjust hue/lightness if needed, and only inside `.surface-admin { ... }` so member/trainer/staff are unaffected.
-3. Create thin admin-only presentational wrappers (no logic) under `src/components/admin-ds/`:
-   - `AdminPageHeader` (title + subtitle + right-side action slot)
-   - `AdminKpiCard` (label, value, delta, accent, icon) — wraps existing `StatCard`/Card; same props surface where possible
-   - `AdminSectionHeader` (title + subtitle + optional action)
-   - `AdminCard` (Card variant with DS spacing/border/shadow)
-   These wrap shadcn `Card` — they do **not** replace it.
+### 3. Live indicators ใน Dashboard — ใช้ `.animate-admin-pulse`
+ตรวจ:
+- `LiveActivityFeed`, `RecentActivityFeed` — ถ้ามี dot status ให้เปลี่ยนเป็น admin-pulse
+- `Lobby.tsx` — สมาชิกที่อยู่ในยิม dot status
+- `Schedule.tsx` — คลาสที่กำลังจัด dot status
+ตรวจก่อนแก้ ถ้าไม่มี dot ก็ข้าม
 
-Phase 2 — Page-by-page restyle (one page per commit-sized chunk):
-For each mapped page:
-- Open DS source, capture layout grid + visual tokens.
-- Replace **only** outer header / KPI grid / section dividers / card chrome with DS wrappers.
-- Keep every existing `useQuery`, `useMutation`, permission gate, dialog, table column, row action, badge, empty state, loading skeleton, route link, realtime subscription, i18n key, and activity log call **byte-for-byte**.
-- Preserve dark mode (DS is light-only — derive dark variants from existing tokens).
-- Preserve responsive breakpoints (DS targets 1280+; on `<lg` keep current responsive behavior).
+### 4. Per-page audit (ทีละหน้า, อ่านก่อนแก้)
+สำหรับแต่ละหน้าที่ map กับ DS — เปิดไฟล์ DS อ่านโครง, เปิดหน้าปัจจุบัน, แก้เฉพาะ visual elements ที่ขาดหาย:
+- **Dashboard** ✅ (Phase 3 done) — เพิ่ม ds-chip KPI + live pulse
+- **Lobby** — ตรวจ live dot indicator + KPI strip
+- **Schedule** — ตรวจ class card live state + side sheet animation
+- **Members** — ตรวจ KPI strip + table row hover
+- **Leads** — ตรวจ KPI strip + status pills
+- **Finance** — ตรวจ KPI + transaction row chrome
+- **Packages / Promotions** — ตรวจ card grid spacing
+- **Insights / Analytics / Reports** — ตรวจ KPI + chart card chrome
+- **Classes / Categories / Rooms / WorkoutList** — ตรวจ list chrome
+- **Staff / Announcements** — ตรวจ list chrome + announcement live dot
+- **Settings** — ตรวจ tab/sidebar layout
+- **Gamification** — ตรวจ progress/tier visuals (ระวังของเดิมเยอะ)
 
-Phase 3 — Verification per page:
-- Build passes (TS errors surface in build).
-- Compare rendered page vs DS screen at 1280px.
-- Smoke: page loads, primary CTA works, table sort/search works, dialog opens, mutation fires toast + activity log.
-- No removed buttons/columns/badges; diff each page against pre-change file.
+**กฎ:** ถ้าหน้าเดิมไม่มี element ที่จะปรับ (เช่นไม่มี live dot) — ข้าม ไม่เพิ่มของใหม่ที่ไม่มีฟังก์ชัน
 
-## Order of execution (chunked, stops are safe)
+### 5. หน้าใน DS ที่ไม่มีใน app — ไม่สร้าง (ตามที่ user สั่ง)
+`Branding.jsx`, `Programs.jsx` (เฉพาะ shell), `GamificationB.jsx` — บันทึกไว้ใน DEVLOG แล้ว ไม่ทำอะไรเพิ่ม
 
-1. Foundation: tokens + `src/components/admin-ds/*` wrappers.
-2. Dashboard.
-3. Members + Leads.
-4. Schedule + Lobby.
-5. Packages + Promotions.
-6. Finance + Insights/Analytics/Reports.
-7. Classes + ClassCategories + Rooms + WorkoutList.
-8. Staff (Trainers) + Announcements.
-9. Settings shell + Gamification pages.
-10. DEVLOG entry + smoke checklist update.
+### 6. หน้า app ที่ไม่อยู่ใน DS — ไม่แตะ
+`MemberDetails`, `StaffDetails`, `*Details`, `Create*`, `TransferSlips`, `Notifications`, `Profile`, `ActivityLog`, `Locations`, `Roles`, `RoleEditor`, `Auth/*`, `liff/*`, `CheckinDisplay`, `CheckinRedeem`, `*Preview`, `DiagnosticsDataAudit`, `ComingSoon`, `NotFound` — ปล่อยตามเดิม (จะได้ DS title styling อัตโนมัติจาก PageHeader ที่อัปแล้ว)
 
-After each step I'll re-check the page renders without console errors before moving to the next.
+## Order
+1. index.css — เพิ่ม admin-* keyframes + utility classes
+2. StatCard — เพิ่ม `variant="ds-chip"` (back-compat)
+3. Dashboard — apply ds-chip ให้ 5 KPIs + ตรวจ live dot
+4. Lobby — live dot pulse
+5. Schedule — live class dot pulse
+6. ตรวจหน้าอื่นทีละหน้า, แก้เฉพาะที่จำเป็น
+7. Update DEVLOG
 
-## Hard rules I'll follow
+## Hard rules (ไม่เปลี่ยน)
+- ไม่แตะ logic/hooks/mutations/RLS/i18n/routes/realtime
+- ไม่แตะ shadcn `ui/*`, AuthContext, hostname.ts, App.tsx, useRealtimeSync
+- ไม่ลบ chip/card/column/action ที่มีอยู่
+- ไม่เพิ่ม dependency
+- DS motion scope ใต้ `.surface-admin` หรือ admin-only utility classes — member/trainer/staff ไม่กระทบ
+- StatCard variant ใหม่ default = legacy → zero regression
 
-- No edits to `src/components/ui/*` (shadcn primitives).
-- No edits to `AuthContext`, `hostname.ts`, `App.tsx` route table, or `useRealtimeSync`.
-- No DB / RLS / edge-function changes.
-- No removal of existing chips/cards/columns/actions.
-- No new dependencies.
-- Member / Trainer / Staff surfaces untouched — all DS changes are scoped under `.surface-admin` or admin-only components.
-- Every i18n string already present stays; no raw English added.
-- DS screens without a current admin home → documented in DEVLOG as "future work", **not** built as empty new pages.
-
-## Risks & mitigations
-
-- Token shifts could leak to other surfaces → scope under `.surface-admin`.
-- DS uses inline styles + custom fonts (Anuphan) → I'll map to existing Tailwind tokens + IBM Plex Sans Thai/Inter (per Core memory). I will **not** add Anuphan unless approved.
-- Large surface area → executed in small chunks with verification gates between each page.
-
-## Deliverables
-
-- Updated admin pages (visual only).
-- New `src/components/admin-ds/*` wrappers.
-- Scoped token additions in `src/index.css` under `.surface-admin`.
-- `docs/DEVLOG.md` entry listing every page touched + DS screens deferred.
-
-Approve and I'll start with Phase 1 (tokens + wrappers) and Dashboard.
+อนุมัติแล้วผมเริ่ม Phase 4 ทันที
