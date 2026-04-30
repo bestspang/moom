@@ -182,7 +182,8 @@ const Packages = () => {
         }
       />
 
-      <div className="mb-6">
+      {/* DS toolbar card — search */}
+      <div className="mb-4 rounded-xl border border-border bg-card shadow-sm p-3">
         <SearchBar placeholder={t('packages.searchPlaceholder')} value={search} onChange={setSearch} className="max-w-md" />
       </div>
 
