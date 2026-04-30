@@ -35,12 +35,15 @@
     --background: 30 10% 98%;
     --foreground: 220 20% 8%;
 
-    /* Admin sidebar — dark (DS) */
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 30 10% 95%;
-    --sidebar-border: 220 15% 16%;
-    --sidebar-accent: 25 40% 16%;
-    --sidebar-accent-foreground: 25 80% 65%;
+    /* Admin sidebar — DS light theme (Modern.jsx) */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 14%;
+    --sidebar-border: 30 10% 89%;
+    --sidebar-muted: 220 10% 46%;
+    --sidebar-muted-light: 220 10% 62%;
+    --sidebar-subtle: 30 10% 96%;
+    --sidebar-accent: 25 95% 95%;
+    --sidebar-accent-foreground: 25 95% 53%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-ring: 25 95% 53%;
