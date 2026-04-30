@@ -362,13 +362,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Scroll area */}
         <ScrollArea className="flex-1">
           <div className={cn(collapsed ? 'px-2.5 pb-2.5' : 'px-3 pb-2.5', 'space-y-px')}>
-            {/* Daily items */}
-            {dailyItems.map(renderItem)}
-
-            {/* Divider */}
-            <div className="h-px bg-sidebar-border my-3 mx-1" />
-
-            {/* Groups */}
+            {/* Groups (home group contains dashboard/lobby/schedule) */}
             <div className="space-y-1">
               {navGroups.map(renderGroup)}
             </div>
