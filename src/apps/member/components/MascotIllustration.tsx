@@ -41,6 +41,7 @@ export function MascotIllustration({
   className,
 }: MascotIllustrationProps) {
   const [bob, setBob] = useState(0);
+  const [tilt, setTilt] = useState(0);
 
   useEffect(() => {
     // Respect reduced motion — skip rAF loop entirely.
@@ -53,7 +54,9 @@ export function MascotIllustration({
     let raf = 0;
     const t0 = performance.now();
     const tick = (t: number) => {
-      setBob(Math.sin((t - t0) / 700) * 1.2);
+      const dt = (t - t0) / 700;
+      setBob(Math.sin(dt) * 2.5);
+      setTilt(Math.sin(dt * 0.6) * 1.5);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
