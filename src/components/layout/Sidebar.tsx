@@ -229,8 +229,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       icon: Settings,
       minLevel: 'level_3_manager',
       items: [
-        // Branding page not built yet — points at existing Settings root so it doesn't 404.
-        { label: t('nav.branding'), path: '/setting/general', icon: Star, minLevel: 'level_3_manager', resource: 'settings' },
+        { label: t('nav.branding'), path: '/setting/branding', icon: Star, minLevel: 'level_3_manager', resource: 'settings' },
         { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
       ],
     },

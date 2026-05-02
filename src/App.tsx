@@ -64,6 +64,7 @@ import SettingsContracts from "./pages/settings/SettingsContracts";
 import SettingsFeatureFlags from "./pages/settings/SettingsFeatureFlags";
 import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import SettingsIntegrations from "./pages/settings/SettingsIntegrations";
+import SettingsBranding from "./pages/settings/SettingsBranding";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import MemberLogin from "./pages/Auth/MemberLogin";
@@ -295,6 +296,7 @@ const App = () => (
                     <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                     <Route path="import-export" element={<SettingsImportExport />} />
                     <Route path="integrations" element={<SettingsIntegrations />} />
+                    <Route path="branding" element={<SettingsBranding />} />
                   </Route>
                   <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
                     <Route index element={<Navigate to="overview" replace />} />
