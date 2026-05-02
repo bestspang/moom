@@ -64,6 +64,7 @@ import SettingsContracts from "./pages/settings/SettingsContracts";
 import SettingsFeatureFlags from "./pages/settings/SettingsFeatureFlags";
 import SettingsImportExport from "./pages/settings/SettingsImportExport";
 import SettingsIntegrations from "./pages/settings/SettingsIntegrations";
+import SettingsBranding from "./pages/settings/SettingsBranding";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import MemberLogin from "./pages/Auth/MemberLogin";
