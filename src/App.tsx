@@ -296,6 +296,7 @@ const App = () => (
                     <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                     <Route path="import-export" element={<SettingsImportExport />} />
                     <Route path="integrations" element={<SettingsIntegrations />} />
+                    <Route path="branding" element={<SettingsBranding />} />
                   </Route>
                   <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
                     <Route index element={<Navigate to="overview" replace />} />

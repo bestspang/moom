@@ -22,6 +22,7 @@ const Settings = () => {
 
   const tabs = [
     { value: 'general', label: t('settings.tabs.general'), path: '/setting/general' },
+    { value: 'branding', label: t('settings.tabs.branding'), path: '/setting/branding' },
     { value: 'class-management', label: t('settings.tabs.class'), path: '/setting/class-management' },
     { value: 'client-management', label: t('settings.tabs.client'), path: '/setting/client-management' },
     { value: 'setting-package', label: t('settings.tabs.package'), path: '/setting/setting-package' },
