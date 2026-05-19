@@ -99,11 +99,31 @@ const SettingsBranding = () => {
     toast.success(t('settings.branding.exportedToast'));
   };
 
-  if (isLoading) {
+  if (isLoading || permLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4">
         <Skeleton className="h-96" />
         <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div className="space-y-4 max-w-[900px] mx-auto">
+        <AdminPageHeader
+          title={t('settings.branding.pageTitle')}
+          subtitle={t('settings.branding.pageSubtitle')}
+        />
+        <AdminCard className="flex flex-col items-center text-center py-12 gap-3">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="text-base font-bold">{t('settings.branding.noAccessTitle')}</div>
+          <div className="text-sm text-muted-foreground max-w-md">
+            {t('settings.branding.noAccessBody')}
+          </div>
+        </AdminCard>
       </div>
     );
   }
