@@ -420,7 +420,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {!collapsed && (
           <div className="px-4 py-3 border-t border-sidebar-border">
             <p className="text-[10px] text-sidebar-muted-light">
-              © 2026 MOOM CLUB · {t('common.version')} 1.0
+              © {new Date().getFullYear()} {brand.name} · {t('common.version')} 1.0
             </p>
           </div>
         )}
