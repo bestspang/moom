@@ -190,6 +190,7 @@ const SettingsBranding = () => {
         </div>
       )}
 
+      <fieldset disabled={!canWrite} className="contents">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
         {/* LEFT — editor */}
         <div className="space-y-3 min-w-0">
