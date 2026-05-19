@@ -20,6 +20,8 @@ import { SidebarBranchSwitcher } from './sidebar/SidebarBranchSwitcher';
 import { SidebarSearch } from './sidebar/SidebarSearch';
 import { SidebarAttentionCard } from './sidebar/SidebarAttentionCard';
 import type { Database } from '@/integrations/supabase/types';
+import { BrandMark } from '@/components/branding/BrandMark';
+import { useBrand } from '@/contexts/BrandContext';
 
 type AccessLevel = Database['public']['Enums']['access_level'];
 
