@@ -1,103 +1,177 @@
 ## Scope
 
-ขยาย guardrails + tests ต่อจากงาน Lobby audit เดิม ครอบคลุม 4 ส่วน: realtime tests, CI gate, Members audit, QR check-in E2E
+Four additive QA layers on top of the existing 105 tests. No production-code behavior changes.
 
 ---
 
-## 1. Realtime Lobby Tests & Guardrails
+## 1. Members Drawer × RBAC contract test
 
-**New files:**
-- `src/hooks/useLobby.realtime.test.ts` — mock `supabase.channel().on('postgres_changes')` → emit INSERT/UPDATE payload → assert `queryClient.invalidateQueries(queryKeys.lobby.*)` ถูกเรียก + row highlight state ถูกตั้ง
-- `src/components/lobby/LobbyTable.realtime.test.tsx` — render table, dispatch fake realtime event ผ่าน mocked channel, assert new row มี `data-highlight="new"` และ badge "LIVE" แสดง
+**New file:** `src/pages/MemberDetails.rbac.test.tsx`
 
-**Edit:**
-- `docs/SMOKE_TEST.md` — เพิ่ม section "Realtime Lobby": เปิด 2 tabs → check-in tab A → tab B ต้องเห็น row ใหม่ภายใน 2s + highlight 5s
-- `AI_GUARDRAILS.md` — Rule 14: ห้ามแก้ `useRealtimeSync` หรือ `TABLE_INVALIDATION_MAP` โดยไม่รัน realtime tests
-- `PROTECTED_FILES.md` — เพิ่ม `src/hooks/useRealtimeSync.ts`, `src/lib/queryKeys.ts`
+Render `MemberDetails` with mocked `usePermissions.can()` returning the matrix for each role and assert which Quick Actions are visible.
 
----
-
-## 2. CI Gate (GitHub Actions)
-
-**New file:** `.github/workflows/quality.yml`
-
-```yaml
-on: [pull_request]
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install --frozen-lockfile
-      - run: bun run lint
-      - run: bun run test
-      - run: bun run build
-      - run: node scripts/compare-i18n.mjs  # exit 1 ถ้า key ไม่ตรง
-      - run: node scripts/check-guardrails.mjs  # ใหม่ — scan protected files diff
+```text
+For each role in [owner, manager, trainer, frontDesk]:
+  mock can(resource, action) per docs/audit-members.md matrix
+  render <MemberDetails /> with QueryClient + Router + i18n + mock member
+  assert:
+    - tab "Overview" + "Records" present (all roles)
+    - "Edit Profile" visible iff can('members','write')
+    - "Add Package" visible iff can('packages','write')
+    - "Add Note" visible iff can('members','write')
+    - "Manual Check-in" visible iff can('lobby','write')
+    - "Archive" visible iff can('members','delete')
 ```
 
-**New file:** `scripts/check-guardrails.mjs` — อ่าน `PROTECTED_FILES.md` Tier 1, ใช้ `git diff --name-only origin/main` (จาก env `GITHUB_BASE_REF`); ถ้าไฟล์ protected ถูกแตะ → print warning + exit 1 (override ได้ด้วย `[skip-guardrails]` ใน PR title)
-
-**Edit:** `package.json` — เพิ่ม script `"ci:guardrails": "node scripts/check-guardrails.mjs"`
+Mocks: `useAuth` (user), `usePermissions` (can fn), `supabase.from(...)` for member fetch. Pattern from `useCheckinQR.test.ts`.
 
 ---
 
-## 3. Members Page Audit + Tests
+## 2. NotificationBell tests
+
+**New file:** `src/apps/member/features/momentum/NotificationBell.test.tsx`
+
+```text
+- renders no badge when count=0 (mock supabase head:true select → count:0)
+- renders "3" badge when count=3
+- renders "99+" when count=150
+- click → onClick handler fired
+```
+
+**New file:** `src/hooks/useNotifications.test.ts`
+
+```text
+- useMarkAsRead: mutationFn issues update({is_read:true}) eq('id', id)
+- useMarkAllAsRead: filters by user_id + is_read=false
+- both onSuccess invalidate queryKey starting with 'notifications-unread-count' AND 'notifications'
+```
+
+**New file:** `src/i18n/notifications.contract.test.ts`
+
+```text
+- For each NotificationType in getNotificationTypeConfig:
+    assert i18n key `notifications.types.<type>` exists in EN & TH
+- assert top-level labels: notifications.markAllRead, notifications.empty,
+  notifications.title exist in both locales
+```
+
+If any required key is missing in either locale → add it in the same diff (no production behavior change; pure i18n).
+
+---
+
+## 3. Realtime invalidation contract — expanded
+
+**Edit:** `src/hooks/useRealtimeSync.test.ts` — append cases:
+
+```text
+- member_packages → contains 'member-packages', 'package-metrics'
+- member_contracts → contains 'member-contracts'
+- class_bookings → contains 'class-bookings', 'member-bookings', 'booking-count'
+- packages → contains 'packages', 'package-stats'
+- notifications → contains 'notifications', 'notifications-unread-count'
+- transactions → contains 'transactions', 'finance-transactions'
+- member_billing → contains 'member-billing'
+
+Plus a generic guard:
+- every prefix referenced by TABLE_INVALIDATION_MAP must be matched by at
+  least one factory in queryKeys.ts (catch typos like 'check-in' vs 'check-ins')
+```
+
+The generic guard uses a static allowlist seeded by reading `src/lib/queryKeys.ts` source text for string literals (simple regex), not full runtime reflection.
+
+---
+
+## 4. Playwright E2E for QR check-in
+
+**New deps (justified):**
+- `@playwright/test@^1.49` (devDep) — industry standard; no runtime cost
+- `playwright` browsers downloaded only in CI
 
 **New files:**
-- `docs/audit-members.md` — RBAC matrix สำหรับ Members list + Member Details (Overview/Records tabs) × Owner/Manager/Trainer/FrontDesk; button→handler trace (Add Member, Edit, Archive, Quick Actions ใน drawer: Add Package, Add Note, Check-in, View Packages)
-- `src/pages/Members.smoke.test.ts` — i18n contract: ทุก label จาก `members.*` namespace มีทั้ง EN/TH; ปุ่มที่ require permission render ตาม role mock
-- `src/pages/MemberDetail.smoke.test.tsx` — render กับ mock member, assert tabs (Overview, Records) แสดง, Quick Actions render ตาม `can('members', 'update')`
+- `playwright.config.ts` — single project (Chromium), `webServer` runs `bun run preview` on port 4173, baseURL from env
+- `e2e/qr-checkin.spec.ts`:
 
-**Edit:**
-- `src/i18n/locales/{en,th}.ts` — เติม key ที่ขาดจาก audit (ถ้ามี)
-- `docs/SMOKE_TEST.md` — section "Members RBAC": 4 role × expected visible buttons
+```text
+test('QR check-in full flow', async ({ browser }) => {
+  // Two contexts: admin (generates QR) + staff (scans/validates)
+  const adminCtx = await browser.newContext()
+  const staffCtx = await browser.newContext()
 
----
+  // 1. Programmatic login via supabase auth REST (uses env: E2E_ADMIN_EMAIL/PWD)
+  // 2. adminPage → /lobby → click QR → select test location → QR svg renders
+  // 3. Extract token from the QR svg (data attribute we add: data-testid="qr-token")
+  // 4. staffPage → directly POST to validate via UI: open redeem URL with token
+  // 5. Assert toast "Check-in successful" appears on staff
+  // 6. Assert admin Lobby table shows new row within 5s (realtime)
+})
+```
 
-## 4. QR Check-in E2E Test
+**Required additions to production code (minimal, additive):**
+- Add `data-testid="qr-token"` + `data-token={tokenData.token}` to QR `<div>` in `CheckInQRCodeDialog.tsx` (test hook only; zero UX change)
+- Add `data-testid="lobby-row"` + `data-member-id` to lobby row container
 
-**Approach:** Vitest + React Testing Library (ไม่ใช้ Playwright เพื่อหลีกเลี่ยง dep ใหม่) — mock camera/QR decoder + supabase RPC
+**New file:** `.github/workflows/e2e.yml`
+- Triggers: `pull_request` + manual `workflow_dispatch`
+- Runs after `quality.yml` succeeds (or in parallel — TBD)
+- Skips if `E2E_ADMIN_EMAIL` secret is missing (graceful no-op so forks don't fail)
 
-**New file:** `src/flows/checkInQR.e2e.test.tsx`
+**Required GitHub secrets (user must add):**
+- `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`
+- `E2E_STAFF_EMAIL`, `E2E_STAFF_PASSWORD`
+- `E2E_TEST_LOCATION_ID` (a known location uuid in the dev DB)
+- `E2E_BASE_URL` (defaults to `http://localhost:4173` if running locally)
 
-Flow:
-1. Render `<CheckInPage />` with QueryClient + Router + i18n + mock auth (Front Desk role)
-2. Click "QR Scan" button → mock `BarcodeDetector` returns member code `M-1234567`
-3. Assert `useCreateCheckIn` ถูกเรียกด้วย `{ member_id, source: 'qr' }`
-4. Mock supabase response → assert toast success + `logActivity({event_type: 'check_in'})` + `fireGamificationEvent('check_in')` ถูกเรียก
-5. Assert UI แสดง member name + package status ใน confirmation card
-
-**New helper:** `src/test/mocks/qrScanner.ts` — reusable mock สำหรับ BarcodeDetector API
-
-**Edit:** `src/test/setup.ts` — register global `BarcodeDetector` mock placeholder
+Plan documents this in `docs/E2E_SETUP.md`.
 
 ---
 
 ## Verification
 
-- `bun run test` — เป้าหมาย: 86 → ~95+ tests passing
-- `bun run build` — pass
-- `node scripts/compare-i18n.mjs` — 100% parity
-- Manual: เปิด 2 tabs ทดสอบ realtime check-in (smoke test ใหม่)
+- `bun run test` — target ~125 tests (was 105 → +20)
+- `bun run lint` — clean
+- `bun run build` — clean
+- `node scripts/compare-i18n.mjs` — 100% parity (if any notification keys missing, add them)
+- Playwright runs locally with `bunx playwright test` (after `bunx playwright install chromium`)
 
 ## Risks & Mitigation
 
-- **Realtime mock complexity** — ใช้ pattern จาก existing `useLeadScoring.test.ts`; ถ้า supabase channel API mock ยาก ให้ test ที่ระดับ `queryClient.invalidateQueries` แทน
-- **GitHub Actions ครั้งแรก** — ถ้า user ยังไม่มี workflow อื่น, file นี้จะเป็น workflow แรก; ต้องการ GitHub repo connected (มีอยู่แล้ว)
-- **BarcodeDetector** — ไม่มีใน jsdom; mock เป็น global stub ก่อน import component
-- **check-guardrails.mjs ใน Lovable env** — script รันเฉพาะใน GitHub Actions (มี `GITHUB_BASE_REF`); local skip อัตโนมัติ
+- **Playwright in Lovable dev sandbox**: not installed by default; the CI workflow installs it. Local dev only needs it if dev wants to run e2e. Acceptable.
+- **NotificationBell test** queries supabase with chained head:true — mock returns `{count, error:null}`; uses same pattern as `useCheckinQR.test.ts`.
+- **Notification i18n keys may be missing** — if so, add minimal EN/TH entries inferred from `getNotificationTypeConfig`. No semantic change.
+- **E2E auth**: relies on real test users in dev DB. If secrets absent, workflow skips gracefully (`if: secrets.E2E_ADMIN_EMAIL`).
+- **`data-testid` additions** are zero-risk (no styling, no behavior); used only by tests.
 
-## Preserved (ไม่แตะ)
+## Preserved (not touched)
 
-- ทุกไฟล์ใน `src/integrations/supabase/*`, `src/components/ui/*`
-- `AuthContext`, `useRealtimeSync` logic (เพิ่ม test เท่านั้น)
-- Existing 86 tests, Lobby production code, i18n keys เดิม
-- `supabase/config.toml`, edge functions
+- `useRealtimeSync.ts` runtime logic (test-only file edits)
+- `usePermissions.ts`, AuthContext, RLS
+- `src/integrations/supabase/*`, `src/components/ui/*`
+- All existing 105 tests
 
 ## Out of Scope
 
-- Playwright/browser E2E (ใช้ vitest แทน)
-- เพิ่ม role/permission ใหม่
-- แก้ realtime logic จริง (test-only)
+- Full LIFF/member-side scan simulation (uses redeem URL shortcut)
+- Mobile viewport variants of E2E
+- Visual regression / screenshot diffs
+- Changing any RBAC default
+
+## File Summary
+
+```
+NEW
+  src/pages/MemberDetails.rbac.test.tsx
+  src/apps/member/features/momentum/NotificationBell.test.tsx
+  src/hooks/useNotifications.test.ts
+  src/i18n/notifications.contract.test.ts
+  playwright.config.ts
+  e2e/qr-checkin.spec.ts
+  .github/workflows/e2e.yml
+  docs/E2E_SETUP.md
+
+EDIT (minimal, additive)
+  src/hooks/useRealtimeSync.test.ts          (append ~7 cases)
+  src/components/lobby/CheckInQRCodeDialog.tsx (add data-testid only)
+  src/pages/Lobby.tsx or LobbyTable          (add data-testid only)
+  src/i18n/locales/{en,th}.ts                (only if notification keys missing)
+  package.json                               (add @playwright/test devDep)
+```

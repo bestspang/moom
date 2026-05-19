@@ -1581,6 +1581,7 @@ export default {
     read: 'อ่านแล้ว',
     new: 'ใหม่',
     markAllRead: 'อ่านทั้งหมด',
+    allMarkedRead: 'ทำเครื่องหมายว่าอ่านแล้วทั้งหมด',
     noUnread: 'ไม่มีการแจ้งเตือน',
     types: {
       booking: 'การจอง',

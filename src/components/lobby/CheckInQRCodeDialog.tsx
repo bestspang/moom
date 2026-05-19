@@ -145,7 +145,13 @@ export function CheckInQRCodeDialog({ open, onOpenChange }: CheckInQRCodeDialogP
 
           {tokenData && (
             <div className="flex flex-col items-center gap-4">
-              <div ref={qrRef} className="bg-white p-4 rounded-lg">
+              <div
+                ref={qrRef}
+                className="bg-white p-4 rounded-lg"
+                data-testid="qr-token-container"
+                data-token={tokenData.token}
+                data-checkin-url={checkinUrl}
+              >
                 <QRCodeSVG value={checkinUrl} size={240} level="M" />
               </div>
               <p className="text-sm text-muted-foreground text-center">
