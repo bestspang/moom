@@ -474,7 +474,13 @@ export default {
       openMember: 'Open member profile',
       noPackage: 'No package (walk-in)',
     },
+    help: {
+      filters: 'Filter by location, check-in method, or package type. Click any row to see details.',
+      checkInButton: 'Manually create a check-in for a member.',
+      qrButton: 'Show the kiosk QR so members can self-check-in.',
+    },
   },
+
 
 
   // Check-in Display (kiosk)
