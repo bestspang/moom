@@ -302,7 +302,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
-            {!!user && (
+            {!!user && (hasAdminAccess || hasTrainerAccess) && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
@@ -312,13 +312,15 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                   <Users className="h-4 w-4 mr-2" />
                   Member App
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
-                  e.preventDefault();
-                  window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
-                }}>
-                  <Dumbbell className="h-4 w-4 mr-2" />
-                  Trainer App
-                </DropdownMenuItem>
+                {hasTrainerAccess && (
+                  <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                    e.preventDefault();
+                    window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
+                  }}>
+                    <Dumbbell className="h-4 w-4 mr-2" />
+                    Trainer App
+                  </DropdownMenuItem>
+                )}
               </>
             )}
             <DropdownMenuSeparator />
