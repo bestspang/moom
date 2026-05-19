@@ -79,8 +79,9 @@ export function CheckInDetailsDrawer({ row, open, onOpenChange }: Props) {
                 />
                 <Row
                   label={t('packages.expiresAt') || 'Expires'}
-                  value={pkg.expire_at ? format(new Date(pkg.expire_at), 'PP') : '-'}
+                  value={pkg.expiry_date ? format(new Date(pkg.expiry_date), 'PP') : '-'}
                 />
+
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('lobby.details.noPackage')}</p>
