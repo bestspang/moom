@@ -57,12 +57,12 @@ const SettingsBranding = () => {
     if (saved) setBrand(saved);
   }, [saved]);
 
+  // Live preview while editing. We do NOT revert on unmount because the global
+  // BrandProvider re-applies the saved kit on any route change, so leaving the
+  // page naturally restores the saved brand.
   useEffect(() => {
     applyBrandFromKit(brand);
-    return () => {
-      applyBrandFromKit(saved ?? null);
-    };
-  }, [brand, saved]);
+  }, [brand]);
 
   const dirty = useMemo(
     () => !!saved && JSON.stringify(saved) !== JSON.stringify(brand),
