@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEFAULT_BRAND } from '@/components/branding/brandDefaults';
 
 interface State {
   hasError: boolean;
