@@ -78,7 +78,7 @@ const NavItemRow = ({
       )}
     >
       {active && !collapsed && (
-        <span className="absolute -left-2 top-2 bottom-2 w-[3px] rounded bg-sidebar-primary animate-fade-in" />
+        <span className="absolute -left-2.5 top-2 bottom-2 w-[3px] rounded bg-sidebar-primary animate-fade-in" />
       )}
       <Icon
         className={cn(
