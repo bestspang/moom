@@ -344,21 +344,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
       >
-        {/* Brand + collapse */}
-        <div className={cn('flex items-center gap-2.5', collapsed ? 'px-3.5 pt-3.5 pb-2.5' : 'px-3.5 pt-3.5 pb-2.5')}>
-          <div
-            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-white font-black text-base"
-            style={{
-              background: 'linear-gradient(135deg, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary-glow)))',
-              boxShadow: '0 6px 18px -6px hsl(var(--sidebar-primary) / 0.6)',
-            }}
-          >
-            M
-          </div>
+        {/* Brand + collapse — driven by global Brand Kit (useBrand) */}
+        <div className={cn('flex items-center gap-2.5', 'px-3.5 pt-3.5 pb-2.5')}>
+          <BrandMark size="md" showName={false} />
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-extrabold text-sidebar-foreground -tracking-tight truncate">
-                MOOM Gym
+                {brand.name}
               </div>
               <div className="text-[10px] font-semibold tracking-widest uppercase text-sidebar-muted-light">
                 Admin
