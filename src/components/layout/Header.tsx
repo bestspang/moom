@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { Phone, Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell } from 'lucide-react';
+import React from 'react';
+import { Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell, Search, Calendar, QrCode } from 'lucide-react';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { getDateLocale } from '@/lib/formatters';
 
 interface HeaderProps {
@@ -26,7 +26,7 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, role, allRoles, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadCount();
@@ -39,19 +39,18 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
   };
 
   const handleNotificationClick = (notificationId: string, isRead: boolean | null) => {
-    if (!isRead) {
-      markAsRead.mutate(notificationId);
-    }
+    if (!isRead) markAsRead.mutate(notificationId);
   };
 
-  // Get user initials from email or metadata
+  const openCommandPalette = () => {
+    window.dispatchEvent(new CustomEvent('moom:open-command-palette'));
+  };
+
   const getUserInitials = () => {
     if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
       return `${user.user_metadata.first_name.charAt(0)}${user.user_metadata.last_name.charAt(0)}`.toUpperCase();
     }
-    if (user?.email) {
-      return user.email.substring(0, 2).toUpperCase();
-    }
+    if (user?.email) return user.email.substring(0, 2).toUpperCase();
     return 'U';
   };
 
@@ -65,18 +64,23 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
   const getRoleLabel = () => {
     if (!role) return '';
     const roleLabels: Record<string, string> = {
-      owner: 'Owner',
-      admin: 'Admin',
-      trainer: 'Trainer',
-      front_desk: 'Front Desk',
+      owner: 'Owner', admin: 'Admin', trainer: 'Trainer', front_desk: 'Front Desk',
     };
     return roleLabels[role] || role;
   };
 
+  const todayLabel = `${t('header.today')}, ${format(
+    new Date(),
+    language === 'th' ? 'd MMM' : 'EEE, d MMM',
+    { locale: getDateLocale(language) }
+  )}`;
+
+  const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform);
+
   return (
-    <header className="sticky top-0 h-14 bg-card border-b border-border z-30 flex items-center justify-between px-4">
-      {/* Left side - mobile menu only (logo lives in sidebar) */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 h-14 bg-card border-b border-border z-30 flex items-center gap-3 px-4">
+      {/* Left: mobile menu */}
+      <div className="flex items-center shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -88,22 +92,51 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
         </Button>
       </div>
 
-      {/* Right side - Actions */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        {/* Theme Toggle */}
-        <ThemeToggle />
+      {/* Center: search trigger */}
+      <div className="flex-1 hidden sm:flex justify-center">
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          className="group w-full max-w-xl inline-flex items-center gap-2 h-9 px-3 rounded-full bg-muted/60 hover:bg-muted border border-border text-muted-foreground text-sm transition-colors"
+          aria-label={t('header.searchPlaceholder')}
+        >
+          <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="flex-1 text-left truncate">{t('header.searchPlaceholder')}</span>
+          <kbd className="hidden md:inline-flex items-center gap-0.5 bg-background border border-border rounded text-[11px] px-1.5 py-0.5 font-mono text-muted-foreground">
+            {isMac ? '⌘' : 'Ctrl'}K
+          </kbd>
+        </button>
+      </div>
+
+      {/* Right: actions */}
+      <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+        {/* Date pill — desktop only */}
+        <div className="hidden lg:inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border bg-card text-sm text-foreground">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <span className="whitespace-nowrap">{todayLabel}</span>
+        </div>
+
+        {/* Check-in CTA */}
+        <Button
+          onClick={() => navigate('/checkin')}
+          className="h-9 px-3.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 font-semibold inline-flex items-center gap-1.5"
+        >
+          <QrCode className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">{t('header.checkin')}</span>
+        </Button>
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="relative"
               aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span 
+                <span
                   className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center"
                   aria-hidden="true"
                 >
@@ -195,10 +228,9 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
         {/* User avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
+            <Button
+              variant="ghost"
+              className="h-10 px-1.5 rounded-full gap-2 hover:bg-muted/60"
               aria-label="User menu"
             >
               <Avatar className="h-8 w-8">
@@ -207,9 +239,18 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
+              <div className="hidden lg:flex flex-col items-start leading-tight pr-1">
+                <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
+                  {getUserName()}
+                </span>
+                {role && (
+                  <span className="text-[10px] text-muted-foreground">{getRoleLabel()}</span>
+                )}
+              </div>
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden lg:block" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <div className="p-3 border-b border-border">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
@@ -225,14 +266,13 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                 </div>
               </div>
             </div>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-primary cursor-pointer"
               onClick={() => navigate('/profile')}
             >
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
-            {/* Surface switcher */}
             {!!user && (
               <>
                 <DropdownMenuSeparator />
@@ -252,6 +292,12 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                 </DropdownMenuItem>
               </>
             )}
+            <DropdownMenuSeparator />
+            {/* Theme toggle — inline inside menu */}
+            <div className="flex items-center justify-between px-2 py-1.5 text-sm">
+              <span className="text-muted-foreground">Theme</span>
+              <ThemeToggle />
+            </div>
             {/* Language toggle — mobile only */}
             <div className="md:hidden">
               <DropdownMenuSeparator />
@@ -264,7 +310,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-primary cursor-pointer"
               onClick={handleLogout}
             >

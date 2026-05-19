@@ -83,8 +83,13 @@ export function CommandPalette() {
         setOpen((o) => !o);
       }
     };
+    const openHandler = () => setOpen(true);
     document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
+    window.addEventListener('moom:open-command-palette', openHandler);
+    return () => {
+      document.removeEventListener('keydown', down);
+      window.removeEventListener('moom:open-command-palette', openHandler);
+    };
   }, []);
 
   // Search members/leads

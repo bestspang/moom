@@ -2879,6 +2879,13 @@ export default {
     error: 'Something went wrong. Please try again.',
   },
 
+  // Admin top header
+  header: {
+    searchPlaceholder: 'Search members, classes, packages…',
+    checkin: 'Check-in',
+    today: 'Today',
+  },
+
   // Command Palette
   commandPalette: {
     placeholder: 'Search pages, members, leads...',

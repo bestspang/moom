@@ -2877,6 +2877,13 @@ export default {
     error: 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
   },
 
+  // Admin top header
+  header: {
+    searchPlaceholder: 'ค้นหาสมาชิก, คลาส, แพ็คเกจ…',
+    checkin: 'เช็คอิน',
+    today: 'วันนี้',
+  },
+
   // Command Palette
   commandPalette: {
     placeholder: 'ค้นหาหน้า สมาชิก ลูกค้าเป้าหมาย...',
