@@ -1672,6 +1672,16 @@ export default {
         classicFriendly: 'Classic · Friendly',
         boldSporty: 'Bold · Sporty',
       },
+      deviceMobile: 'App',
+      deviceWeb: 'Web',
+      deviceCard: 'Card',
+      summaryTitle: 'Brand Summary',
+      summaryName: 'Name',
+      summaryFont: 'Font',
+      summaryRadius: 'Radius',
+      summaryStyle: 'Logo style',
+      saveBarSave: 'Save',
+      saveBarCancel: 'Cancel',
     },
     general: {
       // Sidebar menu
