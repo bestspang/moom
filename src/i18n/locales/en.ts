@@ -111,6 +111,8 @@ export default {
     settingsGroup: 'Settings',
     trainers: 'Trainers',
     branding: 'Gym Branding',
+    pins: 'Pinned',
+    pinsHint: 'Drag to arrange',
   },
 
   // Roadmap
