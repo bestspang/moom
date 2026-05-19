@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEFAULT_BRAND } from '@/components/branding/brandDefaults';
 
 interface State {
   hasError: boolean;
@@ -23,7 +24,7 @@ export class MemberHeaderErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-background shadow-sm px-4">
-          <span className="text-lg font-bold tracking-tight text-primary">MOOM</span>
+          <span className="text-lg font-bold tracking-tight text-primary">{DEFAULT_BRAND.name}</span>
           <span className="text-xs text-destructive">Header error</span>
         </header>
       );

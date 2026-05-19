@@ -449,3 +449,23 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 **Untouched**
 - `src/hooks/useLobby.ts`, `src/pages/Lobby.tsx` logic (only added `title=` tooltips), all `src/components/lobby/*` other than the route-literal fix.
 - RLS, edge functions, auth, realtime sync.
+
+## 2026-05-19 — Global Brand Kit propagation
+
+**Why:** Saved Brand Kit (`settings.branding.brand_kit`) was only applied inside `SettingsBranding` and reverted on unmount. Sidebar/Headers/Auth/title/favicon stayed hardcoded "MOOM" — every surface drifted.
+
+**Changes:**
+- New `src/contexts/BrandContext.tsx` (BrandProvider + useBrand). Mounted in `src/App.tsx` under LanguageProvider.
+- New `src/components/branding/BrandMark.tsx` — logo+name primitive.
+- `SettingsBranding.tsx` — removed revert-on-unmount; provider handles re-apply.
+- Replaced hardcoded "MOOM" in Sidebar, MemberHeader, TrainerHeader, MemberHeaderErrorBoundary, AdminLogin, MemberLogin, Signup.
+- `index.html` — title/description/og tags now MOOM CLUB defaults.
+
+**Guards:**
+- `BrandContext.test.tsx`, `BrandMark.test.tsx` (5 new tests)
+- `scripts/check-brand-consumers.mjs` — CI fails on hardcoded brand strings in protected surfaces
+- AI_GUARDRAILS Rule 15 + PROTECTED_FILES Tier-1 entries for brand files
+
+**Out of scope (TODO):**
+- Edge function emails / PDF receipts still embed hardcoded brand
+- Multi-brand per location

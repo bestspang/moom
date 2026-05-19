@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BrandProvider } from "@/contexts/BrandContext";
 import { ThemeProvider } from "next-themes";
 import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
 import { detectSurface } from "@/apps/shared/hostname";
@@ -153,6 +154,7 @@ const App = () => (
     <AuthProvider>
       <SurfaceProvider>
         <LanguageProvider>
+          <BrandProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -325,6 +327,7 @@ const App = () => (
               </SurfaceGuard>
             </BrowserRouter>
           </TooltipProvider>
+          </BrandProvider>
         </LanguageProvider>
       </SurfaceProvider>
     </AuthProvider>

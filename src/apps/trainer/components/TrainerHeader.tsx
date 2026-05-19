@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Globe, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -21,6 +22,7 @@ export function TrainerHeader() {
   const navigate = useNavigate();
   const { user, allRoles, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { brand } = useBrand();
   const { resolvedTheme, setTheme } = useTheme();
   const { t } = useTranslation();
 
@@ -33,7 +35,7 @@ export function TrainerHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-background shadow-sm px-4">
       <Link to="/trainer" className="text-lg font-bold tracking-tight text-primary">
-        MOOM
+        {brand.name}
       </Link>
 
       <DropdownMenu>

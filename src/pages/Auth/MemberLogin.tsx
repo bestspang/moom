@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2, Mail, Phone, KeyRound } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const RESEND_COOLDOWN = 60;
 
 const MemberLogin: React.FC = () => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -193,7 +195,7 @@ const MemberLogin: React.FC = () => {
               <span className="text-primary-foreground font-bold text-xl">M</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MOOM</CardTitle>
+          <CardTitle className="text-2xl font-bold">{brand.name}</CardTitle>
           <CardDescription>{t('auth.loginDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

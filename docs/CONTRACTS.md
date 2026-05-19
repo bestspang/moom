@@ -92,3 +92,12 @@ All multi-step financial / inventory writes are wrapped in `SECURITY DEFINER` Po
 | `process_slip_approval(p_slip_id, p_approved_by)` | Multi-step approval in `approve-slip` | Locks `transfer_slips` row, calls `process_package_sale` internally, updates slip status to `approved` — all in one transaction. Eliminates "paid but no package" orphan state. |
 
 > **Stripe webhook** uses `process_stripe_payment` (added earlier) for the same atomic guarantees.
+
+## Brand Kit Contract
+
+- **Storage:** `settings` table, `section='branding'`, `key='brand_kit'`, `value=BrandKit JSON`
+- **Shape:** `src/components/branding/brandDefaults.ts` → `BrandKit`
+- **Read:** `useBrandKit()` (TanStack Query, key `queryKeys.settings('branding')`)
+- **Write:** `useSaveBrandKit()` (upsert + logActivity `setting_updated` + invalidate)
+- **Runtime apply:** `<BrandProvider>` at root → applies CSS vars + `document.title` + favicon
+- **Consume in UI:** `useBrand()` returns `{ brand, isLoading }`; prefer `<BrandMark/>` for logo+name

@@ -41,3 +41,6 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/check-guardrails.mjs
+
+      - name: Check brand consumers
+        run: node scripts/check-brand-consumers.mjs

@@ -147,3 +147,32 @@ Ask. A 30-second clarifying question is cheaper than a 30-minute repair loop.
 This file is referenced from `CLAUDE.md` Section 9 as a **MUST READ every session** document. The smoke test in `docs/SMOKE_TEST.md` includes an **AI Change Verification Gate** that explicitly checks compliance with these rules before a change is marked done.
 
 See also: [`PROTECTED_FILES.md`](./PROTECTED_FILES.md) for the explicit do-not-touch list.
+
+---
+
+## Rule 15 — Brand Kit propagation (added 2026-05-19)
+
+The gym's name / logo / colors / fonts are runtime values from `useBrand()` (provider in `src/contexts/BrandContext.tsx`). DO NOT hardcode brand strings or logo glyphs anywhere in user-facing UI.
+
+**Required pattern:**
+```tsx
+import { useBrand } from '@/contexts/BrandContext';
+import { BrandMark } from '@/components/branding/BrandMark';
+
+const { brand } = useBrand();
+return <header>{brand.name}</header>;
+// or:
+return <BrandMark size="md" />;
+```
+
+**Banned (CI fails via `scripts/check-brand-consumers.mjs`):**
+- Literal `"MOOM"` / `"MOOM CLUB"` / `"MOOM Gym"` / `"MOOM Admin"` in Sidebar, Header, MemberHeader, TrainerHeader, AdminLogin, MemberLogin, Signup
+- Inline hardcoded logo letter "M" in those files
+
+**Exemptions:**
+- `src/components/branding/brandDefaults.ts` (the default kit)
+- `src/i18n/locales/*.ts` (marketing copy where the literal is intentional)
+- Test files (`*.test.{ts,tsx}`)
+- Comments / docstrings
+
+Override per PR via `[skip-brand-check]` in PR title (use sparingly, document why in DEVLOG).

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ type LoginFormData = { email: string; password: string };
 
 const AdminLogin: React.FC = () => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,7 +80,7 @@ const AdminLogin: React.FC = () => {
               <ShieldCheck className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MOOM Admin</CardTitle>
+          <CardTitle className="text-2xl font-bold">{brand.name} Admin</CardTitle>
           <CardDescription>Staff & management portal</CardDescription>
         </CardHeader>
         <CardContent>
