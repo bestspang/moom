@@ -14,7 +14,7 @@ to detect AI regressions on visible UI vs. permission gates.
 | `packages.write` (add member package) | ✅ | ✅ | ❌ | ❌ |
 | `finance.read` (billing/transactions tab) | ✅ | ✅ | ❌ | ❌ |
 | `notes.write` (add member note) | ✅ | ✅ | ✅ | ❌ |
-| `lobby.write` (manual check-in from drawer) | ✅ | ✅ | ✅ | ❌ |
+| `lobby.write` (manual check-in from drawer) | ✅ | ✅ | ❌ | ❌ |
 
 Source of truth: `src/hooks/usePermissions.ts` → `getDefaultPermissions()`.
 Locked in by `src/hooks/usePermissions.test.ts`.
