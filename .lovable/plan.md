@@ -1,36 +1,68 @@
-## Sidebar polish — Chunk F (final sidebar pass before moving on)
+## Chunk G — Split Branding from Settings + adopt DS Settings shell
 
-### Why the sidebar still feels noisy in your screenshot
-The 4 visible items "โปรโมชั่น / การเงิน / วิเคราะห์ธุรกิจ / Gamification" you see are the **bottom of the Business group, scrolled past** the pins (Home/Lobby/Calendar/Members) + the Home group + People group + top of Business. The sidebar is duplicating those four pinned items right above the same items inside their groups, which makes the scroll long and the layout repetitive — even though the DS spec is technically satisfied.
+Per the screenshots, Settings should use a single **left vertical icon nav** (no top pill bar), and Branding should be its own top-level page — not a Settings sub-tab.
 
-### Two surgical fixes
+### 1. Split Branding into its own route
 
-**1. Default pins to empty (`[]`).** Keep all the pin-rendering code in place so the future Branding page can populate it from user config, but stop pre-filling it with rows that are already in the main nav. Result: today the sidebar renders Home → People → Business → Gym → Comms → Org → Settings with no duplicates and roughly **one viewport less scrolling** (~120 px shorter). When Branding ships, users opt-in pins explicitly.
+| Before | After |
+|---|---|
+| `/setting/branding` (nested under `<Settings>` outlet, appears in Settings tabs) | `/branding` (top-level route, own page) |
 
-**2. Remove the "ลากจัด" / "drag to arrange" hint** until real DnD is wired. Per `mem://index.md` Core: *No fake interactive elements*. The pins header row keeps the "ปักหมุด" label but drops the right-side hint span. When DnD lands later, the hint comes back at the same time as the handler.
+Changes:
+- `src/App.tsx` — register `<Route path="branding" element={<ProtectedRoute minAccessLevel="level_3_manager"><SettingsBranding /></ProtectedRoute>} />` directly under `<MainLayout>`. Keep `/setting/branding` as `<Route path="branding" element={<Navigate to="/branding" replace />} />` for backward compatibility.
+- `src/pages/Settings.tsx` — remove the `branding` entry from `tabs[]`.
+- `src/components/layout/Sidebar.tsx` — change `nav.branding` item path from `/setting/branding` → `/branding`.
+- `src/pages/settings/SettingsBranding.tsx` — **unchanged** (the page already renders standalone; it doesn't depend on the Settings shell).
 
-### Files touched (1 file)
+### 2. Rework Settings shell to DS pattern (per screenshot 2)
+
+Replace the current top horizontal pill bar with a single 2-column layout:
+
+```text
+┌───────────────────────────────────────────────────────┐
+│ ตั้งค่า                                                │
+│ ตั้งค่าระบบ · การแจ้งเตือน · การชำระเงิน · ความปลอดภัย │
+├───────────────────────────────────────────────────────┤
+│ ╔═════════╗  ┌─────────────────────────────────────┐  │
+│ ║ ⚙ ทั่วไป ║  │ <Outlet />                          │  │
+│ ║ 🔔 แจ้ง   ║  │ (subpage content unchanged)         │  │
+│ ║ 💳 จ่าย   ║  │                                     │  │
+│ ║ 🔌 เชื่อม ║  │                                     │  │
+│ ║ 🔒 ปลอด.  ║  │                                     │  │
+│ ╚═════════╝  └─────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────┘
 ```
-src/components/layout/Sidebar.tsx
-  - DEFAULT_PINS: ['/', '/lobby', '/calendar', '/members']  →  []
-  - Pins header: remove the {t('nav.pinsHint')} span
-```
 
-i18n keys (`nav.pins`, `nav.pinsHint`) **stay** in both locales — `nav.pinsHint` becomes unused for now but is kept for the Branding page work. No locale edits.
+Details:
+- Use `AdminPageHeader` for the title + subtitle line (subtitle = bullet-separated tab labels, matches screenshot).
+- Left nav: vertical list of `NavLink`s, each with a lucide icon, ~220px wide, rounded item rows. Active row uses `bg-sidebar-accent` token + bold orange icon (same active pattern as the main sidebar so look stays consistent and theming flows through the future Branding tokens).
+- Items get icons from lucide: `Settings` (general), `BookOpen` (class-management), `Users` (client-management), `Package` (setting-package), `FileSignature` (member-contracts), `Flag` (feature-flags), `Upload` (import-export), `Plug` (integrations).
+- Mobile: keep the existing `Select` dropdown fallback. No behavior change.
+- Subpages render via `<Outlet />` — **no changes to subpage files**. Each subpage currently wraps itself in its own `SettingsLayout` with an internal sub-nav. Those nested sub-navs stay because they navigate within-page sections (e.g., Theme / Timezone / Payment inside General), which is a different axis than the shell tabs. Out of scope to refactor today.
+
+### Files touched (3)
+```
+src/App.tsx                            — add /branding route, redirect old path
+src/pages/Settings.tsx                 — replace pill bar with left vertical icon nav, remove branding tab
+src/components/layout/Sidebar.tsx      — nav.branding path → /branding
+```
 
 ### Out of scope
-- No new DnD library, no Branding page work in this chunk.
-- No RBAC, route, hook, query, or badge changes.
-- Pin rendering infrastructure (header row, divider, `allItemsByPath` resolver, RBAC filtering) stays exactly as is.
-- No changes to groups, branch switcher, search, attention card, footer.
+- No DB, RLS, hook, query, or RBAC changes (Branding's `minAccessLevel="level_3_manager"` preserved on the new route).
+- No edits to `SettingsBranding.tsx` or any other subpage.
+- No removal of `settings.tabs.branding` i18n key (kept harmless for now).
+- Other admin pages (Members, Leads, Finance, etc.) — next chunks.
+
+### Motion
+- Outlet wrapper keeps existing `animate-in fade-in-0 slide-in-from-bottom-2 duration-200`.
+- Left nav row active-bar uses `animate-fade-in` (already in project) — matches main sidebar pattern.
 
 ### Regression checklist
-- Sidebar renders all 7 groups in correct order, none duplicated.
-- Group auto-open for current route still works (you're on `/` → Home group opens).
-- Collapsed mode still shows group dividers + flat items + urgent dot.
-- Branch switcher, search ⌘K, attention card, footer unchanged.
-- Manager (level_3) still sees Settings + Branding; Operator (level_2) doesn't.
-- Active route still shows orange left bar + bg-sidebar-accent.
-
-### After this chunk
-Sidebar is **done**. Next chunks (page-by-page, in the same surgical style) per your earlier approval: continuing with the rest of the admin pages mapped to `MOOM Design System/ui_kits/admin/*.jsx`. We already shipped Packages. Next candidates in order of DS-delta size: **Members → Leads → Finance → Classes → Schedule → Lobby → Promotions → Insights → Gamification → Rooms → Categories → Announcements → Locations → Staff → Roles → Activity Log → Settings → Branding**.
+- `/branding` works directly (manager+ only).
+- `/setting/branding` redirects to `/branding` (no broken bookmarks).
+- Sidebar "แบรนด์ยิม" still highlights when on `/branding`.
+- Sidebar "ตั้งค่าระบบ" still navigates to `/setting/general` and highlights on any `/setting/*` route.
+- Settings left nav highlights the active subpage; clicking each row navigates without page reload.
+- All 8 remaining Settings subpages load (General, Class, Client, Package, Contracts, FeatureFlags, ImportExport, Integrations).
+- Mobile dropdown still works.
+- No console errors.
