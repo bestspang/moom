@@ -721,6 +721,15 @@ export default {
     unlimited: 'Unlimited',
     session: 'Session',
     pt: 'PT',
+    view: { grid: 'Grid view', table: 'Table view' },
+    kpi: {
+      activePackages: 'Active packages',
+      ofTotal: 'of {{total}} total',
+      activeSubs: 'Active subscriptions',
+      revenue30d: 'Revenue (30d)',
+      arpu: 'ARPU',
+      comingSoon: 'Coming soon',
+    },
     create: {
       title: 'Create package',
       selectType: 'Select package type',
