@@ -10,7 +10,10 @@ import { useCheckIns, type CheckInWithRelations } from '@/hooks/useLobby';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
 import { CheckInQRCodeDialog } from '@/components/lobby/CheckInQRCodeDialog';
 import { LobbyKpiStrip } from '@/components/lobby/LobbyKpiStrip';
+import { LobbyFilters, DEFAULT_LOBBY_FILTERS, type LobbyFilterState } from '@/components/lobby/LobbyFilters';
+import { CheckInDetailsDrawer } from '@/components/lobby/CheckInDetailsDrawer';
 import { QrCode, Plus } from 'lucide-react';
+
 import { useCommandListener } from '@/lib/commandEvents';
 
 const HIGHLIGHT_MS = 3000;
