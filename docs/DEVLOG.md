@@ -424,3 +424,28 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 - Applied `variant="ds-chip"` to all 5 Dashboard KPIs (Check-ins, In Class, Classes Today, Revenue, Active Members).
 - Per-page audit: confirmed Lobby/Schedule have no live-dot elements today, so no fake elements were added (per AI guardrails — no speculative UI).
 - Logic, hooks, RLS, i18n, routes, realtime: untouched. Member/Trainer/Staff surfaces: unaffected (admin-only utilities + variant defaults).
+
+---
+
+## 2026-05-19 — Lobby audit + AI regression guardrails
+
+**Bug fixed**
+- `CheckInDetailsDrawer.tsx` navigated to `/members/:id` (Staff surface route) instead of `/members/:id/detail` (Admin route). Confirmed convention via `NeedsAttentionCard`, `Members.tsx`, `MembersAtRisk.tsx`.
+
+**Audit**
+- Full Lobby button → handler → DB effect trace in `docs/audit-lobby.md`, including RBAC matrix for Owner/Manager/Trainer/Front desk.
+- Realtime: `member_attendance` still in `TABLE_INVALIDATION_MAP`; row highlight works as expected.
+
+**Added (additive only)**
+- `docs/audit-lobby.md` — Lobby audit report + RBAC matrix.
+- `src/hooks/usePermissions.test.ts` — locks in default RBAC matrix per access level.
+- `src/pages/Lobby.smoke.test.ts` — locks in Lobby i18n key contract (top keys + `details.*` + `help.*`) across EN/TH.
+- `lobby.help.{filters,checkInButton,qrButton}` in both locales; wired via `title=` attribute on the existing buttons.
+- ESLint `no-restricted-imports` block for moment/axios/lodash/openai/anthropic (per CLAUDE.md §7).
+- `AI_GUARDRAILS.md` Rules 12 (verify button→handler→side effect) and 13 (i18n + help text in lockstep).
+- `PROTECTED_FILES.md` expanded Tier 2 with `useLobby`, `usePermissions`, `SurfaceContext`, `sessionTransfer`, `LanguageContext`, slip + gamification edge functions, and build/CI configs.
+- `docs/SMOKE_TEST.md` Lobby smoke section + AI change verification gate.
+
+**Untouched**
+- `src/hooks/useLobby.ts`, `src/pages/Lobby.tsx` logic (only added `title=` tooltips), all `src/components/lobby/*` other than the route-literal fix.
+- RLS, edge functions, auth, realtime sync.
