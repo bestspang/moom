@@ -1686,6 +1686,7 @@ export default {
       noAccessBody: 'You do not have permission to view the brand settings. Please contact an administrator.',
       readOnlyBanner: 'Read-only — your role does not allow editing branding.',
       writeBlockedToast: 'You do not have permission to save branding changes',
+      saveErrorToast: 'Failed to save branding changes. Please try again.',
       uploadLogo: 'Upload logo',
       uploadPhoto: 'Upload brand photo',
       uploadBrowse: 'Browse',
