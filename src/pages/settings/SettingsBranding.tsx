@@ -555,6 +555,7 @@ const SettingsBranding = () => {
           />
         </div>
       </div>
+      </fieldset>
 
       {/* Sticky save bar (when dirty) */}
       {dirty && (
