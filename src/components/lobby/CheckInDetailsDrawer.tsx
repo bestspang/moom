@@ -110,7 +110,7 @@ export function CheckInDetailsDrawer({ row, open, onOpenChange }: Props) {
               className="w-full gap-1.5"
               onClick={() => {
                 onOpenChange(false);
-                navigate(`/members/${m.id}`);
+                navigate(`/members/${m.id}/detail`);
               }}
             >
               {t('lobby.details.openMember')}

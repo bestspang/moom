@@ -78,3 +78,24 @@ Every code change produced by an AI session must pass these 5 checks. If any fai
 - [ ] **i18n parity** — `node scripts/compare-i18n.mjs` reports `✅ All EN keys exist in TH!` and counts match
 
 > See `AI_GUARDRAILS.md` (root) for the full pre-edit checklist that prevents these failures from being introduced in the first place.
+
+---
+
+## Lobby (filters, drawer, pagination, realtime)
+
+- [ ] Date picker change → table + KPI strip refetch, page resets to 1
+- [ ] Search → page resets to 1; clearing returns full list
+- [ ] Filters popover → location / method / package each filter the table; active count badge updates; "Clear filters" resets all three
+- [ ] Pagination → prev/next disabled at bounds; "Showing N-M of T" matches
+- [ ] Row click → CheckInDetailsDrawer opens with member/package/check-in sections
+- [ ] Drawer "Open member profile" → navigates to `/members/:id/detail` (admin route, NOT `/members/:id` which is Staff)
+- [ ] New check-in via realtime → row flashes `bg-primary/10` for ~3 s
+- [ ] Trainer role (`level_2_operator`): no Check-in / QR buttons visible; drawer opens but "Open member" hidden if `members.read` is false
+- [ ] Front desk (`level_1_minimum`): Check-in + QR visible; drawer "Open member" visible (front desk has `members.read`)
+- [ ] Tooltips: hovering Check-in / QR / Filters buttons shows EN/TH help text from `lobby.help.*`
+
+## AI change verification gate (Lobby/check-in path)
+
+- [ ] `bun run test` includes `src/hooks/usePermissions.test.ts` + `src/pages/Lobby.smoke.test.ts`
+- [ ] `node scripts/compare-i18n.mjs` reports parity
+- [ ] No new `console.log` or `toast.info('coming soon')` in `src/components/lobby/*` or `src/pages/Lobby.tsx`

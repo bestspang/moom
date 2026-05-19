@@ -95,6 +95,21 @@ A whole class of P1 outages comes from AI sessions writing `.select('rel:table(n
    `packages, classes, class_categories, gamification_rewards, gamification_challenges, gamification_badges, gamification_levels, gamification_rules, gamification_seasons, gamification_trainer_tiers, level_benefits, coupon_templates, announcements`.
 3. Consumer code must fallback: `row.name_th || row.name_en` (never bare `.name`).
 
+### 12. Verify the button still works — trace handler to side effect
+Before claiming an edit is done on any component that renders interactive controls (button, link, row click, drawer action), trace every visible handler down to its real side effect:
+- A button's `onClick` must reach a mutation, navigation, dialog open, or documented no-op — never `console.log`, never `toast.info('coming soon')`, never a dropped reference.
+- A row click must reach a real route or a real drawer. Confirm the route literal exists in `src/App.tsx`. Routes for the Admin surface use `/members/:id/detail`; Staff surface uses `/members/:id`. Do **not** swap them.
+- A mutation's `onSuccess` must still call `logActivity(...)` + `queryClient.invalidateQueries(...)` if it did before. Silently dropping either is a regression.
+
+### 13. i18n + help text must stay in lockstep with the feature
+When adding, renaming, or removing a UI affordance:
+- Add or update the corresponding `*.help.*` / tooltip key in **both** `src/i18n/locales/en.ts` and `th.ts`.
+- If you remove a button, remove its i18n keys in both locales (or the comparator will flag drift forever).
+- Run `node scripts/compare-i18n.mjs` before claiming done. CI runs it too — do not let it fail.
+- Help text describes the **current** behavior. If you changed how a feature works, the help text is now wrong by definition — update it in the same diff.
+
+
+
 ---
 
 ## Common AI Anti-Patterns (do not do these)

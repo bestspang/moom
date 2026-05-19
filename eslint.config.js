@@ -23,6 +23,36 @@ export default tseslint.config(
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
+
+      // === AI regression guardrails (banned libraries) ===
+      // See CLAUDE.md §7. Use date-fns / fetch / native ES instead.
+      "no-restricted-imports": ["error", {
+        paths: [
+          { name: "moment", message: "Use date-fns 3 instead (project provides useDateLocale wrapper)." },
+          { name: "axios", message: "Use supabase-js in client + native fetch in edge functions." },
+          { name: "lodash", message: "Use native ES or lodash-es with deep import paths only." },
+          { name: "openai", message: "Route AI calls through the Lovable AI Gateway edge function." },
+          { name: "@anthropic-ai/sdk", message: "Route AI calls through the Lovable AI Gateway edge function." },
+        ],
+        patterns: [
+          { group: ["lodash/*"], message: "Prefer native ES; if needed, use lodash-es with deep import paths." },
+        ],
+      }],
+    },
+  },
+  // Auto-generated files — do not edit. ESLint should not warn nor be used to
+  // "improve" them. Keep rules minimal here.
+  {
+    files: ["src/integrations/supabase/**/*.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
+  // Test files: relaxed.
+  {
+    files: ["src/**/*.{test,spec}.{ts,tsx}", "src/test/**"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   {

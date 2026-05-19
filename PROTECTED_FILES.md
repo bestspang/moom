@@ -25,9 +25,19 @@ If a task seems to require touching one of these files, **stop and ask the user 
 | `src/apps/shared/hostname.ts` | Surface routing across all 4 surfaces (admin/member/trainer/staff) | "Changing surface detection / cross-surface URLs — confirm?" |
 | `src/App.tsx` (route table) | Every page mount | Confirm route additions/removals before editing |
 | `src/hooks/useRealtimeSync.ts` | All TanStack Query cache invalidation | **Only ADD tables, never remove.** Removing a table silently breaks live updates elsewhere |
+| `src/hooks/useLobby.ts` | Canonical check-in pipeline + gamification fire (`check_in` event) | "Changing the check-in mutation — confirm? This also affects gamification + activity log." |
+| `src/hooks/usePermissions.ts` | RBAC source of truth for every `can(...)` call | Adding resources is OK; never silently flip a default to grant more access |
+| `src/apps/shared/SurfaceContext.tsx` | Surface detection + persistence across all 4 apps | Confirm before changing detection precedence |
+| `src/apps/shared/sessionTransfer.ts` | Cross-surface session handoff | Auth-adjacent — confirm before editing |
+| `src/contexts/LanguageContext.tsx` | i18n provider used by every page | Adding methods OK; changing default locale needs approval |
 | `src/components/ui/*` (shadcn primitives) | Every dialog/button/form in the app | Never modify — wrap in a new component instead |
 | `src/lib/queryKeys.ts` | Every query/mutation cache key | Adding new keys is OK; renaming requires updating all callers |
+| `src/lib/toast-i18n.ts`, `src/lib/commandEvents.ts` | Cross-app helpers (toast wrappers, command palette bus) | Additive only |
+| `supabase/functions/approve-slip/index.ts` | Canonical slip → transaction atomic write + `package_purchase` fire | Confirm before editing — payment + gamification + activity log all here |
+| `supabase/functions/gamification-process-event/index.ts` | Idempotent XP/Coin/SP ledger writes | Confirm before editing — affects every gamification event |
+| `eslint.config.js`, `vite.config.ts`, `vitest.config.ts`, `.github/workflows/quality.yml` | Build / lint / test / CI gates | Additive rules OK; never weaken or remove a gate |
 | RLS policies (in any migration) | Data-isolation boundary | Always preferred via new migration; never disable RLS to "fix" a query |
+
 
 ## 🔒 Tier 3 — High-impact shared utilities (read full file before touching)
 
