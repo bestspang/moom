@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -9,8 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCheckIns, type CheckInWithRelations } from '@/hooks/useLobby';
 import { CheckInDialog } from '@/components/lobby/CheckInDialog';
 import { CheckInQRCodeDialog } from '@/components/lobby/CheckInQRCodeDialog';
+import { LobbyKpiStrip } from '@/components/lobby/LobbyKpiStrip';
 import { QrCode, Plus } from 'lucide-react';
 import { useCommandListener } from '@/lib/commandEvents';
+
+const HIGHLIGHT_MS = 3000;
 
 const Lobby = () => {
   const { t } = useLanguage();
@@ -23,6 +26,48 @@ const Lobby = () => {
   const { data: checkInData = [], isLoading } = useCheckIns(selectedDate, search);
 
   useCommandListener('open-checkin', React.useCallback(() => setDialogOpen(true), []));
+
+  // Track newly-arrived check-ins for transient row highlight.
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+  const [recentIds, setRecentIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!checkInData.length) {
+      if (!initializedRef.current) initializedRef.current = true;
+      return;
+    }
+    const currentIds = checkInData.map((r) => r.id);
+    if (!initializedRef.current) {
+      // First load: seed seen set, no highlight.
+      seenIdsRef.current = new Set(currentIds);
+      initializedRef.current = true;
+      return;
+    }
+    const fresh = currentIds.filter((id) => !seenIdsRef.current.has(id));
+    if (fresh.length === 0) return;
+    fresh.forEach((id) => seenIdsRef.current.add(id));
+    setRecentIds((prev) => {
+      const next = new Set(prev);
+      fresh.forEach((id) => next.add(id));
+      return next;
+    });
+    const timer = window.setTimeout(() => {
+      setRecentIds((prev) => {
+        const next = new Set(prev);
+        fresh.forEach((id) => next.delete(id));
+        return next;
+      });
+    }, HIGHLIGHT_MS);
+    return () => window.clearTimeout(timer);
+  }, [checkInData]);
+
+  // Reset tracker when the selected date changes (different dataset).
+  useEffect(() => {
+    seenIdsRef.current = new Set();
+    initializedRef.current = false;
+    setRecentIds(new Set());
+  }, [selectedDate]);
 
   const methodVariant = (method: string | null | undefined) => {
     switch (method) {
@@ -84,9 +129,25 @@ const Lobby = () => {
   return (
     <div>
       <PageHeader
-        title={t('lobby.title')}
+        title={
+          <span className="inline-flex items-center gap-2">
+            {t('lobby.title')}
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+              aria-label={t('lobby.liveBadge')}
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              {t('lobby.liveBadge')}
+            </span>
+          </span>
+        }
         breadcrumbs={[{ label: t('lobby.title') }]}
       />
+
+      <LobbyKpiStrip data={checkInData} />
 
       {/* DS toolbar card — date + search + actions */}
       <div className="mb-6 rounded-xl border border-border bg-card shadow-sm p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
@@ -126,6 +187,9 @@ const Lobby = () => {
           columns={columns}
           data={checkInData}
           rowKey={(row) => row.id}
+          rowClassName={(row) =>
+            recentIds.has(row.id) ? 'bg-primary/10 animate-in fade-in duration-500' : undefined
+          }
           emptyMessage={t('lobby.noCheckins')}
         />
       )}
