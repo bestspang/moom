@@ -116,3 +116,16 @@ Every code change produced by an AI session must pass these 5 checks. If any fai
 - [ ] `bun run test` includes `src/hooks/usePermissions.test.ts` + `src/pages/Lobby.smoke.test.ts`
 - [ ] `node scripts/compare-i18n.mjs` reports parity
 - [ ] No new `console.log` or `toast.info('coming soon')` in `src/components/lobby/*` or `src/pages/Lobby.tsx`
+
+## Brand Kit Propagation (added 2026-05-19)
+
+1. Settings → Branding → change `name` to "TEST GYM" → click **Save**
+2. ✅ Toast "Brand saved"
+3. Navigate Admin → Sidebar shows "TEST GYM" + footer "© {year} TEST GYM"
+4. Browser tab title shows "TEST GYM"
+5. Open `/login` (incognito) → title = "TEST GYM Admin"
+6. Open `/member/login` → title = "TEST GYM"
+7. Upload logo image → favicon updates in tab
+8. Click **Reset to defaults** → all surfaces revert to "MOOM CLUB"
+9. Click **Export** → JSON file `brand-kit-*.json` downloads
+10. RBAC: log in as Trainer → Save/Reset buttons disabled (read-only); log in as Front Desk → page redirect/blocked
