@@ -99,7 +99,9 @@ export const PhotoBlock: React.FC<{ brand: BrandKit; w?: number; h?: number }> =
         width: w,
         height: h,
         borderRadius: 8,
-        background: `linear-gradient(135deg, ${brand.primary}, ${brand.accent})`,
+        background: brand.photoUrl
+          ? `url(${brand.photoUrl}) center/cover no-repeat`
+          : `linear-gradient(135deg, ${brand.primary}, ${brand.accent})`,
         filter: filterMap[brand.photoStyle],
       }}
     />
