@@ -1,7 +1,17 @@
 import React from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Settings as SettingsIcon,
+  BookOpen,
+  Users,
+  Package,
+  FileSignature,
+  Flag,
+  Upload,
+  Plug,
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PageHeader } from '@/components/common';
+import { AdminPageHeader } from '@/components/admin-ds/AdminPageHeader';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -11,8 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useNavigate } from 'react-router-dom';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const Settings = () => {
   const { t } = useLanguage();
@@ -21,43 +29,42 @@ const Settings = () => {
   const isMobile = useIsMobile();
 
   const tabs = [
-    { value: 'general', label: t('settings.tabs.general'), path: '/setting/general' },
-    { value: 'branding', label: t('settings.tabs.branding'), path: '/setting/branding' },
-    { value: 'class-management', label: t('settings.tabs.class'), path: '/setting/class-management' },
-    { value: 'client-management', label: t('settings.tabs.client'), path: '/setting/client-management' },
-    { value: 'setting-package', label: t('settings.tabs.package'), path: '/setting/setting-package' },
-    { value: 'member-contracts', label: t('settings.tabs.memberContracts'), path: '/setting/member-contracts' },
-    { value: 'feature-flags', label: t('settings.tabs.featureFlags'), path: '/setting/feature-flags' },
-    { value: 'import-export', label: t('settings.tabs.importExport'), path: '/setting/import-export' },
-    { value: 'integrations', label: t('settings.tabs.integrations'), path: '/setting/integrations' },
+    { value: 'general', label: t('settings.tabs.general'), path: '/setting/general', icon: SettingsIcon },
+    { value: 'class-management', label: t('settings.tabs.class'), path: '/setting/class-management', icon: BookOpen },
+    { value: 'client-management', label: t('settings.tabs.client'), path: '/setting/client-management', icon: Users },
+    { value: 'setting-package', label: t('settings.tabs.package'), path: '/setting/setting-package', icon: Package },
+    { value: 'member-contracts', label: t('settings.tabs.memberContracts'), path: '/setting/member-contracts', icon: FileSignature },
+    { value: 'feature-flags', label: t('settings.tabs.featureFlags'), path: '/setting/feature-flags', icon: Flag },
+    { value: 'import-export', label: t('settings.tabs.importExport'), path: '/setting/import-export', icon: Upload },
+    { value: 'integrations', label: t('settings.tabs.integrations'), path: '/setting/integrations', icon: Plug },
   ];
 
   const currentTab = tabs.find(tab => location.pathname === tab.path)?.value || 'general';
+  const subtitle = tabs.map(tb => tb.label).join(' · ');
 
-  // Mobile: Dropdown selector
+  // Mobile: dropdown selector
   if (isMobile) {
     return (
-      <div>
-        <PageHeader title={t('settings.title')} breadcrumbs={[{ label: t('settings.title') }]} />
-        
-        <div className="mb-6">
-          <Select value={currentTab} onValueChange={(value) => {
-            const tab = tabs.find(t => t.value === value);
+      <div className="space-y-6">
+        <AdminPageHeader title={t('settings.title')} subtitle={subtitle} />
+        <Select
+          value={currentTab}
+          onValueChange={(value) => {
+            const tab = tabs.find(tb => tb.value === value);
             if (tab) navigate(tab.path);
-          }}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {tabs.map((tab) => (
-                <SelectItem key={tab.value} value={tab.value}>
-                  {tab.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+          }}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {tabs.map((tab) => (
+              <SelectItem key={tab.value} value={tab.value}>
+                {tab.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
           <Outlet />
         </div>
@@ -65,50 +72,52 @@ const Settings = () => {
     );
   }
 
-  // Desktop: Tab navigation
+  // Desktop: left vertical icon nav + content
   return (
-    <div>
-      <PageHeader title={t('settings.title')} breadcrumbs={[{ label: t('settings.title') }]} />
-      
-      {/* Accessible tab navigation with horizontal scroll */}
-      <ScrollArea className="w-full mb-6">
-        <nav 
-          role="tablist" 
+    <div className="space-y-6">
+      <AdminPageHeader title={t('settings.title')} subtitle={subtitle} />
+
+      <div className="flex gap-6 items-start">
+        <nav
+          role="tablist"
           aria-label={t('settings.title')}
-          className="flex gap-1 p-1 bg-muted rounded-lg w-fit"
+          className="w-[220px] flex-shrink-0 flex flex-col gap-1"
         >
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
+            const Icon = tab.icon;
             return (
-              <NavLink 
-                key={tab.value} 
+              <NavLink
+                key={tab.value}
                 to={tab.path}
                 role="tab"
                 aria-selected={isActive}
-                aria-controls={`${tab.value}-panel`}
                 className={cn(
-                  'px-3 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap',
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  isActive 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 )}
               >
-                {tab.label}
+                <Icon
+                  className={cn(
+                    'h-4 w-4 flex-shrink-0',
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                />
+                <span className="truncate">{tab.label}</span>
               </NavLink>
             );
           })}
         </nav>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
 
-      {/* Tab panel */}
-      <div 
-        role="tabpanel"
-        id={`${location.pathname.split('/').pop()}-panel`}
-        className="animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
-      >
-        <Outlet />
+        <div
+          role="tabpanel"
+          className="flex-1 min-w-0 animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+        >
+          <Outlet />
+        </div>
       </div>
     </div>
   );
