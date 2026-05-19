@@ -455,6 +455,15 @@ const SettingsBranding = () => {
                 );
               })}
             </div>
+            <div className="mt-3">
+              <ImageUploadField
+                kind="photo"
+                value={brand.photoUrl}
+                onChange={(url) => set({ photoUrl: url })}
+                disabled={!canWrite}
+                disabledHint={!canWrite ? t('settings.branding.readOnlyBanner') : undefined}
+              />
+            </div>
           </BrandSectionCard>
 
           {/* SOCIAL */}
