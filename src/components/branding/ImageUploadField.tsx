@@ -53,8 +53,9 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   const handleFile = async (file: File) => {
     setError(null);
     const result = await validateImageUpload(file, kind);
-    if (!result.ok) {
-      const msg = formatMsg(result.i18nKey, result.extras);
+    if (result.ok === false) {
+      const r = result as Extract<typeof result, { ok: false }>;
+      const msg = formatMsg(r.i18nKey, r.extras);
       setError(msg);
       toast.error(msg);
       return;
