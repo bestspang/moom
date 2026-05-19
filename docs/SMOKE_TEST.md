@@ -129,3 +129,15 @@ Every code change produced by an AI session must pass these 5 checks. If any fai
 8. Click **Reset to defaults** → all surfaces revert to "MOOM CLUB"
 9. Click **Export** → JSON file `brand-kit-*.json` downloads
 10. RBAC: log in as Trainer → Save/Reset buttons disabled (read-only); log in as Front Desk → page redirect/blocked
+
+## Brand Kit — Edge Cases (added 2026-05-19)
+
+1. **Empty `logoUrl`** → save brand with `logoUrl=''` → existing favicon stays; no broken `<img src="">` rendered in Sidebar; `BrandMark` falls back to `logoLetter`.
+2. **Empty `name`** → save with blank → UI falls back to `DEFAULT_BRAND.name`; browser tab title is never literally empty.
+3. **Rapid save (3× within 5 s)** → no race; Sidebar / title settle on the last-saved value; no duplicate activity_log entries with the same payload at the same ms.
+4. **Primary color change** → CSS var `--primary` updates; toggle to dark mode → `--primary` in `.dark` block still reflects brand (no theme drift).
+5. **Reset to defaults** → all four surfaces (Admin / Member / Trainer / Staff) revert to `MOOM CLUB` within one render.
+6. **Upload logo > 2 MB** → `useImageUpload` rejects; toast error; previously-saved brand row is untouched (no partial write).
+7. **Persistence** → close browser → reopen → saved brand still rendered (loaded from DB via `BrandProvider`).
+8. **Trainer role** → opens `/settings/branding` → form visible (preview) but Save / Reset / Upload disabled per RBAC.
+9. **Edge-function audit** → `node scripts/check-brand-consumers.mjs` passes (frontend + backend modes); fails if any email/receipt template introduces a literal brand string.
