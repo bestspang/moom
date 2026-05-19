@@ -456,7 +456,26 @@ export default {
     kpiCurrentlyIn: 'Currently in',
     kpiPackage: 'Package use',
     kpiWalkIn: 'Walk-in',
+    filters: 'Filters',
+    filterLocation: 'Location',
+    filterMethod: 'Method',
+    filterPackage: 'Package',
+    filterAll: 'All',
+    filterWithPackage: 'With package',
+    filterWalkIn: 'Walk-in only',
+    clearFilters: 'Clear filters',
+    newCheckinHighlight: 'New check-in',
+    details: {
+      title: 'Check-in details',
+      member: 'Member',
+      package: 'Package',
+      checkin: 'Check-in',
+      createdBy: 'Created by',
+      openMember: 'Open member profile',
+      noPackage: 'No package (walk-in)',
+    },
   },
+
 
   // Check-in Display (kiosk)
   checkinDisplay: {

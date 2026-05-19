@@ -456,7 +456,26 @@ export default {
     kpiCurrentlyIn: 'กำลังอยู่ในยิม',
     kpiPackage: 'ใช้แพ็คเกจ',
     kpiWalkIn: 'Walk-in',
+    filters: 'ตัวกรอง',
+    filterLocation: 'สาขา',
+    filterMethod: 'วิธีเช็คอิน',
+    filterPackage: 'แพ็คเกจ',
+    filterAll: 'ทั้งหมด',
+    filterWithPackage: 'มีแพ็คเกจ',
+    filterWalkIn: 'Walk-in เท่านั้น',
+    clearFilters: 'ล้างตัวกรอง',
+    newCheckinHighlight: 'เช็คอินใหม่',
+    details: {
+      title: 'รายละเอียดเช็คอิน',
+      member: 'สมาชิก',
+      package: 'แพ็คเกจ',
+      checkin: 'เช็คอิน',
+      createdBy: 'สร้างโดย',
+      openMember: 'เปิดโปรไฟล์สมาชิก',
+      noPackage: 'ไม่มีแพ็คเกจ (Walk-in)',
+    },
   },
+
 
   // Check-in Display (kiosk)
   checkinDisplay: {
