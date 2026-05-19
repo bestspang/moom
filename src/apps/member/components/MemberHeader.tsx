@@ -39,9 +39,9 @@ export function MemberHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-background shadow-sm px-4">
-      {/* Brand */}
+      {/* Brand — driven by global Brand Kit */}
       <Link to="/member" className="text-lg font-bold tracking-tight text-primary">
-        MOOM
+        {brand.name}
       </Link>
 
       {/* Actions — Bell + Avatar only */}

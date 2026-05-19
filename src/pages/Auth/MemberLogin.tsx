@@ -193,7 +193,7 @@ const MemberLogin: React.FC = () => {
               <span className="text-primary-foreground font-bold text-xl">M</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MOOM</CardTitle>
+          <CardTitle className="text-2xl font-bold">{brand.name}</CardTitle>
           <CardDescription>{t('auth.loginDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

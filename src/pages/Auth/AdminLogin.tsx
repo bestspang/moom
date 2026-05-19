@@ -78,7 +78,7 @@ const AdminLogin: React.FC = () => {
               <ShieldCheck className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MOOM Admin</CardTitle>
+          <CardTitle className="text-2xl font-bold">{brand.name} Admin</CardTitle>
           <CardDescription>Staff & management portal</CardDescription>
         </CardHeader>
         <CardContent>

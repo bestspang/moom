@@ -86,7 +86,7 @@ const Signup = () => {
               <span className="text-primary-foreground font-bold text-xl">M</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">MOOM CLUB</CardTitle>
+          <CardTitle className="text-2xl font-bold">{brand.name}</CardTitle>
           <CardDescription>{t('auth.signupDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

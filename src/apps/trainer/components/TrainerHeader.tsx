@@ -33,7 +33,7 @@ export function TrainerHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b bg-background shadow-sm px-4">
       <Link to="/trainer" className="text-lg font-bold tracking-tight text-primary">
-        MOOM
+        {brand.name}
       </Link>
 
       <DropdownMenu>
