@@ -721,6 +721,15 @@ export default {
     unlimited: 'ไม่จำกัด',
     session: 'เซสชัน',
     pt: 'PT',
+    view: { grid: 'มุมมองตาราง', table: 'มุมมองรายการ' },
+    kpi: {
+      activePackages: 'แพ็คเกจใช้งาน',
+      ofTotal: 'จากทั้งหมด {{total}}',
+      activeSubs: 'สมาชิกที่กำลังใช้',
+      revenue30d: 'รายได้ 30 วัน',
+      arpu: 'ARPU',
+      comingSoon: 'เร็วๆ นี้',
+    },
     create: {
       title: 'สร้างแพ็คเกจ',
       selectType: 'เลือกประเภทแพ็คเกจ',
