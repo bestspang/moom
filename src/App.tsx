@@ -153,6 +153,7 @@ const App = () => (
     <AuthProvider>
       <SurfaceProvider>
         <LanguageProvider>
+          <BrandProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
