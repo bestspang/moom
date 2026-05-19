@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2, Mail, Phone, KeyRound } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const RESEND_COOLDOWN = 60;
 
 const MemberLogin: React.FC = () => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Globe, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {

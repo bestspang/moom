@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { useRecentNotifications, useUnreadCount, useMarkAsRead } from '@/hooks/useNotifications';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +23,7 @@ type SignupFormData = {
 
 const Signup = () => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();

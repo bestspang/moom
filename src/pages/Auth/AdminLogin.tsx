@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrand } from '@/contexts/BrandContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ type LoginFormData = { email: string; password: string };
 
 const AdminLogin: React.FC = () => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
