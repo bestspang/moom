@@ -155,19 +155,20 @@ const Lobby = () => {
 
       <LobbyKpiStrip data={checkInData} />
 
-      {/* DS toolbar card — date + search + actions */}
+      {/* DS toolbar card — date + search + filters + actions */}
       <div className="mb-6 rounded-xl border border-border bg-card shadow-sm p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
         <DatePicker
           date={selectedDate}
-          onChange={setSelectedDate}
+          onChange={(d) => { setSelectedDate(d); setPage(1); }}
           showNavigation={false}
         />
         <SearchBar
           placeholder={t('lobby.searchPlaceholder')}
           value={search}
-          onChange={setSearch}
+          onChange={(v) => { setSearch(v); setPage(1); }}
           className="flex-1 min-w-[200px] max-w-md"
         />
+        <LobbyFilters value={filters} onChange={(f) => { setFilters(f); setPage(1); }} />
         {can('lobby', 'write') && (
           <div className="flex items-center gap-2 sm:ml-auto">
             <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
@@ -191,19 +192,28 @@ const Lobby = () => {
       ) : (
         <DataTable
           columns={columns}
-          data={checkInData}
+          data={pageData}
           rowKey={(row) => row.id}
           rowClassName={(row) =>
             recentIds.has(row.id) ? 'bg-primary/10 animate-in fade-in duration-500' : undefined
           }
+          onRowClick={(row) => setDetailsRow(row)}
+          pagination={{ page, perPage: PAGE_SIZE, total: filteredData.length }}
+          onPageChange={setPage}
           emptyMessage={t('lobby.noCheckins')}
         />
       )}
 
       <CheckInDialog open={dialogOpen} onOpenChange={setDialogOpen} />
       <CheckInQRCodeDialog open={qrDialogOpen} onOpenChange={setQrDialogOpen} />
+      <CheckInDetailsDrawer
+        row={detailsRow}
+        open={!!detailsRow}
+        onOpenChange={(o) => !o && setDetailsRow(null)}
+      />
     </div>
   );
 };
+
 
 export default Lobby;
