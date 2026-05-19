@@ -33,14 +33,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({
   const px = PX[size];
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <LogoMark
-        letter={brand.logoLetter}
-        style={brand.logoStyle}
-        color={brand.primary}
-        radius={brand.radius}
-        size={px}
-        url={brand.logoUrl}
-      />
+      <LogoMark brand={brand} size={px} />
       {showName && (
         <span className={cn('font-bold tracking-tight text-foreground', nameClassName)}>
           {brand.name}
