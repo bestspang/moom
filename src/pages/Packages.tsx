@@ -173,36 +173,112 @@ const Packages = () => {
     { key: 'popular', header: t('packages.popular'), cell: (row) => row.is_popular ? <Star className="h-4 w-4 fill-warning text-warning" /> : null },
   ];
 
-  return (
-    <div>
-      <PageHeader
-        title={t('packages.title')}
-        breadcrumbs={[{ label: t('nav.package') }, { label: t('packages.title') }]}
-        actions={
-          <div className="flex items-center gap-2">
-            {can('packages', 'write') && (
-              <>
-                <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
-                <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
-                  {t('packages.createPackage')}
-                </Button>
-              </>
-            )}
+  const totalPackages = (stats?.on_sale || 0) + (stats?.scheduled || 0) + (stats?.drafts || 0) + (stats?.archive || 0);
+
+  const kpis: Array<{ label: string; value: React.ReactNode; suffix?: React.ReactNode; icon: React.ReactNode; accent: 'orange' | 'teal' | 'info' | 'pink'; comingSoon?: boolean }> = [
+    { label: t('packages.kpi.activePackages'), value: stats?.on_sale ?? '—', suffix: t('packages.kpi.ofTotal').replace('{{total}}', String(totalPackages)), icon: <PackageIcon />, accent: 'orange' },
+    { label: t('packages.kpi.activeSubs'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <Users />, accent: 'teal', comingSoon: true },
+    { label: t('packages.kpi.revenue30d'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <DollarSign />, accent: 'info', comingSoon: true },
+    { label: t('packages.kpi.arpu'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <TrendingUp />, accent: 'pink', comingSoon: true },
+  ];
+
+  const renderGridCard = (row: Package) => {
+    const name = language === 'th' && row.name_th ? row.name_th : row.name_en;
+    return (
+      <AdminCard
+        key={row.id}
+        onClick={() => navigate(`/package/${row.id}`)}
+        className="cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all duration-150 p-4 flex flex-col gap-3"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[14px] font-bold text-foreground truncate">{name}</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{getTypeLabel(row.type)}</div>
           </div>
+          {row.is_popular && <Star className="h-4 w-4 fill-warning text-warning shrink-0" />}
+        </div>
+        <div className="flex items-end justify-between gap-2 mt-auto">
+          <div>
+            <div className="text-[22px] font-extrabold text-foreground tabular-nums leading-none">{formatCurrency(row.price)}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {row.term_days}d {row.sessions ? `· ${row.sessions} ${t('packages.sessions')}` : ''}
+            </div>
+          </div>
+          <StatusBadge variant={row.type === 'pt' ? 'pending' : 'default'}>{getTypeLabel(row.type)}</StatusBadge>
+        </div>
+      </AdminCard>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <AdminPageHeader
+        title={t('packages.title')}
+        actions={
+          can('packages', 'write') && (
+            <>
+              <ManageDropdown onExport={handleExport} onDownloadTemplate={handleDownloadTemplate} onImport={() => setImportOpen(true)} exportDisabled={!packages?.length} />
+              <Button className="bg-primary hover:bg-primary-hover" onClick={() => navigate('/package/create')}>
+                {t('packages.createPackage')}
+              </Button>
+            </>
+          )
         }
       />
 
-      {/* DS toolbar card — search */}
-      <div className="mb-4 rounded-xl border border-border bg-card shadow-sm p-3">
-        <SearchBar placeholder={t('packages.searchPlaceholder')} value={search} onChange={setSearch} className="max-w-md" />
+      {/* KPI strip — DS-aligned 4-up */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {kpis.map((k, i) => (
+          <div key={i} className={cn(k.comingSoon && 'opacity-60 pointer-events-none')}>
+            <AdminKpiCard label={k.label} value={k.value} suffix={k.suffix} icon={k.icon} accent={k.accent} />
+          </div>
+        ))}
       </div>
+
+      {/* Toolbar card — search + view toggle */}
+      <AdminCard className="p-3 flex items-center gap-2 flex-wrap">
+        <SearchBar placeholder={t('packages.searchPlaceholder')} value={search} onChange={setSearch} className="max-w-md flex-1 min-w-[180px]" />
+        <div className="flex-1" />
+        <div className="flex p-0.5 bg-muted rounded-lg">
+          <button
+            type="button"
+            onClick={() => setView('grid')}
+            aria-label={t('packages.view.grid')}
+            className={cn(
+              'h-7 w-8 rounded-md flex items-center justify-center transition-colors',
+              view === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('table')}
+            aria-label={t('packages.view.table')}
+            className={cn(
+              'h-7 w-8 rounded-md flex items-center justify-center transition-colors',
+              view === 'table' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </AdminCard>
 
       <StatusTabs tabs={statusTabs} activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); clearSelection(); }} />
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        <div className={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5' : 'space-y-3'}>
+          {[...Array(view === 'grid' ? 8 : 5)].map((_, i) => <Skeleton key={i} className={view === 'grid' ? 'h-36 w-full' : 'h-12 w-full'} />)}
         </div>
+      ) : view === 'grid' ? (
+        (packages || []).length === 0 ? (
+          <AdminCard className="p-10 text-center text-sm text-muted-foreground">{t('common.noData')}</AdminCard>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            {(packages || []).map(renderGridCard)}
+          </div>
+        )
       ) : (
         <DataTable
           columns={columns}
