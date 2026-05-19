@@ -25,8 +25,13 @@ const Lobby = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<LobbyFilterState>(DEFAULT_LOBBY_FILTERS);
+  const [page, setPage] = useState(1);
+  const [detailsRow, setDetailsRow] = useState<CheckInWithRelations | null>(null);
+  const PAGE_SIZE = 25;
 
   const { data: checkInData = [], isLoading } = useCheckIns(selectedDate, search);
+
 
   useCommandListener('open-checkin', React.useCallback(() => setDialogOpen(true), []));
 
