@@ -32,6 +32,24 @@ const Lobby = () => {
 
   const { data: checkInData = [], isLoading } = useCheckIns(selectedDate, search);
 
+  const filteredData = React.useMemo(() => {
+    return checkInData.filter((r) => {
+      if (filters.locationId !== 'all' && r.location_id !== filters.locationId) return false;
+      const method = (r as any).checkin_method || 'manual';
+      if (filters.method !== 'all' && method !== filters.method) return false;
+      if (filters.packageType === 'with_package' && !r.member_package_id) return false;
+      if (filters.packageType === 'walk_in' && r.member_package_id) return false;
+      return true;
+    });
+  }, [checkInData, filters]);
+
+  const pageData = React.useMemo(
+    () => filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredData, page]
+  );
+
+
+
 
   useCommandListener('open-checkin', React.useCallback(() => setDialogOpen(true), []));
 
