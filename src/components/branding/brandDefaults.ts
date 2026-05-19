@@ -20,6 +20,8 @@ export interface BrandKit {
   fontWeight: number;
   radius: number;    // px
   photoStyle: PhotoStyle;
+  logoUrl?: string;
+  photoUrl?: string;
   social: {
     ig: string;
     fb: string;

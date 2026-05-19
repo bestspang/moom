@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Download, RotateCcw, Upload, Check, Info,
+  Download, RotateCcw, Check, Info,
   Sparkles, Image as ImageIcon, Palette, Type, Globe, Building2,
   Instagram, Facebook, Youtube, MessageCircle, Music2, Phone, Mail, MapPin,
 } from 'lucide-react';
@@ -27,6 +27,10 @@ import { BrandPreviewPanel } from '@/components/branding/BrandPreviewPanel';
 import { BrandSectionCard } from '@/components/branding/BrandSectionCard';
 import { BrandSummaryCard } from '@/components/branding/BrandSummaryCard';
 import { useBrandKit, useSaveBrandKit } from '@/hooks/useBrandKit';
+import { ImageUploadField } from '@/components/branding/ImageUploadField';
+import { usePermissions } from '@/hooks/usePermissions';
+import { AdminCard } from '@/components/admin-ds/AdminCard';
+import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 // DS accent colors mirroring adminTokens in MOOM Design System
@@ -41,6 +45,9 @@ const ACCENT = {
 
 const SettingsBranding = () => {
   const { t } = useLanguage();
+  const { can, loading: permLoading } = usePermissions();
+  const canRead = can('settings', 'read');
+  const canWrite = can('settings', 'write');
   const { data: saved, isLoading } = useBrandKit();
   const saveMutation = useSaveBrandKit();
   const [brand, setBrand] = useState<BrandKit>(DEFAULT_BRAND);
@@ -92,11 +99,31 @@ const SettingsBranding = () => {
     toast.success(t('settings.branding.exportedToast'));
   };
 
-  if (isLoading) {
+  if (isLoading || permLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4">
         <Skeleton className="h-96" />
         <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div className="space-y-4 max-w-[900px] mx-auto">
+        <AdminPageHeader
+          title={t('settings.branding.pageTitle')}
+          subtitle={t('settings.branding.pageSubtitle')}
+        />
+        <AdminCard className="flex flex-col items-center text-center py-12 gap-3">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="text-base font-bold">{t('settings.branding.noAccessTitle')}</div>
+          <div className="text-sm text-muted-foreground max-w-md">
+            {t('settings.branding.noAccessBody')}
+          </div>
+        </AdminCard>
       </div>
     );
   }
@@ -146,14 +173,24 @@ const SettingsBranding = () => {
               <Download className="h-4 w-4 mr-1.5" />
               {t('settings.branding.exportKit')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-1.5" />
-              {t('settings.branding.reset')}
-            </Button>
+            {canWrite && (
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4 mr-1.5" />
+                {t('settings.branding.reset')}
+              </Button>
+            )}
           </>
         }
       />
 
+      {!canWrite && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-[12px] font-semibold border border-amber-200/60">
+          <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{t('settings.branding.readOnlyBanner')}</span>
+        </div>
+      )}
+
+      <fieldset disabled={!canWrite} className="contents">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
         {/* LEFT — editor */}
         <div className="space-y-3 min-w-0">
@@ -265,15 +302,15 @@ const SettingsBranding = () => {
               <LogoMark brand={brand} size={80} />
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2.5 opacity-60 pointer-events-none"
-              disabled
-            >
-              <Upload className="h-4 w-4 mr-1.5" />
-              {t('settings.branding.uploadLogo')}
-            </Button>
+            <div className="mt-2.5">
+              <ImageUploadField
+                kind="logo"
+                value={brand.logoUrl}
+                onChange={(url) => set({ logoUrl: url })}
+                disabled={!canWrite}
+                disabledHint={!canWrite ? t('settings.branding.readOnlyBanner') : undefined}
+              />
+            </div>
           </BrandSectionCard>
 
           {/* COLORS */}
@@ -418,6 +455,15 @@ const SettingsBranding = () => {
                 );
               })}
             </div>
+            <div className="mt-3">
+              <ImageUploadField
+                kind="photo"
+                value={brand.photoUrl}
+                onChange={(url) => set({ photoUrl: url })}
+                disabled={!canWrite}
+                disabledHint={!canWrite ? t('settings.branding.readOnlyBanner') : undefined}
+              />
+            </div>
           </BrandSectionCard>
 
           {/* SOCIAL */}
@@ -518,9 +564,10 @@ const SettingsBranding = () => {
           />
         </div>
       </div>
+      </fieldset>
 
       {/* Sticky save bar (when dirty) */}
-      {dirty && (
+      {dirty && canWrite && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t shadow-lg animate-in slide-in-from-bottom-4 duration-200">
           <div className="max-w-[1500px] mx-auto px-6 py-3 flex items-center justify-end gap-2">
             <span className="text-xs text-amber-700 font-semibold mr-auto inline-flex items-center gap-2">
@@ -532,7 +579,13 @@ const SettingsBranding = () => {
             </Button>
             <Button
               size="sm"
-              onClick={() => saveMutation.mutate(brand)}
+              onClick={() => {
+                if (!canWrite) {
+                  toast.error(t('settings.branding.writeBlockedToast'));
+                  return;
+                }
+                saveMutation.mutate(brand);
+              }}
               disabled={saveMutation.isPending}
             >
               {t('settings.branding.saveBarSave')}

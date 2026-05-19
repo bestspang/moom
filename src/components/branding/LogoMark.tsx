@@ -32,6 +32,32 @@ export const LogoMark: React.FC<LogoMarkProps> = ({ brand, size = 56, inverse })
   }
 
   const isCircle = brand.logoStyle === 'circle';
+  const radius = isCircle ? '50%' : `${brand.radius}px`;
+
+  if (brand.logoUrl) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          background: bg,
+          borderRadius: radius,
+          overflow: 'hidden',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <img
+          src={brand.logoUrl}
+          alt={brand.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -39,7 +65,7 @@ export const LogoMark: React.FC<LogoMarkProps> = ({ brand, size = 56, inverse })
         height: size,
         background: bg,
         color: fg,
-        borderRadius: isCircle ? '50%' : `${brand.radius}px`,
+        borderRadius: radius,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -73,7 +99,9 @@ export const PhotoBlock: React.FC<{ brand: BrandKit; w?: number; h?: number }> =
         width: w,
         height: h,
         borderRadius: 8,
-        background: `linear-gradient(135deg, ${brand.primary}, ${brand.accent})`,
+        background: brand.photoUrl
+          ? `url(${brand.photoUrl}) center/cover no-repeat`
+          : `linear-gradient(135deg, ${brand.primary}, ${brand.accent})`,
         filter: filterMap[brand.photoStyle],
       }}
     />
