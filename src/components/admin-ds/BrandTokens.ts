@@ -48,3 +48,25 @@ export const readBrandToken = (key: BrandToken): string => {
   if (typeof document === 'undefined') return '';
   return getComputedStyle(document.documentElement).getPropertyValue(key).trim();
 };
+
+/**
+ * Apply a BrandKit-shaped object to runtime CSS variables.
+ * Only converts the subset of fields that map to documented BrandTokens.
+ * Pass `null` to reset everything we touched.
+ */
+import { stripHsl, type BrandKit } from '@/components/branding/brandDefaults';
+
+const KEYS_TOUCHED: BrandToken[] = ['--primary', '--accent', '--radius', '--font-admin'];
+
+export const applyBrandFromKit = (kit: BrandKit | null) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  if (!kit) {
+    KEYS_TOUCHED.forEach((k) => root.style.removeProperty(k));
+    return;
+  }
+  root.style.setProperty('--primary', stripHsl(kit.primary));
+  root.style.setProperty('--accent', stripHsl(kit.accent));
+  root.style.setProperty('--radius', `${(kit.radius / 16).toFixed(3)}rem`);
+  root.style.setProperty('--font-admin', `"${kit.font}", sans-serif`);
+};
