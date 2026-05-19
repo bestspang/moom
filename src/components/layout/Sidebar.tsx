@@ -335,7 +335,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
       <aside
         className={cn(
-          'fixed top-14 left-0 bottom-0 z-40',
+          'fixed top-0 left-0 bottom-0 z-40',
           'bg-sidebar border-r border-sidebar-border',
           'transition-[width,transform] duration-200 ease-out motion-reduce:transition-none',
           'flex flex-col',
