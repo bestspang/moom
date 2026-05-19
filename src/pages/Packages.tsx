@@ -22,6 +22,9 @@ type Package = Tables<'packages'>;
 const TEMPLATE_HEADERS = ['ID', 'Name', 'Type', 'Term(D)', 'Sessions', 'Price', 'Categories', 'Access locations', 'Sold at', 'Date modified', 'Status'];
 
 
+const VIEW_KEY = 'moom-pkg-view';
+type ViewMode = 'grid' | 'table';
+
 const Packages = () => {
   const { t, language } = useLanguage();
   const { can } = usePermissions();
@@ -29,6 +32,11 @@ const Packages = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('on_sale');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [view, setView] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'table';
+    return (localStorage.getItem(VIEW_KEY) as ViewMode) || 'table';
+  });
+  useEffect(() => { try { localStorage.setItem(VIEW_KEY, view); } catch {} }, [view]);
 
   const PACKAGE_STATUS_OPTIONS = [
     { value: 'on_sale', label: t('common.onSale') },
