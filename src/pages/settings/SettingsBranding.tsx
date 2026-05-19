@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Download, RotateCcw, Check, Info,
+  Download, RotateCcw, Check, Info, Save,
   Sparkles, Image as ImageIcon, Palette, Type, Globe, Building2,
   Instagram, Facebook, Youtube, MessageCircle, Music2, Phone, Mail, MapPin,
 } from 'lucide-react';
