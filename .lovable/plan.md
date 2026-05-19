@@ -1,60 +1,66 @@
-## Why the sidebar still "feels เหมือนเดิม"
+## Sidebar status: ✅ DS-aligned
 
-The 7-group taxonomy, NavItemRow visuals, branch switcher and attention card are already DS-aligned from Chunk D. But four pieces from `MOOM Design System/ui_kits/admin/Modern.jsx` are still missing — and they're the most "DS-ish" elements you actually see:
+Sidebar now has: 7-group taxonomy, Pins shortcut row, group dividers in collapsed mode, urgent dot on closed groups, branch switcher, search w/ ⌘K kbd, attention card, footer. RBAC AND-gate intact. Done.
 
-1. **Pins row** ("ปักหมุด" — Dashboard / Lobby / Schedule / Members) above the divider
-2. **Collapsed mode**: DS replaces the group header with a 1px divider; we currently render items flat with no divider
-3. **Urgent red dot** on a collapsed group header when it contains an urgent item but is closed
-4. Micro token nits: active bar offset (`-left-2.5` to match DS `left: -10` against `pl-3`), branch switcher height (48 expanded / 44 collapsed), and the `⌘K` kbd hint inside the search input
+## Why "ทุกหน้ายังเหมือนเดิม"
 
-## Plan (sidebar only — no routes, no data hooks, RBAC untouched)
+Because beyond the sidebar, the admin pages haven't been migrated yet. The DS primitives (`AdminPageHeader`, `AdminKpiCard`, `AdminCard`, `AdminSectionHeader`, `AdminToolbar`) exist in `src/components/admin-ds/` but the pages still use the legacy `PageHeader` + raw `Card` patterns. Plan rolls them out page-by-page, starting with the page you're on (**Packages**, `/package`), since it has the biggest visible delta vs `MOOM Design System/ui_kits/admin/Packages.jsx`.
 
-### Step 1 — Add Pins section to `Sidebar.tsx`
-- New constant `DEFAULT_PINS: string[] = ['/', '/lobby', '/calendar', '/members']` (paths, not ids — matches our routing model).
-- Resolve pin items by flattening `navGroups` and matching by `path`. Filter through the existing `hasAccess()` so RBAC still hides items a user can't see.
-- Render above the group list with the DS header row (`ปักหมุด` left, `ลากจัด` right, both `text-[10px] uppercase tracking-wider text-sidebar-muted-light`). No drag wiring yet (TODO comment — Branding page will own pin config later).
-- Add a 1px `bg-sidebar-border` divider with `my-3 mx-1` between Pins and Groups (matches DS line 370).
-- i18n keys: `nav.pins` = "ปักหมุด"/"Pinned", `nav.pinsHint` = "ลากจัด"/"Drag to arrange".
+## Plan — Chunk E: Packages page DS migration
 
-### Step 2 — Collapsed-mode group dividers
-In `renderGroup`, when `collapsed === true`:
-- Render a 1px divider (`h-px bg-sidebar-border mx-1.5 my-2`) before the group's items (skip for the first visible group).
-- Keep flat items below it. This mirrors DS lines 399–401.
+### Scope (this chunk only)
+File: `src/pages/Packages.tsx` (the list view at `/package`). Nothing else.
 
-### Step 3 — Urgent dot on collapsed group headers
-- Compute `groupHasUrgent = visible.some(i => i.urgent && (i.badge ?? 0) > 0)`.
-- In expanded mode, when the group is closed AND `groupHasUrgent`, render a 6px destructive dot at the right of the header button (DS lines 395–397).
+### Visual gap vs DS `Packages.jsx`
+| DS element | Current | Action |
+|---|---|---|
+| 4-up **KPI strip** above the table (Active packages / Active subscriptions / 30-day revenue / ARPU) | None | Add using `AdminKpiCard` × 4, fed by existing `usePackageStats()` + `usePackages()` data — **no new hooks, no new queries** |
+| `AdminPageHeader` (DS title block) | `PageHeader` (legacy with breadcrumbs) | Swap to `AdminPageHeader`; keep the same actions slot (Manage dropdown + Create button + RBAC gate) |
+| **Toolbar card** (search + status select + sort + view toggle) wrapped as a single DS card | Loose `SearchBar` in a div + `StatusTabs` below | Wrap search + the existing `StatusTabs` in one `AdminCard` toolbar; keep status tabs as-is (they already drive `usePackages(activeTab, search)`) |
+| **Grid view** (`PackageCard` masonry) + **view toggle** (grid/table) | Table only | Add a `view` local state (`'grid' \| 'table'`, default `'table'` to keep current UX), persisted in `localStorage` under `moom-pkg-view`. Grid renders `AdminCard` tiles using existing package fields (`name`, `type`, `price`, `term_days`, `sessions`, `is_popular`). Click → existing `navigate('/package/:id')`. No new data, no new actions. |
+| Detail drawer | Already a separate route (`/package/:id`) | **Skip** — DS drawer is page-replaced by the existing detail route. Leave it alone. |
+| Sort dropdown | None | **Skip this chunk** — sort would require touching `usePackages()` hook signature. Out of scope per "ห้าม function ที่ทำงานอยู่แล้วขาด". Add TODO comment. |
 
-### Step 4 — DS micro-token alignment
-- Active left bar: change `-left-2` → `-left-2.5` (10px) inside `NavItemRow` so the bar sits exactly between the rail and the row, matching DS `left: -10` against `padding-left: 12px`.
-- Inside `SidebarSearch`: confirm the placeholder is "ค้นหา หรือกด ⌘K…" / "Search or press ⌘K…" and the trailing `<kbd>⌘K</kbd>` chip is present (only when input is empty). If missing, add it. No new shortcut logic — `CommandPalette` already owns ⌘K globally.
-- `SidebarBranchSwitcher`: verify expanded height = 48px, collapsed = 44px, icon tile uses `bg-sidebar-teal/14 text-sidebar-teal`. If tokens for `--sidebar-teal` aren't defined, fall back to existing `--accent` (no new tokens this round — Branding page will introduce token overrides later).
+### Data wiring (zero new queries, zero hook changes)
+- `usePackages(activeTab, search)` → table rows AND grid tiles (same data, two presentations).
+- `usePackageStats()` → KPI 1 ("Active packages") = `stats.on_sale`.
+- KPI 2/3/4 (Active subscriptions / Revenue / ARPU): values that aren't in current hooks → render the KPI tile with `value="—"` and a "Coming soon" subtitle following the project's Coming Soon pattern (`opacity-60 pointer-events-none`). **Do not invent fake numbers.** When the hooks gain those fields later, swap `—` → real value, no layout change.
+- All existing handlers (`handleExport`, `handleSelectRow`, `handleSelectAll`, `clearSelection`, `BulkActionBar`, `ImportCenterDialog`, RBAC via `can('packages', 'write')`) are **preserved verbatim**.
 
-### Step 5 — Verify (no regressions)
+### Motion / animation
+- KPI cards: rely on existing `MainLayout` `animate-page-enter-desktop` (already wraps every route). No new keyframes.
+- Grid card hover: matches `AdminKpiCard`'s built-in `hover:-translate-y-px hover:shadow-md`.
+- View-toggle switch: pure CSS `transition-colors`, no JS animation.
+
+### i18n
+- New keys: `packages.kpi.activePackages`, `packages.kpi.ofTotal`, `packages.kpi.activeSubs`, `packages.kpi.revenue30d`, `packages.kpi.arpu`, `packages.view.grid`, `packages.view.table`. Add to both `th.ts` and `en.ts`.
+
+### Files to touch (1 page + 2 locales)
+```
+src/pages/Packages.tsx     — KPI strip, AdminPageHeader, view toggle, grid renderer
+src/i18n/locales/th.ts     — new packages.kpi.* + packages.view.* keys
+src/i18n/locales/en.ts     — same
+```
+
+### Out of scope (intentionally — keeping the diff surgical)
+- No changes to `usePackages`, `usePackageStats`, `useBulkUpdatePackageStatus`, `useBulkDeletePackages`, `useBulkDuplicatePackages`, `useLocations`.
+- No changes to routes, `/package/create`, `/package/:id` detail page, `ImportCenterDialog`.
+- No new sort logic, no detail drawer, no promo rules section (those are separate pages already).
+- Other pages (Members, Leads, Finance, Classes, etc.) — **next chunks**, page by page, same approach.
+
+### Verification (smoke matrix)
 - Build passes.
-- Smoke matrix (manual, 1107×756 desktop preview + mobile drawer):
-  - level_4_master: all 7 groups + Pins visible; Settings group visible
-  - level_3_manager: Pins visible, Roles hidden, Settings group visible
-  - level_2_operator: Settings group fully hidden, Branding hidden
-  - level_1_minimum: Business/Gym/Settings groups fully hidden; Pins filters to only `/` + `/lobby` + `/calendar` items they can read
-- Collapse/expand persists in `localStorage`.
-- Auto-open behaviour for the group hosting the active route still fires.
+- `/package` renders KPI strip with 1 real value + 3 "—" tiles.
+- Status tabs still filter (`on_sale`/`scheduled`/`drafts`/`archive`) — counts match.
+- Search still filters.
+- Bulk select → bulk delete/duplicate/status change still works.
+- Row click → still navigates to `/package/:id`.
+- `localStorage` persists view toggle.
+- Manager (level_3) sees Create + Manage dropdown; Operator (level_2) sees neither.
 
-## Files to touch (4)
+### Risk / rollback
+- Risk: layout change only — no behavior, no data, no permissions touched.
+- Rollback: revert `Packages.tsx` and the two i18n diffs.
 
-```
-src/components/layout/Sidebar.tsx                    — pins row, divider, urgent dot, active-bar offset
-src/components/layout/sidebar/SidebarSearch.tsx      — ⌘K kbd + placeholder parity (if missing)
-src/i18n/locales/th.ts                               — nav.pins, nav.pinsHint
-src/i18n/locales/en.ts                               — nav.pins, nav.pinsHint
-```
-
-## Out of scope (intentionally)
-- No changes to routes, `usePermissions`, `useDashboardStats`, `useExpiringPackages`, `useTransferSlips`.
-- No drag-and-drop for pins (Branding page will own the persisted config).
-- No new CSS tokens — only consuming existing `--sidebar-*` tokens so the future Branding page can override them.
-- Other admin pages (Dashboard, Members, Finance, …) stay untouched in this chunk — sidebar first, as you asked.
-
-## Risks & rollback
-- Risk: Pins duplicating an item that is also visible inside its group is *intentional* per DS (it's a shortcut, not a move). Both rows are independent React nodes with stable keys, no state collision.
-- Rollback: revert `Sidebar.tsx` + the two i18n diffs; pure presentational change.
+### After this chunk
+Confirm with you, then proceed in the same surgical style to **Members → Leads → Finance → Classes → Schedule → Lobby → Promotions → Rooms → Categories → Announcements → Insights → Gamification → Locations → Staff → Roles → Activity Log → Settings → Branding**, mapped 1:1 against the DS `ui_kits/admin/*.jsx` files. Pages that exist in the app but not in DS are left untouched, as instructed.
