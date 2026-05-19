@@ -567,44 +567,26 @@ const SettingsBranding = () => {
       </div>
       </fieldset>
 
-      {/* Sticky save bar (pill) — matches DS Branding.jsx */}
-      {/* Sticky save bar (pill) — portaled to body to escape transformed ancestors */}
-      {dirty && canWrite && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 inline-flex items-center gap-3.5 pl-5 pr-2.5 py-2.5 rounded-full bg-foreground text-background animate-in slide-in-from-bottom-4 duration-200"
-          style={{ boxShadow: '0 20px 50px rgba(15,23,42,0.3)' }}
-        >
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-[13px] font-bold whitespace-nowrap">
-            {t('settings.branding.dirty')}
-          </span>
-          <button
-            type="button"
-            onClick={handleRevert}
-            disabled={saveMutation.isPending}
-            className="h-8 px-3.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors disabled:opacity-50"
-          >
-            {t('settings.branding.saveBarCancel')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canWrite) {
-                toast.error(t('settings.branding.writeBlockedToast'));
-                return;
-              }
-              saveMutation.mutate(brand);
-            }}
-            disabled={saveMutation.isPending}
-            className="h-8 px-4 rounded-full bg-primary text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 hover:brightness-110 transition disabled:opacity-50"
-            style={{ boxShadow: '0 8px 20px hsl(var(--primary) / 0.4)' }}
-          >
-            <Save className="w-3.5 h-3.5" strokeWidth={2.4} />
-            {t('settings.branding.saveBarSave')}
-          </button>
-        </div>,
-        document.body
-      )}
+      {/* Sticky save bar — reusable, portal+RBAC+unmount-safe */}
+      <StickySaveBar
+        visible={dirty}
+        canWrite={canWrite}
+        saving={saveMutation.isPending}
+        onSave={() => {
+          if (!canWrite) {
+            toast.error(t('settings.branding.writeBlockedToast'));
+            return;
+          }
+          saveMutation.mutate(brand);
+        }}
+        onCancel={handleRevert}
+        labels={{
+          dirty: t('settings.branding.dirty'),
+          save: t('settings.branding.saveBarSave'),
+          cancel: t('settings.branding.saveBarCancel'),
+          blocked: t('settings.branding.writeBlockedToast'),
+        }}
+      />
     </div>
   );
 };
