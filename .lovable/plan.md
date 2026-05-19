@@ -1,101 +1,93 @@
-# Sticky Save Bar — Hardening Plan
+# Admin Header — DS Match Plan
+
+Bring the admin top header to 1:1 parity with the reference screenshot, using the existing design system tokens and the existing CommandPalette / notifications / auth wiring. Zero regressions to dropdowns, surface switcher, theme toggle, and mobile menu.
+
+## Reference vs. current
+
+Reference (screenshot):
+```text
+[ ☰ ]   [ 🔍 ค้นหาสมาชิก, คลาส, แพ็คเกจ…   ⌘K ]   [ 📅 วันนี้, 19 เม.ย. ]  [ 🟧 เช็คอิน ]  [ 🔔 ]  [ KS  Kongphop S. / Owner  ⌄ ]
+```
+
+Current (`src/components/layout/Header.tsx`):
+```text
+[ ☰ ]                                                                                          [ 🌓 ] [ 🔔 ] [ TH ⌄ ] [ Avatar ]
+```
+
+Gap to close (additive, no removals of working behavior):
+1. Centered search pill (opens existing CommandPalette).
+2. "Today" date pill (read-only display, localized).
+3. Orange "เช็คอิน" primary CTA → existing `/checkin` route.
+4. Avatar trigger shows name + role on desktop (matches screenshot's KS · Kongphop S. · Owner).
+5. Theme toggle stays but moves into the avatar dropdown to declutter the bar (DS reference has no theme button in topbar).
 
 ## Affected modules
 
-- `src/pages/settings/SettingsBranding.tsx` — only consumer of the portal save bar today.
-- `src/hooks/useBrandKit.ts` — `useSaveBrandKit` already toasts on success/error.
-- `src/i18n/locales/{en,th}.ts` — `settings.branding.*` already has `savedToast`, `revertedToast`, `writeBlockedToast`, `saveBarSave`, `saveBarCancel`, `dirty`, `readOnlyBanner`. Only one new key needed (`saveErrorToast`).
-- NEW `src/components/admin-ds/StickySaveBar.tsx` — reusable, DS-aligned, portal-based, unmount-safe, RBAC-aware.
+- `src/components/layout/Header.tsx` — layout refactor (3-zone flex), add search trigger + date pill + check-in CTA + avatar-with-name. Status: PARTIAL (works, missing DS elements).
+- `src/components/command-palette/CommandPalette.tsx` — add a `window` event listener (`moom:open-command-palette`) so the new search button can open it. Keep Cmd/Ctrl+K shortcut. Status: WORKING, additive change only.
+- `src/i18n/locales/{en,th}.ts` — add `header.searchPlaceholder`, `header.checkin`, `header.today` (or reuse existing keys if present). Status: WORKING.
 
-## Status of each module
-
-- WORKING: branding load/save/revert/export, RBAC fieldset disabling, success toast, portal positioning at viewport bottom, page-enter motion, design tokens.
-- PARTIAL: portal save bar is inlined in the page (not reusable, no explicit unmount cleanup beyond React's natural portal teardown, save error path shows raw `err.message` instead of i18n).
-- BROKEN: none confirmed. No leak today (React unmounts the portal node when `dirty && canWrite` becomes false or the route unmounts), but there is no defensive guard if a future caller forgets the conditional.
-- GHOST: other settings pages (`SettingsGeneral`, `SettingsClass`, `SettingsPackage`, …) have no sticky save bar yet — out of scope to add, in scope to verify the new component would drop in cleanly.
+No changes to: `Sidebar.tsx`, `MainLayout.tsx`, AuthContext, surface routing, notifications hook, ThemeToggle component, CommandPalette search logic, hostname helpers.
 
 ## What must be preserved
 
-- Save / Revert / Reset / Export behavior and existing success toasts.
-- `dirty` derivation (`JSON.stringify` comparison against `saved`).
-- `applyBrandFromKit` live preview + cleanup effect.
-- RBAC: `fieldset disabled={!canWrite}` and the read-only banner.
-- Portal escape from transformed ancestors (sidebar/main use transforms for the page-enter animation).
-- z-index tier (`z-50`) and bottom-centered pill styling that matches DS `Branding.jsx`.
+- Notifications dropdown (unread badge, mark-as-read, "view all" → `/notifications`).
+- Language dropdown (desktop) + language toggle inside avatar menu (mobile).
+- Avatar dropdown: profile link, surface switcher (Member/Trainer with `buildSessionTransferUrl`), logout.
+- Mobile menu toggle (`onMenuToggle` prop, `lg:hidden`).
+- `sticky top-0 z-30` so it stays at top of the content column (sidebar full-height to its left).
+- ThemeToggle remains accessible (relocated into avatar menu — not removed).
 
-## What is actually broken / to harden
+## Design
 
-1. **Unmount safety** — when navigating away mid-edit, the bar should disappear instantly. Today React unmounts it correctly, but there is no explicit cleanup hook and no SSR/HMR safety net. Add an effect that mounts a dedicated container `<div id="moom-sticky-savebar-root">` once and removes it on unmount, so the portal can never outlive the page.
-2. **RBAC guard on the buttons themselves** — `canWrite` is checked in the render conditional, but a stale render or a future caller could leak through. Each button gets its own `disabled || !canWrite` guard plus an early-return in the click handler, mirroring the existing Save handler. Revert gets the same treatment.
-3. **i18n'd error toast** — `useSaveBrandKit.onError` currently shows `err.message` (English DB error). Replace with `toast.error(t('settings.branding.saveErrorToast'))` and keep `console.error` for diagnostics. Add the key to both locales.
-4. **Reusability + test surface** — extract `StickySaveBar` so the same primitive can be reused on the other 8 settings pages in future work without re-implementing portal/RBAC/cleanup logic. Adopt it only in `SettingsBranding.tsx` now (no behavior change on the other 8 pages).
+Layout zones (flexbox):
+- Left (shrink-0): mobile menu button (`lg:hidden`).
+- Center (flex-1, `max-w-xl mx-auto`): search trigger pill — button styled as input, left icon, placeholder text, right `⌘K` kbd chip; on click dispatches `window.dispatchEvent(new CustomEvent('moom:open-command-palette'))`. Hidden on `sm` and below to keep mobile clean.
+- Right (shrink-0, `gap-2`): date pill → check-in CTA → bell → avatar.
 
-## Minimal-diff plan
+DS tokens only — no hex literals:
+- Search pill: `bg-muted/60 hover:bg-muted text-muted-foreground border border-border rounded-full h-9 px-3`.
+- Kbd chip: `bg-background border border-border rounded text-[11px] px-1.5 py-0.5`.
+- Date pill: `inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border bg-card text-sm`.
+- Check-in CTA: `Button` with `bg-primary text-primary-foreground rounded-lg h-9 px-3.5 font-semibold` + `LayoutGrid` (or `QrCode`) icon, click → `navigate('/checkin')`.
+- Avatar trigger: same `Button` dropdown trigger, but on `lg+` includes a 2-line text block (`Kongphop S.` / `Owner`) next to the circle; on `<lg` icon-only as today.
 
-### 1. New file `src/components/admin-ds/StickySaveBar.tsx`
+Date pill content: `format(new Date(), language === 'th' ? 'EEEE, d MMM' : 'EEE, d MMM', { locale: getDateLocale(language) })` truncated as the reference shows ("วันนี้, 19 เม.ย." → render as `วันนี้, 19 เม.ย.` using a small helper that prepends the i18n word for "today").
 
-```text
-Props:
-  visible: boolean          // typically `dirty`
-  canWrite: boolean         // RBAC gate
-  saving?: boolean
-  onSave: () => void
-  onCancel: () => void
-  labels: { dirty; save; cancel; blocked }   // i18n strings, no t() inside
-```
+## Implementation steps
 
-Behavior:
-- On mount: create `<div id="moom-sticky-savebar-root">` appended to `document.body` if not present; on unmount: remove it (ref-counted so concurrent instances don't fight).
-- Render via `createPortal` into that root only when `visible && canWrite`.
-- Both buttons: `disabled={saving || !canWrite}`; click handlers early-return when `!canWrite` and call `onSave` / `onCancel` otherwise — `onSave` callers can show the blocked toast themselves (matches existing `writeBlockedToast` pattern).
-- No business logic, no `useLanguage`, no mutation knowledge. Pure presentation + lifecycle.
-- Uses existing Tailwind tokens (`bg-foreground`, `text-background`, `bg-primary`, `text-primary-foreground`) — no hard-coded colors.
-- Preserves existing animation: `animate-in slide-in-from-bottom-4 duration-200`.
+1. **CommandPalette listener** — in `CommandPalette.tsx`, alongside the existing keydown effect, add:
+   ```text
+   useEffect(() => {
+     const open = () => setOpen(true);
+     window.addEventListener('moom:open-command-palette', open);
+     return () => window.removeEventListener('moom:open-command-palette', open);
+   }, []);
+   ```
+   No other change.
 
-### 2. `src/pages/settings/SettingsBranding.tsx`
+2. **i18n** — add to `settings`-sibling `header` section (create if missing):
+   - TH: `searchPlaceholder: 'ค้นหาสมาชิก, คลาส, แพ็คเกจ…'`, `checkin: 'เช็คอิน'`, `today: 'วันนี้'`.
+   - EN: `searchPlaceholder: 'Search members, classes, packages…'`, `checkin: 'Check-in'`, `today: 'Today'`.
 
-- Remove the inline `createPortal(...)` block at lines 570–607.
-- Import `StickySaveBar` and render:
-  ```text
-  <StickySaveBar
-    visible={dirty}
-    canWrite={canWrite}
-    saving={saveMutation.isPending}
-    onSave={() => { if (!canWrite) { toast.error(t('settings.branding.writeBlockedToast')); return; } saveMutation.mutate(brand); }}
-    onCancel={handleRevert}
-    labels={{ dirty: t('settings.branding.dirty'), save: t('settings.branding.saveBarSave'), cancel: t('settings.branding.saveBarCancel'), blocked: t('settings.branding.writeBlockedToast') }}
-  />
-  ```
-- Remove the now-unused `createPortal` import.
+3. **Header.tsx rewrite (single file, ~80 LOC net)** — preserve the entire right-side dropdown blocks verbatim; only reshape the outer flex and insert the three new elements. Move `<ThemeToggle />` to a `<DropdownMenuItem>` inside the avatar menu (above the language item) wrapped in a `<div>` that renders the toggle inline.
 
-### 3. `src/hooks/useBrandKit.ts`
-
-- Replace `toast.error(err.message)` with `toast.error(t('settings.branding.saveErrorToast'))`. Keep `console.error('[useSaveBrandKit] save failed', err)`.
-
-### 4. `src/i18n/locales/{en,th}.ts`
-
-- Add inside `settings.branding`:
-  - EN: `saveErrorToast: 'Failed to save branding changes. Please try again.'`
-  - TH: `saveErrorToast: 'บันทึกการเปลี่ยนแปลงไม่สำเร็จ กรุณาลองอีกครั้ง'`
-
-## Cross-page verification (no edits)
-
-Manually load each settings page in the preview and confirm: the save bar appears only on Branding, disappears on route change, and does not leave a `#moom-sticky-savebar-root` node in `document.body` after navigation. (Verified via DevTools snapshot — included in the regression checklist.)
+4. **Verify**: build clean, click search → CommandPalette opens, ⌘K still works, click "เช็คอิน" → routes to `/checkin`, date pill updates per language switch, avatar dropdown still has Profile / Member App / Trainer App / Language (mobile) / Theme / Logout, notifications badge unchanged, mobile (`<sm`) hides search + date pill but keeps CTA + bell + avatar.
 
 ## Regression checklist
 
-- [ ] Edit any branding field → bar appears at viewport bottom-center.
-- [ ] Save → success toast (TH/EN), bar disappears, `dirty=false`.
-- [ ] Force save error (e.g. offline) → i18n error toast, bar stays, `console.error` logged.
-- [ ] Cancel → fields revert to `saved`, revert toast, bar disappears.
-- [ ] Navigate away mid-edit → bar disappears immediately; `document.body` no longer contains `#moom-sticky-savebar-root`.
-- [ ] Switch role to read-only (`canWrite=false`) → bar never appears; read-only banner still shows; fieldset disabled.
-- [ ] Manually call `onSave` while `!canWrite` (e.g. via stale render) → blocked toast, no mutation fired.
-- [ ] Other 8 settings pages render unchanged.
-- [ ] Page-enter animation, sidebar full-height, header sticky-in-content, branding preview live update — all unchanged.
 - [ ] `bun run build` clean.
+- [ ] Cmd/Ctrl+K still opens palette.
+- [ ] Search pill click opens palette; ESC closes; query works.
+- [ ] "เช็คอิน" navigates to `/checkin` (existing route).
+- [ ] Date pill shows TH locale when TH active, EN when EN active.
+- [ ] Notifications badge + dropdown + "view all" unchanged.
+- [ ] Avatar dropdown: profile, surface switcher (Member/Trainer transfer URL), language (mobile), theme toggle (relocated), logout.
+- [ ] Mobile (`<sm`): menu button + CTA + bell + avatar visible; search and date pill hidden.
+- [ ] Desktop (`lg+`): avatar trigger shows name + role text.
+- [ ] Header still `sticky top-0 z-30` inside `<main>`; sidebar still full-height to its left.
+- [ ] No new hardcoded colors — all via tokens.
 
 ## Doc updates
 
-- `docs/DEVLOG.md` — append entry: "Extracted `StickySaveBar` (portal + RBAC + unmount-safe), i18n'd branding save error toast."
-- `docs/CONTRACTS.md` — note the new shared component under admin-ds primitives.
+- `docs/DEVLOG.md` — "Admin Header: DS-match (search pill, date pill, check-in CTA, name+role avatar); ThemeToggle relocated into avatar menu; CommandPalette opened via `moom:open-command-palette` event."
