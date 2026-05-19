@@ -53,7 +53,7 @@ type TableName =
   | 'member_status_tiers'
   | 'sp_ledger';
 
-const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
+export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
   member_attendance: ['dashboard-stats', 'schedule', 'member-attendance', 'member-summary-stats', 'gym-checkins', 'check-ins', 'members-enrichment'],
   class_bookings: ['class-bookings', 'member-bookings', 'booking-count', 'schedule', 'class-performance'],

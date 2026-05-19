@@ -8,12 +8,14 @@ on:
 
 jobs:
   verify:
-    name: Build, Test, Lint, i18n
+    name: Build, Test, Lint, i18n, Guardrails
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -34,3 +36,8 @@ jobs:
 
       - name: Check i18n parity
         run: node scripts/compare-i18n.mjs
+
+      - name: Check protected files
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/check-guardrails.mjs

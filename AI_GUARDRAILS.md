@@ -109,8 +109,16 @@ When adding, renaming, or removing a UI affordance:
 - Help text describes the **current** behavior. If you changed how a feature works, the help text is now wrong by definition — update it in the same diff.
 
 
+### 14. Realtime invalidation must stay in sync with new query keys
+When adding a new `useQuery` whose data is updated by a DB table mutation:
+- Add the query-key prefix to `TABLE_INVALIDATION_MAP[<table>]` in `src/hooks/useRealtimeSync.ts`.
+- Never **remove** an entry from `TABLE_INVALIDATION_MAP` — only add. Removing silently breaks live updates on whichever surface depended on it.
+- The contract is locked by `src/hooks/useRealtimeSync.test.ts`; if your change breaks a test there, update the test in the same diff and explain why.
+- When in doubt: open `useRealtimeSync.ts`, find the table you write to, confirm the prefix you query under is listed.
+
 
 ---
+
 
 ## Common AI Anti-Patterns (do not do these)
 
