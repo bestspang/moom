@@ -286,6 +286,7 @@ const App = () => (
                   <Route path="coming-soon" element={<ComingSoon />} />
                   <Route path="member-app" element={<MemberAppPreview />} />
                   <Route path="trainer-app" element={<TrainerAppPreview />} />
+                  <Route path="branding" element={<ProtectedRoute minAccessLevel="level_3_manager"><SettingsBranding /></ProtectedRoute>} />
                   <Route path="setting" element={<ProtectedRoute minAccessLevel="level_3_manager"><Settings /></ProtectedRoute>}>
                     <Route index element={<Navigate to="general" replace />} />
                     <Route path="general" element={<SettingsGeneral />} />
@@ -296,7 +297,7 @@ const App = () => (
                     <Route path="feature-flags" element={<SettingsFeatureFlags />} />
                     <Route path="import-export" element={<SettingsImportExport />} />
                     <Route path="integrations" element={<SettingsIntegrations />} />
-                    <Route path="branding" element={<SettingsBranding />} />
+                    <Route path="branding" element={<Navigate to="/branding" replace />} />
                   </Route>
                   <Route path="gamification" element={<ProtectedRoute minAccessLevel="level_3_manager"><GamificationStudio /></ProtectedRoute>}>
                     <Route index element={<Navigate to="overview" replace />} />
