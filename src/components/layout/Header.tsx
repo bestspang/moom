@@ -1,10 +1,12 @@
 import React from 'react';
 import { Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell, Search, Calendar, QrCode } from 'lucide-react';
+import { toast } from 'sonner';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
