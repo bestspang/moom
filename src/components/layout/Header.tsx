@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell, Search, Calendar, QrCode } from 'lucide-react';
+import { Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell, Search, Calendar, QrCode, Check, LayoutDashboard } from 'lucide-react';
+import { useSurface, setSurfacePreference } from '@/apps/shared/SurfaceContext';
 import { toast } from 'sonner';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
@@ -31,6 +32,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { user, role, allRoles, signOut } = useAuth();
   const { can } = usePermissions();
   const navigate = useNavigate();
+  const { surface } = useSurface();
 
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data: recentNotifications = [] } = useRecentNotifications(5);
@@ -302,23 +304,54 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
-            {!!user && (hasAdminAccess || hasTrainerAccess) && (
+            {!!user && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
-                  e.preventDefault();
-                  window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('member', '/member'));
-                }}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Member App
-                </DropdownMenuItem>
-                {hasTrainerAccess && (
-                  <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                {/* Member App — every authenticated user has a member record */}
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  disabled={surface === 'member'}
+                  onClick={async (e) => {
                     e.preventDefault();
-                    window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
-                  }}>
+                    if (surface === 'member') return;
+                    setSurfacePreference('member');
+                    window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('member', '/member'));
+                  }}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  <span className="flex-1">Member App</span>
+                  {surface === 'member' && <Check className="h-3.5 w-3.5 text-primary" />}
+                </DropdownMenuItem>
+                {hasAdminAccess && (
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    disabled={surface === 'admin'}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (surface === 'admin') return;
+                      setSurfacePreference('admin');
+                      window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('admin', '/'));
+                    }}
+                  >
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    <span className="flex-1">Admin Portal</span>
+                    {surface === 'admin' && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </DropdownMenuItem>
+                )}
+                {hasTrainerAccess && (
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    disabled={surface === 'trainer'}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (surface === 'trainer') return;
+                      setSurfacePreference('trainer');
+                      window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
+                    }}
+                  >
                     <Dumbbell className="h-4 w-4 mr-2" />
-                    Trainer App
+                    <span className="flex-1">Trainer App</span>
+                    {surface === 'trainer' && <Check className="h-3.5 w-3.5 text-primary" />}
                   </DropdownMenuItem>
                 )}
               </>

@@ -451,6 +451,11 @@ export default {
     refreshing: 'กำลังรีเฟรช...',
     usageType: 'ประเภท',
     gym: 'ยิม',
+    liveBadge: 'สด',
+    kpiTotal: 'เช็คอินวันนี้',
+    kpiCurrentlyIn: 'กำลังอยู่ในยิม',
+    kpiPackage: 'ใช้แพ็คเกจ',
+    kpiWalkIn: 'Walk-in',
   },
 
   // Check-in Display (kiosk)
