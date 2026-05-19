@@ -302,15 +302,15 @@ const SettingsBranding = () => {
               <LogoMark brand={brand} size={80} />
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2.5 opacity-60 pointer-events-none"
-              disabled
-            >
-              <Upload className="h-4 w-4 mr-1.5" />
-              {t('settings.branding.uploadLogo')}
-            </Button>
+            <div className="mt-2.5">
+              <ImageUploadField
+                kind="logo"
+                value={brand.logoUrl}
+                onChange={(url) => set({ logoUrl: url })}
+                disabled={!canWrite}
+                disabledHint={!canWrite ? t('settings.branding.readOnlyBanner') : undefined}
+              />
+            </div>
           </BrandSectionCard>
 
           {/* COLORS */}
