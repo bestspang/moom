@@ -63,7 +63,7 @@ export const useSaveBrandKit = () => {
     },
     onError: (err: Error) => {
       console.error('[useSaveBrandKit] save failed', err);
-      toast.error(err.message);
+      toast.error(t('settings.branding.saveErrorToast'));
     },
   });
 };
