@@ -55,6 +55,10 @@ const accessLevelOrder: Record<AccessLevel, number> = {
 
 const GROUPS_KEY = 'moom-sb-groups';
 
+// Default pinned shortcuts (paths). RBAC is applied at render time via hasAccess().
+// Future: Branding page will own the persisted pin config.
+const DEFAULT_PINS: string[] = ['/', '/lobby', '/calendar', '/members'];
+
 /**
  * NavItem — DS-aligned, token-driven (no hard-coded colors).
  * Active: bg-sidebar-accent + 3px left orange bar + bold orange icon.
@@ -78,7 +82,7 @@ const NavItemRow = ({
       )}
     >
       {active && !collapsed && (
-        <span className="absolute -left-2 top-2 bottom-2 w-[3px] rounded bg-sidebar-primary animate-fade-in" />
+        <span className="absolute -left-2.5 top-2 bottom-2 w-[3px] rounded bg-sidebar-primary animate-fade-in" />
       )}
       <Icon
         className={cn(
@@ -263,17 +267,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
-  const renderGroup = (group: NavGroup) => {
+  const renderGroup = (group: NavGroup, index: number) => {
     if (!hasAccess(group.minLevel)) return null;
     const visible = group.items.filter(i => hasAccess(i.minLevel, i.resource));
     if (visible.length === 0) return null;
 
     if (collapsed) {
-      // Collapsed: render items flat, no group header
-      return <div key={group.key}>{visible.map(renderItem)}</div>;
+      // Collapsed: divider between groups (DS Modern.jsx parity), then flat items.
+      return (
+        <div key={group.key}>
+          {index > 0 && <div className="h-px bg-sidebar-border mx-1.5 my-2" />}
+          {visible.map(renderItem)}
+        </div>
+      );
     }
 
     const isOpen = !!openGroups[group.key];
+    const groupHasUrgent = visible.some(i => i.urgent && (i.badge ?? 0) > 0);
     return (
       <div key={group.key} className="mb-0.5">
         <button
@@ -284,9 +294,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {isOpen
             ? <ChevronDown className="h-3 w-3" />
             : <ChevronRight className="h-3 w-3" />}
-          <span className="text-[10px] font-bold tracking-wider uppercase">
+          <span className="flex-1 text-left text-[10px] font-bold tracking-wider uppercase">
             {group.label}
           </span>
+          {!isOpen && groupHasUrgent && (
+            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+          )}
         </button>
         {isOpen && (
           <div className="space-y-px">
@@ -296,6 +309,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </div>
     );
   };
+
+  // Resolve pinned items by path, RBAC-filtered.
+  const allItemsByPath = React.useMemo(() => {
+    const m = new Map<string, NavItem>();
+    navGroups.forEach(g => g.items.forEach(i => m.set(i.path, i)));
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, currentlyIn, expiringCount, pendingSlips]);
+  const pinItems = DEFAULT_PINS
+    .map(p => allItemsByPath.get(p))
+    .filter((i): i is NavItem => !!i && hasAccess(i.minLevel, i.resource));
+
 
   const widthClass = collapsed ? 'w-[68px]' : 'w-[252px]';
 
@@ -361,12 +386,41 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Scroll area */}
         <ScrollArea className="flex-1">
           <div className={cn(collapsed ? 'px-2.5 pb-2.5' : 'px-3 pb-2.5', 'space-y-px')}>
-            {/* Groups (home group contains dashboard/lobby/schedule) */}
+            {/* Pins (shortcuts) — DS Modern.jsx parity */}
+            {pinItems.length > 0 && (
+              <>
+                {!collapsed && (
+                  <div className="flex items-center justify-between px-1 pt-1 pb-1">
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-sidebar-muted-light">
+                      {t('nav.pins')}
+                    </span>
+                    {/* TODO: wire drag-to-arrange when Branding page owns pin config */}
+                    <span className="text-[9px] font-semibold text-sidebar-muted-light">
+                      {t('nav.pinsHint')}
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-px">
+                  {pinItems.map(i => (
+                    <NavItemRow
+                      key={`pin-${i.path}`}
+                      item={i}
+                      active={isActiveRoute(i.path)}
+                      collapsed={collapsed}
+                      onClick={onClose}
+                    />
+                  ))}
+                </div>
+                <div className="h-px bg-sidebar-border mx-1 my-3" />
+              </>
+            )}
+            {/* Groups */}
             <div className="space-y-1">
-              {navGroups.map(renderGroup)}
+              {navGroups.map((g, idx) => renderGroup(g, idx))}
             </div>
           </div>
         </ScrollArea>
+
 
         {/* Attention card (bottom) */}
         <SidebarAttentionCard collapsed={collapsed} />

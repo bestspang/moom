@@ -111,6 +111,8 @@ export default {
     settingsGroup: 'ตั้งค่า',
     trainers: 'เทรนเนอร์',
     branding: 'แบรนด์ยิม',
+    pins: 'ปักหมุด',
+    pinsHint: 'ลากจัด',
   },
 
   // Roadmap
