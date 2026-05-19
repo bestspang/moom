@@ -55,6 +55,10 @@ const accessLevelOrder: Record<AccessLevel, number> = {
 
 const GROUPS_KEY = 'moom-sb-groups';
 
+// Default pinned shortcuts (paths). RBAC is applied at render time via hasAccess().
+// Future: Branding page will own the persisted pin config.
+const DEFAULT_PINS: string[] = ['/', '/lobby', '/calendar', '/members'];
+
 /**
  * NavItem — DS-aligned, token-driven (no hard-coded colors).
  * Active: bg-sidebar-accent + 3px left orange bar + bold orange icon.
