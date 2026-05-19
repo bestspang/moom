@@ -1,66 +1,52 @@
-## Goal
-Bring `/branding` to 100% visual parity with `MOOM Design System/ui_kits/admin/Branding.jsx`, while keeping all working backend wiring (`useBrandKit`, `useSaveBrandKit`, `applyBrandFromKit`, i18n, activity log).
+# Realistic Mobile Preview for Branding Page
 
-## Gap Analysis (current → reference)
+## Scope
+Replace the simplified phone frame in `src/components/branding/previews/MobilePreview.tsx` with a realistic iPhone-style mockup. Only the **mobile** preview is touched. WebPreview, CardPreview, editor, save logic, color picker, brand kit hooks, and tokens are untouched.
 
-| Area | Current | Reference | Action |
-|---|---|---|---|
-| Section card header | Plain `AdminCard` + h3/p | `BCard` with colored icon chip + title + subtitle in bordered header | Build `BrandSectionCard` wrapper |
-| Color picker | Native `<input type=color>` swatch only | Popover with hue gradient bar, H/S/L sliders, HEX + copy | Rewrite `ColorField` as `ColorSwatch` popover |
-| Mobile preview | ~260px simplified card list | 360×620 phone with status bar, header w/ eye btn, hero gradient card w/ pill CTAs + accent blob, filter chips, 3 class rows w/ progress bars, bottom tab bar | Rewrite `MobilePreview` |
-| Web preview | Plain header + small photo + 2 buttons | Browser chrome (3 dots + URL), full nav (logo, name, links, CTA pill), 40px-padded hero w/ eyebrow pill, two-tone H1 (60% width), tagline, 2 CTAs, 2 decorative circles | Rewrite `WebPreview` |
-| Card preview | Single membership card | 2-col grid: membership card (gradient + GOLD chip + ID/expiry) **and** email header (primary band + welcome body + CTA) | Rewrite `CardPreview` |
-| Preview panel chrome | Tabs above plain bg | Eye icon + "ตัวอย่างสด" + tab pill on top; preview surface w/ gradient bg on mobile, white on others | Update `BrandPreviewPanel` |
-| Brand summary | Missing | Card under preview listing name/font/radius/colors swatches | Add `BrandSummaryCard` |
-| Sticky save bar | Missing | Bottom-fixed bar visible when `dirty`, Save + Cancel | Add `BrandStickyBar` |
-| Title dirty badge | Amber `Badge` from shadcn | Pill w/ warn-soft bg matching DS | Keep but restyle |
-| Section icons + accents | None | sparkle(orange), image(info-blue), palette(pink), type(success-green), image(purple), web(orange), biz(warn-amber) | Pass `icon`+`accent` to wrapper |
+## What changes (visual only)
 
-## New / Edited Files
+**Outer device frame (new)**
+- iPhone 15-style chassis: ~`375×760` total, ~`8px` titanium bezel, outer radius `54px`, inner screen radius `46px`.
+- Side hardware: silent switch + volume up/down on the left, power button on the right (thin rounded bars on the outer edge).
+- Subtle dual-layer shadow + thin highlight border to suggest metal rim.
+- Optional `scale-[0.92]` wrapper so it still fits the preview panel.
 
-**New**
-- `src/components/branding/BrandSectionCard.tsx` — DS card chrome with `icon` (lucide) + `accent` (hsl string) chip in header
-- `src/components/branding/BrandSummaryCard.tsx` — summary list (name, font, radius, color row)
-- `src/components/branding/BrandStickyBar.tsx` — bottom-fixed Save/Cancel bar
-- `src/components/branding/previews/MobilePreview.tsx` — full 360×620 mockup
-- `src/components/branding/previews/WebPreview.tsx` — browser chrome + hero
-- `src/components/branding/previews/CardPreview.tsx` — membership card + email header
+**Screen chrome**
+- Dynamic Island: pill `120×34`, centered, `top: 10px`, pure black, with a tiny inner camera dot.
+- Status bar (44px tall, content offset around the island):
+  - Left: time `9:41`, SF-like weight.
+  - Right: signal bars (4 bars SVG), wifi glyph, battery (rounded rect + nub + fill).
+- Home indicator: bottom-centered `134×5` rounded bar over a `34px` safe area.
 
-**Edited**
-- `src/components/branding/ColorField.tsx` → rename intent to `ColorSwatch`: popover w/ hue bar, 3 sliders, HEX+copy. Keep export name `ColorField` for callsite stability.
-- `src/components/branding/BrandPreviewPanel.tsx` — use new preview components + DS header chrome
-- `src/pages/settings/SettingsBranding.tsx` — swap `AdminCard` for `BrandSectionCard` with icons/accents; add summary + sticky bar; remove the "Save" duplicate from header (lives in sticky bar)
-- `src/i18n/locales/{th,en}.ts` — add `settings.branding.livePreview`, `summary`, `saveBar.save`, `saveBar.cancel`, social/contact icon labels
+**Inner app content (kept, lightly adjusted)**
+- Keep existing header, hero gradient card, filter chips, class list, and bottom tab bar — they already use brand tokens.
+- Adjust top padding so content starts **below** the Dynamic Island (≈`56px` from screen top).
+- Adjust bottom padding so the tab bar sits **above** the home indicator safe area.
+- Tab bar gets a subtle `backdrop-blur` + translucent white to feel iOS-native.
+- Hero card gets a very subtle inner highlight (`box-shadow: inset 0 1px 0 rgba(255,255,255,.25)`) to read as glass on gradient.
 
-## Mapping decisions (project-fit)
+## What is preserved (regression guard)
+- `BrandKit` prop shape and all token bindings (`brand.primary`, `secondary`, `accent`, `surface`, `radius`, `font`, `fontWeight`, `name`, `tagline`).
+- `LogoMark` usage and sizing.
+- Class list data, chip labels, tab icon set.
+- No changes to `BrandPreviewPanel`, `WebPreview`, `CardPreview`, `SettingsBranding`, `useBrandKit`, `applyBrandFromKit`, i18n, or routes.
 
-- Reference uses inline styles + `adminTokens`. We translate to Tailwind + semantic tokens (`bg-primary`, `text-primary`, `border-border`, `bg-muted`, `bg-amber-50/text-amber-700` for warn-soft equivalents). Direct brand colors (preview surfaces) keep inline `style` because they're user-driven brand values, not DS tokens.
-- Reference stores in `localStorage`. We keep our Supabase `settings.branding.brand_kit` path via `useBrandKit`/`useSaveBrandKit`.
-- Logo upload stays "coming soon" (DS shows it too as toast-only).
-- All Thai strings go through i18n; no raw text added.
+## Technical notes
+- Pure Tailwind + inline styles; no new dependencies.
+- All hardware/chrome rendered with `div` + SVG; no images.
+- Colors for chassis/island/indicator are neutral hardware grays (not brand tokens) since they represent the physical device, not the app.
 
-## Things explicitly preserved (no regression)
-
-- `useBrandKit` query + `useSaveBrandKit` mutation + `logActivity` on save
-- `applyBrandFromKit(brand)` live-token effect on every change, restore on unmount
-- `DEFAULT_BRAND`, `COLOR_PRESETS`, `FONT_CHOICES`, `PHOTO_STYLES` schema unchanged
-- Route `/branding` + sidebar entry untouched
-- `useSettings('branding')` typing unchanged
-
-## Regression checklist
-
-1. `/branding` loads server data, hydrates editor.
-2. Editing any field updates preview instantly (mobile/web/card all reflect).
-3. Color popover: drag sliders → preview updates; HEX copy works.
-4. Dirty badge appears; sticky bar shows; Save persists + toast + activity log.
-5. Cancel reverts to last saved.
-6. Export downloads JSON.
-7. Reset confirms then loads `DEFAULT_BRAND`.
-8. Unmounting page (navigate away) restores saved tokens app-wide.
-9. Mobile (<lg) stacks editor over preview; preview no longer sticky.
-10. No new TS errors; build passes.
+## Files touched
+- `src/components/branding/previews/MobilePreview.tsx` — rewrite only this file.
 
 ## Out of scope
-- Logo file upload (still placeholder).
-- Applying brand tokens beyond `--primary/--accent/--radius/--font-admin`.
+- Web/Card preview redesign.
+- Editor, color picker, save bar, or any business logic.
 - Other admin pages.
+
+## Regression checklist
+1. `/branding` loads without console errors.
+2. Editing primary/accent/secondary/surface/radius/font still updates the phone in real time.
+3. Logo style/shape changes still reflect in header.
+4. Save, Cancel, Export, Reset still work.
+5. Web and Card preview tabs unchanged.
