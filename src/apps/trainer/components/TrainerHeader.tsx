@@ -22,6 +22,7 @@ export function TrainerHeader() {
   const navigate = useNavigate();
   const { user, allRoles, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { brand } = useBrand();
   const { resolvedTheme, setTheme } = useTheme();
   const { t } = useTranslation();
 

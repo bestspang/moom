@@ -27,6 +27,7 @@ export function MemberHeader() {
   const { firstName, lastName } = useMemberSession();
   const { allRoles, signOut, user } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { brand } = useBrand();
   const { resolvedTheme, setTheme } = useTheme();
 
   const initials = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase() || '?';
