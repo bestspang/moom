@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminPageHeader } from '@/components/admin-ds/AdminPageHeader';
 import { applyBrandFromKit } from '@/components/admin-ds/BrandTokens';
