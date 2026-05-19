@@ -326,6 +326,7 @@ const App = () => (
               </SurfaceGuard>
             </BrowserRouter>
           </TooltipProvider>
+          </BrandProvider>
         </LanguageProvider>
       </SurfaceProvider>
     </AuthProvider>
