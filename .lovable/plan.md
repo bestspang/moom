@@ -1,100 +1,83 @@
-## 1. ปัญหาที่พบ (Root Cause Analysis)
+## 1. ขอบเขต
 
-หลังตรวจ `SettingsBranding.tsx`, `useBrandKit.ts`, `BrandTokens.ts`, `brandDefaults.ts`, layout, และ `index.html` — **Brand Kit (ชื่อยิม / โลโก้ / สี / ฟอนต์ / ติดต่อ / โซเชียล) ไม่ถูก propagate ออกไปนอกหน้า Settings เลย** เป็นต้นเหตุของอาการ "ของไม่ตรงกันทั้งระบบ"
+ต่อยอดงาน Brand Kit ที่ propagate แล้ว ด้วย 4 ส่วน:
 
-| พื้นที่ | สถานะปัจจุบัน | ปัญหา |
+| # | งาน | Deliverable |
 |---|---|---|
-| `applyBrandFromKit` | ถูกเรียก **เฉพาะใน SettingsBranding** และ **revert ตอน unmount** | สีและฟอนต์ที่ save แล้วไม่ apply กับ Admin / Member / Trainer / Staff |
-| Sidebar / MobilePageHeader / Auth pages | hard-coded ไม่ผูก brand | เปลี่ยนชื่อ/โลโก้แล้วไม่ขึ้น |
-| `index.html` | `<title>Lovable App</title>`, og: Lovable, ไม่มี favicon brand | SEO / share preview ผิดแบรนด์ |
-| Document title / favicon runtime | ไม่ sync `brand.name` / `brand.logoUrl` | tab title ผิด |
-| Help / tooltip / docs | `docs/audit-*.md`, `SMOKE_TEST.md`, `CONTRACTS.md` ไม่ครอบคลุม brand flow | คนใหม่ไม่รู้ว่า brand ต้อง propagate |
-| ปุ่มใน SettingsBranding (Export / Reset / Save / Revert / Upload) | ยังไม่ได้ตรวจครบทุก role + ไม่มี smoke test | เสี่ยง regression |
-| Brand consumers (receipt PDF, edge function emails, OG image) | ใช้ค่า hardcode | ไม่ตรงแบรนด์ลูกค้า |
+| A | Playwright E2E: Save brand → ทุกหน้าอัปเดต | `e2e/brand-propagation.spec.ts` |
+| B | CSS-var coverage guard: `BrandTokens` ครอบทุก var ที่ใช้จริง + ไม่ตกหล่นข้าม theme | `src/components/admin-ds/BrandTokens.test.ts` + helper |
+| C | SMOKE_TEST edge cases (logoUrl ว่าง / name ว่าง / save ซ้อนกัน) | append `docs/SMOKE_TEST.md` |
+| D | Audit + scanner สำหรับ edge functions (email/invite/receipt/notification) | `docs/audit-brand-backend.md`, ขยาย `check-brand-consumers.mjs` |
 
-**Root cause:** ไม่มี **single source of truth ระดับ runtime** ที่โหลด brand ครั้งเดียวแล้วใช้งานทั่วทั้งแอป → ทุก surface เลย drift ทีละจุด
+## 2. รายละเอียดแต่ละ Step
 
-## 2. Modules ที่กระทบ + สถานะ
+### A — Playwright E2E
+ไฟล์ใหม่ `e2e/brand-propagation.spec.ts`
+1. login admin (helper เดิม), seed `settings.branding.brand_kit` ผ่าน supabase REST → set `name='E2E BRAND ' + nonce`, ลบ `logoUrl`
+2. ไป `/settings/branding`, อ่านชื่อช่อง name ตรงกับ seed
+3. แก้ name → "E2E NEW " + nonce, กด **Save** → assert toast
+4. ตรวจครบ 3 จุด:
+   - Sidebar header text contains new name
+   - Sidebar footer "© {year} {new name}"
+   - `await page.title()` === new name
+   - `link[rel~='icon']` href แล้ว set ถ้า logoUrl != ''
+5. cross-surface: navigate `/lobby`, `/members`, `/login` (logout flow) — title ยังตรงทุกหน้า
+6. cleanup: restore เป็น `DEFAULT_BRAND` snapshot ที่ snapshot ตอนเริ่ม
+7. skip gracefully ถ้า E2E secrets ไม่มี (เหมือน qr-checkin.spec)
 
-| Module | Status | ต้องเก็บไว้ |
-|---|---|---|
-| `src/hooks/useBrandKit.ts` | WORKING | query/mutation API |
-| `src/components/branding/*` | WORKING | preview components |
-| `src/components/admin-ds/BrandTokens.ts` `applyBrandFromKit` | PARTIAL | logic ดี แต่ต้องเลิก revert ตอน unmount |
-| `src/pages/settings/SettingsBranding.tsx` | WORKING | ฟอร์ม + ปุ่ม Save/Export/Reset/Revert |
-| `src/App.tsx` (root provider) | UNKNOWN — ต้องเสริม BrandProvider | routing |
-| `src/components/layout/Sidebar.tsx`, `Header.tsx`, `MobilePageHeader.tsx` | PARTIAL | ใช้ `<BrandMark>` component |
-| `index.html` | BROKEN (ค่า default ของ Lovable) | structure |
-| Auth pages, LIFF callbacks | PARTIAL | flow |
-| Help / docs / smoke test | BROKEN | ของเดิม |
+### B — CSS-vars Coverage Guard
+ไฟล์ใหม่ `src/components/admin-ds/BrandTokens.test.ts`
+- อ่าน `src/index.css` ดิบ → regex หาทุก `var(--xxx)` ที่ใช้ใน rules ของ `index.css`
+- เทียบกับ `BrandToken` union — assert ว่า var ที่ผูกกับแบรนด์ (primary, accent, radius, font-admin, sidebar-*) ปรากฏใน `BrandToken` enum
+- เทียบ light vs dark mode: parse `:root { … }` block และ `.dark { … }` block, assert: ทุก key ใน `:root` ต้องมีใน `.dark` (และในทางกลับ) — ถ้าตกหล่นจะ fail พร้อมรายชื่อ var
+- เทียบ `applyBrandFromKit` (`KEYS_TOUCHED`) กับ `BrandKit` fields → assert ทุก field สีในkit ถูก map (primary→--primary, accent→--accent, radius→--radius, font→--font-admin); ถ้ามี field ใหม่ใน BrandKit ต้องประกาศ map หรือ skip อย่างชัดเจน
 
-## 3. แผนแก้ (Minimal-Diff, Surgical)
+### C — SMOKE_TEST Edge Cases
+Append section "Brand Kit — Edge Cases" 8 ข้อ:
+1. `logoUrl` ว่าง → favicon คงเดิม (ไม่ลบ tab icon)
+2. `name` ว่าง → fallback เป็น `DEFAULT_BRAND.name` (ไม่ปล่อย title ว่าง)
+3. Save 3 รอบติด ภายใน 5 วินาที → ไม่มี race / sidebar แสดงค่าสุดท้าย
+4. เปลี่ยน primary color → CSS var `--primary` เปลี่ยน, dark mode toggle แล้วยังตรง
+5. Reset → ทุก surface revert เป็น DEFAULT_BRAND
+6. Upload logo ใหญ่ >2MB → toast error, brand เดิมไม่ถูกทับ
+7. ปิด browser แล้วเปิดใหม่ → brand persistent (โหลดจาก DB)
+8. Trainer login → เปิด Settings/Branding → ปุ่ม Save disabled แต่ preview ได้
 
-### Step A — Global Brand Runtime (สาเหตุหลัก)
-1. **`src/contexts/BrandContext.tsx` (new)** — โหลด `useBrandKit()` ครั้งเดียวที่ root, expose `{ brand, isLoading }`. Fallback = `DEFAULT_BRAND`.
-2. **`src/App.tsx`** — wrap `<BrandProvider>` ใต้ `<QueryClientProvider>` (ทำเฉพาะ wrap ไม่แตะ routing).
-3. **`src/components/admin-ds/BrandTokens.ts`** — เพิ่ม `<BrandStyleInjector />` component ที่ apply CSS vars จาก context ทุกครั้งที่ brand เปลี่ยน + sync `document.title` + `<link rel="icon">` จาก `brand.logoUrl`.
-4. **`src/pages/settings/SettingsBranding.tsx`** — ลบ revert-on-unmount (เพราะ provider จะ handle) เหลือเฉพาะ preview local state.
+### D — Backend / Email Audit
+ไฟล์ใหม่ `docs/audit-brand-backend.md`
+- ตาราง consumer ทุก edge function: `invite-staff`, `auto-notifications`, `daily-briefing`, `approve-slip`, `sell-package`, `stripe-*`, `line-auth` — สถานะปัจจุบัน "ยังไม่มี email/PDF body ที่ embed ชื่อแบรนด์"
+- จุดที่ "ถ้าเพิ่ม email template ต้องผ่าน brand source": ระบุว่าควรใช้ `settings.branding.brand_kit` ผ่าน supabase service role ใน edge function (snippet ตัวอย่าง)
+- กฎข้อใหม่: ห้าม hardcode brand string ใน edge function file ใหม่ที่มี keyword `email|invoice|receipt|invite|html`
 
-### Step B — Brand UI Primitives (ทดแทน hardcode)
-1. **`src/components/branding/BrandMark.tsx` (new)** — render โลโก้ + ชื่อยิม จาก context (รองรับ `size`, `showName`, `variant`).
-2. ใช้แทน hardcoded brand ใน: `Sidebar.tsx`, `Header.tsx`, `MobilePageHeader.tsx` (เฉพาะจุดที่มีอยู่แล้ว ไม่เพิ่ม UI ใหม่).
-3. **Login / Signup / Forgot / Reset / LIFF callback** — เปลี่ยน static "MOOM" → `<BrandMark />`.
+ขยาย `scripts/check-brand-consumers.mjs`:
+- เพิ่ม dynamic scan โหมดที่ 2: walk `supabase/functions/**/*.ts`, ข้าม `_shared/` และ comments
+- ถ้าเจอ literal `MOOM`, `MOOM CLUB`, `Moom Club`, หรือ `hello@moom.co` ในไฟล์ที่มีหนึ่งใน keyword `mail|email|invoice|receipt|invite|sendgrid|resend|html` → fail
+- การจับ CORS allowlist (`https://admin.moom.fit`) **ไม่นับ** (regex จงใจ match แค่ literal brand ในบริบท content)
 
-### Step C — Static Shell
-1. **`index.html`** — แก้ `<title>`, meta description, og:title/description/image, favicon path (ใช้ค่าเริ่มจาก `DEFAULT_BRAND` + runtime override จาก `BrandStyleInjector`).
+อัปเดต `AI_GUARDRAILS.md` Rule 15 ให้ครอบ edge functions และ link ไปยัง `docs/audit-brand-backend.md`.
 
-### Step D — Verify ปุ่ม + RBAC ในหน้า Settings Branding
-1. เพิ่ม `src/pages/settings/SettingsBranding.test.tsx` — ตรวจ:
-   - 4 roles (Owner/Admin/Trainer/Front desk) → ปุ่ม Save/Reset/Revert/Export แสดงตาม `can('settings','write')`
-   - กด Reset → form reset เป็น `DEFAULT_BRAND`
-   - กด Save (mock) → trigger mutation + toast
-   - กด Export → trigger JSON download (mock `URL.createObjectURL`)
-   - Upload logo → เรียก `useImageUpload` mock
-2. เพิ่ม `src/contexts/BrandContext.test.tsx` — apply CSS vars ตรง + `document.title` sync
+## 3. ที่ต้องเก็บไว้
+- `useBrandKit`, `BrandProvider`, `BrandMark` signature
+- โครง `BrandTokens.ts` + `applyBrandFromKit`
+- 171 tests เดิม + 7 brand tests
+- CORS allowlist ใน edge functions (เป็น infra, ไม่ใช่ brand display)
+- Playwright qr-checkin.spec ที่มีอยู่
 
-### Step E — i18n & Help/Docs Sync
-1. ตรวจ keys ใน `src/i18n/locales/{en,th}.ts` ใต้ `settings.branding.*` ให้ครบ (เพิ่ม key ที่ขาด)
-2. อัปเดต:
-   - `docs/audit-frontend.md` — section "Brand propagation"
-   - `docs/SMOKE_TEST.md` — เพิ่ม Brand checklist (8 ข้อ: save→sidebar, save→login, save→title, reset, export, upload logo, color preset, font change)
-   - `docs/CONTRACTS.md` — เพิ่ม "Brand Kit Contract" (settings.section='branding', key='brand_kit', shape = `BrandKit`)
-   - `docs/DEVLOG.md` — append entry
-   - `docs/data-contract-yourgym.md` — sync กับ `BrandKit` type จริง
-3. **`docs/audit-brand.md` (new)** — RBAC matrix + button trace + consumer list
+## 4. Out of Scope
+- ไม่สร้าง email template จริง (จะทำตอนมี integration)
+- ไม่แตะ DB schema
+- ไม่ refactor `useBrandKit` ให้ realtime-subscribe (TanStack invalidate ก็พอ)
 
-### Step F — Regression Guards (กัน AI พังของเดิม)
-1. **`src/contexts/BrandContext.test.tsx`** — contract: brand context ต้อง expose `brand.name`, `brand.primary`, `brand.logoUrl`
-2. **`src/components/branding/BrandMark.test.tsx`** — render ด้วย DEFAULT_BRAND + custom brand
-3. **`scripts/check-brand-consumers.mjs` (new)** — สแกน `Sidebar/Header/MobilePageHeader/Login*/Signup*` ห้าม hardcode คำว่า `MOOM` หรือ `moom` (ยกเว้นเป็น default brand) → CI fail
-4. **`PROTECTED_FILES.md`** — เพิ่ม Tier-1: `BrandContext.tsx`, `BrandTokens.ts`, `useBrandKit.ts`, `brandDefaults.ts`, `BrandMark.tsx`
-5. **`AI_GUARDRAILS.md`** — เพิ่ม Rule 15: "ห้าม hardcode ชื่อยิม/โลโก้/สี — ใช้ `useBrand()` หรือ `<BrandMark/>` เท่านั้น"
-6. **`.github/workflows/quality.yml`** — เพิ่ม step รัน `check-brand-consumers.mjs`
+## 5. Regression Checklist
+- [ ] `bun run test` ≥ 171 tests + ใหม่ ~5 (BrandTokens coverage)
+- [ ] `bun run build` ผ่าน
+- [ ] `node scripts/check-brand-consumers.mjs` ผ่าน (frontend + backend modes)
+- [ ] `bunx playwright test brand-propagation.spec.ts` ผ่าน (เมื่อมี E2E secrets) หรือ skip clean
+- [ ] CI workflow ไม่เพิ่ม step ใหม่ (script เดิม `check-brand-consumers.mjs` รับงาน backend mode ด้วย)
+- [ ] i18n parity ยัง 100%
 
-## 4. สิ่งที่ต้องเก็บไว้ (Preserve)
-- `useBrandKit` query/mutation signatures (callers ใช้อยู่)
-- `applyBrandFromKit` signature
-- `SettingsBranding` UI layout / ปุ่มเดิม (เฉพาะลบ `return () => applyBrandFromKit(saved)` line เดียว)
-- `settings` table schema (ไม่มี migration)
-- RLS / auth ทั้งหมด
-- Existing 164 tests
-
-## 5. Out of Scope
-- Multi-brand per location (ตอนนี้ 1 brand/ทั้ง org)
-- Edit เอกสาร help ที่ไม่เกี่ยว brand
-- ไม่แตะ edge functions (PDF receipt / email) ในรอบนี้ — จดเป็น TODO ใน DEVLOG
-
-## 6. Regression Checklist
-- [ ] บันทึก brand แล้ว reload → sidebar / login / title อัปเดต
-- [ ] รีเซ็ตเป็น default → ทุกที่กลับ DEFAULT_BRAND
-- [ ] 4 roles เห็น/ไม่เห็นปุ่มถูกต้อง
-- [ ] `bun run test` ผ่านทั้งหมด (เป้า 175+ จาก 164)
-- [ ] `bun run build` ผ่าน (TS strict-loose ยังเดิน)
-- [ ] i18n parity 100%
-- [ ] CI brand-consumers scan ผ่าน
-- [ ] ไม่มีจุดอื่นใน UI พัง (manual smoke 8 ข้อ)
-
-## 7. ผลลัพธ์
-- ✅ ตั้งค่าแบรนด์ครั้งเดียว → ทุกหน้าตรงกันอัตโนมัติ
-- ✅ Help/docs/smoke test sync กับ feature จริง
-- ✅ AI editor รุ่นถัดไปแก้ของเดิมไม่ได้ง่ายๆ (protected + lint + test)
+## 6. ผลลัพธ์
+- จับ regression brand ได้ทั้ง frontend และ backend อัตโนมัติ
+- มี E2E จริงยืนยันว่า Save → Sidebar/Header/Title/Favicon update
+- CSS vars ไม่ตกหล่นระหว่าง light/dark
+- เคสขอบเขต (ว่าง / save ติดกัน) อยู่ใน smoke checklist

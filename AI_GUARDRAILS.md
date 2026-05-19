@@ -168,11 +168,13 @@ return <BrandMark size="md" />;
 **Banned (CI fails via `scripts/check-brand-consumers.mjs`):**
 - Literal `"MOOM"` / `"MOOM CLUB"` / `"MOOM Gym"` / `"MOOM Admin"` in Sidebar, Header, MemberHeader, TrainerHeader, AdminLogin, MemberLogin, Signup
 - Inline hardcoded logo letter "M" in those files
+- Brand literals in edge function files that touch user-facing content (`mail`/`email`/`invoice`/`receipt`/`invite`/`html`/`subject`/`body`/`template`). See `docs/audit-brand-backend.md` for the contract — read `settings.branding.brand_kit` via service-role client instead.
 
 **Exemptions:**
 - `src/components/branding/brandDefaults.ts` (the default kit)
 - `src/i18n/locales/*.ts` (marketing copy where the literal is intentional)
 - Test files (`*.test.{ts,tsx}`)
 - Comments / docstrings
+- CORS allowlist lines in edge functions (`https://admin.moom.fit`, etc. — these are infra, not brand display)
 
 Override per PR via `[skip-brand-check]` in PR title (use sparingly, document why in DEVLOG).
