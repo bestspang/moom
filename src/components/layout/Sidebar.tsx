@@ -390,13 +390,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             {pinItems.length > 0 && (
               <>
                 {!collapsed && (
-                  <div className="flex items-center justify-between px-1 pt-1 pb-1">
+                  <div className="flex items-center px-1 pt-1 pb-1">
                     <span className="text-[10px] font-bold tracking-wider uppercase text-sidebar-muted-light">
                       {t('nav.pins')}
-                    </span>
-                    {/* TODO: wire drag-to-arrange when Branding page owns pin config */}
-                    <span className="text-[9px] font-semibold text-sidebar-muted-light">
-                      {t('nav.pinsHint')}
                     </span>
                   </div>
                 )}
