@@ -189,15 +189,16 @@ const Lobby = () => {
         <LobbyFilters value={filters} onChange={(f) => { setFilters(f); setPage(1); }} />
         {can('lobby', 'write') && (
           <div className="flex items-center gap-2 sm:ml-auto">
-            <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)} title={t('lobby.help.qrButton')}>
               <QrCode className="h-4 w-4 mr-1" />
               {t('lobby.qrCode')}
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)}>
+            <Button size="sm" className="bg-primary hover:bg-primary-hover" onClick={() => setDialogOpen(true)} title={t('lobby.help.checkInButton')}>
               <Plus className="h-4 w-4 mr-1" />
               {t('lobby.checkIn')}
             </Button>
           </div>
+
         )}
       </div>
 
