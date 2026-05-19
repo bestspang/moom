@@ -1642,7 +1642,7 @@ export default {
       radius: 'Corner radius',
       radiusMin: 'Sharp',
       radiusMax: 'Round',
-      uploadLogo: 'Upload logo (soon)',
+      uploadLogoLegacy: 'Upload logo (soon)',
       preset: 'Color preset',
       primary: 'Primary',
       secondary: 'Secondary',
