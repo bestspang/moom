@@ -568,7 +568,8 @@ const SettingsBranding = () => {
       </fieldset>
 
       {/* Sticky save bar (pill) — matches DS Branding.jsx */}
-      {dirty && canWrite && (
+      {/* Sticky save bar (pill) — portaled to body to escape transformed ancestors */}
+      {dirty && canWrite && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 inline-flex items-center gap-3.5 pl-5 pr-2.5 py-2.5 rounded-full bg-foreground text-background animate-in slide-in-from-bottom-4 duration-200"
           style={{ boxShadow: '0 20px 50px rgba(15,23,42,0.3)' }}
@@ -601,7 +602,8 @@ const SettingsBranding = () => {
             <Save className="w-3.5 h-3.5" strokeWidth={2.4} />
             {t('settings.branding.saveBarSave')}
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
