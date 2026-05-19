@@ -41,6 +41,7 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   onRowClick?: (row: T) => void;
   rowKey: (row: T) => string;
+  rowClassName?: (row: T) => string | undefined;
   isLoading?: boolean;
   emptyMessage?: string;
   emptyVariant?: 'default' | 'members' | 'schedule' | 'packages' | 'finance' | 'notifications' | 'notes' | 'workouts' | 'locations' | 'activity';
