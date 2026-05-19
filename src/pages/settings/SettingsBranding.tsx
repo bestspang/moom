@@ -27,6 +27,10 @@ import { BrandPreviewPanel } from '@/components/branding/BrandPreviewPanel';
 import { BrandSectionCard } from '@/components/branding/BrandSectionCard';
 import { BrandSummaryCard } from '@/components/branding/BrandSummaryCard';
 import { useBrandKit, useSaveBrandKit } from '@/hooks/useBrandKit';
+import { ImageUploadField } from '@/components/branding/ImageUploadField';
+import { usePermissions } from '@/hooks/usePermissions';
+import { AdminCard } from '@/components/admin-ds/AdminCard';
+import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 // DS accent colors mirroring adminTokens in MOOM Design System
