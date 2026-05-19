@@ -2882,6 +2882,10 @@ export default {
     searchPlaceholder: 'ค้นหาสมาชิก, คลาส, แพ็คเกจ…',
     checkin: 'เช็คอิน',
     today: 'วันนี้',
+    logoutSuccess: 'ออกจากระบบสำเร็จ',
+    logoutError: 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
+    checkinDenied: 'คุณไม่มีสิทธิ์เข้าถึงหน้าเช็คอิน',
+    notificationError: 'อัปเดตการแจ้งเตือนไม่สำเร็จ',
   },
 
   // Command Palette

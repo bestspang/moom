@@ -2884,6 +2884,10 @@ export default {
     searchPlaceholder: 'Search members, classes, packages…',
     checkin: 'Check-in',
     today: 'Today',
+    logoutSuccess: 'Signed out successfully',
+    logoutError: 'Failed to sign out. Please try again.',
+    checkinDenied: 'You do not have permission to access check-in.',
+    notificationError: 'Failed to update notification.',
   },
 
   // Command Palette

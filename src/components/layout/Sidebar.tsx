@@ -349,7 +349,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div
             className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-white font-black text-base"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--sidebar-primary)), hsl(14 90% 48%))',
+              background: 'linear-gradient(135deg, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary-glow)))',
               boxShadow: '0 6px 18px -6px hsl(var(--sidebar-primary) / 0.6)',
             }}
           >

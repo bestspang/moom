@@ -46,6 +46,7 @@
     --sidebar-accent-foreground: 25 95% 53%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-glow: 14 90% 48%;
     --sidebar-ring: 25 95% 53%;
 
     --content-background: 30 10% 98%;
@@ -191,6 +192,7 @@
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-glow: 14 90% 48%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
@@ -302,6 +304,7 @@
     --sidebar-accent-foreground: 222 28% 12%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-glow: 14 90% 48%;
     /* DS table header — light surface (replaces dark legacy) */
     --table-header: 220 20% 96%;
     --table-header-foreground: 220 10% 46%;

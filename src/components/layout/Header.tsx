@@ -1,10 +1,12 @@
 import React from 'react';
 import { Bell, ChevronDown, Menu, LogOut, User, Globe, Users, Dumbbell, Search, Calendar, QrCode } from 'lucide-react';
+import { toast } from 'sonner';
 import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 import { buildSessionTransferUrl } from '@/apps/shared/sessionTransfer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount, useRecentNotifications, useMarkAsRead } from '@/hooks/useNotifications';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,20 +28,45 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, role, signOut } = useAuth();
+  const { user, role, allRoles, signOut } = useAuth();
+  const { can } = usePermissions();
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data: recentNotifications = [] } = useRecentNotifications(5);
   const markAsRead = useMarkAsRead();
 
+  const ADMIN_ROLES = ['owner', 'admin', 'front_desk'] as const;
+  const TRAINER_ROLES = ['trainer', 'freelance_trainer'] as const;
+  const hasAdminAccess = (allRoles ?? []).some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
+  const hasTrainerAccess = (allRoles ?? []).some((r) => (TRAINER_ROLES as readonly string[]).includes(r));
+  const canCheckin = can('lobby', 'write');
+
   const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      await signOut();
+      toast.success(t('header.logoutSuccess'));
+      navigate('/login');
+    } catch (err) {
+      console.error('[Header] logout failed', err);
+      toast.error(t('header.logoutError'));
+    }
+  };
+
+  const handleCheckinClick = () => {
+    if (!canCheckin) {
+      toast.error(t('header.checkinDenied'));
+      return;
+    }
+    navigate('/checkin');
   };
 
   const handleNotificationClick = (notificationId: string, isRead: boolean | null) => {
-    if (!isRead) markAsRead.mutate(notificationId);
+    if (!isRead) {
+      markAsRead.mutate(notificationId, {
+        onError: () => toast.error(t('header.notificationError')),
+      });
+    }
   };
 
   const openCommandPalette = () => {
@@ -116,14 +143,16 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
           <span className="whitespace-nowrap">{todayLabel}</span>
         </div>
 
-        {/* Check-in CTA */}
-        <Button
-          onClick={() => navigate('/checkin')}
-          className="h-9 px-3.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 font-semibold inline-flex items-center gap-1.5"
-        >
-          <QrCode className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">{t('header.checkin')}</span>
-        </Button>
+        {/* Check-in CTA — RBAC: requires lobby write permission */}
+        {canCheckin && (
+          <Button
+            onClick={handleCheckinClick}
+            className="h-9 px-3.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 font-semibold inline-flex items-center gap-1.5"
+          >
+            <QrCode className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{t('header.checkin')}</span>
+          </Button>
+        )}
 
         {/* Notifications */}
         <DropdownMenu>
@@ -273,7 +302,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
               <User className="h-4 w-4 mr-2" />
               {t('profile.editProfile')}
             </DropdownMenuItem>
-            {!!user && (
+            {!!user && (hasAdminAccess || hasTrainerAccess) && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
@@ -283,13 +312,15 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
                   <Users className="h-4 w-4 mr-2" />
                   Member App
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
-                  e.preventDefault();
-                  window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
-                }}>
-                  <Dumbbell className="h-4 w-4 mr-2" />
-                  Trainer App
-                </DropdownMenuItem>
+                {hasTrainerAccess && (
+                  <DropdownMenuItem className="cursor-pointer" onClick={async (e) => {
+                    e.preventDefault();
+                    window.location.href = await buildSessionTransferUrl(buildCrossSurfaceUrl('trainer', '/trainer'));
+                  }}>
+                    <Dumbbell className="h-4 w-4 mr-2" />
+                    Trainer App
+                  </DropdownMenuItem>
+                )}
               </>
             )}
             <DropdownMenuSeparator />
