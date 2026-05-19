@@ -558,7 +558,7 @@ const SettingsBranding = () => {
       </fieldset>
 
       {/* Sticky save bar (when dirty) */}
-      {dirty && (
+      {dirty && canWrite && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t shadow-lg animate-in slide-in-from-bottom-4 duration-200">
           <div className="max-w-[1500px] mx-auto px-6 py-3 flex items-center justify-end gap-2">
             <span className="text-xs text-amber-700 font-semibold mr-auto inline-flex items-center gap-2">
@@ -570,7 +570,13 @@ const SettingsBranding = () => {
             </Button>
             <Button
               size="sm"
-              onClick={() => saveMutation.mutate(brand)}
+              onClick={() => {
+                if (!canWrite) {
+                  toast.error(t('settings.branding.writeBlockedToast'));
+                  return;
+                }
+                saveMutation.mutate(brand);
+              }}
               disabled={saveMutation.isPending}
             >
               {t('settings.branding.saveBarSave')}
