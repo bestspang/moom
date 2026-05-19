@@ -1583,6 +1583,7 @@ export default {
     read: 'read',
     new: 'New',
     markAllRead: 'Mark all as read',
+    allMarkedRead: 'All notifications marked as read',
     noUnread: "No notifications to show.",
     types: {
       booking: 'Booking',
