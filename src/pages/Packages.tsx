@@ -1,11 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Package as PackageIcon, Users, DollarSign, TrendingUp, LayoutGrid, List } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { PageHeader, SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
+import { SearchBar, StatusTabs, DataTable, StatusBadge, ManageDropdown, BulkActionBar, type Column, type StatusTab } from '@/components/common';
+import { AdminPageHeader, AdminKpiCard, AdminCard } from '@/components/admin-ds';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 import { usePackages, usePackageStats, useBulkUpdatePackageStatus, useBulkDeletePackages, useBulkDuplicatePackages } from '@/hooks/usePackages';
 import { useLocations } from '@/hooks/useLocations';
