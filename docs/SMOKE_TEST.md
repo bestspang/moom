@@ -18,6 +18,23 @@
 - [ ] Camera scan opens and processes QR
 - [ ] Manual code input works
 
+### Lobby Realtime
+- [ ] Open Admin → Lobby in **Tab A**
+- [ ] Open Staff → Lobby in **Tab B** (different browser profile / incognito)
+- [ ] Trigger a manual check-in in Tab A
+- [ ] **Tab B** shows the new row within ~2 seconds without manual refresh
+- [ ] The new row has the "new" highlight state (≥3s) and the `LIVE` badge is visible
+- [ ] Toggle a filter in Tab B → still receives subsequent realtime updates
+- [ ] Approving a transfer slip (admin) reflects in member portfolio in Tab B within ~2s
+
+### Members RBAC (visual smoke; full matrix in `docs/audit-members.md`)
+- [ ] Sign in as **Front Desk** → `/members` list visible, `Add Member` button hidden, drawer shows no "Add Package" button
+- [ ] Sign in as **Trainer** → can edit profile + add note, but **cannot** add package or see finance tab
+- [ ] Sign in as **Manager** → all member actions visible except the Roles tab in settings
+- [ ] Sign in as **Owner** → everything visible, including Archive
+
+
+
 ### Receipt/Transfer Slip
 - [ ] Member uploads slip → appears in admin Transfer Slips list (status: needs_review)
 - [ ] Admin approves slip → creates transaction + member_package
