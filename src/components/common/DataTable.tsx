@@ -58,6 +58,7 @@ export function DataTable<T>({
   onPageChange,
   onRowClick,
   rowKey,
+  rowClassName,
   isLoading = false,
   emptyMessage,
   emptyVariant = 'default',
@@ -123,7 +124,8 @@ export function DataTable<T>({
                         className={cn(
                           'transition-colors',
                           onRowClick && 'cursor-pointer hover:bg-accent/40',
-                          isSelected && 'bg-accent'
+                          isSelected && 'bg-accent',
+                          rowClassName?.(row)
                         )}
                         onClick={() => onRowClick?.(row)}
                       >
