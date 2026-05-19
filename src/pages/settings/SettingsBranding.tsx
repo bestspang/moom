@@ -433,7 +433,7 @@ const SettingsBranding = () => {
             accent={ACCENT.purple}
           >
             <Label className="text-[11px] font-bold uppercase tracking-wide">{t('settings.branding.photoStyle')}</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-4 gap-2 mt-2">
               {PHOTO_STYLES.map((p) => {
                 const active = brand.photoStyle === p.id;
                 const labelKey = `photo${p.id.charAt(0).toUpperCase() + p.id.slice(1)}`;
