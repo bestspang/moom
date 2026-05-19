@@ -143,14 +143,16 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
           <span className="whitespace-nowrap">{todayLabel}</span>
         </div>
 
-        {/* Check-in CTA */}
-        <Button
-          onClick={() => navigate('/checkin')}
-          className="h-9 px-3.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 font-semibold inline-flex items-center gap-1.5"
-        >
-          <QrCode className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">{t('header.checkin')}</span>
-        </Button>
+        {/* Check-in CTA — RBAC: requires lobby write permission */}
+        {canCheckin && (
+          <Button
+            onClick={handleCheckinClick}
+            className="h-9 px-3.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 font-semibold inline-flex items-center gap-1.5"
+          >
+            <QrCode className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{t('header.checkin')}</span>
+          </Button>
+        )}
 
         {/* Notifications */}
         <DropdownMenu>
