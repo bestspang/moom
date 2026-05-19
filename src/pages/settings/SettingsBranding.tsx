@@ -103,7 +103,7 @@ const SettingsBranding = () => {
 
   const socialFields: {
     k: keyof BrandKit['social']; labelKey: string; prefix: string;
-    icon: React.ComponentType<{ className?: string }>; color: string;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string;
   }[] = [
     { k: 'ig', labelKey: 'socialIg', prefix: '@', icon: Instagram, color: ACCENT.pink },
     { k: 'fb', labelKey: 'socialFb', prefix: '/', icon: Facebook, color: ACCENT.info },
