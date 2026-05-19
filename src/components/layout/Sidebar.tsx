@@ -123,6 +123,7 @@ const NavItemRow = ({
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const { accessLevel } = useAuth();
   const { can, hasCustomPermissions } = usePermissions();
   const location = useLocation();
