@@ -45,6 +45,9 @@ const ACCENT = {
 
 const SettingsBranding = () => {
   const { t } = useLanguage();
+  const { can, loading: permLoading } = usePermissions();
+  const canRead = can('settings', 'read');
+  const canWrite = can('settings', 'write');
   const { data: saved, isLoading } = useBrandKit();
   const saveMutation = useSaveBrandKit();
   const [brand, setBrand] = useState<BrandKit>(DEFAULT_BRAND);
