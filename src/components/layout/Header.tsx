@@ -28,20 +28,45 @@ interface HeaderProps {
 
 export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { language, setLanguage, t } = useLanguage();
-  const { user, role, signOut } = useAuth();
+  const { user, role, allRoles, signOut } = useAuth();
+  const { can } = usePermissions();
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data: recentNotifications = [] } = useRecentNotifications(5);
   const markAsRead = useMarkAsRead();
 
+  const ADMIN_ROLES = ['owner', 'admin', 'front_desk'] as const;
+  const TRAINER_ROLES = ['trainer', 'freelance_trainer'] as const;
+  const hasAdminAccess = (allRoles ?? []).some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
+  const hasTrainerAccess = (allRoles ?? []).some((r) => (TRAINER_ROLES as readonly string[]).includes(r));
+  const canCheckin = can('lobby', 'write');
+
   const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      await signOut();
+      toast.success(t('header.logoutSuccess'));
+      navigate('/login');
+    } catch (err) {
+      console.error('[Header] logout failed', err);
+      toast.error(t('header.logoutError'));
+    }
+  };
+
+  const handleCheckinClick = () => {
+    if (!canCheckin) {
+      toast.error(t('header.checkinDenied'));
+      return;
+    }
+    navigate('/checkin');
   };
 
   const handleNotificationClick = (notificationId: string, isRead: boolean | null) => {
-    if (!isRead) markAsRead.mutate(notificationId);
+    if (!isRead) {
+      markAsRead.mutate(notificationId, {
+        onError: () => toast.error(t('header.notificationError')),
+      });
+    }
   };
 
   const openCommandPalette = () => {
