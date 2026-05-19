@@ -68,8 +68,12 @@ const EXPECTED: Array<{
     label: 'Manual Check-in from drawer (lobby.write)',
     resource: 'lobby',
     action: 'can_write',
-    expect: { owner: true, manager: true, trainer: true, frontDesk: false },
+    // Trainer is read-only on lobby per getDefaultPermissions; manual check-in
+    // is reserved for Owner / Manager. Front Desk uses the QR / Lobby surface
+    // directly (not the member drawer), so the drawer button is gated off.
+    expect: { owner: true, manager: true, trainer: false, frontDesk: false },
   },
+
 ];
 
 describe('Member Details — RBAC policy contract (docs/audit-members.md)', () => {
