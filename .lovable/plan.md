@@ -1,72 +1,107 @@
-# Lobby Enhancements Plan
+# Full Audit & Regression Hardening
 
-## Scope
-Extend the existing `src/pages/Lobby.tsx` with filters, pagination, a row details drawer, complete i18n, audited RBAC, and verified realtime — without breaking the current check-in flow, KPI strip, LIVE badge, or row-highlight animation.
+## Goal
+Make sure (a) Lobby + Check-in flow ทุกปุ่ม/feature ทำงานจริง และ help/i18n ตรงกับ code ปัจจุบัน, (b) ลดโอกาส AI ไปแก้ของที่ทำงานดีอยู่แล้วผ่าน smoke tests, ESLint boundary rules และ Protected/Guardrails docs ที่ครอบคลุมขึ้น. **ห้ามแตะ logic ของ feature ที่ยังทำงานปกติ** — งานนี้คือ verify + add guardrails, ไม่ใช่ refactor.
 
-## Current state (verified)
-- `useCheckIns(date, search)` already supports text search → keep.
-- `useRealtimeSync` is already subscribed to `member_attendance` and invalidates `check-ins` → realtime already works; row highlight runs when `checkInData` mutates.
-- `DataTable` already accepts `rowClassName` → reuse.
-- Lobby i18n keys (`liveBadge`, `kpiTotal`, `kpiCurrentlyIn`, `kpiPackage`, `kpiWalkIn`) exist in EN/TH → add only the new ones below.
+---
 
-## Changes
+## Part A — Lobby + Check-in audit (verify-only, แก้เฉพาะที่ผิดจริง)
 
-### 1. Filters (client-side, added to toolbar card)
-- **Location filter** — `Select` populated from `useLocations()`; default "All".
-- **Method filter** — `manual | qr | liff | all`.
-- **Package filter** — `with package | walk-in | all`.
-- Filters apply on top of `useCheckIns` results (in-memory) so server query stays unchanged.
-- Active filter count → small badge on a "Filters" `Popover` trigger (keeps toolbar compact on 1169px viewport).
+**Checklist (ทำเป็น report ใน `docs/audit-lobby.md` ใหม่):**
+1. แต่ละปุ่ม Lobby → trace กลับไปหา handler จริง
+   - `Check-in` button → `CheckInDialog` → `useCreateCheckIn` → `member_attendance` insert + `logActivity` + `fireGamificationEvent('check_in')`
+   - `QR Code` → `CheckInQRCodeDialog` → `useCheckinQR`
+   - Row click → `CheckInDetailsDrawer` → `Open member` → `/members/:id` (เช็คว่า route นี้ยังมี)
+   - Filters/Pagination → client-side, page reset ครบ
+   - KPI strip → ใช้ raw `checkInData` (ไม่ใช่ filtered) — verify intentional
+2. **RBAC matrix** ของ Lobby across roles (Owner/Manager/Trainer/Front desk):
+   - เช็คว่าทุก action ผ่าน `can('lobby', 'read'|'write')` + `can('members','read')` (ปุ่ม Open member)
+   - ทำเป็นตารางใน audit doc
+3. **Realtime** — verify `member_attendance` ยังอยู่ใน `TABLE_INVALIDATION_MAP` และ row highlight ทำงาน
+4. **i18n parity** — รัน `node scripts/compare-i18n.mjs` เฉพาะ `lobby.*` namespace, แก้ key ที่ขาด
+5. **Help/Tooltip sync** — ค้น `lobby.help|lobby.tooltip|lobby.description` ใน i18n; ถ้ามี help text เก่าที่อ้างถึง feature ที่ลบไปแล้ว → อัปเดต. ถ้ายังไม่มี help tooltip บน Filters/Drawer → เพิ่ม `lobby.help.*` key (EN/TH ทั้งคู่)
+6. **Dead code check** — ใช้ `rg` หา component lobby/* ที่ไม่ถูก import
 
-### 2. Pagination
-- Add `pageSize` (default 25) + `page` state in `Lobby.tsx`.
-- Slice filtered array; render existing `Pagination` shadcn component below `DataTable`.
-- Reset `page` to 1 whenever date/search/filters change.
+**ผลลัพธ์:** report (`docs/audit-lobby.md`) + แก้เฉพาะ bug จริงที่เจอ (ถ้าเจอ จะ list ก่อนแก้)
 
-### 3. Row details drawer
-- New `src/components/lobby/CheckInDetailsDrawer.tsx` using existing `Sheet` (shadcn) on the right.
-- Sections: Member (avatar, name, member_id, phone, tier badge), Package (name, sessions used/remaining, expiry), Check-in (time, location, method, created_by staff name if present).
-- Footer action: "Open member" → `navigate(/members/:id)` (gated by `can('members','read')`).
-- Open via new `onRowClick` prop on `DataTable` (additive, optional) — set `cursor-pointer` only when handler is provided. Falls back to no-op for other tables.
+---
 
-### 4. i18n (EN + TH)
-Add under `lobby.*`:
-- `filters`, `filterLocation`, `filterMethod`, `filterPackage`, `filterAll`, `filterWithPackage`, `filterWalkIn`, `clearFilters`
-- `pagination.showing` (`Showing {{from}}-{{to}} of {{total}}`), `pagination.rowsPerPage`
-- `details.title`, `details.member`, `details.package`, `details.checkin`, `details.createdBy`, `details.openMember`, `details.noPackage`
-- `newCheckinHighlight` (sr-only label for the highlighted row, used via `aria-label`)
+## Part B — AI Regression Guardrails (เพิ่มของจริงให้กัน AI พังของเก่า)
 
-### 5. RBAC audit (no logic added; just gates the new affordances)
-| Action | Gate |
-|---|---|
-| View Lobby page | `can('lobby','read')` — already enforced by route |
-| Open details drawer | `can('lobby','read')` |
-| "Open member" in drawer | `can('members','read')` (hidden otherwise) |
-| Check-in button | `can('lobby','write')` — already gated |
-| QR Code button | `can('lobby','write')` — already gated |
-| Filters/Pagination | read-only → no gate |
+### B1. Smoke tests (Vitest) — gate `bun run test` ที่ CI มีอยู่แล้ว
+สร้าง **3 ไฟล์ test** focused on the critical paths:
+- `src/hooks/useLobby.test.ts` — mock supabase client, verify `useCreateCheckIn` builds correct payload + fires `logActivity` + `fireGamificationEvent('check_in')`
+- `src/hooks/usePermissions.test.ts` — สำหรับ 4 access levels, สร้าง matrix `can(resource, action)` ตรวจกับ `getDefaultPermissions`
+- `src/components/lobby/Lobby.smoke.test.tsx` — render Lobby ด้วย QueryClient + i18n + role mock; assert ปุ่ม Check-in/QR แสดงเฉพาะ `lobby.write`, แสดง KPI strip, filter popover เปิดได้
 
-Owner=all, Manager=all, Trainer=read (no check-in/QR buttons, drawer opens read-only), Front desk=read+write (full).
+### B2. ESLint boundary rules (เพิ่มกฎ — ไม่แตะ rules เดิม)
+แก้ `eslint.config.js` เพิ่ม `no-restricted-imports` + `no-restricted-syntax`:
+- ห้าม import จาก `src/integrations/supabase/client.ts` หรือ `types.ts` แบบ relative ที่ไม่ใช้ alias `@/`
+- ห้ามแก้ `src/components/ui/*` (ใช้ `no-restricted-syntax` หรือ override block) — กฎ "ห้าม export default จาก path นี้นอกจากไฟล์ shadcn เดิม" ทำยาก → ใช้ **commented eslint override block** สำหรับ `src/components/ui/**` ที่ flag warning ถ้ามีการเพิ่ม import นอก shadcn
+- ห้าม `import 'moment'`, `import 'axios'`, `import 'lodash'` (banned libs ตาม CLAUDE.md) — ใช้ `no-restricted-imports`
+- ห้าม raw `console.log` ใน `src/**` (เป็น warning, ไม่ใช่ error) → ลดการ debug noise ที่ AI ทิ้งไว้
 
-### 6. Realtime verification
-- No code change. Confirm `member_attendance` is in `TABLE_INVALIDATION_MAP` and the `check-ins` query key is invalidated → new rows arrive within the realtime debounce window and pass through the existing `recentIds` highlighter (3s pulse).
-- Add a brief note to `docs/DEVLOG.md`.
+### B3. Expand `PROTECTED_FILES.md`
+เพิ่มไฟล์ที่ปัจจุบันยังไม่ list แต่ critical:
+- `src/lib/toast-i18n.ts`, `src/lib/commandEvents.ts`
+- `src/contexts/LanguageContext.tsx`, `src/contexts/LiffContext.tsx`
+- `src/apps/shared/SurfaceContext.tsx`, `src/apps/shared/sessionTransfer.ts`
+- `src/hooks/useLobby.ts` (canonical check-in pipeline + gamification fire)
+- `src/hooks/usePermissions.ts` (RBAC source of truth)
+- `supabase/functions/approve-slip/index.ts` (canonical slip→transaction atomic write)
+- `supabase/functions/gamification-process-event/index.ts` (idempotency ledger)
+- `vite.config.ts`, `vitest.config.ts`, `eslint.config.js`, `.github/workflows/quality.yml`
 
-## Files
-- edit `src/pages/Lobby.tsx` — filters, pagination, row click handler, drawer wiring
-- create `src/components/lobby/CheckInDetailsDrawer.tsx`
-- create `src/components/lobby/LobbyFilters.tsx`
-- edit `src/components/common/DataTable.tsx` — add optional `onRowClick?: (row: T) => void`
-- edit `src/i18n/locales/en.ts` and `src/i18n/locales/th.ts`
-- edit `docs/DEVLOG.md`
+### B4. Expand `AI_GUARDRAILS.md`
+เพิ่ม 2 rule:
+- **Rule 9 — Verify the button still works:** หลังแก้ component ที่มีปุ่ม → manually trace handler ไปจนถึง DB call / mutation. ถ้า handler หาย หรือถูกแทนด้วย `console.log`/`toast.info('coming soon')` = regression.
+- **Rule 10 — i18n + help text sync:** ถ้าเพิ่ม/เปลี่ยน feature → ต้องอัปเดต `lobby.help.*` (หรือ namespace ที่เกี่ยวข้อง) ทั้ง EN + TH. ถ้าลบปุ่ม → ลบ key ของปุ่มนั้นออกจากทั้งสองภาษา
 
-## Preserved
-- `useCheckIns`, `useRealtimeSync`, DB schema, edge functions, KPI strip, LIVE badge animation, existing row-highlight logic, CheckInDialog, CheckInQRCodeDialog.
+### B5. CI gate (ไฟล์ `.github/workflows/quality.yml` มีแล้ว)
+- ไม่แตะโครงสร้างเดิม. แค่เช็คว่า smoke tests ใหม่ทำให้ `bun run test` ผ่าน
+- เพิ่ม step ใหม่ **เฉพาะ**: `bun run lint` มีอยู่แล้ว → boundary rules ใหม่จะ run อัตโนมัติ
 
-## Regression checklist
-- `bun run build` passes
-- Manual check-in still works; toast + activity log fire
-- KPI strip numbers reflect filtered set? → **No** — KPIs use raw `checkInData` (today totals), filters only affect the table. (Documented in DEVLOG.)
-- New check-in via realtime still flashes
-- Trainer role: no check-in/QR buttons, drawer opens, "Open member" hidden when no members.read
-- EN/TH parity verified with `scripts/compare-i18n.mjs`
+---
+
+## Part C — Help / Tooltip / Docs sync
+1. รัน `rg -n "TODO|FIXME|coming soon|toast\.info\(.coming" src/` → list dead UI hints
+2. เช็ค `docs/SMOKE_TEST.md` กับ feature ปัจจุบัน → append ส่วน "Lobby filters + drawer + pagination" smoke checklist
+3. Append entry ใน `docs/DEVLOG.md` สรุปสิ่งที่ verify + ของที่เพิ่ม
+
+---
+
+## Files touched
+
+**New (5)**
+- `docs/audit-lobby.md` (audit report + RBAC matrix)
+- `src/hooks/useLobby.test.ts`
+- `src/hooks/usePermissions.test.ts`
+- `src/components/lobby/Lobby.smoke.test.tsx`
+- (อาจมี mock helpers ใน `src/test/`)
+
+**Edit (append-only, ไม่ refactor)**
+- `eslint.config.js` (เพิ่ม rules)
+- `AI_GUARDRAILS.md` (เพิ่ม Rule 9 + 10)
+- `PROTECTED_FILES.md` (เพิ่มรายการ)
+- `docs/SMOKE_TEST.md` (append Lobby section)
+- `docs/DEVLOG.md` (append entry)
+- `src/i18n/locales/{en,th}.ts` — **เฉพาะ key ที่ขาดจริง** หลัง audit (จะ list ก่อนแก้)
+
+**ห้ามแตะ**
+- `src/pages/Lobby.tsx`, `src/hooks/useLobby.ts`, `src/components/lobby/*` — verify only
+- ทุกไฟล์ใน `PROTECTED_FILES.md` Tier 1–3
+- Auth/RLS/edge functions
+
+---
+
+## Risks & rollback
+- ESLint rules ใหม่อาจ flag warning เก่าๆ มาก → ตั้งเป็น `warn` ไม่ใช่ `error` รอบแรก, แล้วค่อย upgrade
+- Smoke tests ที่ mock supabase ผิดอาจ false-positive → ใช้ pattern เดียวกับ `useLeadScoring.test.ts` ที่มีอยู่
+- Rollback = ลบไฟล์ใหม่ + revert append-only docs
+
+## Acceptance
+- `bun run build` ✅
+- `bun run test` ✅ (รวม 3 ไฟล์ใหม่)
+- `bun run lint` ✅ (warnings ใหม่ยอมรับได้)
+- `node scripts/compare-i18n.mjs` ✅
+- `docs/audit-lobby.md` มี RBAC matrix + button→handler trace ครบทุกปุ่มใน Lobby
