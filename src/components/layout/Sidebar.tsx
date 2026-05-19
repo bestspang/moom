@@ -233,7 +233,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       icon: Settings,
       minLevel: 'level_3_manager',
       items: [
-        { label: t('nav.branding'), path: '/setting/branding', icon: Star, minLevel: 'level_3_manager', resource: 'settings' },
+        { label: t('nav.branding'), path: '/branding', icon: Star, minLevel: 'level_3_manager', resource: 'settings' },
         { label: t('nav.settings'), path: '/setting/general', icon: Settings, minLevel: 'level_3_manager', resource: 'settings' },
       ],
     },
