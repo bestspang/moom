@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Download, RotateCcw, Check, Info,
+  Download, RotateCcw, Check, Info, Save,
   Sparkles, Image as ImageIcon, Palette, Type, Globe, Building2,
   Instagram, Facebook, Youtube, MessageCircle, Music2, Phone, Mail, MapPin,
 } from 'lucide-react';
@@ -433,7 +433,7 @@ const SettingsBranding = () => {
             accent={ACCENT.purple}
           >
             <Label className="text-[11px] font-bold uppercase tracking-wide">{t('settings.branding.photoStyle')}</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-4 gap-2 mt-2">
               {PHOTO_STYLES.map((p) => {
                 const active = brand.photoStyle === p.id;
                 const labelKey = `photo${p.id.charAt(0).toUpperCase() + p.id.slice(1)}`;
@@ -566,31 +566,40 @@ const SettingsBranding = () => {
       </div>
       </fieldset>
 
-      {/* Sticky save bar (when dirty) */}
+      {/* Sticky save bar (pill) — matches DS Branding.jsx */}
       {dirty && canWrite && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t shadow-lg animate-in slide-in-from-bottom-4 duration-200">
-          <div className="max-w-[1500px] mx-auto px-6 py-3 flex items-center justify-end gap-2">
-            <span className="text-xs text-amber-700 font-semibold mr-auto inline-flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              {t('settings.branding.dirty')}
-            </span>
-            <Button variant="ghost" size="sm" onClick={handleRevert} disabled={saveMutation.isPending}>
-              {t('settings.branding.saveBarCancel')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (!canWrite) {
-                  toast.error(t('settings.branding.writeBlockedToast'));
-                  return;
-                }
-                saveMutation.mutate(brand);
-              }}
-              disabled={saveMutation.isPending}
-            >
-              {t('settings.branding.saveBarSave')}
-            </Button>
-          </div>
+        <div
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 inline-flex items-center gap-3.5 pl-5 pr-2.5 py-2.5 rounded-full bg-foreground text-background animate-in slide-in-from-bottom-4 duration-200"
+          style={{ boxShadow: '0 20px 50px rgba(15,23,42,0.3)' }}
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span className="text-[13px] font-bold whitespace-nowrap">
+            {t('settings.branding.dirty')}
+          </span>
+          <button
+            type="button"
+            onClick={handleRevert}
+            disabled={saveMutation.isPending}
+            className="h-8 px-3.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors disabled:opacity-50"
+          >
+            {t('settings.branding.saveBarCancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!canWrite) {
+                toast.error(t('settings.branding.writeBlockedToast'));
+                return;
+              }
+              saveMutation.mutate(brand);
+            }}
+            disabled={saveMutation.isPending}
+            className="h-8 px-4 rounded-full bg-primary text-primary-foreground text-xs font-extrabold inline-flex items-center gap-1.5 hover:brightness-110 transition disabled:opacity-50"
+            style={{ boxShadow: '0 8px 20px hsl(var(--primary) / 0.4)' }}
+          >
+            <Save className="w-3.5 h-3.5" strokeWidth={2.4} />
+            {t('settings.branding.saveBarSave')}
+          </button>
         </div>
       )}
     </div>
