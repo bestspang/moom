@@ -173,13 +173,22 @@ const SettingsBranding = () => {
               <Download className="h-4 w-4 mr-1.5" />
               {t('settings.branding.exportKit')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-1.5" />
-              {t('settings.branding.reset')}
-            </Button>
+            {canWrite && (
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4 mr-1.5" />
+                {t('settings.branding.reset')}
+              </Button>
+            )}
           </>
         }
       />
+
+      {!canWrite && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-[12px] font-semibold border border-amber-200/60">
+          <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{t('settings.branding.readOnlyBanner')}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
         {/* LEFT — editor */}
