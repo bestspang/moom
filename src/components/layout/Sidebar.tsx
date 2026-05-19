@@ -267,17 +267,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     );
   };
 
-  const renderGroup = (group: NavGroup) => {
+  const renderGroup = (group: NavGroup, index: number) => {
     if (!hasAccess(group.minLevel)) return null;
     const visible = group.items.filter(i => hasAccess(i.minLevel, i.resource));
     if (visible.length === 0) return null;
 
     if (collapsed) {
-      // Collapsed: render items flat, no group header
-      return <div key={group.key}>{visible.map(renderItem)}</div>;
+      // Collapsed: divider between groups (DS Modern.jsx parity), then flat items.
+      return (
+        <div key={group.key}>
+          {index > 0 && <div className="h-px bg-sidebar-border mx-1.5 my-2" />}
+          {visible.map(renderItem)}
+        </div>
+      );
     }
 
     const isOpen = !!openGroups[group.key];
+    const groupHasUrgent = visible.some(i => i.urgent && (i.badge ?? 0) > 0);
     return (
       <div key={group.key} className="mb-0.5">
         <button
@@ -288,9 +294,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {isOpen
             ? <ChevronDown className="h-3 w-3" />
             : <ChevronRight className="h-3 w-3" />}
-          <span className="text-[10px] font-bold tracking-wider uppercase">
+          <span className="flex-1 text-left text-[10px] font-bold tracking-wider uppercase">
             {group.label}
           </span>
+          {!isOpen && groupHasUrgent && (
+            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+          )}
         </button>
         {isOpen && (
           <div className="space-y-px">
@@ -300,6 +309,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </div>
     );
   };
+
+  // Resolve pinned items by path, RBAC-filtered.
+  const allItemsByPath = React.useMemo(() => {
+    const m = new Map<string, NavItem>();
+    navGroups.forEach(g => g.items.forEach(i => m.set(i.path, i)));
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, currentlyIn, expiringCount, pendingSlips]);
+  const pinItems = DEFAULT_PINS
+    .map(p => allItemsByPath.get(p))
+    .filter((i): i is NavItem => !!i && hasAccess(i.minLevel, i.resource));
+
 
   const widthClass = collapsed ? 'w-[68px]' : 'w-[252px]';
 
