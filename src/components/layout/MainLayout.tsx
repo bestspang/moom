@@ -23,27 +23,28 @@ const MainLayoutInner = () => {
         Skip to main content
       </a>
       <CommandPalette />
-      <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <main
-        id="main-content"
+      <div
         className={cn(
-          'pt-14 min-h-screen transition-[padding] duration-200 ease-out motion-reduce:transition-none',
+          'min-h-screen transition-[padding] duration-200 ease-out motion-reduce:transition-none',
           collapsed ? 'lg:pl-[68px]' : 'lg:pl-[252px]',
         )}
       >
-        <div
-          key={location.pathname}
-          className="p-3 md:p-5 animate-page-enter-desktop"
-        >
-          <ErrorBoundary key={location.pathname}>
-            <Outlet />
-          </ErrorBoundary>
-        </div>
-      </main>
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+        <main id="main-content">
+          <div
+            key={location.pathname}
+            className="p-3 md:p-5 animate-page-enter-desktop"
+          >
+            <ErrorBoundary key={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

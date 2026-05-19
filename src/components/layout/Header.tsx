@@ -74,8 +74,8 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-      {/* Left side - Logo and menu */}
+    <header className="sticky top-0 h-14 bg-card border-b border-border z-30 flex items-center justify-between px-4">
+      {/* Left side - mobile menu only (logo lives in sidebar) */}
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -86,12 +86,6 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
         >
           <Menu className="h-5 w-5" aria-hidden="true" />
         </Button>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">M</span>
-          </div>
-          <span className="font-bold text-lg hidden sm:block">MOOM CLUB</span>
-        </div>
       </div>
 
       {/* Right side - Actions */}
