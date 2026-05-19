@@ -451,6 +451,11 @@ export default {
     refreshing: 'Refreshing...',
     usageType: 'Type',
     gym: 'Gym',
+    liveBadge: 'Live',
+    kpiTotal: 'Today total',
+    kpiCurrentlyIn: 'Currently in',
+    kpiPackage: 'Package use',
+    kpiWalkIn: 'Walk-in',
   },
 
   // Check-in Display (kiosk)
