@@ -386,12 +386,41 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Scroll area */}
         <ScrollArea className="flex-1">
           <div className={cn(collapsed ? 'px-2.5 pb-2.5' : 'px-3 pb-2.5', 'space-y-px')}>
-            {/* Groups (home group contains dashboard/lobby/schedule) */}
+            {/* Pins (shortcuts) — DS Modern.jsx parity */}
+            {pinItems.length > 0 && (
+              <>
+                {!collapsed && (
+                  <div className="flex items-center justify-between px-1 pt-1 pb-1">
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-sidebar-muted-light">
+                      {t('nav.pins')}
+                    </span>
+                    {/* TODO: wire drag-to-arrange when Branding page owns pin config */}
+                    <span className="text-[9px] font-semibold text-sidebar-muted-light">
+                      {t('nav.pinsHint')}
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-px">
+                  {pinItems.map(i => (
+                    <NavItemRow
+                      key={`pin-${i.path}`}
+                      item={i}
+                      active={isActiveRoute(i.path)}
+                      collapsed={collapsed}
+                      onClick={onClose}
+                    />
+                  ))}
+                </div>
+                <div className="h-px bg-sidebar-border mx-1 my-3" />
+              </>
+            )}
+            {/* Groups */}
             <div className="space-y-1">
-              {navGroups.map(renderGroup)}
+              {navGroups.map((g, idx) => renderGroup(g, idx))}
             </div>
           </div>
         </ScrollArea>
+
 
         {/* Attention card (bottom) */}
         <SidebarAttentionCard collapsed={collapsed} />
