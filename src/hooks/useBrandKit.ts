@@ -44,7 +44,7 @@ export const useSaveBrandKit = () => {
       const { error } = await supabase
         .from('settings')
         .upsert(
-          { section: SECTION, key: KEY, value: kit as unknown as Record<string, unknown> },
+          [{ section: SECTION, key: KEY, value: kit as unknown as Record<string, unknown> }],
           { onConflict: 'section,key' }
         );
       if (error) throw error;
