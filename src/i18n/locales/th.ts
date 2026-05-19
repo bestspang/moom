@@ -1640,7 +1640,7 @@ export default {
       radius: 'ความโค้งของมุม',
       radiusMin: 'เหลี่ยม',
       radiusMax: 'มนมาก',
-      uploadLogo: 'อัปโหลดโลโก้ (เร็วๆ นี้)',
+      uploadLogoLegacy: 'อัปโหลดโลโก้ (เร็วๆ นี้)',
       preset: 'พรีเซ็ตสี',
       primary: 'สีหลัก',
       secondary: 'สีรอง',
