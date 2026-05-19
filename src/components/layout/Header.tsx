@@ -32,6 +32,7 @@ export const Header = ({ onMenuToggle }: HeaderProps) => {
   const { user, role, allRoles, signOut } = useAuth();
   const { can } = usePermissions();
   const navigate = useNavigate();
+  const { surface } = useSurface();
 
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data: recentNotifications = [] } = useRecentNotifications(5);
