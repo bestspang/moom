@@ -6,7 +6,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { logActivity } from '@/lib/activityLogger';
 import { queryKeys } from '@/lib/queryKeys';
 
-export type SettingsSection = 'general' | 'class' | 'client' | 'package' | 'contracts';
+export type SettingsSection = 'general' | 'class' | 'client' | 'package' | 'contracts' | 'branding';
 
 export interface Setting {
   id: string;
