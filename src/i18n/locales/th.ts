@@ -1670,6 +1670,16 @@ export default {
         classicFriendly: 'คลาสสิก · เป็นมิตร',
         boldSporty: 'หนา · สปอร์ต',
       },
+      deviceMobile: 'แอป',
+      deviceWeb: 'เว็บ',
+      deviceCard: 'การ์ด',
+      summaryTitle: 'สรุปแบรนด์',
+      summaryName: 'ชื่อ',
+      summaryFont: 'ฟอนต์',
+      summaryRadius: 'มุมโค้ง',
+      summaryStyle: 'รูปแบบโลโก้',
+      saveBarSave: 'บันทึก',
+      saveBarCancel: 'ยกเลิก',
     },
     general: {
       // Sidebar menu
