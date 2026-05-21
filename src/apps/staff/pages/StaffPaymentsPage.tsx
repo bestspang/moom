@@ -58,6 +58,23 @@ export default function StaffPaymentsPage() {
     return 'text-muted-foreground';
   };
 
+  const statusLabel = (status: string | null) => {
+    switch (status) {
+      case 'approved':
+        return t('transferSlips.paid');
+      case 'needs_review':
+        return t('transferSlips.needsReview');
+      case 'pending':
+        return t('common.pending');
+      case 'rejected':
+        return t('transferSlips.rejected');
+      case 'voided':
+        return t('transferSlips.voided');
+      default:
+        return status ?? '-';
+    }
+  };
+
   const handleApprove = async () => {
     if (!selectedSlip) return;
     await approveSlip.mutateAsync({ slipId: selectedSlip.id });
@@ -67,7 +84,7 @@ export default function StaffPaymentsPage() {
 
   const handleReject = async () => {
     if (!selectedSlip) return;
-    await rejectSlip.mutateAsync({ slipId: selectedSlip.id, reviewNote: 'Rejected by staff' });
+    await rejectSlip.mutateAsync({ slipId: selectedSlip.id, reviewNote: t('transferSlips.rejected') });
     setSelectedSlip(null);
     refetch();
   };
@@ -92,7 +109,7 @@ export default function StaffPaymentsPage() {
                 meta={`฿${Number(s.amount_thb ?? 0).toLocaleString()}`}
                 trailing={
                   <span className={`text-xs font-medium ${statusColor(s.status)}`}>
-                    {s.status}
+                    {statusLabel(s.status)}
                   </span>
                 }
                 onClick={() => setSelectedSlip(s)}
@@ -112,7 +129,7 @@ export default function StaffPaymentsPage() {
               {/* Slip image */}
               {selectedSlip.slip_file_url ? (
                 <div className="rounded-lg overflow-hidden border border-border">
-                  <img src={selectedSlip.slip_file_url} alt="Transfer slip" className="w-full object-contain max-h-56" />
+                  <img src={selectedSlip.slip_file_url} alt={t('transferSlips.slipDetail')} className="w-full object-contain max-h-56" />
                 </div>
               ) : (
                 <div className="flex items-center justify-center rounded-lg border border-dashed border-border h-32">
@@ -123,20 +140,20 @@ export default function StaffPaymentsPage() {
               {/* Details */}
               <div className="rounded-lg border border-border p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('staff.membersTitle')}</span>
+                  <span className="text-muted-foreground">{t('transferSlips.soldTo')}</span>
                   <span className="font-medium">{memberName(selectedSlip)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('staff.paymentsTitle')}</span>
+                  <span className="text-muted-foreground">{t('transferSlips.amount')}</span>
                   <span className="font-semibold text-foreground">฿{Number(selectedSlip.amount_thb ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className={`font-medium ${statusColor(selectedSlip.status)}`}>{selectedSlip.status}</span>
+                  <span className="text-muted-foreground">{t('common.status')}</span>
+                  <span className={`font-medium ${statusColor(selectedSlip.status)}`}>{statusLabel(selectedSlip.status)}</span>
                 </div>
                 {selectedSlip.slip_datetime && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date</span>
+                    <span className="text-muted-foreground">{t('finance.dateTime')}</span>
                     <span>{format(parseISO(selectedSlip.slip_datetime), 'd MMM yyyy', { locale: dateLocale })}</span>
                   </div>
                 )}
@@ -154,13 +171,13 @@ export default function StaffPaymentsPage() {
                     {rejectSlip.isPending
                       ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                       : <XCircle className="h-4 w-4 mr-1.5" />}
-                    Reject
+                    {t('transferSlips.reject')}
                   </Button>
                   <Button onClick={handleApprove} disabled={approveSlip.isPending || rejectSlip.isPending}>
                     {approveSlip.isPending
                       ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                       : <CheckCircle className="h-4 w-4 mr-1.5" />}
-                    Approve
+                    {t('transferSlips.approve')}
                   </Button>
                 </div>
               )}
