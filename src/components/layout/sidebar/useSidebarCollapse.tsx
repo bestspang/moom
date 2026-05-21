@@ -23,7 +23,9 @@ export const SidebarCollapseProvider = ({ children }: { children: React.ReactNod
   useEffect(() => {
     try {
       localStorage.setItem(KEY, collapsed ? '1' : '0');
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [collapsed]);
 
   const toggle = useCallback(() => setCollapsedState(c => !c), []);

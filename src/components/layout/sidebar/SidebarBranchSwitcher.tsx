@@ -34,7 +34,9 @@ export const SidebarBranchSwitcher = ({ collapsed }: Props) => {
 
   const handleSelect = (id: string) => {
     setActiveId(id);
-    try { localStorage.setItem(KEY, id); } catch {}
+    try { localStorage.setItem(KEY, id); } catch {
+      // ignore
+    }
     setOpen(false);
   };
 

@@ -133,12 +133,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     try {
       const raw = localStorage.getItem(GROUPS_KEY);
       if (raw) return JSON.parse(raw);
-    } catch {}
+    } catch {
+      // ignore
+    }
     return { home: true, people: true, business: true, gym: false, comms: false, org: false, settings: false };
   });
 
   React.useEffect(() => {
-    try { localStorage.setItem(GROUPS_KEY, JSON.stringify(openGroups)); } catch {}
+    try { localStorage.setItem(GROUPS_KEY, JSON.stringify(openGroups)); } catch {
+      // ignore
+    }
   }, [openGroups]);
 
   // Badge data — existing hooks only

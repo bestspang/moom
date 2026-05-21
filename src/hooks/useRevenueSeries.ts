@@ -57,7 +57,7 @@ export const useRevenueSeries = (range: RevenueRange) => {
       }
 
       // Day-bucket modes
-      let days: Date[] = [];
+      const days: Date[] = [];
       if (range === '7d') {
         for (let i = 6; i >= 0; i--) {
           days.push(new Date(Date.now() - i * 86400000));

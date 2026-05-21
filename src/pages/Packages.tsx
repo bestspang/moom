@@ -36,7 +36,13 @@ const Packages = () => {
     if (typeof window === 'undefined') return 'table';
     return (localStorage.getItem(VIEW_KEY) as ViewMode) || 'table';
   });
-  useEffect(() => { try { localStorage.setItem(VIEW_KEY, view); } catch {} }, [view]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // ignore
+    }
+  }, [view]);
 
   const PACKAGE_STATUS_OPTIONS = [
     { value: 'on_sale', label: t('common.onSale') },

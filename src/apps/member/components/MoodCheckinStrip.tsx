@@ -51,7 +51,11 @@ export function MoodCheckinStrip() {
         {picked && (
           <button
             onClick={() => {
-              try { localStorage.removeItem(todayKey()); } catch {}
+              try {
+                localStorage.removeItem(todayKey());
+              } catch {
+                // ignore
+              }
               setPicked(null);
             }}
             className="text-xs font-semibold text-primary px-2 py-1 rounded hover:bg-primary/5"
