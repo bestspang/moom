@@ -1,83 +1,61 @@
-## 1. ขอบเขต
 
-ต่อยอดงาน Brand Kit ที่ propagate แล้ว ด้วย 4 ส่วน:
+## Findings from Live Preview (admin dashboard at `/`)
 
-| # | งาน | Deliverable |
-|---|---|---|
-| A | Playwright E2E: Save brand → ทุกหน้าอัปเดต | `e2e/brand-propagation.spec.ts` |
-| B | CSS-var coverage guard: `BrandTokens` ครอบทุก var ที่ใช้จริง + ไม่ตกหล่นข้าม theme | `src/components/admin-ds/BrandTokens.test.ts` + helper |
-| C | SMOKE_TEST edge cases (logoUrl ว่าง / name ว่าง / save ซ้อนกัน) | append `docs/SMOKE_TEST.md` |
-| D | Audit + scanner สำหรับ edge functions (email/invite/receipt/notification) | `docs/audit-brand-backend.md`, ขยาย `check-brand-consumers.mjs` |
+Inspected the dashboard at viewport 1366×768 logged in as Owner. Verified each card against the database + source code to separate REAL bugs from "correct-but-zero" dynamic data.
 
-## 2. รายละเอียดแต่ละ Step
+### Modules touched / status
 
-### A — Playwright E2E
-ไฟล์ใหม่ `e2e/brand-propagation.spec.ts`
-1. login admin (helper เดิม), seed `settings.branding.brand_kit` ผ่าน supabase REST → set `name='E2E BRAND ' + nonce`, ลบ `logoUrl`
-2. ไป `/settings/branding`, อ่านชื่อช่อง name ตรงกับ seed
-3. แก้ name → "E2E NEW " + nonce, กด **Save** → assert toast
-4. ตรวจครบ 3 จุด:
-   - Sidebar header text contains new name
-   - Sidebar footer "© {year} {new name}"
-   - `await page.title()` === new name
-   - `link[rel~='icon']` href แล้ว set ถ้า logoUrl != ''
-5. cross-surface: navigate `/lobby`, `/members`, `/login` (logout flow) — title ยังตรงทุกหน้า
-6. cleanup: restore เป็น `DEFAULT_BRAND` snapshot ที่ snapshot ตอนเริ่ม
-7. skip gracefully ถ้า E2E secrets ไม่มี (เหมือน qr-checkin.spec)
+| # | Area | Status | Evidence |
+|---|---|---|---|
+| 1 | `SidebarBranchSwitcher` — subtitle | **BROKEN** | UI shows raw key `locations.switchBranch` because the key does not exist in `src/i18n/locales/{en,th}.ts`. The `?? 'สลับสาขา'` fallback never fires (i18next returns the key string, which is truthy). |
+| 2 | `LivePulseCard` 12-hour sparkline | **PARTIAL / UX bug** | Real data = `[0,0,…,0]`. Current `Sparkline` collapses to a flat orange line at the bottom of the card — looks broken/static, not "no data". Data layer (`useCheckin12hSeries`) is correct & live. |
+| 3 | Revenue Forecast card (`฿9,999` last/next month) | **WORKING** | Verified against DB: `select sum(amount) from transactions where status='paid' and last month` = `9999.00`. Number is real and dynamic. No change. |
+| 4 | KPI strip (เช็คอิน/กำลังเรียน/คลาส/รายได้/สมาชิก) | **WORKING** | Loads from live hooks after initial skeleton; values match DB (0/0/0/฿0/1). No change. |
+| 5 | Revenue 30-day chart, Business Health, Goals, Activity feed, Daily Briefing | **WORKING** | All read from Supabase via TanStack Query + `useRealtimeSync` invalidation. No hardcoded numbers found (grep for `9999` returned only CSS `border-radius`). No change. |
 
-### B — CSS-vars Coverage Guard
-ไฟล์ใหม่ `src/components/admin-ds/BrandTokens.test.ts`
-- อ่าน `src/index.css` ดิบ → regex หาทุก `var(--xxx)` ที่ใช้ใน rules ของ `index.css`
-- เทียบกับ `BrandToken` union — assert ว่า var ที่ผูกกับแบรนด์ (primary, accent, radius, font-admin, sidebar-*) ปรากฏใน `BrandToken` enum
-- เทียบ light vs dark mode: parse `:root { … }` block และ `.dark { … }` block, assert: ทุก key ใน `:root` ต้องมีใน `.dark` (และในทางกลับ) — ถ้าตกหล่นจะ fail พร้อมรายชื่อ var
-- เทียบ `applyBrandFromKit` (`KEYS_TOUCHED`) กับ `BrandKit` fields → assert ทุก field สีในkit ถูก map (primary→--primary, accent→--accent, radius→--radius, font→--font-admin); ถ้ามี field ใหม่ใน BrandKit ต้องประกาศ map หรือ skip อย่างชัดเจน
+### What must be preserved
 
-### C — SMOKE_TEST Edge Cases
-Append section "Brand Kit — Edge Cases" 8 ข้อ:
-1. `logoUrl` ว่าง → favicon คงเดิม (ไม่ลบ tab icon)
-2. `name` ว่าง → fallback เป็น `DEFAULT_BRAND.name` (ไม่ปล่อย title ว่าง)
-3. Save 3 รอบติด ภายใน 5 วินาที → ไม่มี race / sidebar แสดงค่าสุดท้าย
-4. เปลี่ยน primary color → CSS var `--primary` เปลี่ยน, dark mode toggle แล้วยังตรง
-5. Reset → ทุก surface revert เป็น DEFAULT_BRAND
-6. Upload logo ใหญ่ >2MB → toast error, brand เดิมไม่ถูกทับ
-7. ปิด browser แล้วเปิดใหม่ → brand persistent (โหลดจาก DB)
-8. Trainer login → เปิด Settings/Branding → ปุ่ม Save disabled แต่ preview ได้
+- `useCheckin12hSeries`, `useRevenueForecast`, `useDashboardStats`, `useRecentActivity`, `useDailyBriefing` — all already dynamic; do **not** touch.
+- `Sparkline` visual style (gradient + stroke), props API of `LivePulseCard`.
+- Realtime invalidation map in `useRealtimeSync`.
+- All other dashboard cards/components and their layouts.
 
-### D — Backend / Email Audit
-ไฟล์ใหม่ `docs/audit-brand-backend.md`
-- ตาราง consumer ทุก edge function: `invite-staff`, `auto-notifications`, `daily-briefing`, `approve-slip`, `sell-package`, `stripe-*`, `line-auth` — สถานะปัจจุบัน "ยังไม่มี email/PDF body ที่ embed ชื่อแบรนด์"
-- จุดที่ "ถ้าเพิ่ม email template ต้องผ่าน brand source": ระบุว่าควรใช้ `settings.branding.brand_kit` ผ่าน supabase service role ใน edge function (snippet ตัวอย่าง)
-- กฎข้อใหม่: ห้าม hardcode brand string ใน edge function file ใหม่ที่มี keyword `email|invoice|receipt|invite|html`
+### What is actually broken
 
-ขยาย `scripts/check-brand-consumers.mjs`:
-- เพิ่ม dynamic scan โหมดที่ 2: walk `supabase/functions/**/*.ts`, ข้าม `_shared/` และ comments
-- ถ้าเจอ literal `MOOM`, `MOOM CLUB`, `Moom Club`, หรือ `hello@moom.co` ในไฟล์ที่มีหนึ่งใน keyword `mail|email|invoice|receipt|invite|sendgrid|resend|html` → fail
-- การจับ CORS allowlist (`https://admin.moom.fit`) **ไม่นับ** (regex จงใจ match แค่ literal brand ในบริบท content)
+- **Bug A — Missing i18n key** `locations.switchBranch` (and surrounding `locations.*` namespace if not present) → user sees a literal dot-string in the sidebar in both EN and TH.
+- **Bug B — Sparkline "zero" rendering** misleads the user into thinking the trend chart is broken/hardcoded when there is simply no check-in activity in the last 12h.
 
-อัปเดต `AI_GUARDRAILS.md` Rule 15 ให้ครอบ edge functions และ link ไปยัง `docs/audit-brand-backend.md`.
+### Minimal-diff plan
 
-## 3. ที่ต้องเก็บไว้
-- `useBrandKit`, `BrandProvider`, `BrandMark` signature
-- โครง `BrandTokens.ts` + `applyBrandFromKit`
-- 171 tests เดิม + 7 brand tests
-- CORS allowlist ใน edge functions (เป็น infra, ไม่ใช่ brand display)
-- Playwright qr-checkin.spec ที่มีอยู่
+**A. Add missing i18n entry (both locales)**
+- `src/i18n/locales/th.ts` → add `locations: { switchBranch: 'สลับสาขา', … }` (only add `switchBranch`; preserve any existing `locations.*` keys).
+- `src/i18n/locales/en.ts` → add `locations: { switchBranch: 'Switch branch' }`.
+- Verify with `scripts/compare-i18n.mjs` — parity must stay green.
 
-## 4. Out of Scope
-- ไม่สร้าง email template จริง (จะทำตอนมี integration)
-- ไม่แตะ DB schema
-- ไม่ refactor `useBrandKit` ให้ realtime-subscribe (TanStack invalidate ก็พอ)
+**B. Sparkline empty-state in `LivePulseCard`**
+- Inside `Sparkline`, detect `max === 0` (all-zero series) and render a subtle dashed baseline + small muted label (`trendLabel` already conveys context; add a tiny "—" or use existing i18n `common.noData`). No new prop, no API change.
+- Keep current gradient/stroke when data > 0. Single component, ~6 LOC diff.
 
-## 5. Regression Checklist
-- [ ] `bun run test` ≥ 171 tests + ใหม่ ~5 (BrandTokens coverage)
-- [ ] `bun run build` ผ่าน
-- [ ] `node scripts/check-brand-consumers.mjs` ผ่าน (frontend + backend modes)
-- [ ] `bunx playwright test brand-propagation.spec.ts` ผ่าน (เมื่อมี E2E secrets) หรือ skip clean
-- [ ] CI workflow ไม่เพิ่ม step ใหม่ (script เดิม `check-brand-consumers.mjs` รับงาน backend mode ด้วย)
-- [ ] i18n parity ยัง 100%
+**C. No backend changes, no hook changes, no schema changes.**
 
-## 6. ผลลัพธ์
-- จับ regression brand ได้ทั้ง frontend และ backend อัตโนมัติ
-- มี E2E จริงยืนยันว่า Save → Sidebar/Header/Title/Favicon update
-- CSS vars ไม่ตกหล่นระหว่าง light/dark
-- เคสขอบเขต (ว่าง / save ติดกัน) อยู่ใน smoke checklist
+### Verification gate
+
+1. `bun run build` passes.
+2. Reload `/` in preview:
+   - Sidebar branch card subtitle reads `สลับสาขา` (TH) / `Switch branch` (EN).
+   - LIVE card shows a clear "no activity" baseline instead of a misleading flat orange line; once a check-in is recorded, the curve renders normally (manually verified by inserting a fake `member_attendance` row in a scratch session — read-only verification only).
+3. `bun run test` — existing 190 tests stay green.
+4. `node scripts/compare-i18n.mjs` — i18n parity unchanged.
+5. No regression on other dashboard cards (KPIs, forecast, chart, activity, briefing).
+
+### Doc updates
+
+- Append a one-line entry to `docs/DEVLOG.md` describing the two fixes.
+- Add a "Dashboard zero-data sparkline" item to `docs/SMOKE_TEST.md`.
+
+### Out of scope (explicitly)
+
+- No refactor of `LivePulseCard` API.
+- No change to revenue/forecast logic (numbers are real).
+- No new realtime subscriptions, no DB migration.
+- Other surfaces (Member/Trainer/Staff) — not inspected this round; can be a follow-up if you want.
