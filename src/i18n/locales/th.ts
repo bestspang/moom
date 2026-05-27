@@ -1229,6 +1229,7 @@ export default {
   // Locations
   locations: {
     title: 'สาขา',
+    switchBranch: 'สลับสาขา',
     searchPlaceholder: 'ค้นหาชื่อสาขา',
     id: 'รหัส',
     locationName: 'ชื่อสาขา',
