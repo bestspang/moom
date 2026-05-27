@@ -1231,6 +1231,7 @@ export default {
   // Locations
   locations: {
     title: 'Locations',
+    switchBranch: 'Switch branch',
     searchPlaceholder: 'Search location name',
     id: 'ID',
     locationName: 'Location name',
