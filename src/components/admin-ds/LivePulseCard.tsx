@@ -24,11 +24,13 @@ const Sparkline: React.FC<{ data: number[]; height?: number }> = ({
   const w = 220;
   const h = height;
   const max = Math.max(...safe);
+  const isEmpty = max <= 0;
   const min = Math.min(...safe);
   const range = max - min || 1;
   const pts = safe.map((v, i) => {
     const x = (i / (safe.length - 1)) * w;
-    const y = h - ((v - min) / range) * (h - 4) - 2;
+    // For empty series, draw the baseline near the bottom; otherwise scale.
+    const y = isEmpty ? h - 2 : h - ((v - min) / range) * (h - 4) - 2;
     return [x, y] as const;
   });
   const path = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
@@ -47,18 +49,21 @@ const Sparkline: React.FC<{ data: number[]; height?: number }> = ({
           <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill="url(#live-pulse-area)" />
+      {!isEmpty && <path d={area} fill="url(#live-pulse-area)" />}
       <path
         d={path}
         fill="none"
-        stroke="hsl(var(--primary))"
-        strokeWidth="2"
+        stroke={isEmpty ? 'hsl(215 20% 45%)' : 'hsl(var(--primary))'}
+        strokeWidth={isEmpty ? 1.5 : 2}
+        strokeOpacity={isEmpty ? 0.5 : 1}
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeDasharray={isEmpty ? '3 4' : undefined}
       />
     </svg>
   );
 };
+
 
 /**
  * Dark "LIVE" hero card for admin Dashboard.
