@@ -42,9 +42,9 @@ export function BulkActionBar({
 
   if (selectedCount === 0) return null;
 
-  return (
+  const bar = (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-card border border-border shadow-lg rounded-lg px-4 py-3 animate-in slide-in-from-bottom-4 duration-200">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-card border border-border shadow-lg rounded-lg px-4 py-3 animate-in slide-in-from-bottom-4 duration-200" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         <span className="text-sm font-medium text-foreground whitespace-nowrap">
           {selectedCount} {t('bulk.selected')}
         </span>
