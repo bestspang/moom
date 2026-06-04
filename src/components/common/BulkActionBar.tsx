@@ -127,4 +127,6 @@ export function BulkActionBar({
       </AlertDialog>
     </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(bar, document.body) : bar;
 }
