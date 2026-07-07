@@ -7,21 +7,26 @@ import { getBangkokDayRange } from '@/lib/dateRange';
 import type { RevenueRange } from '@/components/admin-ds';
 
 export interface RevenueSeriesPoint {
-  date: string;   // ISO yyyy-mm-dd
-  label: string;  // short display label (e.g. "1 พ.ย." or "1")
+  date: string;
+  label: string;
   value: number;
 }
 
-const labelFor = (d: Date): string =>
-  `${d.getDate()}`;
+export interface RevenueSeriesResult {
+  points: RevenueSeriesPoint[];
+  total: number;
+  /** Count of status='paid' transactions within the same window that have paid_at IS NULL. */
+  missingPaidAtCount: number;
+}
+
+const labelFor = (d: Date): string => `${d.getDate()}`;
 
 /**
  * Revenue time series for the dashboard area chart.
- * Returns one bucket per day. Range:
- *  - 7d  : last 7 days
- *  - 30d : last 30 days
- *  - mtd : month-to-date
- *  - ytd : last 12 months (bucketed by month — value still per-month, label = month)
+ * Uses `created_at` as the bucket key (the app records paid transactions
+ * via created_at). Also reports how many `status='paid'` rows in the same
+ * window have `paid_at IS NULL` so the UI can warn instead of silently
+ * showing ฿0 when data quality is bad.
  */
 export const useRevenueSeries = (range: RevenueRange) => {
   const { user } = useAuth();
@@ -30,12 +35,14 @@ export const useRevenueSeries = (range: RevenueRange) => {
     queryKey: [...queryKeys.dashboardStats(), 'revenue-series', range],
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
-    queryFn: async (): Promise<RevenueSeriesPoint[]> => {
+    queryFn: async (): Promise<RevenueSeriesResult> => {
       const now = new Date();
 
+      let windowStart: string;
+      let windowEnd: string;
+      const points: RevenueSeriesPoint[] = [];
+
       if (range === 'ytd') {
-        // 12 months bucket
-        const points: RevenueSeriesPoint[] = [];
         for (let i = 11; i >= 0; i--) {
           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
           const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
@@ -53,48 +60,49 @@ export const useRevenueSeries = (range: RevenueRange) => {
             value,
           });
         }
-        return points;
+        windowStart = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString();
+        windowEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+      } else {
+        const days: Date[] = [];
+        if (range === '7d') {
+          for (let i = 6; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000));
+        } else if (range === '30d') {
+          for (let i = 29; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000));
+        } else {
+          const first = new Date(now.getFullYear(), now.getMonth(), 1);
+          for (let d = new Date(first); d <= now; d.setDate(d.getDate() + 1)) days.push(new Date(d));
+        }
+
+        const results = await Promise.all(
+          days.map(async (d) => {
+            const r = getBangkokDayRange(d);
+            const { data } = await supabase
+              .from('transactions')
+              .select('amount')
+              .gte('created_at', r.start)
+              .lt('created_at', r.end)
+              .eq('status', 'paid');
+            const value = (data || []).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+            return { date: formatDateForDB(d), label: labelFor(d), value };
+          }),
+        );
+        points.push(...results);
+        windowStart = getBangkokDayRange(days[0]).start;
+        windowEnd = getBangkokDayRange(days[days.length - 1]).end;
       }
 
-      // Day-bucket modes
-      const days: Date[] = [];
-      if (range === '7d') {
-        for (let i = 6; i >= 0; i--) {
-          days.push(new Date(Date.now() - i * 86400000));
-        }
-      } else if (range === '30d') {
-        for (let i = 29; i >= 0; i--) {
-          days.push(new Date(Date.now() - i * 86400000));
-        }
-      } else if (range === 'mtd') {
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        for (let d = new Date(first); d <= now; d.setDate(d.getDate() + 1)) {
-          days.push(new Date(d));
-        }
-      }
+      const total = points.reduce((s, p) => s + p.value, 0);
 
-      const results = await Promise.all(
-        days.map(async (d) => {
-          const range = getBangkokDayRange(d);
-          const { data } = await supabase
-            .from('transactions')
-            .select('amount')
-            .gte('created_at', range.start)
-            .lt('created_at', range.end)
-            .eq('status', 'paid');
-          const value = (data || []).reduce(
-            (s, t) => s + (Number(t.amount) || 0),
-            0,
-          );
-          return {
-            date: formatDateForDB(d),
-            label: labelFor(d),
-            value,
-          };
-        }),
-      );
+      // How many paid transactions in this window have NO paid_at set?
+      const { count: missingPaidAtCount } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', windowStart)
+        .lt('created_at', windowEnd)
+        .eq('status', 'paid')
+        .is('paid_at', null);
 
-      return results;
+      return { points, total, missingPaidAtCount: missingPaidAtCount || 0 };
     },
   });
 };

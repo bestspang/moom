@@ -14,6 +14,7 @@ import {
   RevenueAreaChart,
   type RevenueRange,
 } from '@/components/admin-ds';
+import { CardQueryError } from '@/apps/shared/components/CardQueryError';
 import {
   useDashboardStats,
   useHighRiskMembers,
@@ -72,13 +73,21 @@ const Dashboard = () => {
   const [revenueRange, setRevenueRange] = useState<RevenueRange>('30d');
 
   // Fetch real data
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useDashboardStats();
   const { data: highRiskMembers = [] } = useHighRiskMembers();
   const { data: rawScheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(new Date());
   const { data: trends } = useDashboardTrends();
   const { data: slipStats } = useTransferSlipStats();
   const { data: locations = [] } = useLocations();
-  const { data: revenueSeries = [], isLoading: revenueSeriesLoading } = useRevenueSeries(revenueRange);
+  const {
+    data: revenueSeriesResult,
+    isLoading: revenueSeriesLoading,
+    isError: revenueSeriesError,
+    error: revenueSeriesErr,
+    refetch: refetchRevenueSeries,
+  } = useRevenueSeries(revenueRange);
+  const revenueSeries = revenueSeriesResult?.points ?? [];
+  const missingPaidAt = revenueSeriesResult?.missingPaidAtCount ?? 0;
   const { data: checkin12h = [] } = useCheckin12hSeries();
   const pendingSlips = slipStats?.needs_review || 0;
 
@@ -158,84 +167,91 @@ const Dashboard = () => {
       />
 
       {/* ── Row 2: 5 KPI tiles (preserved) ───────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {statsLoading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <StatCard
-              variant="ds-chip"
-              title={t('dashboard.allCheckinsToday')}
-              value={stats?.checkinsToday || 0}
-              subtitle={t('dashboardExtra.mainLocation')}
-              color="teal"
-              icon={<DoorOpen className="h-4 w-4" />}
-              trend={trends?.checkins7d}
-              comparison={
-                checkinVsLastWeek !== undefined
-                  ? { value: checkinVsLastWeek, label: `vs ${lastDayName}` }
-                  : undefined
-              }
-              onClick={() => navigate('/lobby')}
-            />
-            <StatCard
-              variant="ds-chip"
-              title={t('dashboard.currentlyInClass')}
-              value={stats?.currentlyInClass || 0}
-              subtitle={t('dashboardExtra.attendees')}
-              color="orange"
-              icon={
-                <span className="relative inline-flex items-center justify-center">
-                  <Dumbbell className="h-4 w-4" />
-                  {(stats?.currentlyInClass ?? 0) > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-admin-pulse" />
-                  )}
-                </span>
-              }
-              onClick={() => navigate('/calendar')}
-            />
-            <StatCard
-              variant="ds-chip"
-              title={t('dashboard.classesScheduledToday')}
-              value={stats?.classesToday || 0}
-              color="blue"
-              icon={<CalendarCheck className="h-4 w-4" />}
-              trend={trends?.classes7d}
-              onClick={() => navigate('/calendar')}
-            />
-            {can('finance', 'read') && (
+      {statsError ? (
+        <CardQueryError
+          message={(statsErr as Error)?.message}
+          onRetry={() => refetchStats()}
+        />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {statsLoading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
               <StatCard
                 variant="ds-chip"
-                title={t('dashboardExtra.revenueToday')}
-                value={formatCurrency(stats?.todayRevenue || 0)}
-                color="magenta"
-                icon={<Banknote className="h-4 w-4" />}
+                title={t('dashboard.allCheckinsToday')}
+                value={stats?.checkinsToday || 0}
+                subtitle={t('dashboardExtra.mainLocation')}
+                color="teal"
+                icon={<DoorOpen className="h-4 w-4" />}
+                trend={trends?.checkins7d}
                 comparison={
-                  revenueVsLastWeek !== undefined
-                    ? { value: revenueVsLastWeek, label: `vs ${lastDayName}` }
+                  checkinVsLastWeek !== undefined
+                    ? { value: checkinVsLastWeek, label: `vs ${lastDayName}` }
                     : undefined
                 }
-                onClick={() => navigate('/finance')}
+                onClick={() => navigate('/lobby')}
               />
-            )}
-            <StatCard
-              variant="ds-chip"
-              title={t('dashboardExtra.activeMembers')}
-              value={stats?.activeMembers || 0}
-              subtitle={t('dashboardExtra.members')}
-              color="blue"
-              icon={<Users className="h-4 w-4" />}
-              onClick={() => navigate('/members')}
-            />
-          </>
-        )}
-      </div>
+              <StatCard
+                variant="ds-chip"
+                title={t('dashboard.currentlyInClass')}
+                value={stats?.currentlyInClass || 0}
+                subtitle={t('dashboardExtra.attendees')}
+                color="orange"
+                icon={
+                  <span className="relative inline-flex items-center justify-center">
+                    <Dumbbell className="h-4 w-4" />
+                    {(stats?.currentlyInClass ?? 0) > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-admin-pulse" />
+                    )}
+                  </span>
+                }
+                onClick={() => navigate('/calendar')}
+              />
+              <StatCard
+                variant="ds-chip"
+                title={t('dashboard.classesScheduledToday')}
+                value={stats?.classesToday || 0}
+                color="blue"
+                icon={<CalendarCheck className="h-4 w-4" />}
+                trend={trends?.classes7d}
+                onClick={() => navigate('/calendar')}
+              />
+              {can('finance', 'read') && (
+                <StatCard
+                  variant="ds-chip"
+                  title={t('dashboardExtra.revenueToday')}
+                  value={formatCurrency(stats?.todayRevenue || 0)}
+                  color="magenta"
+                  icon={<Banknote className="h-4 w-4" />}
+                  comparison={
+                    revenueVsLastWeek !== undefined
+                      ? { value: revenueVsLastWeek, label: `vs ${lastDayName}` }
+                      : undefined
+                  }
+                  onClick={() => navigate('/finance')}
+                />
+              )}
+              <StatCard
+                variant="ds-chip"
+                title={t('dashboardExtra.activeMembers')}
+                value={stats?.activeMembers || 0}
+                subtitle={t('dashboardExtra.members')}
+                color="blue"
+                icon={<Users className="h-4 w-4" />}
+                onClick={() => navigate('/members')}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Row 3: Revenue chart (2/3) + Recent Activity (1/3) ── */}
       {can('finance', 'read') ? (
@@ -254,6 +270,16 @@ const Dashboard = () => {
                 'ytd': 'YTD',
               }}
               loading={revenueSeriesLoading}
+              isError={revenueSeriesError}
+              errorMessage={(revenueSeriesErr as Error)?.message}
+              onRetry={() => refetchRevenueSeries()}
+              warning={
+                missingPaidAt > 0
+                  ? revenueTotal === 0
+                    ? t('common.revenueMissingPaidAt', { count: missingPaidAt })
+                    : t('common.revenueSomeMissingPaidAt', { count: missingPaidAt })
+                  : undefined
+              }
             />
           </div>
           <RecentActivityFeed />

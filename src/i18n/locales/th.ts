@@ -57,6 +57,9 @@ export default {
     unlimited: 'ไม่จำกัด',
     failedToLoad: 'โหลดข้อมูลไม่สำเร็จ',
     retry: 'ลองใหม่',
+    cardError: 'โหลดส่วนนี้ไม่สำเร็จ',
+    revenueMissingPaidAt: 'ไม่มีรายได้ในช่วงเวลานี้ · มี {{count}} รายการที่จ่ายแล้วแต่ยังไม่มี paid_at — กราฟจะว่างจนกว่าจะเติมข้อมูล',
+    revenueSomeMissingPaidAt: 'มี {{count}} รายการที่จ่ายแล้วแต่ยังไม่มี paid_at',
   },
 
   // Bulk actions

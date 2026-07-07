@@ -7,16 +7,21 @@ import { useRevenueByMonth, useMemberGrowth, useClassFillRate, useLeadFunnel } f
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
+import { CardQueryError } from '@/apps/shared/components/CardQueryError';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => `${i + 6}:00`);
 
 const Analytics = () => {
   const { t } = useLanguage();
-  const { data: revenueData, isLoading: revLoading } = useRevenueByMonth();
-  const { data: growthData, isLoading: growthLoading } = useMemberGrowth();
-  const { data: fillData, isLoading: fillLoading } = useClassFillRate();
-  const { data: funnelData, isLoading: funnelLoading } = useLeadFunnel();
+  const rev = useRevenueByMonth();
+  const growth = useMemberGrowth();
+  const fill = useClassFillRate();
+  const funnel = useLeadFunnel();
+  const { data: revenueData, isLoading: revLoading } = rev;
+  const { data: growthData, isLoading: growthLoading } = growth;
+  const { data: fillData, isLoading: fillLoading } = fill;
+  const { data: funnelData, isLoading: funnelLoading } = funnel;
 
   return (
     <div>
@@ -32,7 +37,9 @@ const Analytics = () => {
             <CardTitle className="text-sm font-medium">{t('analytics.revenueTrends')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {revLoading ? (
+            {rev.isError ? (
+              <CardQueryError message={(rev.error as Error)?.message} onRetry={() => rev.refetch()} />
+            ) : revLoading ? (
               <Skeleton className="h-[250px] w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={250}>
@@ -58,7 +65,9 @@ const Analytics = () => {
             <CardTitle className="text-sm font-medium">{t('analytics.memberGrowth')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {growthLoading ? (
+            {growth.isError ? (
+              <CardQueryError message={(growth.error as Error)?.message} onRetry={() => growth.refetch()} />
+            ) : growthLoading ? (
               <Skeleton className="h-[250px] w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={250}>
@@ -85,7 +94,9 @@ const Analytics = () => {
             <CardTitle className="text-sm font-medium">{t('analytics.classFillRate')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {fillLoading ? (
+            {fill.isError ? (
+              <CardQueryError message={(fill.error as Error)?.message} onRetry={() => fill.refetch()} />
+            ) : fillLoading ? (
               <Skeleton className="h-[250px] w-full" />
             ) : (
               <div className="overflow-x-auto">
@@ -146,7 +157,9 @@ const Analytics = () => {
             <CardTitle className="text-sm font-medium">{t('analytics.leadFunnel')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {funnelLoading ? (
+            {funnel.isError ? (
+              <CardQueryError message={(funnel.error as Error)?.message} onRetry={() => funnel.refetch()} />
+            ) : funnelLoading ? (
               <Skeleton className="h-[250px] w-full" />
             ) : (
               <div className="space-y-3 py-4">
