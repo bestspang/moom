@@ -1,64 +1,30 @@
-## Problem
+# Recheck: Member Self-Serve Payment
 
-`/liff/member` and `/liff/trainer` still render "Coming Soon" shells (`LiffMemberApp.tsx`, `LiffTrainerApp.tsx`), and `LiffCallback.tsx` routes users into those dead-ends on error and as its default target. The real apps live at `/member` and `/trainer`.
+## Acceptance criteria — status
 
-## Changes
+| # | Criterion | Status | Evidence |
+|---|-----------|--------|----------|
+| 1 | Card checkout end-to-end, member_packages created, activity_log written | ✅ Pass | `stripe-webhook` calls `process_stripe_payment` RPC atomically (transaction + member_package + billing + audit) |
+| 2 | PromptPay option creates Stripe session containing `promptpay` | ✅ Pass | `useMemberStripeCheckout` passes `['promptpay','card']`; edge function validates + forwards to `stripe.checkout.sessions.create` |
+| 3 | Replayed webhook does not double-fulfill | ✅ Pass | Guard in `fulfillCheckoutSession`: early-return when `tx.status === 'paid'`; RPC also idempotent |
+| 4 | Slip upload path unchanged | ✅ Pass | `transfer` branch of `handlePurchase` still routes to `/member/upload-slip`; `member_upload_slip` RPC untouched |
 
-### 1. New redirect component — `src/pages/liff/LiffRedirect.tsx` (new)
-Small component that:
-- Reads `target: 'member' | 'trainer'` prop.
-- Preserves `location.search` (query params) and `location.hash`.
-- If a `liff.state` query param is present, uses it as the destination path (LINE deep-link convention); otherwise uses `/member` or `/trainer`.
-- Calls `navigate(destination, { replace: true })` inside `useEffect` — client-side redirect keeps auth/session state intact.
-- Renders a minimal spinner while redirecting (reuse `Loader2` pattern already in `LiffCallback`).
+## Task compliance — deviations
 
-Because `/liff/*` is a shared route served from either hostname, staying within react-router (no full page reload) is correct and preserves login. No `buildCrossSurfaceUrl` needed here — same origin, same session.
+**A. Host resolution not using `hostname.ts`**
+`stripe-create-checkout` hardcodes `admin.moom.fit → member.moom.fit` swap. Task asked for the same host-resolution approach as `src/apps/shared/hostname.ts`. Current logic works for the 3 known origins but is brittle. Low priority — fix if we ever add a new host.
 
-### 2. `src/App.tsx`
-- Remove imports of `LiffMemberApp`, `LiffTrainerApp`.
-- Import `LiffRedirect`.
-- Replace routes:
-  - `/liff/member` → `<LiffRedirect target="member" />`
-  - `/liff/trainer` → `<LiffRedirect target="trainer" />`
-- Leave `/liff/callback` route untouched.
+**B. Success URL differs from spec**
+Spec said `/member/packages?payment=success|cancelled`. Implementation redirects to `/member/packages/{id}/purchase?payment=success|cancelled`. This is actually better because `MemberPurchasePage` owns the `?payment=` handler (shows success state, invalidates queries). No fix needed unless we want the spec's exact path.
 
-### 3. `src/pages/liff/LiffCallback.tsx`
-- Change default `targetPath` from `/liff/member` / `/liff/trainer` to `/member` / `/trainer`.
-- Change the error-state "back to app" button target from `/liff/member` to `/member`.
-- Keep the `liff.state` deep-link behavior and the rest of the flow (LINE login round-trip) untouched.
-- No hostname hardcoding; all navigation stays within react-router since `/member` and `/liff/*` are both served on the same host (`member.moom.fit`). `buildCrossSurfaceUrl` is not required for this same-origin case.
+**C. Query keys not centralized**
+`useMemberStripeCheckout` doesn't declare a query key (it's an invoke, not a query) — OK. But `MemberPurchasePage` invalidates `['available-packages']` and `['member-packages', memberId]` inline instead of via `src/lib/queryKeys.ts`. Minor CLAUDE.md convention gap.
 
-### 4. Delete orphaned files
-After the route swap, nothing else imports them (verified: only `App.tsx` and each other). Delete:
-- `src/pages/liff/LiffMemberApp.tsx`
-- `src/pages/liff/LiffTrainerApp.tsx`
-- `src/components/liff/LiffComingSoon.tsx` (only used by the two files above)
+## Recommendation
 
-Leave `LiffContext.tsx`, `LiffBottomNav.tsx`, and the `line-auth` edge function untouched.
+No functional bugs. The three deviations are cosmetic/convention. Recommend a small follow-up PR:
 
-### 5. i18n cleanup
-Remove now-unused keys from `src/i18n/locales/{en,th}.ts`:
-- `liff.member.*` (welcome, guest, linked, notLinked, memberId, nextClass, linkPrompt)
-- `liff.nav.*` (booking, packages, checkin, profile, home)
-- `liff.trainerNav.*` (schedule, attendance, ptLog, members)
-- `liff.comingSoonDescription`
+1. Move the inline query keys in `MemberPurchasePage` and `useMemberStripeCheckout` into `src/lib/queryKeys.ts`.
+2. Optionally centralize the admin→member host swap into `src/apps/shared/hostname.ts` (exported `getSurfaceHostForRequest(origin, surface)`) and reuse in the edge function via a small inline copy (edge functions can't import from `src/`).
 
-Keep the keys still used by `LiffCallback.tsx`: `liff.callbackError`, `liff.backToApp`, `liff.loggingIn`.
-
-Run `scripts/compare-i18n.mjs` mentally / by matching keys — both locales must stay in sync.
-
-### 6. Docs
-Append a short `docs/DEVLOG.md` entry noting the legacy LIFF shell removal and the redirect.
-
-## Regression Checklist
-- `/liff/member?foo=bar` → lands on `/member?foo=bar`, session preserved (single client-side redirect).
-- `/liff/member?liff.state=%2Fmember%2Fpackages` → lands on `/member/packages`.
-- `/liff/trainer` → lands on `/trainer`.
-- `/liff/callback` LINE login flow behaves identically for the success path.
-- On callback error, "back to app" button goes to `/member` (real home), not the Coming Soon shell.
-- `bun run build` clean (no dangling imports).
-- `bun run test` green.
-- No orphaned i18n keys (`en.ts` ↔ `th.ts` in sync).
-
-## Out of Scope
-`LiffContext`, `line-auth`, `SurfaceGuard`, RLS, auth flow.
+Say the word and I'll ship the follow-up. Otherwise, the feature is production-ready as delivered.
