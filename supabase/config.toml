@@ -54,3 +54,7 @@ verify_jwt = false
 # other functions instead of relying on the gateway default.
 [functions.streak-freeze]
 verify_jwt = false
+
+# Cron-invoked; does its own auth in-code (CRON_SECRET or service-role key).
+[functions.line-push-worker]
+verify_jwt = false
