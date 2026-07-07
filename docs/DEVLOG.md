@@ -1,6 +1,15 @@
 # Development Log — MOOM Fitness Platform
 
+## 2026-07-07 — Card error states, revenue paid_at warning, realtime coverage
+
+- New `CardQueryError` component (compact + block variants) under `src/apps/shared/components/`. Wired into Dashboard KPIs, `RevenueAreaChart`, and all four Analytics charts so failed queries render an inline error + Retry button instead of blank cards.
+- `useRevenueSeries` now returns `{ points, total, missingPaidAtCount }`. When the window has 0 revenue but paid transactions with `paid_at IS NULL` exist, `RevenueAreaChart` shows an amber warning strip explaining why the chart is empty. When both exist, a subtle "N missing paid_at" note appears.
+- `useRealtimeSync` invalidation map extended so `transactions` also refreshes `analytics-revenue-by-month`, `revenue-daily-30d`, `peak-hour-revenue`; `members`/`member_packages` refresh `analytics-member-growth`; `leads` refreshes `analytics-lead-funnel`. Dev-only `console.debug('[rt] invalidated ...)` added for QA.
+- `LanguageContext.t` signature widened to accept i18next options (`{ count }`) — backward compatible.
+- New Playwright regression `e2e/lobby-filters.spec.ts` fails if any request uses `location_status=eq.active` or if `/lobby` triggers any 4xx/5xx REST/functions response.
+
 ---
+
 ## 2026-04-30 — Admin UI alignment Phase 5 (visible chrome + shared primitives)
 
 **Goal:** Make admin pages visibly match `MOOM Design System/MOOM Admin UI Kit.html` (`ui_kits/admin/*.jsx`) — Phase 3/4 only changed global tokens, so most pages still looked unchanged. This pass updates the chrome and the shared primitives that propagate to ~all admin pages.
