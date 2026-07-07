@@ -16,8 +16,15 @@ export const useStripeCheckout = () => {
   const createCheckout = async (params: StripeCheckoutParams) => {
     setIsLoading(true);
     try {
+      // Per-attempt nonce so the server idempotency key isn't fixed per (member, package)
+      // — otherwise a member can never repurchase/renew the same package, and an abandoned
+      // pending checkout can never be retried. Double-submit is guarded by isLoading.
+      const nonce =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const { data, error } = await supabase.functions.invoke('stripe-create-checkout', {
-        body: params,
+        body: { ...params, nonce },
       });
 
       if (error) throw error;

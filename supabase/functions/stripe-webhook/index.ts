@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.93.3'
 import Stripe from 'https://esm.sh/stripe@18.5.0'
 
 // Stripe webhook doesn't need browser CORS, but keep headers for consistency
