@@ -105,6 +105,8 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   // ── Status Tier tables ──
   member_status_tiers: ['member-status-tier', 'status-tier-distribution'],
   sp_ledger: ['member-status-tier', 'sp-history'],
+  // ── LINE push outbox ──
+  line_push_outbox: ['line-push-outbox-stats'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
