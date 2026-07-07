@@ -112,6 +112,25 @@ async function fulfillCheckoutSession(
       console.warn('[stripe-webhook] Gamification event failed (non-blocking):', gamErr)
     }
   }
+
+  // Member-surface: enqueue a payment_success LINE push if the outbox table exists.
+  // Defensive try/catch — the table may not exist yet; missing table must not block fulfillment.
+  if (session.metadata?.surface === 'member' && tx.member_id) {
+    try {
+      await supabase.from('line_push_outbox').insert({
+        member_id: tx.member_id,
+        template: 'payment_success',
+        payload: {
+          transaction_id: tx.id,
+          package_id: tx.package_id,
+          package_name: tx.package_name_snapshot,
+          amount: tx.amount,
+        },
+      })
+    } catch (pushErr) {
+      console.warn('[stripe-webhook] line_push_outbox enqueue skipped (non-blocking):', pushErr)
+    }
+  }
 }
 
 Deno.serve(async (req) => {
