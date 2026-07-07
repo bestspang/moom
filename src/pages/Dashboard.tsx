@@ -14,6 +14,7 @@ import {
   RevenueAreaChart,
   type RevenueRange,
 } from '@/components/admin-ds';
+import { CardQueryError } from '@/apps/shared/components/CardQueryError';
 import {
   useDashboardStats,
   useHighRiskMembers,
