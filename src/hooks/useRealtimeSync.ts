@@ -35,6 +35,7 @@ type TableName =
   | 'member_suspensions'
   | 'member_contracts'
   | 'member_billing'
+  | 'expenses'
   // ── Added missing tables ──
   | 'notifications'
   | 'roles'
@@ -84,6 +85,7 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   member_suspensions: ['member-suspensions'],
   member_contracts: ['member-contracts', 'members-enrichment'],
   member_billing: ['member-billing', 'member-summary-stats'],
+  expenses: ['expenses', 'finance-stats'],
   // ── Added missing tables ──
   notifications: ['notifications', 'notifications-unread-count', 'notifications-recent'],
   roles: ['roles', 'role-permissions', 'my-permissions'],
