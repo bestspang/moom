@@ -30,3 +30,8 @@ dist-ssr
 
 # Lock files (project uses Bun)
 package-lock.json
+
+# Playwright e2e output
+playwright-report/
+test-results/
+blob-report/

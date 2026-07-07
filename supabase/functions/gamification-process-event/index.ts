@@ -401,6 +401,16 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing required fields: event_type, idempotency_key" }), { status: 400, headers: cors });
     }
 
+    // Monetary events mint XP/coins from a client-supplied `net_paid` and a
+    // client-chosen idempotency key. They must only ever originate from trusted
+    // server callers (sell-package, approve-slip, stripe-webhook — all service role).
+    // Reject non-service-role callers so a logged-in member can't forge currency by
+    // calling this endpoint directly with an inflated net_paid.
+    const MONETARY_EVENTS = new Set(["package_purchase", "shop_purchase"]);
+    if (MONETARY_EVENTS.has(event_type) && !isInternalServiceRole) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
+    }
+
     // Identity resolution — supports both direct member_id and cross-project experience_user_id
     const identity = await resolveMemberId(db, body);
     if (!identity) {
