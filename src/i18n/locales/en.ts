@@ -2631,6 +2631,13 @@ export default {
     price: 'Price',
     sessionsCount: '{{n}} sessions',
     dayTermCount: '{{n}} day term',
+    payWithCard: 'Pay with card',
+    payWithPromptPay: 'Pay with PromptPay',
+    redirectingToStripe: 'Redirecting to secure Stripe checkout…',
+    paymentSuccessTitle: 'Payment successful',
+    paymentSuccessDesc: 'Your package is now active. Enjoy your training!',
+    paymentCancelled: 'Payment was cancelled. You can try again anytime.',
+    paymentFailed: 'Could not start checkout. Please try again.',
     // Bottom nav
     navHome: 'Home',
     navSchedule: 'Schedule',
