@@ -76,8 +76,7 @@ import Profile from "./pages/Profile";
 import ComingSoon from "./pages/ComingSoon";
 import MemberAppPreview from "./pages/MemberAppPreview";
 import TrainerAppPreview from "./pages/TrainerAppPreview";
-import LiffMemberApp from "./pages/liff/LiffMemberApp";
-import LiffTrainerApp from "./pages/liff/LiffTrainerApp";
+import LiffRedirect from "./pages/liff/LiffRedirect";
 import LiffCallback from "./pages/liff/LiffCallback";
 import DiagnosticsDataAudit from "./pages/DiagnosticsDataAudit";
 import CheckinRedeem from "./pages/CheckinRedeem";
@@ -172,8 +171,8 @@ const App = () => (
                 <Route path="/checkin-display" element={<CheckinDisplay />} />
 
                 {/* LIFF public routes */}
-                <Route path="/liff/member" element={<LiffMemberApp />} />
-                <Route path="/liff/trainer" element={<LiffTrainerApp />} />
+                <Route path="/liff/member" element={<LiffRedirect target="member" />} />
+                <Route path="/liff/trainer" element={<LiffRedirect target="trainer" />} />
                 <Route path="/liff/callback" element={<LiffCallback />} />
 
                 {/* ===== Diagnostics (dev only) ===== */}

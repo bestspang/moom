@@ -478,3 +478,10 @@ Full system audit: sync all features/functions, fix contracts, remove fake UI ac
 **Out of scope (TODO):**
 - Edge function emails / PDF receipts still embed hardcoded brand
 - Multi-brand per location
+
+## 2026-07-07 — Remove legacy LIFF Coming Soon shells
+- `/liff/member` and `/liff/trainer` now redirect (client-side, `replace: true`) to real apps at `/member` and `/trainer` via new `LiffRedirect` component. Preserves query params, hash, and honors LINE `liff.state` deep-link.
+- `LiffCallback` fallback targets updated from `/liff/member` → `/member` (default + error "back to app").
+- Deleted orphaned files: `src/pages/liff/LiffMemberApp.tsx`, `src/pages/liff/LiffTrainerApp.tsx`, `src/components/liff/LiffComingSoon.tsx`.
+- Cleaned unused i18n keys `liff.member.*`, `liff.nav.*`, `liff.trainerNav.*`, `liff.comingSoonDescription` from EN/TH; parity verified via `scripts/compare-i18n.mjs`.
+- Untouched: `LiffContext`, `line-auth` edge function, `SurfaceGuard`, RLS.

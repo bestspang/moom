@@ -2866,34 +2866,12 @@ export default {
 
   // LIFF App
   liff: {
-    comingSoonDescription: 'This feature is coming soon. Stay tuned!',
     loggingIn: 'Logging in...',
     callbackError: 'Login failed. Please try again.',
     backToApp: 'Back to app',
     notConfigured: 'LINE login is not configured yet.',
-    nav: {
-      home: 'Home',
-      booking: 'Book Class',
-      packages: 'Packages',
-      checkin: 'Check-in',
-      profile: 'Profile',
-    },
-    trainerNav: {
-      schedule: 'Schedule',
-      attendance: 'Attendance',
-      ptLog: 'PT Log',
-      members: 'Members',
-    },
-    member: {
-      welcome: 'Hi, {{name}} 👋',
-      guest: 'Guest',
-      linked: 'Account linked',
-      notLinked: 'Account not linked yet',
-      memberId: 'Member ID',
-      nextClass: 'Next class',
-      linkPrompt: 'Link your LINE account with your membership to access all features.',
-    },
   },
+
   ai: {
     suggestions: 'AI Suggestions',
     noSuggestions: 'No pending suggestions',
