@@ -1,23 +1,51 @@
-## Problem
-`BulkActionBar` already uses `fixed bottom-6 left-1/2`, but in the screenshot it renders next to the selected row instead of pinned to the bottom of the viewport.
+## Quick Recheck — Overall Functions
 
-Root cause: the bar is rendered inside `<Members>` page content, and an ancestor in the admin shell applies a CSS `transform` / `filter` / `will-change` (animate-in / slide / motion wrapper). When any ancestor has a transform, `position: fixed` is contained by that ancestor instead of the viewport — so `bottom-6` becomes "6 from the bottom of the row's animated container", which matches what we see.
+Systematic smoke pass across all 4 surfaces (Admin, Member, Trainer, Staff) using live Playwright against the running preview, verifying real data flows (not just code). No code changes unless a bug is confirmed.
 
-## Fix (surgical, 1 file)
-`src/components/common/BulkActionBar.tsx`
-- Wrap the floating bar in a React `createPortal` to `document.body` so it escapes any transformed ancestor and is truly viewport-fixed.
-- Keep classes: `fixed bottom-6 left-1/2 -translate-x-1/2 z-50` and add `pb-[env(safe-area-inset-bottom)]` wrapper for safety on devices with home indicator.
-- Leave AlertDialog where it is (Radix already portals it).
-- No prop/API change → no caller updates needed (Members, Classes, Staff, Packages, Promotions, WorkoutList all continue to work).
+### Scope
 
-## Verification
-1. `/members` → select 1 row → bar appears pinned to bottom-center of viewport, not over the row.
-2. Scroll the table → bar stays at the bottom of the viewport.
-3. Repeat on `/classes`, `/staff`, `/packages`, `/promotions`, `/workouts`.
-4. Open delete confirm → AlertDialog still centers correctly.
-5. Collapse/expand sidebar → bar stays centered to viewport (not offset by sidebar — current behavior preserved; if user wants it centered to content area only, that's a follow-up).
+**Admin (desktop)**
+- Dashboard: KPI strip, LIVE 12h pulse, 30-day chart, Business Health, Goals, Activity feed, Daily Briefing
+- Members: list loads, search/filter, bulk action bar position, member details (Overview + Records tabs)
+- Schedule: today's classes render, roster, booking counts
+- Finance: transactions list, revenue chart, slip review queue
+- Packages / Promotions / Classes / Staff / Locations: list + CRUD buttons wired
+- Gamification: rules, rewards, quests, badges pages load with data
+- Settings → Brand Kit: name/logo change propagates to sidebar/header/tab/favicon
 
-## Out of scope
-- No redesign of the bar.
-- No change to selection logic or i18n.
-- No change to other floating elements.
+**Member (mobile)**
+- Home: greeting, momentum card, today's plan, quick actions
+- Schedule + Booking flow
+- Check-in QR
+- Rewards + XP ledger
+- Profile + tier
+
+**Trainer (mobile)**
+- Home impact cards, Schedule (filtered by staff_id), Roster, Workouts, Badges
+
+**Staff (mobile)**
+- Home recent check-ins, Check-in, Members lookup, Payments, Schedule
+
+### Method
+
+1. Launch Playwright against `http://localhost:8080` with injected Supabase session.
+2. For each surface, navigate route → screenshot → verify:
+   - Data present (not empty/loading/hardcoded)
+   - Numbers match DB via a quick `supabase--read_query` cross-check on 2-3 KPIs
+   - Realtime: mutate one record (e.g. toggle a booking) → confirm list updates without reload
+   - No console errors, no failed network requests
+3. Classify each area **WORKING / PARTIAL / BROKEN** with screenshot evidence.
+4. Report findings; propose targeted fixes only for confirmed issues (separate plan per fix, no bundled refactors).
+
+### Deliverable
+
+A single report with:
+- Per-surface checklist (pass/fail + screenshot ref)
+- List of confirmed bugs with root-cause hypothesis and minimal-diff fix proposal
+- Zero speculative changes
+
+### Out of Scope
+
+- Redesigns, refactors, new features
+- Fixing anything not confirmed broken via screenshot + data cross-check
+- Backend schema changes
