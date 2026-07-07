@@ -171,8 +171,8 @@ const App = () => (
                 <Route path="/checkin-display" element={<CheckinDisplay />} />
 
                 {/* LIFF public routes */}
-                <Route path="/liff/member" element={<LiffMemberApp />} />
-                <Route path="/liff/trainer" element={<LiffTrainerApp />} />
+                <Route path="/liff/member" element={<LiffRedirect target="member" />} />
+                <Route path="/liff/trainer" element={<LiffRedirect target="trainer" />} />
                 <Route path="/liff/callback" element={<LiffCallback />} />
 
                 {/* ===== Diagnostics (dev only) ===== */}
