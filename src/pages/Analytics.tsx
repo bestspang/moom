@@ -7,16 +7,21 @@ import { useRevenueByMonth, useMemberGrowth, useClassFillRate, useLeadFunnel } f
 import { formatCurrency } from '@/lib/formatters';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
+import { CardQueryError } from '@/apps/shared/components/CardQueryError';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => `${i + 6}:00`);
 
 const Analytics = () => {
   const { t } = useLanguage();
-  const { data: revenueData, isLoading: revLoading } = useRevenueByMonth();
-  const { data: growthData, isLoading: growthLoading } = useMemberGrowth();
-  const { data: fillData, isLoading: fillLoading } = useClassFillRate();
-  const { data: funnelData, isLoading: funnelLoading } = useLeadFunnel();
+  const rev = useRevenueByMonth();
+  const growth = useMemberGrowth();
+  const fill = useClassFillRate();
+  const funnel = useLeadFunnel();
+  const { data: revenueData, isLoading: revLoading } = rev;
+  const { data: growthData, isLoading: growthLoading } = growth;
+  const { data: fillData, isLoading: fillLoading } = fill;
+  const { data: funnelData, isLoading: funnelLoading } = funnel;
 
   return (
     <div>
