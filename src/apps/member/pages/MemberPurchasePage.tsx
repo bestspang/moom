@@ -39,7 +39,7 @@ export default function MemberPurchasePage() {
   ] as const;
 
   const { data: packages, isLoading, isError, refetch } = useQuery({
-    queryKey: ['available-packages'],
+    queryKey: queryKeys.availablePackages(),
     queryFn: fetchAvailablePackages,
   });
 
