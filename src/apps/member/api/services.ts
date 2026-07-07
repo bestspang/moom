@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getBangkokDayRange } from '@/lib/dateRange';
 
 // ─── Schedule ───
 export interface ScheduleItem {
@@ -449,16 +450,17 @@ export async function fetchMyAttendance(memberId: string): Promise<AttendanceRec
 export async function fetchTodayCheckin(memberId: string): Promise<{ checkedIn: boolean; checkInTime: string | null }> {
   if (!memberId) return { checkedIn: false, checkInTime: null };
 
-  // Bangkok day-bucket — check-ins are stored as UTC timestamptz, so we compare
-  // against today's start in local time, expressed as ISO.
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  // Bangkok day-bucket — check-ins are stored as UTC timestamptz. Use the shared
+  // helper so "today" is the Asia/Bangkok calendar day (00:00–24:00 +07:00), with an
+  // explicit upper bound so a late check-in doesn't leak across the day boundary.
+  const { start, end } = getBangkokDayRange(new Date());
 
   const { data, error } = await supabase
     .from('member_attendance')
     .select('id, check_in_time')
     .eq('member_id', memberId)
-    .gte('check_in_time', startOfDay.toISOString())
+    .gte('check_in_time', start)
+    .lt('check_in_time', end)
     .order('check_in_time', { ascending: false })
     .limit(1)
     .maybeSingle();

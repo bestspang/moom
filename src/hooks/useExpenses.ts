@@ -56,10 +56,22 @@ export function useCreateExpense() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as Expense;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses() });
+      logActivity({
+        event_type: 'expense_created',
+        activity: `Expense "${data?.category}" recorded (${data?.amount} THB)`,
+        entity_type: 'expense',
+        entity_id: data?.id,
+        new_value: {
+          category: data?.category,
+          amount: data?.amount,
+          date: data?.date,
+          description: data?.description,
+        },
+      });
       toast.success(i18n.t('toast.expenseCreated'));
     },
     onError: () => {
@@ -73,11 +85,23 @@ export function useDeleteExpense() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Capture the row before deletion so the audit log has meaningful old_value.
+      const { data: existing } = await supabase.from('expenses').select('*').eq('id', id).maybeSingle();
       const { error } = await supabase.from('expenses').delete().eq('id', id);
       if (error) throw error;
+      return existing as Expense | null;
     },
-    onSuccess: () => {
+    onSuccess: (existing, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses() });
+      logActivity({
+        event_type: 'expense_deleted',
+        activity: `Expense${existing ? ` "${existing.category}" (${existing.amount} THB)` : ''} deleted`,
+        entity_type: 'expense',
+        entity_id: id,
+        old_value: existing
+          ? { category: existing.category, amount: existing.amount, date: existing.date }
+          : { id },
+      });
       toast.success(i18n.t('toast.expenseDeleted'));
     },
     onError: () => {

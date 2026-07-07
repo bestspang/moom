@@ -163,8 +163,8 @@ export const useApproveSlip = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
-      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetailAll() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLogAll() });
       queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
       toast.success(i18n.t('toast.slipApproved'));
     },
@@ -224,8 +224,8 @@ export const useRejectSlip = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
-      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetailAll() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLogAll() });
       toast.success(i18n.t('toast.slipRejected'));
     },
     onError: (error) => {
@@ -301,8 +301,8 @@ export const useVoidSlip = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlips() });
       queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipStats() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetail('') });
-      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLog('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transferSlipDetailAll() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.slipActivityLogAll() });
       queryClient.invalidateQueries({ queryKey: queryKeys.financeTransactions() });
       toast.success(i18n.t('toast.slipVoided'));
     },

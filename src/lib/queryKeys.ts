@@ -50,6 +50,8 @@ export const queryKeys = {
   transferSlips: (filters?: object) => ['transfer-slips', filters] as const,
   transferSlipStats: () => ['transfer-slip-stats'] as const,
   transferSlipDetail: (id: string) => ['transfer-slip-detail', id] as const,
+  /** Prefix for invalidating whichever slip detail is currently open. */
+  transferSlipDetailAll: () => ['transfer-slip-detail'] as const,
 
   // Training / Workouts
   trainingTemplates: (search?: string, filter?: string) => ['training-templates', search, filter] as const,
@@ -91,6 +93,8 @@ export const queryKeys = {
 
   // Check-ins (Lobby)
   checkIns: (dateStr: string, search?: string) => ['check-ins', dateStr, search] as const,
+  /** Prefix for invalidating every dated/searched check-in list at once. */
+  checkInsAll: () => ['check-ins'] as const,
   membersForCheckin: (search?: string) => ['members-for-checkin', search] as const,
   memberPackagesForCheckin: (memberId: string | null) => ['member-packages-for-checkin', memberId] as const,
   checkInDuplicate: (memberId: string | null, locationId: string | null, dateStr: string) => ['check-in-duplicate', memberId, locationId, dateStr] as const,
@@ -203,6 +207,8 @@ export const queryKeys = {
 
   // Transfer Slips (extended)
   slipActivityLog: (slipId: string) => ['slip-activity-log', slipId] as const,
+  /** Prefix for invalidating whichever slip's activity timeline is open. */
+  slipActivityLogAll: () => ['slip-activity-log'] as const,
 
   // Member attendance (check-in tracking)
   memberAttendanceCheckin: () => ['member-attendance'] as const,

@@ -98,7 +98,7 @@ export function useCreateCheckIn() {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.checkIns('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkInsAll() });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
 
       logActivity({
