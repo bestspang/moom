@@ -9,9 +9,10 @@ const corsHeaders = {
 }
 
 const VAT_RATE = 0.07
+const ALLOWED_PAYMENT_METHODS = ['card', 'promptpay'] as const
+type PaymentMethod = typeof ALLOWED_PAYMENT_METHODS[number]
 
 Deno.serve(async (req) => {
-  // Dynamic CORS based on whitelist
   const reqOrigin = req.headers.get('origin') || ''
   const responseOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : ALLOWED_ORIGINS[0]
   const dynamicCors = { ...corsHeaders, 'Access-Control-Allow-Origin': responseOrigin }
@@ -21,7 +22,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
@@ -45,18 +45,64 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // --- ACCESS LEVEL CHECK: require level_3_manager ---
-    const { data: accessCheck } = await supabase.rpc('has_min_access_level', {
-      _user_id: userId,
-      _min_level: 'level_3_manager',
-    })
-    if (!accessCheck) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
-    }
+    const body = await req.json().catch(() => ({}))
+    const { member_id, package_id, location_id, nonce, payment_method_types, surface } = body ?? {}
 
-    const { member_id, package_id, location_id, nonce } = await req.json()
     if (!member_id || !package_id) {
       return new Response(JSON.stringify({ error: 'member_id and package_id are required' }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
+    }
+
+    const isMemberSurface = surface === 'member'
+
+    // Validate payment_method_types
+    let pmTypes: PaymentMethod[] = ['card']
+    if (Array.isArray(payment_method_types) && payment_method_types.length > 0) {
+      const invalid = payment_method_types.filter((m: string) => !ALLOWED_PAYMENT_METHODS.includes(m as PaymentMethod))
+      if (invalid.length > 0) {
+        return new Response(JSON.stringify({ error: `Unsupported payment_method_types: ${invalid.join(',')}` }), { status: 400, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
+      }
+      pmTypes = payment_method_types as PaymentMethod[]
+    }
+
+    // Authorization split
+    let staffRecordId: string | null = null
+    if (isMemberSurface) {
+      // Caller must own the member_id (via identity_map or line_users)
+      const { data: identity } = await supabase
+        .from('identity_map')
+        .select('admin_entity_id')
+        .eq('experience_user_id', userId)
+        .eq('entity_type', 'member')
+        .eq('is_verified', true)
+        .maybeSingle()
+
+      let resolvedMemberId: string | null = identity?.admin_entity_id ?? null
+      if (!resolvedMemberId) {
+        const { data: lineUser } = await supabase
+          .from('line_users')
+          .select('member_id')
+          .eq('user_id', userId)
+          .maybeSingle()
+        resolvedMemberId = lineUser?.member_id ?? null
+      }
+
+      if (!resolvedMemberId || resolvedMemberId !== member_id) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
+      }
+    } else {
+      const { data: accessCheck } = await supabase.rpc('has_min_access_level', {
+        _user_id: userId,
+        _min_level: 'level_3_manager',
+      })
+      if (!accessCheck) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...dynamicCors, 'Content-Type': 'application/json' } })
+      }
+      const { data: staffRecord } = await supabase
+        .from('staff')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      staffRecordId = staffRecord?.id ?? null
     }
 
     // Fetch package
@@ -77,22 +123,14 @@ Deno.serve(async (req) => {
       .eq('id', member_id)
       .single()
 
-    // Get staff
-    const { data: staffRecord } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    // Idempotency key — deterministic (no Date.now())
+    // Idempotency key
     const idempotencyKey = nonce
       ? `stripe:${member_id}:${package_id}:${nonce}`
       : `stripe:${member_id}:${package_id}`
 
-    // Check for existing pending transaction with same idempotency key
     const { data: existingTx } = await supabase
       .from('transactions')
-      .select('id, transaction_id')
+      .select('id, transaction_id, source_ref')
       .eq('idempotency_key', idempotencyKey)
       .maybeSingle()
 
@@ -103,15 +141,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Generate transaction number via DB sequence (atomic, no race condition)
     const { data: txNo } = await supabase.rpc('next_transaction_number')
 
-    // VAT calc
     const amountGross = Number(pkg.price)
     const amountExVat = Math.round((amountGross / (1 + VAT_RATE)) * 100) / 100
     const amountVat = Math.round((amountGross - amountExVat) * 100) / 100
 
-    // Create pending transaction
     const { data: tx, error: txErr } = await supabase
       .from('transactions')
       .insert({
@@ -124,14 +159,14 @@ Deno.serve(async (req) => {
         vat_rate: VAT_RATE,
         currency: 'THB',
         type: pkg.type,
-        payment_method: 'card_stripe',
+        payment_method: pmTypes.includes('promptpay') && !pmTypes.includes('card') ? 'promptpay_stripe' : 'card_stripe',
         status: 'pending',
         member_id,
         package_id,
         package_name_snapshot: pkg.name_en,
         location_id: location_id || null,
-        staff_id: staffRecord?.id || null,
-        source_type: 'stripe',
+        staff_id: staffRecordId,
+        source_type: isMemberSurface ? 'stripe_member' : 'stripe',
         source_ref: null,
         idempotency_key: idempotencyKey,
         sold_to_name: member ? `${member.first_name} ${member.last_name}` : null,
@@ -142,17 +177,27 @@ Deno.serve(async (req) => {
 
     if (txErr) throw txErr
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
       apiVersion: '2025-08-27.basil',
     })
 
-    // Use whitelisted origin for redirect URLs
-    const origin = responseOrigin
+    // Build success/cancel URLs based on surface
+    let redirectBase = responseOrigin
+    let successPath = '/finance?payment=success'
+    let cancelPath = '/finance?payment=cancelled'
+    if (isMemberSurface) {
+      // Ensure we redirect to the member host (swap admin.moom.fit → member.moom.fit).
+      // For preview/lovable.app, keep the requesting origin (SPA handles /member/*).
+      if (responseOrigin === 'https://admin.moom.fit') {
+        redirectBase = 'https://member.moom.fit'
+      }
+      successPath = `/member/packages/${package_id}/purchase?payment=success`
+      cancelPath = `/member/packages/${package_id}/purchase?payment=cancelled`
+    }
 
-    // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      payment_method_types: pmTypes,
       line_items: [
         {
           price_data: {
@@ -171,27 +216,26 @@ Deno.serve(async (req) => {
         member_id,
         package_id,
         location_id: location_id || '',
+        surface: isMemberSurface ? 'member' : 'admin',
       },
       customer_email: member?.email || undefined,
-      success_url: `${origin}/finance?payment=success`,
-      cancel_url: `${origin}/finance?payment=cancelled`,
+      success_url: `${redirectBase}${successPath}`,
+      cancel_url: `${redirectBase}${cancelPath}`,
     })
 
-    // Update transaction with Stripe session ID
     await supabase
       .from('transactions')
       .update({ source_ref: session.id })
       .eq('id', tx.id)
 
-    // Activity log
     await supabase.from('activity_log').insert({
-      event_type: 'stripe.checkout_created',
-      activity: `Stripe checkout created for ${pkg.name_en}. Transaction ${txNo}. Amount: ${amountGross} THB.`,
+      event_type: isMemberSurface ? 'member.stripe_checkout_created' : 'stripe.checkout_created',
+      activity: `Stripe checkout created for ${pkg.name_en}. Transaction ${txNo}. Amount: ${amountGross} THB. Methods: ${pmTypes.join(',')}.`,
       entity_type: 'finance_transaction',
       entity_id: tx.id,
-      staff_id: staffRecord?.id || null,
+      staff_id: staffRecordId,
       member_id,
-      new_value: { transaction_id: tx.id, transaction_no: txNo, package_id, amount: amountGross, status: 'pending', stripe_session_id: session.id },
+      new_value: { transaction_id: tx.id, transaction_no: txNo, package_id, amount: amountGross, status: 'pending', stripe_session_id: session.id, surface: isMemberSurface ? 'member' : 'admin', payment_method_types: pmTypes },
     })
 
     return new Response(
