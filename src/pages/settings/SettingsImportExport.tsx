@@ -69,7 +69,7 @@ const modules: ModuleConfig[] = [
   },
   {
     id: 'slips', icon: Receipt, labelKey: 'slips',
-    hasExport: false, hasImport: true, importEntity: 'slips' as EntityId,
+    hasExport: true, hasImport: true, importEntity: 'slips' as EntityId,
     templateHeaders: ['Transaction no.','Slip file url','Slip amount','Slip datetime','Sender bank','Sender last4','Status','Review note'],
   },
 ];
@@ -305,6 +305,26 @@ const SettingsImportExport = () => {
             { key: 'staff', header: 'Staff', accessor: r => r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : '-' },
           ];
           exportToCsv(data || [], cols, `finance-export-${new Date().toISOString().split('T')[0]}`);
+          break;
+        }
+        case 'slips': {
+          const { data, error } = await supabase
+            .from('transfer_slips')
+            .select('*, linked_transaction:transactions!transfer_slips_linked_transaction_id_fkey(transaction_id)')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          const cols: CsvColumn<any>[] = [
+            { key: 'transactionNo', header: 'Transaction no.', accessor: r => r.linked_transaction?.transaction_id || '-' },
+            { key: 'slipFileUrl', header: 'Slip file url', accessor: r => r.slip_file_url || '-' },
+            { key: 'slipAmount', header: 'Slip amount', accessor: r => (r.amount_thb != null ? Number(r.amount_thb).toFixed(2) : '-') },
+            { key: 'slipDatetime', header: 'Slip datetime', accessor: r => (r.slip_datetime ? format(new Date(r.slip_datetime), 'd MMM yyyy, HH:mm').toUpperCase() : '-') },
+            // transfer_slips stores a single bank_reference field; there is no discrete last4 column.
+            { key: 'senderBank', header: 'Sender bank', accessor: r => r.bank_reference || '-' },
+            { key: 'senderLast4', header: 'Sender last4', accessor: () => '-' },
+            { key: 'status', header: 'Status', accessor: r => r.status || '-' },
+            { key: 'reviewNote', header: 'Review note', accessor: r => r.review_note || '-' },
+          ];
+          exportToCsv(data || [], cols, `slips-export-${new Date().toISOString().split('T')[0]}`);
           break;
         }
       }

@@ -3,7 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Sparkles } from 'lucide-react';
+import { CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCreateAnnouncement, type AnnouncementFormData } from '@/hooks/useAnnouncements';
 import {
@@ -65,6 +67,7 @@ export const CreateAnnouncementDialog = ({
   const [channels, setChannels] = useState({ in_app: true, line: false });
   const [targetMode, setTargetMode] = useState('all');
   const [targetLocationIds, setTargetLocationIds] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(announcementSchema),
@@ -73,6 +76,34 @@ export const CreateAnnouncementDialog = ({
       message_th: '',
     },
   });
+
+  const handleAiDraft = async () => {
+    const seed = (form.getValues('message_en') || '').trim();
+    if (!seed) {
+      toast.error(t('announcements.aiDraftNeedTopic'));
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-announcement-draft', {
+        body: { prompt: seed },
+      });
+      if (error) throw error;
+      const result = data as { message_en?: string; message_th?: string; error?: string } | null;
+      if (!result || result.error || !result.message_en) {
+        throw new Error(result?.error || 'AI draft failed');
+      }
+      form.setValue('message_en', result.message_en, { shouldValidate: true, shouldDirty: true });
+      if (result.message_th) {
+        form.setValue('message_th', result.message_th, { shouldValidate: true, shouldDirty: true });
+      }
+      toast.success(t('announcements.aiDraftDone'));
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : t('announcements.aiDraftError'));
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     const data: AnnouncementFormData = {
@@ -117,15 +148,16 @@ export const CreateAnnouncementDialog = ({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled
+                            onClick={handleAiDraft}
+                            disabled={aiLoading}
                             className="h-7 gap-1 text-xs"
                           >
-                            <Sparkles className="h-3 w-3" />
+                            {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                             {t('announcements.aiDraft')}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{t('announcements.aiDraftComingSoon')}</p>
+                          <p>{t('announcements.aiDraftHint')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

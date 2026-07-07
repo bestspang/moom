@@ -3,6 +3,10 @@ project_id = "qedxqilmnkbjncpnopty"
 [functions.daily-briefing]
 verify_jwt = false
 
+# Authenticates + gates (level_3_manager) in-code, like daily-briefing.
+[functions.generate-announcement-draft]
+verify_jwt = false
+
 [functions.invite-staff]
 verify_jwt = false
 
