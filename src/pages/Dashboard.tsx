@@ -37,6 +37,7 @@ import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTransferSlipStats } from '@/hooks/useTransferSlips';
 import { useLocations } from '@/hooks/useLocations';
+import { useRooms } from '@/hooks/useRooms';
 import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -78,6 +79,7 @@ const Dashboard = () => {
   const { data: trends } = useDashboardTrends();
   const { data: slipStats } = useTransferSlipStats();
   const { data: locations = [] } = useLocations();
+  const { data: openRooms = [] } = useRooms('open');
   const { data: revenueSeries = [], isLoading: revenueSeriesLoading } = useRevenueSeries(revenueRange);
   const { data: checkin12h = [] } = useCheckin12hSeries();
   const pendingSlips = slipStats?.needs_review || 0;
@@ -111,11 +113,12 @@ const Dashboard = () => {
 
   // ── LIVE Hero data ──────────────────────────────────────────
   const primaryBranchName = locations[0]?.name || t('dashboardExtra.mainLocation');
-  // Capacity: pick highest-capacity room across active locations as a proxy for gym capacity
+  // Capacity: sum of open-room max_capacity as a proxy for gym capacity.
+  // Falls back to 60 before rooms load / when none are configured.
   const totalCapacity = useMemo(() => {
-    // sum of capacity across rooms; fall back to 60 if data not joined
-    return 60;
-  }, []);
+    const sum = openRooms.reduce((s, r: any) => s + (r.max_capacity || 0), 0);
+    return sum > 0 ? sum : 60;
+  }, [openRooms]);
 
   const deltaPctText = useMemo(() => {
     if (!stats || !stats.checkinsLastWeekSameDay || stats.checkinsLastWeekSameDay === 0) return undefined;

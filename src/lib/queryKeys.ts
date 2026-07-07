@@ -33,6 +33,8 @@ export const queryKeys = {
   packages: (status?: string, search?: string) => ['packages', status, search] as const,
   package: (id: string) => ['packages', id] as const,
   packageStats: () => ['package-stats'] as const,
+  packageKpis: () => ['package-kpis'] as const,
+  memberXpToday: (memberId?: string | null, day?: string) => ['member-xp-today', memberId, day] as const,
   packageMetrics: (id: string) => ['package-metrics', id] as const,
 
   // Promotions

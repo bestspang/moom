@@ -43,6 +43,7 @@ type TableName =
   | 'checkin_qr_tokens'
   | 'transfer_slips'
   // ── Gamification tables ──
+  | 'xp_ledger'
   | 'member_gamification_profiles'
   | 'badge_earnings'
   | 'quest_instances'
@@ -93,6 +94,7 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   checkin_qr_tokens: ['checkin-qr-tokens', 'check-ins'],
   transfer_slips: ['transfer-slips', 'transfer-slip-stats', 'transfer-slip-detail'],
   // ── Gamification tables ──
+  xp_ledger: ['member-xp-today', 'momentum-profile', 'xp-leaderboard'],
   member_gamification_profiles: ['momentum-profile', 'gamification-profiles', 'xp-leaderboard', 'streak-leaderboard'],
   badge_earnings: ['my-badges', 'badge-earnings', 'momentum-profile'],
   quest_instances: ['my-quests', 'quest-instances'],

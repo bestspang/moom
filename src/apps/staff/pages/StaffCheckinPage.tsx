@@ -3,12 +3,15 @@ import { Section } from '@/apps/shared/components/Section';
 import { Button } from '@/components/ui/button';
 import { Monitor, QrCode, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { buildCrossSurfaceUrl } from '@/apps/shared/hostname';
 
 export default function StaffCheckinPage() {
   const { t } = useTranslation();
 
   const handleLaunchKiosk = () => {
-    window.open('/checkin-display', '_blank');
+    // /checkin-display is an admin-affinity route; open it on the admin origin so the
+    // new tab doesn't bounce cross-domain off the staff surface (member.moom.fit).
+    window.open(buildCrossSurfaceUrl('admin', '/checkin-display'), '_blank');
   };
 
   return (

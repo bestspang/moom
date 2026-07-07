@@ -4,10 +4,7 @@
  * Stats:
  *   1. Today's classes  — `todayBookingsCount` (real, computed in HomePage)
  *   2. Check-in status  — `checkedIn` (real, fetchTodayCheckin)
- *   3. XP today         — UI shell, "Coming Soon" (no endpoint yet)
- *
- * The XP slot follows the project's "Coming Soon" guardrail:
- * `opacity-60 pointer-events-none` and never wired to a fake handler.
+ *   3. XP today         — `xpToday` (real, summed from xp_ledger; null until loaded)
  */
 
 import { Calendar, CheckCircle2, Zap } from 'lucide-react';
@@ -16,9 +13,10 @@ import { useTranslation } from 'react-i18next';
 interface TodaySnapshotStripProps {
   todayBookingsCount: number;
   checkedIn: boolean;
+  xpToday?: number | null;
 }
 
-export function TodaySnapshotStrip({ todayBookingsCount, checkedIn }: TodaySnapshotStripProps) {
+export function TodaySnapshotStrip({ todayBookingsCount, checkedIn, xpToday }: TodaySnapshotStripProps) {
   const { t } = useTranslation();
 
   const stats = [
@@ -41,8 +39,9 @@ export function TodaySnapshotStrip({ todayBookingsCount, checkedIn }: TodaySnaps
       key: 'xp',
       icon: Zap,
       label: t('member.snapshotXpToday'),
-      value: t('member.comingSoon'),
-      muted: true, // UI shell — no XP-by-day endpoint yet
+      // null only while loading / before the member id resolves.
+      value: xpToday == null ? '—' : `+${xpToday}`,
+      muted: xpToday == null,
     },
   ];
 

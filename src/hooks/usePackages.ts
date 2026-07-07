@@ -6,6 +6,8 @@ import i18n from '@/i18n';
 import { logActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
 import { queryKeys } from '@/lib/queryKeys';
+import { fetchAllRows } from '@/lib/supabasePaginate';
+import { getBangkokDayRange } from '@/lib/dateRange';
 
 type Package = Tables<'packages'>;
 type PackageInsert = TablesInsert<'packages'>;
@@ -58,6 +60,45 @@ export const usePackageStats = () => {
       });
 
       return stats as { on_sale: number; scheduled: number; drafts: number; archive: number };
+    },
+  });
+};
+
+// Aggregate KPIs for the Packages dashboard: active subscriptions, trailing-30d
+// revenue, and ARPU (revenue per active subscription).
+export const usePackageKpis = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.packageKpis(),
+    enabled: !!user,
+    queryFn: async () => {
+      // Trailing 30 Bangkok days.
+      const windowStart = getBangkokDayRange(new Date(Date.now() - 30 * 86_400_000)).start;
+
+      const [activeRes, revenueRows] = await Promise.all([
+        supabase
+          .from('member_packages')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'active'),
+        // created_at is always present (unlike paid_at); paginate past the 1000-row cap.
+        fetchAllRows<{ amount: number }>((from, to) =>
+          supabase
+            .from('transactions')
+            .select('amount')
+            .eq('status', 'paid')
+            .gte('created_at', windowStart)
+            .order('created_at', { ascending: true })
+            .range(from, to)
+        ),
+      ]);
+
+      if (activeRes.error) throw activeRes.error;
+
+      const activeSubs = activeRes.count ?? 0;
+      const revenue30d = revenueRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      const arpu = activeSubs > 0 ? revenue30d / activeSubs : 0;
+
+      return { activeSubs, revenue30d, arpu };
     },
   });
 };

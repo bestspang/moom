@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
-import { usePackages, usePackageStats, useBulkUpdatePackageStatus, useBulkDeletePackages, useBulkDuplicatePackages } from '@/hooks/usePackages';
+import { usePackages, usePackageStats, usePackageKpis, useBulkUpdatePackageStatus, useBulkDeletePackages, useBulkDuplicatePackages } from '@/hooks/usePackages';
 import { useLocations } from '@/hooks/useLocations';
 import { exportToCsv, type CsvColumn } from '@/lib/exportCsv';
 import { toast } from 'sonner';
@@ -54,6 +54,7 @@ const Packages = () => {
 
   const { data: packages, isLoading } = usePackages(activeTab, search);
   const { data: stats } = usePackageStats();
+  const { data: packageKpis } = usePackageKpis();
   const { data: locations } = useLocations();
 
   const bulkStatus = useBulkUpdatePackageStatus();
@@ -183,9 +184,9 @@ const Packages = () => {
 
   const kpis: Array<{ label: string; value: React.ReactNode; suffix?: React.ReactNode; icon: React.ReactNode; accent: 'orange' | 'teal' | 'info' | 'pink'; comingSoon?: boolean }> = [
     { label: t('packages.kpi.activePackages'), value: stats?.on_sale ?? '—', suffix: t('packages.kpi.ofTotal').replace('{{total}}', String(totalPackages)), icon: <PackageIcon />, accent: 'orange' },
-    { label: t('packages.kpi.activeSubs'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <Users />, accent: 'teal', comingSoon: true },
-    { label: t('packages.kpi.revenue30d'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <DollarSign />, accent: 'info', comingSoon: true },
-    { label: t('packages.kpi.arpu'), value: '—', suffix: t('packages.kpi.comingSoon'), icon: <TrendingUp />, accent: 'pink', comingSoon: true },
+    { label: t('packages.kpi.activeSubs'), value: packageKpis ? packageKpis.activeSubs : '—', icon: <Users />, accent: 'teal' },
+    { label: t('packages.kpi.revenue30d'), value: packageKpis ? formatCurrency(packageKpis.revenue30d) : '—', icon: <DollarSign />, accent: 'info' },
+    { label: t('packages.kpi.arpu'), value: packageKpis ? formatCurrency(packageKpis.arpu) : '—', icon: <TrendingUp />, accent: 'pink' },
   ];
 
   const renderGridCard = (row: Package) => {

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, ChevronRight, Megaphone, Zap } from 'lucide-react';
 import { useMemberSession } from '../hooks/useMemberSession';
+import { useXpToday } from '@/hooks/useXpToday';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import {
   fetchMyBookings,
@@ -57,6 +58,7 @@ export default function MemberHomePage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const { firstName, memberId, isAuthenticated } = useMemberSession();
+  const { data: xpToday } = useXpToday(memberId);
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => localStorage.getItem('moom-onboarding-dismissed') === 'true'
   );
@@ -278,6 +280,7 @@ export default function MemberHomePage() {
         <TodaySnapshotStrip
           todayBookingsCount={todayBookings.length}
           checkedIn={!!todayCheckin?.checkedIn}
+          xpToday={xpToday ?? null}
         />
       </Section>
 
