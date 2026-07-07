@@ -11,6 +11,9 @@ export default function DiagnosticsSurfacePage() {
   const { surface, isMobileFirst } = useSurface();
   const { user, role, accessLevel } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation();
+  const isManagerPlus = accessLevel === 'level_3_manager' || accessLevel === 'level_4_master';
+  const outbox = useLinePushOutboxStats();
 
   const items = [
     { label: 'Hostname', value: window.location.hostname },
