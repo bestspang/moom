@@ -72,13 +72,21 @@ const Dashboard = () => {
   const [revenueRange, setRevenueRange] = useState<RevenueRange>('30d');
 
   // Fetch real data
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useDashboardStats();
   const { data: highRiskMembers = [] } = useHighRiskMembers();
   const { data: rawScheduleData = [], isLoading: scheduleLoading } = useScheduleByDate(new Date());
   const { data: trends } = useDashboardTrends();
   const { data: slipStats } = useTransferSlipStats();
   const { data: locations = [] } = useLocations();
-  const { data: revenueSeries = [], isLoading: revenueSeriesLoading } = useRevenueSeries(revenueRange);
+  const {
+    data: revenueSeriesResult,
+    isLoading: revenueSeriesLoading,
+    isError: revenueSeriesError,
+    error: revenueSeriesErr,
+    refetch: refetchRevenueSeries,
+  } = useRevenueSeries(revenueRange);
+  const revenueSeries = revenueSeriesResult?.points ?? [];
+  const missingPaidAt = revenueSeriesResult?.missingPaidAtCount ?? 0;
   const { data: checkin12h = [] } = useCheckin12hSeries();
   const pendingSlips = slipStats?.needs_review || 0;
 
