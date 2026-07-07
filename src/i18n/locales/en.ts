@@ -57,6 +57,9 @@ export default {
     unlimited: 'Unlimited',
     failedToLoad: 'Failed to load',
     retry: 'Retry',
+    cardError: 'Could not load this section.',
+    revenueMissingPaidAt: 'No revenue in this range. {{count}} paid transaction(s) are missing paid_at — chart is empty until they are backfilled.',
+    revenueSomeMissingPaidAt: '{{count}} paid transaction(s) missing paid_at',
   },
 
   // Bulk actions
