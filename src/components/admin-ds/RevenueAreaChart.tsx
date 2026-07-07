@@ -45,6 +45,10 @@ export const RevenueAreaChart: React.FC<RevenueAreaChartProps> = ({
   rangeLabels,
   className,
   loading,
+  warning,
+  isError,
+  errorMessage,
+  onRetry,
 }) => {
   const ranges: RevenueRange[] = ['7d', '30d', 'mtd', 'ytd'];
 
@@ -78,8 +82,19 @@ export const RevenueAreaChart: React.FC<RevenueAreaChartProps> = ({
         </div>
       </div>
 
+      {warning && !isError && !loading && (
+        <div className="mx-5 mt-3 flex items-start gap-2 rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{warning}</span>
+        </div>
+      )}
+
       <div className="px-2 pb-4 pt-3">
-        {loading ? (
+        {isError ? (
+          <div className="px-3">
+            <CardQueryError message={errorMessage} onRetry={onRetry} />
+          </div>
+        ) : loading ? (
           <div className="h-[220px] animate-pulse rounded-md bg-muted/40" />
         ) : data.length === 0 ? (
           <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
