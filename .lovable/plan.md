@@ -1,73 +1,94 @@
 
-## 1. UI-visible error handling on cards/components
+## Goal
+Let a logged-in member self-purchase a package via Stripe (card + PromptPay) end-to-end, reusing the existing `stripe-create-checkout` + `stripe-webhook` fulfillment path. Keep the transfer/slip flow unchanged.
 
-Goal: Every data-driven card shows an inline error + Retry when its query fails, instead of silently blank or "฿0".
+## Affected modules (status)
+- `supabase/functions/stripe-create-checkout/index.ts` — WORKING for admin. Extend, preserve staff behavior.
+- `supabase/functions/stripe-webhook/index.ts` — WORKING; fulfillment is already idempotent on `transactions.status='paid'` and guarded on session id via `process_stripe_payment` RPC. Add member surface hooks only.
+- `src/apps/member/pages/MemberPurchasePage.tsx` — enable card + promptpay branches.
+- New: `src/hooks/useMemberStripeCheckout.ts`
+- `src/lib/queryKeys.ts` — add `memberStripeCheckout` key namespace.
+- `src/i18n/locales/{en,th}.ts` — new strings.
+- No RLS, no `create_booking_safe`, no slip approval changes.
 
-- Reuse existing `src/apps/shared/components/QueryError.tsx` (already has message + retry) and add a compact sibling `CardQueryError` variant sized for KPI/chart cards (icon + one-line message + small Retry button).
-- Wrap render bodies of the main dashboard/chart components with a standard pattern:
-  ```
-  if (isLoading) <Skeleton/>
-  else if (isError) <CardQueryError message={error.message} onRetry={refetch}/>
-  else <Content/>
-  ```
-- Apply to:
-  - `src/pages/Dashboard.tsx` KPI tiles (checkins, revenue, classes, active members)
-  - `src/components/admin-ds/RevenueAreaChart.tsx` host page (pass `isError` + `onRetry` props; add optional `error`/`onRetry` to the component)
-  - `src/pages/Analytics.tsx` four charts (Revenue, Growth, Fill Rate, Funnel)
-  - `LivePulseCard`, `AttentionList`, `AIBrief` on dashboard
-- Add i18n keys `common.cardError`, `common.retry` (retry exists) in `src/i18n/locales/{en,th}.ts`.
-- No hook signature changes — just surface `isError`, `error`, `refetch` already returned by TanStack Query.
+## Design decisions
 
-## 2. Revenue chart UX when `paid_at` is missing
+### 1. `stripe-create-checkout` — dual-surface authorization
+Currently gated by `has_min_access_level('level_3_manager')`. Split the authz:
 
-Problem: Chart shows ฿0 because most `transactions` rows have `paid_at = NULL`, hiding real revenue.
+- Parse body first: `{ member_id, package_id, location_id?, nonce?, payment_method_types?, surface? }`.
+- If `surface === 'member'`: require that the caller's `user.id` resolves (via `identity_map` verified member OR `line_users.member_id`) to the same `member_id` in the body. Reject otherwise. `staff_id` on the transaction stays `null`; `source_type` becomes `stripe_member`.
+- Else (default / `surface === 'admin'`): keep the existing `level_3_manager` check.
 
-- Update `useRevenueSeries` (and `useDashboardStats.todayRevenue`, `useRevenueByMonth`) to return an extra shape:
-  ```
-  { data, total, paidCount, missingPaidAtCount }
-  ```
-  Query both: rows with `paid_at` in range (used for chart), and count of `status='paid'` rows with `paid_at IS NULL` in the same created_at window.
-- In `RevenueAreaChart`:
-  - If `total === 0 && missingPaidAtCount > 0`: replace the empty "—" state with a warning card:
-    "ไม่มีข้อมูล `paid_at` สำหรับ N รายการที่จ่ายแล้ว — กราฟจึงยังว่าง" + link/button "ดูรายการ" that routes to Finance filtered by `paid_at IS NULL`.
-  - If `total > 0 && missingPaidAtCount > 0`: show a subtle inline badge under the summary: "N รายการรอเติม paid_at".
-- Same warning surfaced in Dashboard revenue KPI tile subtitle.
-- Add i18n strings (EN/TH). No schema change.
+### 2. `stripe-create-checkout` — payment methods + URLs
+- `payment_method_types`: accept optional array. Validate against `['card','promptpay']`. Default `['card']`. Reject anything else. `promptpay` only when `currency = 'thb'` (always true here).
+- Pass `payment_method_types` to `stripe.checkout.sessions.create`.
+- Metadata: add `surface` and keep `member_id`.
+- Success/cancel URLs:
+  - Admin surface → existing `${origin}/finance?payment=success|cancelled` (origin from request whitelist, unchanged).
+  - Member surface → derive member base host from the request origin using the same allowlist logic already in the file: if request origin is `https://member.moom.fit` use it; if it's `https://admin.moom.fit` swap to `https://member.moom.fit`; for `moom.lovable.app` (preview) keep origin (SPA routes handle `/member/...`). Then `${memberBase}/member/packages?payment=success|cancelled`. No hardcoded host outside the existing `ALLOWED_ORIGINS` list.
 
-## 3. Verify realtime updates on KPIs/charts
+### 3. `stripe-webhook` — member surface path
+Fulfillment already:
+- Uses `process_stripe_payment` RPC (atomic tx paid + member_billing + member_package + activity log).
+- Is idempotent: early-returns when `transactions.status === 'paid'`; RPC also keyed on `p_stripe_session_id`.
+- Fires `package_purchase` gamification event with `idempotency_key = purchase:${tx.id}`.
 
-Goal: KPI numbers and charts update without page reload when `transactions`, `member_attendance`, `schedule`, `members` change.
+Changes:
+- After successful `fulfillCheckoutSession`, if `session.metadata.surface === 'member'` AND the `line_push_outbox` table exists in the schema (defensive `try/catch` insert; the current DB has no such table, so this is a no-op today and safe when the table is later added), enqueue a `payment_success` row `{ member_id, template: 'payment_success', payload: { transaction_id, package_name, amount } }`. Wrap in try/catch so a missing table never blocks fulfillment.
+- No duplication risk: idempotency guard is unchanged.
 
-- Audit `src/hooks/useRealtimeSync.ts` `TABLE_INVALIDATION_MAP`:
-  - Ensure `transactions` → invalidates `queryKeys.dashboardStats`, `queryKeys.revenueSeries*`, `queryKeys.revenueByMonth`.
-  - Ensure `member_attendance` → dashboardStats + checkin series + livePulse.
-  - Ensure `schedule` → dashboardStats (classesToday) + schedule lists.
-  - Ensure `members` → dashboardStats (activeMembers) + members list + high-risk.
-- Add missing mappings if absent. Add a lightweight dev-only `console.debug` tag `[rt] invalidated <keys> from <table>` behind `import.meta.env.DEV` to make realtime observable during QA.
-- Manual verification checklist added to `docs/SMOKE_TEST.md` (insert paid transaction → dashboard revenue tile updates ≤2s, no reload).
+### 4. Frontend
 
-## 4. Playwright regression for LobbyFilters
+`src/hooks/useMemberStripeCheckout.ts`:
+```ts
+export function useMemberStripeCheckout() {
+  const { memberId } = useMemberSession();
+  const [isLoading, setLoading] = useState(false);
+  const start = async (packageId: string, method: 'card'|'promptpay') => {
+    // nonce + supabase.functions.invoke('stripe-create-checkout', {
+    //   body: { member_id: memberId, package_id: packageId, surface: 'member',
+    //           payment_method_types: method === 'promptpay' ? ['card','promptpay'] : ['card'],
+    //           nonce }
+    // })
+    // window.location.href = data.checkout_url  (same tab — member is on mobile)
+  };
+  return { start, isLoading };
+}
+```
+Query-key namespace added to `queryKeys.ts`: `memberStripeCheckout: ['member','stripe-checkout'] as const` (used only for potential future cache tagging; mutation itself has no key).
 
-- New spec `e2e/lobby-filters.spec.ts`:
-  1. Login as staff (reuse existing session-injection pattern from `e2e/qr-checkin.spec.ts`).
-  2. Attach a network listener: fail the test if any response `status >= 400` OR any request URL contains `location_status=eq.active`.
-  3. Navigate to `/lobby`, open the location filter, iterate through each option.
-  4. Assert filter chips render and the list re-queries with `location_status=eq.open`.
-- Add to `.github/workflows/e2e.yml` matrix (already runs Playwright).
+`MemberPurchasePage.tsx`:
+- `PAYMENT_METHODS`: `transfer` (enabled), `promptpay` (enabled), `card` (enabled).
+- `handlePurchase`:
+  - `transfer` → existing navigate to `/member/upload-slip`.
+  - `card` / `promptpay` → `start(id, method)`.
+- Read `?payment=success|cancelled` on mount:
+  - `success` → set `step='success'`, invalidate `queryKeys.member.packages` (and `available-packages`), `toast.success`.
+  - `cancelled` → `toast.error(t('member.paymentCancelled'))`, stay on review step.
+- Add `logActivity({ event_type: 'member.stripe_checkout_initiated', ... })` in the hook `onSuccess`.
 
-## Technical notes
+### 5. i18n keys (both `en.ts` and `th.ts`)
+`member.payWithCard`, `member.payWithPromptPay`, `member.redirectingToStripe`, `member.paymentSuccessTitle`, `member.paymentSuccessDesc`, `member.paymentCancelled`, `member.paymentFailed`.
 
-- Files touched:
-  - New: `src/apps/shared/components/CardQueryError.tsx`, `e2e/lobby-filters.spec.ts`
-  - Edit: `src/pages/Dashboard.tsx`, `src/pages/Analytics.tsx`, `src/components/admin-ds/RevenueAreaChart.tsx`, `src/components/admin-ds/LivePulseCard.tsx`, `src/hooks/useDashboardStats.ts`, `src/hooks/useRevenueSeries.ts`, `src/hooks/useAnalytics.ts`, `src/hooks/useRealtimeSync.ts`, `src/i18n/locales/{en,th}.ts`, `docs/SMOKE_TEST.md`, `docs/DEVLOG.md`
-- No DB migration. No RLS change. No hook API break — additive fields only.
-- Zero-regression: existing consumers ignoring new fields keep working.
+## What is preserved
+- Admin sell-package via Stripe (unchanged code path, unchanged authz).
+- Slip upload → `approve-slip` flow.
+- `process_stripe_payment` RPC and all RLS.
+- Webhook idempotency on replayed events.
+
+## Implementation order
+1. Edit `stripe-create-checkout` (authz split + payment_method_types + member URLs + metadata).
+2. Edit `stripe-webhook` (defensive `line_push_outbox` enqueue on member surface).
+3. Add `queryKeys.ts` entry + `useMemberStripeCheckout.ts`.
+4. Wire `MemberPurchasePage.tsx` (enable methods, handler, redirect-return handling).
+5. i18n en + th.
+6. DEVLOG entry.
 
 ## Regression checklist
-
-- Dashboard KPIs still render numbers when queries succeed.
-- Forcing a 500 on any card shows error + Retry, Retry refetches.
-- Revenue chart with real paid_at data unchanged visually.
-- Insert paid `transactions` row → dashboard revenue tile updates without reload.
-- `bun run test` and `bun run build` pass.
-- New Playwright spec passes locally.
+- Admin sell-package Stripe checkout still works (staff_id set, redirects to `/finance?payment=...`).
+- Member card checkout completes → `member_packages` row created, `activity_log` row present, no duplicate on webhook replay.
+- Member PromptPay session shows `promptpay` in Stripe test dashboard payment methods.
+- Member cancel returns to `/member/packages?payment=cancelled` with toast, no pending duplicate.
+- Slip upload path renders identically and reaches `/member/upload-slip`.
+- No RLS/policy migration; typecheck via `bun run build` clean.
