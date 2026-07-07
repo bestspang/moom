@@ -46,7 +46,7 @@ const LiffCallback: React.FC = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center">
         <p className="text-destructive font-medium mb-2">{error}</p>
         <button
-          onClick={() => navigate('/liff/member', { replace: true })}
+          onClick={() => navigate('/member', { replace: true })}
           className="text-sm text-primary underline"
         >
           {t('liff.backToApp')}
