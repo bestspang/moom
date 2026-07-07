@@ -23,9 +23,9 @@ const LiffCallback: React.FC = () => {
         const liffState = searchParams.get('liff.state');
 
         // In production: LIFF SDK init → get ID token → call line-auth edge function
-        // For now, redirect to the target app
-        const targetPath = targetApp === 'trainer' ? '/liff/trainer' : '/liff/member';
-        
+        // Redirect to the real Member/Trainer app (legacy /liff/member shell removed)
+        const targetPath = targetApp === 'trainer' ? '/trainer' : '/member';
+
         // If there's a liff.state, it may contain the original path
         if (liffState) {
           navigate(liffState, { replace: true });
