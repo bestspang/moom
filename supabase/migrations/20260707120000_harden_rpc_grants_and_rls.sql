@@ -10,12 +10,16 @@
 --   1. adds is_staff() — true only for real staff roles, never members;
 --   2. revokes direct EXECUTE on the edge-function-only money RPCs;
 --   3. binds the member-facing RPCs to the caller's own member id;
---   4. re-scopes the slip-images / staff / member_notes read policies to is_staff().
+--   4. re-scopes the slip-images / member_notes read policies to is_staff().
 --
--- NOTE: the members / member_packages / member_attendance PII reads are intentionally
--- NOT changed here — the member app reads other members' names/avatars for social and
--- leaderboard features, so those need a view-based (column-scoped) fix, not a policy
--- swap. Tracked as a follow-up.
+-- NOTE: the members / member_packages / member_attendance PII reads AND the staff
+-- directory read are intentionally NOT tightened here. The member app reads other
+-- members' names/avatars (social/leaderboard) and scheduled trainers' names from the
+-- staff table (trainer:staff!schedule_trainer_id_fkey embeds in the schedule/booking/
+-- class-detail queries). RLS is row-level, so blocking those tables would null out
+-- trainer names and leaderboards in the member UI. Those need a column-scoped view
+-- (e.g. a trainer_directory / member_directory view the member app reads instead of
+-- the base table). Tracked as a follow-up.
 
 -- ---------------------------------------------------------------------------
 -- 1) Staff-only predicate. Unlike has_min_access_level(uid,'level_1_minimum'),
@@ -326,11 +330,11 @@ CREATE POLICY "Slip images readable by staff or owner"
     )
   );
 
--- 4b) staff directory
-DROP POLICY IF EXISTS "Staff with role can read staff" ON public.staff;
-CREATE POLICY "Staff with role can read staff" ON public.staff
-  FOR SELECT
-  USING (public.is_staff(auth.uid()));
+-- 4b) staff directory: intentionally left at has_min_access_level(level_1). The member
+--     app reads scheduled trainers' names from the staff table via
+--     trainer:staff!schedule_trainer_id_fkey embeds, so tightening to is_staff() would
+--     remove trainer names from the member schedule/booking UI. Deferred to a
+--     column-scoped trainer_directory view (see NOTE at the top of this file).
 
 -- 4c) member_notes (staff-only feature: private notes about members)
 DROP POLICY IF EXISTS "Staff with role can read member notes" ON public.member_notes;
