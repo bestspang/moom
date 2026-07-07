@@ -1,51 +1,73 @@
-## Quick Recheck — Overall Functions
 
-Systematic smoke pass across all 4 surfaces (Admin, Member, Trainer, Staff) using live Playwright against the running preview, verifying real data flows (not just code). No code changes unless a bug is confirmed.
+## 1. UI-visible error handling on cards/components
 
-### Scope
+Goal: Every data-driven card shows an inline error + Retry when its query fails, instead of silently blank or "฿0".
 
-**Admin (desktop)**
-- Dashboard: KPI strip, LIVE 12h pulse, 30-day chart, Business Health, Goals, Activity feed, Daily Briefing
-- Members: list loads, search/filter, bulk action bar position, member details (Overview + Records tabs)
-- Schedule: today's classes render, roster, booking counts
-- Finance: transactions list, revenue chart, slip review queue
-- Packages / Promotions / Classes / Staff / Locations: list + CRUD buttons wired
-- Gamification: rules, rewards, quests, badges pages load with data
-- Settings → Brand Kit: name/logo change propagates to sidebar/header/tab/favicon
+- Reuse existing `src/apps/shared/components/QueryError.tsx` (already has message + retry) and add a compact sibling `CardQueryError` variant sized for KPI/chart cards (icon + one-line message + small Retry button).
+- Wrap render bodies of the main dashboard/chart components with a standard pattern:
+  ```
+  if (isLoading) <Skeleton/>
+  else if (isError) <CardQueryError message={error.message} onRetry={refetch}/>
+  else <Content/>
+  ```
+- Apply to:
+  - `src/pages/Dashboard.tsx` KPI tiles (checkins, revenue, classes, active members)
+  - `src/components/admin-ds/RevenueAreaChart.tsx` host page (pass `isError` + `onRetry` props; add optional `error`/`onRetry` to the component)
+  - `src/pages/Analytics.tsx` four charts (Revenue, Growth, Fill Rate, Funnel)
+  - `LivePulseCard`, `AttentionList`, `AIBrief` on dashboard
+- Add i18n keys `common.cardError`, `common.retry` (retry exists) in `src/i18n/locales/{en,th}.ts`.
+- No hook signature changes — just surface `isError`, `error`, `refetch` already returned by TanStack Query.
 
-**Member (mobile)**
-- Home: greeting, momentum card, today's plan, quick actions
-- Schedule + Booking flow
-- Check-in QR
-- Rewards + XP ledger
-- Profile + tier
+## 2. Revenue chart UX when `paid_at` is missing
 
-**Trainer (mobile)**
-- Home impact cards, Schedule (filtered by staff_id), Roster, Workouts, Badges
+Problem: Chart shows ฿0 because most `transactions` rows have `paid_at = NULL`, hiding real revenue.
 
-**Staff (mobile)**
-- Home recent check-ins, Check-in, Members lookup, Payments, Schedule
+- Update `useRevenueSeries` (and `useDashboardStats.todayRevenue`, `useRevenueByMonth`) to return an extra shape:
+  ```
+  { data, total, paidCount, missingPaidAtCount }
+  ```
+  Query both: rows with `paid_at` in range (used for chart), and count of `status='paid'` rows with `paid_at IS NULL` in the same created_at window.
+- In `RevenueAreaChart`:
+  - If `total === 0 && missingPaidAtCount > 0`: replace the empty "—" state with a warning card:
+    "ไม่มีข้อมูล `paid_at` สำหรับ N รายการที่จ่ายแล้ว — กราฟจึงยังว่าง" + link/button "ดูรายการ" that routes to Finance filtered by `paid_at IS NULL`.
+  - If `total > 0 && missingPaidAtCount > 0`: show a subtle inline badge under the summary: "N รายการรอเติม paid_at".
+- Same warning surfaced in Dashboard revenue KPI tile subtitle.
+- Add i18n strings (EN/TH). No schema change.
 
-### Method
+## 3. Verify realtime updates on KPIs/charts
 
-1. Launch Playwright against `http://localhost:8080` with injected Supabase session.
-2. For each surface, navigate route → screenshot → verify:
-   - Data present (not empty/loading/hardcoded)
-   - Numbers match DB via a quick `supabase--read_query` cross-check on 2-3 KPIs
-   - Realtime: mutate one record (e.g. toggle a booking) → confirm list updates without reload
-   - No console errors, no failed network requests
-3. Classify each area **WORKING / PARTIAL / BROKEN** with screenshot evidence.
-4. Report findings; propose targeted fixes only for confirmed issues (separate plan per fix, no bundled refactors).
+Goal: KPI numbers and charts update without page reload when `transactions`, `member_attendance`, `schedule`, `members` change.
 
-### Deliverable
+- Audit `src/hooks/useRealtimeSync.ts` `TABLE_INVALIDATION_MAP`:
+  - Ensure `transactions` → invalidates `queryKeys.dashboardStats`, `queryKeys.revenueSeries*`, `queryKeys.revenueByMonth`.
+  - Ensure `member_attendance` → dashboardStats + checkin series + livePulse.
+  - Ensure `schedule` → dashboardStats (classesToday) + schedule lists.
+  - Ensure `members` → dashboardStats (activeMembers) + members list + high-risk.
+- Add missing mappings if absent. Add a lightweight dev-only `console.debug` tag `[rt] invalidated <keys> from <table>` behind `import.meta.env.DEV` to make realtime observable during QA.
+- Manual verification checklist added to `docs/SMOKE_TEST.md` (insert paid transaction → dashboard revenue tile updates ≤2s, no reload).
 
-A single report with:
-- Per-surface checklist (pass/fail + screenshot ref)
-- List of confirmed bugs with root-cause hypothesis and minimal-diff fix proposal
-- Zero speculative changes
+## 4. Playwright regression for LobbyFilters
 
-### Out of Scope
+- New spec `e2e/lobby-filters.spec.ts`:
+  1. Login as staff (reuse existing session-injection pattern from `e2e/qr-checkin.spec.ts`).
+  2. Attach a network listener: fail the test if any response `status >= 400` OR any request URL contains `location_status=eq.active`.
+  3. Navigate to `/lobby`, open the location filter, iterate through each option.
+  4. Assert filter chips render and the list re-queries with `location_status=eq.open`.
+- Add to `.github/workflows/e2e.yml` matrix (already runs Playwright).
 
-- Redesigns, refactors, new features
-- Fixing anything not confirmed broken via screenshot + data cross-check
-- Backend schema changes
+## Technical notes
+
+- Files touched:
+  - New: `src/apps/shared/components/CardQueryError.tsx`, `e2e/lobby-filters.spec.ts`
+  - Edit: `src/pages/Dashboard.tsx`, `src/pages/Analytics.tsx`, `src/components/admin-ds/RevenueAreaChart.tsx`, `src/components/admin-ds/LivePulseCard.tsx`, `src/hooks/useDashboardStats.ts`, `src/hooks/useRevenueSeries.ts`, `src/hooks/useAnalytics.ts`, `src/hooks/useRealtimeSync.ts`, `src/i18n/locales/{en,th}.ts`, `docs/SMOKE_TEST.md`, `docs/DEVLOG.md`
+- No DB migration. No RLS change. No hook API break — additive fields only.
+- Zero-regression: existing consumers ignoring new fields keep working.
+
+## Regression checklist
+
+- Dashboard KPIs still render numbers when queries succeed.
+- Forcing a 500 on any card shows error + Retry, Retry refetches.
+- Revenue chart with real paid_at data unchanged visually.
+- Insert paid `transactions` row → dashboard revenue tile updates without reload.
+- `bun run test` and `bun run build` pass.
+- New Playwright spec passes locally.
