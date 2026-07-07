@@ -194,10 +194,13 @@ export default function MemberCheckInPage() {
 
   const onCheckInSuccess = useCallback(async () => {
     if (!memberId) return;
+    // Stable per-member, per-Bangkok-day key so a re-scan/retry doesn't mint duplicate
+    // XP (Date.now() made every event unique, defeating the xp_ledger idempotency guard).
+    const bangkokDate = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
     fireGamificationEvent({
       event_type: 'check_in',
       member_id: memberId,
-      idempotency_key: `checkin:${memberId}:${new Date().toISOString().split('T')[0]}:${Date.now()}`,
+      idempotency_key: `checkin:${memberId}:${bangkokDate}`,
       metadata: { method: 'qr_scan' },
     });
     await queryClient.invalidateQueries({ queryKey: ['momentum-profile'] });

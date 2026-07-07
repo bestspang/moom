@@ -116,19 +116,26 @@ export const useValidateQRToken = () => {
       if (new Date(tokenData.expires_at) < new Date()) throw new Error('QR code has expired');
       if (tokenData.used_at) throw new Error('QR code has already been used');
 
-      // Mark as used
-      await supabase
+      // Consume the token conditionally on it still being unused, so two concurrent
+      // scans can't both succeed (the earlier used_at check is a TOCTOU on its own).
+      const { data: consumed, error: consumeError } = await supabase
         .from('checkin_qr_tokens')
         .update({
           used_at: new Date().toISOString(),
           used_by_staff_id: staffId || null,
         } as any)
-        .eq('id', tokenData.id);
+        .eq('id', tokenData.id)
+        .is('used_at', null)
+        .select('id')
+        .maybeSingle();
 
-      // Create attendance record
+      if (consumeError) throw consumeError;
+      if (!consumed) throw new Error('QR code has already been used');
+
+      // Create attendance record — surface failures instead of falsely reporting success.
       const effectiveMemberId = memberId || tokenData.member_id;
       if (effectiveMemberId) {
-        await supabase
+        const { error: attendanceError } = await supabase
           .from('member_attendance')
           .insert({
             member_id: effectiveMemberId,
@@ -137,13 +144,14 @@ export const useValidateQRToken = () => {
             check_in_type: 'gym',
             checkin_method: 'qr',
           } as any);
+        if (attendanceError) throw attendanceError;
       }
 
       return { token: tokenData, memberId: effectiveMemberId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.activeQrToken(null) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.checkIns('') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkInsAll() });
       logActivity({
         event_type: 'checkin_qr_validated',
         activity: 'Check-in via QR code successful',

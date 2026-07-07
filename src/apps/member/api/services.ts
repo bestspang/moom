@@ -330,27 +330,8 @@ export async function uploadTransferSlip(data: {
   package_id?: string | null;
   file?: File;
 }): Promise<void> {
-  let slipUrl: string | null = null;
-
-  // Upload file to storage if provided
-  if (data.file) {
-    const fileExt = data.file.name.split('.').pop() ?? 'jpg';
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
-    const filePath = `slips/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('slip-images')
-      .upload(filePath, data.file, { contentType: data.file.type });
-
-    if (uploadError) throw uploadError;
-
-    const { data: urlData } = supabase.storage
-      .from('slip-images')
-      .getPublicUrl(filePath);
-    slipUrl = urlData?.publicUrl ?? null;
-  }
-
-  // Get member ID from session
+  // Resolve member identity first so the uploaded file can be scoped to a
+  // per-member folder (the storage INSERT policy enforces this).
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData?.user?.id;
   if (!userId) throw new Error('Not authenticated');
@@ -365,6 +346,25 @@ export async function uploadTransferSlip(data: {
 
   const memberId = identity?.admin_entity_id;
   if (!memberId) throw new Error('Member identity not found');
+
+  let slipUrl: string | null = null;
+
+  // Upload file to storage if provided, under the caller's own member folder.
+  if (data.file) {
+    const fileExt = data.file.name.split('.').pop() ?? 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `slips/${memberId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('slip-images')
+      .upload(filePath, data.file, { contentType: data.file.type });
+
+    if (uploadError) throw uploadError;
+
+    // Store the bucket-relative object path — the bucket is private, so getPublicUrl()
+    // would produce a dead link. Viewers sign it on read (see src/lib/slipImages.ts).
+    slipUrl = filePath;
+  }
 
   const basePayload = {
     p_member_id: memberId,

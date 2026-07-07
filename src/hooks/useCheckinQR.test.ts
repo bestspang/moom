@@ -96,7 +96,14 @@ describe('useValidateQRToken — QR check-in E2E contract', () => {
   });
 
   it('successful redemption marks token used and inserts attendance with checkin_method=qr', async () => {
-    const updateEq = vi.fn(async () => ({ data: null, error: null }));
+    // Token consume is now conditional: .update().eq('id',..).is('used_at',null).select().maybeSingle()
+    const updateEq = vi.fn(() => ({
+      is: () => ({
+        select: () => ({
+          maybeSingle: async () => ({ data: { id: 't3' }, error: null }),
+        }),
+      }),
+    }));
     const insertSpy = vi.fn(async () => ({ data: null, error: null }));
 
     // call 1: select token

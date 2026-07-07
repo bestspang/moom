@@ -13,7 +13,8 @@ import { getDateLocale } from '@/lib/formatters';
 import { useTransferSlipDetail, useSlipActivityLog, useApproveSlip, useRejectSlip, useVoidSlip } from '@/hooks/useTransferSlips';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, XCircle, Ban, Clock, FileText, User, MapPin, Banknote, Package } from 'lucide-react';
+import { getSlipSignedUrl } from '@/lib/slipImages';
+import { CheckCircle, XCircle, Ban, Clock, FileText, User, MapPin, Banknote, Package, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface SlipDetailDialogProps {
@@ -29,6 +30,15 @@ export const SlipDetailDialog: React.FC<SlipDetailDialogProps> = ({ slipId, open
   const approveSlip = useApproveSlip();
   const rejectSlip = useRejectSlip();
   const voidSlip = useVoidSlip();
+
+  // Bucket is private — sign the slip's object path on demand so reviewers can see it.
+  const slipFileUrl = (slip as { slip_file_url?: string | null } | undefined)?.slip_file_url ?? null;
+  const { data: signedSlipUrl, isLoading: signingSlip } = useQuery({
+    queryKey: ['slip-signed-url', slipId],
+    enabled: !!slipFileUrl,
+    queryFn: () => getSlipSignedUrl(slipFileUrl),
+    staleTime: 50 * 60 * 1000,
+  });
 
   const [mode, setMode] = useState<'view' | 'approve' | 'reject' | 'void'>('view');
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
@@ -156,6 +166,19 @@ export const SlipDetailDialog: React.FC<SlipDetailDialogProps> = ({ slipId, open
             </Badge>
           )}
         </div>
+
+        {/* Slip image (signed URL — private bucket) */}
+        {slipFileUrl && (
+          <div className="flex items-center justify-center rounded-lg overflow-hidden border border-border min-h-32">
+            {signingSlip ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
+            ) : signedSlipUrl ? (
+              <img src={signedSlipUrl} alt={t('transferSlips.slipDetail')} className="w-full object-contain max-h-64" />
+            ) : (
+              <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+            )}
+          </div>
+        )}
 
         {/* Slip Info Grid */}
         <div className="grid grid-cols-2 gap-3 text-sm">
