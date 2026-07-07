@@ -44,3 +44,13 @@ verify_jwt = false
 
 [functions.evaluate-tiers-daily]
 verify_jwt = false
+
+# Does its own auth in-code (CRON_SECRET or service-role key); the cron invoker
+# sends no user JWT, so the gateway default verify_jwt=true would reject it.
+[functions.auto-notifications]
+verify_jwt = false
+
+# Validates the caller's JWT in-code (auth.getUser); keep it consistent with the
+# other functions instead of relying on the gateway default.
+[functions.streak-freeze]
+verify_jwt = false

@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import { useApproveSlip, useRejectSlip } from '@/hooks/useTransferSlips';
+import { getSlipSignedUrl } from '@/lib/slipImages';
 
 type Slip = {
   id: string;
@@ -34,6 +35,14 @@ export default function StaffPaymentsPage() {
 
   const approveSlip = useApproveSlip();
   const rejectSlip = useRejectSlip();
+
+  // Bucket is private — sign the selected slip's object path on demand to display it.
+  const { data: signedSlipUrl, isLoading: signingSlip } = useQuery({
+    queryKey: ['slip-signed-url', selectedSlip?.id],
+    enabled: !!selectedSlip?.slip_file_url,
+    queryFn: () => getSlipSignedUrl(selectedSlip!.slip_file_url),
+    staleTime: 50 * 60 * 1000,
+  });
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['staff-transfer-slips'],
@@ -126,10 +135,16 @@ export default function StaffPaymentsPage() {
           </SheetHeader>
           {selectedSlip && (
             <div className="space-y-4">
-              {/* Slip image */}
+              {/* Slip image (signed URL — private bucket) */}
               {selectedSlip.slip_file_url ? (
-                <div className="rounded-lg overflow-hidden border border-border">
-                  <img src={selectedSlip.slip_file_url} alt={t('transferSlips.slipDetail')} className="w-full object-contain max-h-56" />
+                <div className="flex items-center justify-center rounded-lg overflow-hidden border border-border min-h-32">
+                  {signingSlip ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
+                  ) : signedSlipUrl ? (
+                    <img src={signedSlipUrl} alt={t('transferSlips.slipDetail')} className="w-full object-contain max-h-56" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-center rounded-lg border border-dashed border-border h-32">

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logActivity } from '@/lib/activityLogger';
-import { fireGamificationEvent } from '@/lib/gamificationEvents';
 import type { Database } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -648,17 +647,9 @@ export const useAssignPackageToMember = () => {
           amount: variables.pkg.price,
         },
       });
-      fireGamificationEvent({
-        event_type: 'package_purchase',
-        member_id: variables.memberId,
-        idempotency_key: `purchase:${result.transactionNo}`,
-        metadata: {
-          package_id: variables.pkg.id,
-          package_name: variables.pkg.name_en,
-          net_paid: variables.pkg.price - Math.min((variables.promotionDiscount || 0) + (variables.couponDiscount || 0) + (variables.manualDiscount || 0), variables.pkg.price),
-          term_months: Math.ceil((variables.pkg.term_days || 30) / 30),
-        },
-      });
+      // Gamification for the sale is emitted server-side by the sell-package edge
+      // function (keyed on the transaction UUID). Do NOT emit again here — a second
+      // client-side event with a different key double-awards XP/coins/SP on every sale.
       toast.success(t('toast.packageAssigned'));
     },
     onError: (error) => toast.error(error.message),

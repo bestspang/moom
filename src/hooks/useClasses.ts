@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { queryKeys } from '@/lib/queryKeys';
 import { logActivity } from '@/lib/activityLogger';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Class = Tables<'classes'>;
@@ -125,8 +125,10 @@ export const useClassPerformance = (classId: string) => {
       const now = new Date();
       const weekStart = startOfWeek(now, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      const weekStartStr = weekStart.toISOString().split('T')[0];
-      const weekEndStr = weekEnd.toISOString().split('T')[0];
+      // format() keeps the local calendar date; toISOString() would shift to UTC first
+      // and pull Monday back to Sunday for UTC+7 (Bangkok), skewing the week window.
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+      const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
 
       const { data: weekSchedules, error: schedErr } = await supabase
         .from('schedule')

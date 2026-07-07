@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getBangkokDayRange } from '@/lib/dateRange';
 
 // ─── Schedule ───
 export interface ScheduleItem {
@@ -329,27 +330,8 @@ export async function uploadTransferSlip(data: {
   package_id?: string | null;
   file?: File;
 }): Promise<void> {
-  let slipUrl: string | null = null;
-
-  // Upload file to storage if provided
-  if (data.file) {
-    const fileExt = data.file.name.split('.').pop() ?? 'jpg';
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
-    const filePath = `slips/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('slip-images')
-      .upload(filePath, data.file, { contentType: data.file.type });
-
-    if (uploadError) throw uploadError;
-
-    const { data: urlData } = supabase.storage
-      .from('slip-images')
-      .getPublicUrl(filePath);
-    slipUrl = urlData?.publicUrl ?? null;
-  }
-
-  // Get member ID from session
+  // Resolve member identity first so the uploaded file can be scoped to a
+  // per-member folder (the storage INSERT policy enforces this).
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData?.user?.id;
   if (!userId) throw new Error('Not authenticated');
@@ -364,6 +346,25 @@ export async function uploadTransferSlip(data: {
 
   const memberId = identity?.admin_entity_id;
   if (!memberId) throw new Error('Member identity not found');
+
+  let slipUrl: string | null = null;
+
+  // Upload file to storage if provided, under the caller's own member folder.
+  if (data.file) {
+    const fileExt = data.file.name.split('.').pop() ?? 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `slips/${memberId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('slip-images')
+      .upload(filePath, data.file, { contentType: data.file.type });
+
+    if (uploadError) throw uploadError;
+
+    // Store the bucket-relative object path — the bucket is private, so getPublicUrl()
+    // would produce a dead link. Viewers sign it on read (see src/lib/slipImages.ts).
+    slipUrl = filePath;
+  }
 
   const basePayload = {
     p_member_id: memberId,
@@ -449,16 +450,17 @@ export async function fetchMyAttendance(memberId: string): Promise<AttendanceRec
 export async function fetchTodayCheckin(memberId: string): Promise<{ checkedIn: boolean; checkInTime: string | null }> {
   if (!memberId) return { checkedIn: false, checkInTime: null };
 
-  // Bangkok day-bucket — check-ins are stored as UTC timestamptz, so we compare
-  // against today's start in local time, expressed as ISO.
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  // Bangkok day-bucket — check-ins are stored as UTC timestamptz. Use the shared
+  // helper so "today" is the Asia/Bangkok calendar day (00:00–24:00 +07:00), with an
+  // explicit upper bound so a late check-in doesn't leak across the day boundary.
+  const { start, end } = getBangkokDayRange(new Date());
 
   const { data, error } = await supabase
     .from('member_attendance')
     .select('id, check_in_time')
     .eq('member_id', memberId)
-    .gte('check_in_time', startOfDay.toISOString())
+    .gte('check_in_time', start)
+    .lt('check_in_time', end)
     .order('check_in_time', { ascending: false })
     .limit(1)
     .maybeSingle();

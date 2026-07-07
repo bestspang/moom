@@ -333,33 +333,33 @@ async function processChallenges(
       const challengeIdemKey = `challenge_complete:${challenge.id}:${memberId}`;
 
       if (rewardXp > 0) {
-        await db.from("xp_ledger").insert({
+        await db.from("xp_ledger").upsert({
           member_id: memberId,
           event_type: "challenge_completed",
           delta: rewardXp,
           balance_after: newTotalXp + rewardXp,
           idempotency_key: `xp:${challengeIdemKey}`,
           metadata: { challenge_id: challenge.id },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
       }
 
       if (rewardPoints > 0) {
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id: memberId,
           event_type: "challenge_completed",
           delta: rewardPoints,
           balance_after: newAvailablePoints + rewardPoints,
           idempotency_key: `pts:${challengeIdemKey}`,
           metadata: { challenge_id: challenge.id },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
       }
 
       if (challenge.reward_badge_id) {
-        await db.from("badge_earnings").insert({
+        await db.from("badge_earnings").upsert({
           member_id: memberId,
           badge_id: challenge.reward_badge_id,
           event_ref: challengeIdemKey,
-        }).onConflict("member_id,badge_id").ignoreDuplicates();
+        }, { onConflict: "member_id,badge_id", ignoreDuplicates: true });
       }
     }
 
@@ -399,6 +399,16 @@ Deno.serve(async (req) => {
 
     if (!event_type || !idempotency_key) {
       return new Response(JSON.stringify({ error: "Missing required fields: event_type, idempotency_key" }), { status: 400, headers: cors });
+    }
+
+    // Monetary events mint XP/coins from a client-supplied `net_paid` and a
+    // client-chosen idempotency key. They must only ever originate from trusted
+    // server callers (sell-package, approve-slip, stripe-webhook — all service role).
+    // Reject non-service-role callers so a logged-in member can't forge currency by
+    // calling this endpoint directly with an inflated net_paid.
+    const MONETARY_EVENTS = new Set(["package_purchase", "shop_purchase"]);
+    if (MONETARY_EVENTS.has(event_type) && !isInternalServiceRole) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
     }
 
     // Identity resolution — supports both direct member_id and cross-project experience_user_id
@@ -507,7 +517,6 @@ Deno.serve(async (req) => {
     }
 
     const newTotalXp = (profile.total_xp || 0) + xpDelta;
-    const newTotalPoints = (profile.total_points || 0) + pointsDelta;
     const newAvailablePoints = (profile.available_points || 0) + pointsDelta;
 
     // 6) INSERT XP LEDGER (always insert for idempotency tracking)
@@ -569,12 +578,13 @@ Deno.serve(async (req) => {
       }
 
       if (spValue > 0) {
-        await db.from("sp_ledger").insert({
+        await db.from("sp_ledger").upsert({
           member_id,
           event_type,
           delta: spValue,
+          idempotency_key: `sp:${idempotency_key}`,
           metadata: metadata || {},
-        });
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
       }
     } catch (spErr) {
       console.warn("SP ledger write failed (non-blocking):", spErr);
@@ -586,16 +596,17 @@ Deno.serve(async (req) => {
     // 9) UPDATE STREAK
     const { newStreak, newLongest } = await updateStreak(db, member_id, profile.longest_streak || 0);
 
-    // 10) UPDATE PROFILE
-    await db.from("member_gamification_profiles").update({
-      total_xp: newTotalXp,
-      total_points: newTotalPoints,
-      available_points: newAvailablePoints,
-      current_level: newLevel,
-      current_streak: newStreak,
-      longest_streak: newLongest,
-      last_activity_at: new Date().toISOString(),
-    }).eq("member_id", member_id);
+    // 10) UPDATE PROFILE — atomic relative increment so concurrent events don't lose
+    //     XP/points (the profile is a cache over the append-only ledgers).
+    await db.rpc("apply_gamification_profile_delta", {
+      p_member_id: member_id,
+      p_xp_delta: xpDelta,
+      p_points_total_delta: pointsDelta,
+      p_points_available_delta: pointsDelta,
+      p_current_level: newLevel,
+      p_current_streak: newStreak,
+      p_longest_streak: newLongest,
+    });
 
     // 10.5) CHECK BADGE UNLOCKS (condition-based)
     const newBadgeIds: string[] = [];
@@ -713,39 +724,41 @@ Deno.serve(async (req) => {
         // Grant points to referrer
         const referrerProfile = await getOrCreateProfile(db, pendingReferral.referrer_member_id);
         const referrerNewAvail = (referrerProfile.available_points || 0) + referrerPoints;
-        const referrerNewTotal = (referrerProfile.total_points || 0) + referrerPoints;
 
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id: pendingReferral.referrer_member_id,
           event_type: "referral_reward",
           delta: referrerPoints,
           balance_after: referrerNewAvail,
           idempotency_key: `pts:${refIdemKey}:referrer`,
           metadata: { referral_id: pendingReferral.id, role: "referrer" },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
 
-        await db.from("member_gamification_profiles").update({
-          total_points: referrerNewTotal,
-          available_points: referrerNewAvail,
-        }).eq("member_id", pendingReferral.referrer_member_id);
+        await db.rpc("apply_gamification_profile_delta", {
+          p_member_id: pendingReferral.referrer_member_id,
+          p_xp_delta: 0,
+          p_points_total_delta: referrerPoints,
+          p_points_available_delta: referrerPoints,
+        });
 
         // Grant points to referred (current member)
         const referredNewAvail = newAvailablePoints + referredPoints;
-        const referredNewTotal = newTotalPoints + referredPoints;
 
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id,
           event_type: "referral_reward",
           delta: referredPoints,
           balance_after: referredNewAvail,
           idempotency_key: `pts:${refIdemKey}:referred`,
           metadata: { referral_id: pendingReferral.id, role: "referred" },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
 
-        await db.from("member_gamification_profiles").update({
-          total_points: referredNewTotal,
-          available_points: referredNewAvail,
-        }).eq("member_id", member_id);
+        await db.rpc("apply_gamification_profile_delta", {
+          p_member_id: member_id,
+          p_xp_delta: 0,
+          p_points_total_delta: referredPoints,
+          p_points_available_delta: referredPoints,
+        });
 
         // Mark referral as completed
         await db.from("member_referrals").update({
@@ -766,12 +779,13 @@ Deno.serve(async (req) => {
             .maybeSingle();
           const refSpValue = refSpRule?.sp_value ?? 20;
           if (refSpValue > 0) {
-            await db.from("sp_ledger").insert({
+            await db.from("sp_ledger").upsert({
               member_id: pendingReferral.referrer_member_id,
               event_type: "referral_purchase",
               delta: refSpValue,
+              idempotency_key: `sp:referral:${pendingReferral.id}`,
               metadata: { referral_id: pendingReferral.id },
-            });
+            }, { onConflict: "idempotency_key", ignoreDuplicates: true });
           }
         } catch (spErr) {
           console.warn("Referral SP write failed (non-blocking):", spErr);

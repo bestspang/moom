@@ -240,10 +240,10 @@ const App = () => (
                   }
                 >
                   <Route index element={<Dashboard />} />
-                  <Route path="lobby" element={<Lobby />} />
-                  <Route path="members" element={<Members />} />
-                  <Route path="members/:id/detail" element={<MemberDetails />} />
-                  <Route path="leads" element={<Leads />} />
+                  <Route path="lobby" element={<ProtectedRoute minAccessLevel="level_1_minimum"><Lobby /></ProtectedRoute>} />
+                  <Route path="members" element={<ProtectedRoute minAccessLevel="level_1_minimum"><Members /></ProtectedRoute>} />
+                  <Route path="members/:id/detail" element={<ProtectedRoute minAccessLevel="level_1_minimum"><MemberDetails /></ProtectedRoute>} />
+                  <Route path="leads" element={<ProtectedRoute minAccessLevel="level_2_operator"><Leads /></ProtectedRoute>} />
                   <Route path="package" element={<ProtectedRoute minAccessLevel="level_2_operator"><Packages /></ProtectedRoute>} />
                   <Route path="package/create" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
                   <Route path="package/:id/edit" element={<ProtectedRoute minAccessLevel="level_2_operator"><CreatePackage /></ProtectedRoute>} />
@@ -265,7 +265,7 @@ const App = () => (
                   <Route path="roles/create" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
                   <Route path="roles/:id" element={<ProtectedRoute minAccessLevel="level_4_master"><RoleEditor /></ProtectedRoute>} />
                   <Route path="location" element={<ProtectedRoute minAccessLevel="level_3_manager"><Locations /></ProtectedRoute>} />
-                  <Route path="activity-log" element={<ActivityLog />} />
+                  <Route path="activity-log" element={<ProtectedRoute minAccessLevel="level_2_operator"><ActivityLog /></ProtectedRoute>} />
                   <Route path="announcement" element={<Announcements />} />
                   <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
                   <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
