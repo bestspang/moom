@@ -43,6 +43,7 @@ export const queryKeys = {
   // Member packages & usage
   memberPackages: (memberId: string) => ['member-packages', memberId] as const,
   packageUsage: (memberPackageId: string) => ['package-usage', memberPackageId] as const,
+  availablePackages: () => ['available-packages'] as const,
 
   // Finance
   transactions: () => ['transactions'] as const,
