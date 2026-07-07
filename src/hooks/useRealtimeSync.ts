@@ -63,16 +63,16 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   locations: ['locations', 'location-stats'],
   classes: ['classes', 'class-stats', 'class-performance'],
   class_categories: ['class-categories', 'class-stats', 'classes'],
-  members: ['members', 'member', 'member-stats', 'high-risk-members', 'upcoming-birthdays'],
-  member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages', 'members-enrichment'],
+  members: ['members', 'member', 'member-stats', 'high-risk-members', 'upcoming-birthdays', 'analytics-member-growth', 'dashboard-stats'],
+  member_packages: ['high-risk-members', 'member-bookings', 'member-packages', 'package-metrics', 'packages', 'members-enrichment', 'analytics-member-growth'],
   package_usage_ledger: ['member-bookings', 'package-usage', 'package-usage-summary', 'package-metrics'],
-  leads: ['leads', 'hot-leads'],
+  leads: ['leads', 'hot-leads', 'analytics-lead-funnel'],
   ai_suggestions: ['ai-suggestions'],
   packages: ['packages', 'package-stats', 'package-metrics'],
   promotions: ['promotions', 'promotion-stats', 'promotion-packages'],
   promotion_packages: ['promotion-packages', 'promotions'],
   promotion_redemptions: ['promotion-redemptions', 'promotions', 'promotion-stats'],
-  transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats'],
+  transactions: ['transactions', 'finance-transactions', 'finance-stats', 'transfer-slips', 'transfer-slip-stats', 'package-metrics', 'dashboard-stats', 'analytics-revenue-by-month', 'revenue-daily-30d', 'peak-hour-revenue'],
   training_templates: ['training-templates'],
   workout_items: ['training-templates'],
   staff: ['staff', 'staff-stats'],
@@ -136,6 +136,10 @@ export function useRealtimeSync() {
           // Broad prefix-match invalidation
           for (const prefix of prefixes) {
             queryClient.invalidateQueries({ queryKey: [prefix] });
+          }
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.debug('[rt] invalidated', prefixes, 'from', table, payload.eventType);
           }
         }
       );
