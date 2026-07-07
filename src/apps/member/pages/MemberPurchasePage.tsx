@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MobilePageHeader } from '@/apps/shared/components/MobilePageHeader';
 import { Section } from '@/apps/shared/components/Section';
 import { QueryError } from '@/apps/shared/components/QueryError';
@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useTranslation } from 'react-i18next';
+import { useMemberStripeCheckout } from '@/hooks/useMemberStripeCheckout';
+import { toast } from 'sonner';
 
 type Step = 'review' | 'payment' | 'success';
 type PaymentMethodId = 'transfer' | 'promptpay' | 'card';
@@ -19,15 +21,20 @@ type PaymentMethodId = 'transfer' | 'promptpay' | 'card';
 export default function MemberPurchasePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
   const { memberId } = useMemberSession();
-  const [step, setStep] = useState<Step>('review');
+  const queryClient = useQueryClient();
+  const { start: startStripeCheckout, isLoading: stripeLoading } = useMemberStripeCheckout();
+
+  const paymentReturn = searchParams.get('payment');
+  const [step, setStep] = useState<Step>(paymentReturn === 'success' ? 'success' : 'review');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('transfer');
 
   const PAYMENT_METHODS = [
     { id: 'transfer', label: t('member.bankTransfer'), icon: Building2, enabled: true },
-    { id: 'promptpay', label: t('member.promptPay'), icon: Smartphone, enabled: false },
-    { id: 'card', label: t('member.creditDebitCard'), icon: CreditCard, enabled: false },
+    { id: 'promptpay', label: t('member.promptPay'), icon: Smartphone, enabled: true },
+    { id: 'card', label: t('member.creditDebitCard'), icon: CreditCard, enabled: true },
   ] as const;
 
   const { data: packages, isLoading, isError, refetch } = useQuery({
@@ -37,12 +44,32 @@ export default function MemberPurchasePage() {
 
   const pkg = useMemo(() => packages?.find(p => p.id === id), [packages, id]);
 
+  // Handle Stripe redirect return
+  useEffect(() => {
+    if (paymentReturn === 'success') {
+      queryClient.invalidateQueries({ queryKey: ['available-packages'] });
+      if (memberId) {
+        queryClient.invalidateQueries({ queryKey: ['member-packages', memberId] });
+      }
+      toast.success(t('member.paymentSuccessTitle'));
+      // Strip the query param so a refresh doesn't re-trigger.
+      setSearchParams({}, { replace: true });
+    } else if (paymentReturn === 'cancelled') {
+      toast.error(t('member.paymentCancelled'));
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentReturn, memberId]);
+
   const handlePurchase = async () => {
     if (!memberId || !id) return;
 
     if (paymentMethod === 'transfer') {
       navigate(`/member/upload-slip?packageId=${id}&amount=${pkg?.price ?? ''}`);
+      return;
     }
+    // card | promptpay → Stripe hosted checkout
+    await startStripeCheckout(id, paymentMethod);
   };
 
   const backAction = (
@@ -68,7 +95,7 @@ export default function MemberPurchasePage() {
     </div>
   );
 
-  if (!pkg) return (
+  if (!pkg && step !== 'success') return (
     <div className="animate-in fade-in-0 duration-200">
       <MobilePageHeader title={t('member.packages')} action={backAction} />
       <Section><p className="text-sm text-muted-foreground text-center py-8">{t('member.packageNotFound')}</p></Section>
@@ -81,8 +108,8 @@ export default function MemberPurchasePage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
           <CheckCircle2 className="h-8 w-8" />
         </div>
-        <h1 className="text-xl font-bold text-foreground mb-1">{t('member.purchaseInitiated')}</h1>
-        <p className="text-sm text-muted-foreground mb-6">{t('member.checkPaymentWindow')}</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">{t('member.paymentSuccessTitle')}</h1>
+        <p className="text-sm text-muted-foreground mb-6">{t('member.paymentSuccessDesc')}</p>
         <div className="space-y-2 w-full max-w-xs">
           <Button className="w-full" onClick={() => navigate('/member/packages')}>{t('member.viewMyPackages')}</Button>
           <Button variant="outline" className="w-full" onClick={() => navigate('/member/schedule')}>{t('member.bookAClass')}</Button>
@@ -115,7 +142,7 @@ export default function MemberPurchasePage() {
         ))}
       </div>
 
-      {step === 'review' && (
+      {step === 'review' && pkg && (
         <>
           <Section className="mb-4">
             <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
@@ -146,7 +173,7 @@ export default function MemberPurchasePage() {
         </>
       )}
 
-      {step === 'payment' && (
+      {step === 'payment' && pkg && (
         <>
           <Section className="mb-4">
             <div className="rounded-lg bg-card p-4 shadow-sm border border-border">
@@ -181,7 +208,9 @@ export default function MemberPurchasePage() {
                 })}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                {t('member.transferReviewDescription')}
+                {paymentMethod === 'transfer'
+                  ? t('member.transferReviewDescription')
+                  : t('member.redirectingToStripe')}
               </p>
             </div>
           </Section>
@@ -196,9 +225,13 @@ export default function MemberPurchasePage() {
           </Section>
 
           <div className="px-4 pb-8">
-            <Button className="w-full" onClick={handlePurchase} disabled={!memberId}>
-              {!memberId && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {t('member.uploadSlipForAmount', { amount: pkg.price.toLocaleString() })}
+            <Button className="w-full" onClick={handlePurchase} disabled={!memberId || stripeLoading}>
+              {(!memberId || stripeLoading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {paymentMethod === 'transfer'
+                ? t('member.uploadSlipForAmount', { amount: pkg.price.toLocaleString() })
+                : paymentMethod === 'promptpay'
+                  ? t('member.payWithPromptPay')
+                  : t('member.payWithCard')}
             </Button>
           </div>
         </>

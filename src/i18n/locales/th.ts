@@ -2629,6 +2629,13 @@ export default {
     price: 'ราคา',
     sessionsCount: '{{n}} เซสชัน',
     dayTermCount: '{{n}} วัน',
+    payWithCard: 'ชำระด้วยบัตร',
+    payWithPromptPay: 'ชำระด้วยพร้อมเพย์',
+    redirectingToStripe: 'กำลังพาไปยังหน้าชำระเงิน Stripe…',
+    paymentSuccessTitle: 'ชำระเงินสำเร็จ',
+    paymentSuccessDesc: 'แพ็กเกจของคุณเริ่มใช้งานได้แล้ว ขอให้สนุกกับการเทรน!',
+    paymentCancelled: 'ยกเลิกการชำระเงินแล้ว คุณสามารถลองใหม่ได้ทุกเมื่อ',
+    paymentFailed: 'ไม่สามารถเริ่มการชำระเงินได้ กรุณาลองใหม่อีกครั้ง',
     // Bottom nav
     navHome: 'หน้าหลัก',
     navSchedule: 'ตาราง',
