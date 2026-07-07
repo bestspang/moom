@@ -52,7 +52,9 @@ type TableName =
   | 'squad_memberships'
   // ── Status Tier tables ──
   | 'member_status_tiers'
-  | 'sp_ledger';
+  | 'sp_ledger'
+  // ── LINE push outbox ──
+  | 'line_push_outbox';
 
 export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
