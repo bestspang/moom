@@ -48,9 +48,9 @@ export default function MemberPurchasePage() {
   // Handle Stripe redirect return
   useEffect(() => {
     if (paymentReturn === 'success') {
-      queryClient.invalidateQueries({ queryKey: ['available-packages'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.availablePackages() });
       if (memberId) {
-        queryClient.invalidateQueries({ queryKey: ['member-packages', memberId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.memberPackages(memberId) });
       }
       toast.success(t('member.paymentSuccessTitle'));
       // Strip the query param so a refresh doesn't re-trigger.
