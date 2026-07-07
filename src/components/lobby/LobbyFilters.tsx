@@ -29,7 +29,7 @@ interface Props {
 
 export function LobbyFilters({ value, onChange }: Props) {
   const { t } = useLanguage();
-  const { data: locations = [] } = useLocations('active');
+  const { data: locations = [] } = useLocations('open');
 
   const activeCount =
     (value.locationId !== 'all' ? 1 : 0) +
