@@ -213,4 +213,7 @@ export const queryKeys = {
 
   // Member attendance (check-in tracking)
   memberAttendanceCheckin: () => ['member-attendance'] as const,
+
+  // LINE Push Outbox
+  linePushOutboxStats: () => ['line-push-outbox-stats'] as const,
 };
