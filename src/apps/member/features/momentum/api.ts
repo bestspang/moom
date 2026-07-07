@@ -397,7 +397,7 @@ export async function fetchMySquad(memberId: string): Promise<SquadInfo | null> 
 
   const { data: members } = await supabase
     .from('squad_memberships')
-    .select('*, member:members(first_name, last_name)')
+    .select('*, member:member_directory(first_name, last_name)')
     .eq('squad_id', squad.id);
 
   const memberList: SquadMemberInfo[] = (members ?? []).map((m: any) => ({
@@ -453,7 +453,7 @@ export async function fetchSquadContributions(squadId: string): Promise<SquadCon
   // Get squad member IDs
   const { data: memberships, error: mErr } = await supabase
     .from('squad_memberships')
-    .select('member_id, member:members(first_name, last_name)')
+    .select('member_id, member:member_directory(first_name, last_name)')
     .eq('squad_id', squadId);
 
   if (mErr) throw mErr;
@@ -607,42 +607,28 @@ export async function fetchAttendanceLeaderboard(): Promise<LeaderboardEntry[]> 
 export async function fetchAttendanceLeaderboardByWindow(window: LeaderboardTimeWindow): Promise<LeaderboardEntry[]> {
   const since = window === 'all' ? null : getSinceDate(window);
 
-  let query = supabase
-    .from('member_attendance')
-    .select('member_id, members(first_name, last_name, avatar_url)');
+  // Cross-member aggregation runs server-side: member_attendance is now own+staff only
+  // under RLS, so a client-side scan would only see the caller's own check-ins.
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{
+      data: Array<{ member_id: string; first_name: string | null; last_name: string | null; avatar_url: string | null; check_in_count: number }> | null;
+      error: { message?: string } | null;
+    }>
+  )('get_attendance_leaderboard', { p_since: since, p_limit: 20 });
+  if (error) throw new Error(error.message || 'Failed to load attendance leaderboard');
 
-  if (since) {
-    query = query.gte('check_in_time', since);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  // Aggregate by member
-  const countMap = new Map<string, { count: number; member: any }>();
-  for (const row of (data ?? []) as any[]) {
-    const existing = countMap.get(row.member_id);
-    if (existing) {
-      existing.count++;
-    } else {
-      countMap.set(row.member_id, { count: 1, member: row.members });
-    }
-  }
-
-  // Sort and return top 20
-  const sorted = [...countMap.entries()]
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 20);
-
-  return sorted.map(([memberId, { count, member }], idx) => ({
-    memberId,
-    firstName: member?.first_name ?? '',
-    lastName: member?.last_name ?? '',
-    avatarUrl: member?.avatar_url ?? null,
+  return (data ?? []).map((row, idx) => ({
+    memberId: row.member_id,
+    firstName: row.first_name ?? '',
+    lastName: row.last_name ?? '',
+    avatarUrl: row.avatar_url ?? null,
     totalXp: 0,
     level: 0,
     rank: idx + 1,
-    checkInCount: count,
+    checkInCount: Number(row.check_in_count),
   }));
 }
 

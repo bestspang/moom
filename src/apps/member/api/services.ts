@@ -26,7 +26,7 @@ export async function fetchSchedule(fromDate?: string): Promise<ScheduleItem[]> 
     .select(`
       *,
       class:classes(name, name_th, category:class_categories(name)),
-      trainer:staff!schedule_trainer_id_fkey(first_name, last_name),
+      trainer:trainer_directory(first_name, last_name),
       room:rooms(name),
       location:locations(name)
     `)
@@ -80,7 +80,7 @@ export async function fetchMyBookings(memberId: string): Promise<MyBooking[]> {
       schedule:schedule(
         id, scheduled_date, start_time, end_time,
         class:classes(name),
-        trainer:staff!schedule_trainer_id_fkey(first_name, last_name)
+        trainer:trainer_directory(first_name, last_name)
       )
     `)
     .eq('member_id', memberId)
@@ -212,7 +212,7 @@ export async function fetchBookingById(bookingId: string): Promise<BookingDetail
       schedule:schedule(
         id, scheduled_date, start_time, end_time,
         class:classes(name),
-        trainer:staff!schedule_trainer_id_fkey(first_name, last_name)
+        trainer:trainer_directory(first_name, last_name)
       )
     `)
     .eq('id', bookingId)
@@ -264,7 +264,7 @@ export async function fetchScheduleById(scheduleId: string): Promise<ScheduleIte
     .select(`
       *,
       class:classes(name, name_th, category:class_categories(name)),
-      trainer:staff!schedule_trainer_id_fkey(first_name, last_name),
+      trainer:trainer_directory(first_name, last_name),
       room:rooms(name),
       location:locations(name)
     `)

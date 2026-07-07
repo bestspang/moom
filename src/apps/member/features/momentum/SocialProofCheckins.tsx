@@ -15,10 +15,7 @@ function formatNameList(names: string[]): string {
 }
 
 async function fetchTodaySquadCheckins(memberId: string) {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  // Get member's squad
+  // Get member's own squad (own-scoped read)
   const { data: membership } = await supabase
     .from('squad_memberships')
     .select('squad_id')
@@ -26,23 +23,20 @@ async function fetchTodaySquadCheckins(memberId: string) {
     .maybeSingle();
 
   if (membership?.squad_id) {
-    // Get squad member IDs
+    // Squadmate names via the directory view (member_attendance/members are own+staff
+    // only under RLS now, so cross-member reads go through SECURITY DEFINER helpers).
     const { data: squadMembers } = await supabase
       .from('squad_memberships')
-      .select('member_id, member:members(first_name)')
+      .select('member_id, member:member_directory(first_name)')
       .eq('squad_id', membership.squad_id)
       .neq('member_id', memberId);
 
     if (squadMembers?.length) {
-      const memberIds = squadMembers.map((m: any) => m.member_id);
-
-      const { data: checkins } = await supabase
-        .from('member_attendance')
-        .select('member_id')
-        .in('member_id', memberIds)
-        .gte('check_in_time', todayStart.toISOString());
-
-      const checkedInSet = new Set((checkins ?? []).map((c: any) => c.member_id));
+      // Which of MY squadmates checked in today — computed server-side (Bangkok day).
+      const { data: checkins } = await (
+        supabase.rpc as unknown as (name: string) => Promise<{ data: Array<{ member_id: string }> | null; error: unknown }>
+      )('get_squad_checkins_today');
+      const checkedInSet = new Set((checkins ?? []).map((c) => c.member_id));
 
       const checkedInMembers = squadMembers
         .filter((m: any) => checkedInSet.has(m.member_id))
@@ -54,13 +48,12 @@ async function fetchTodaySquadCheckins(memberId: string) {
     }
   }
 
-  // Fallback: show total gym activity today
-  const { count } = await supabase
-    .from('member_attendance')
-    .select('id', { count: 'exact', head: true })
-    .gte('check_in_time', todayStart.toISOString());
+  // Fallback: total gym activity today (server-side count; Bangkok day).
+  const { data: gymTotal } = await (
+    supabase.rpc as unknown as (name: string) => Promise<{ data: number | null; error: unknown }>
+  )('get_gym_checkin_count_today');
 
-  return { type: 'gym' as const, names: [], total: count ?? 0 };
+  return { type: 'gym' as const, names: [], total: gymTotal ?? 0 };
 }
 
 export function SocialProofCheckins({ memberId }: SocialProofCheckinsProps) {
