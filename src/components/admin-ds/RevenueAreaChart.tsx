@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   AreaChart,
   Area,
@@ -8,25 +8,28 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
+import { AlertTriangle } from 'lucide-react';
 import { AdminCard } from './AdminCard';
 import { cn } from '@/lib/utils';
+import { CardQueryError } from '@/apps/shared/components/CardQueryError';
 
 export type RevenueRange = '7d' | '30d' | 'mtd' | 'ytd';
 
 export interface RevenueAreaChartProps {
-  /** Data series: array of { date: string (label), value: number } */
   data: Array<{ date: string; value: number }>;
-  /** Currently selected range (controlled). */
   range: RevenueRange;
   onRangeChange: (range: RevenueRange) => void;
-  /** Total revenue label, e.g. "รายได้รายวัน" */
   title: string;
-  /** Optional summary line, e.g. "รวม ฿1,132K · เฉลี่ย ฿38K/วัน" */
   summary?: string;
-  /** Range tab labels — caller passes i18n strings */
   rangeLabels: Record<RevenueRange, string>;
   className?: string;
   loading?: boolean;
+  /** Data-quality warning shown above the chart (e.g. missing paid_at). */
+  warning?: string;
+  /** Error state — replaces the chart body with a retry surface. */
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
 }
 
 /**
