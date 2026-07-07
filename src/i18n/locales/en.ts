@@ -3621,4 +3621,13 @@ export default {
     linkGoogleFailed: 'Failed to link Google account',
     setPasswordFailed: 'Failed to set password',
   },
+  diagnostics: {
+    linePushOutbox: {
+      title: 'LINE Push Outbox (last 24h)',
+      pending: 'Pending',
+      sent: 'Sent',
+      failed: 'Failed',
+      skipped: 'Skipped',
+    },
+  },
 };

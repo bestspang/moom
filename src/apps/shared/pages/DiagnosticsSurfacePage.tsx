@@ -1,14 +1,19 @@
 import { useSurface } from '@/apps/shared/SurfaceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { isDevEnvironment, getRouteHostAffinity } from '@/apps/shared/hostname';
 import { getRedirectResult } from '@/apps/shared/SurfaceGuard';
+import { useLinePushOutboxStats } from '@/hooks/useLinePushOutboxStats';
 
 /** Dev-only diagnostics page. Shows current surface, host, role, and routing info. */
 export default function DiagnosticsSurfacePage() {
   const { surface, isMobileFirst } = useSurface();
   const { user, role, accessLevel } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation();
+  const isManagerPlus = accessLevel === 'level_3_manager' || accessLevel === 'level_4_master';
+  const outbox = useLinePushOutboxStats();
 
   const items = [
     { label: 'Hostname', value: window.location.hostname },
@@ -62,6 +67,38 @@ export default function DiagnosticsSurfacePage() {
           <li><code className="text-foreground">?surface=member|trainer|staff</code> → Dev override</li>
         </ul>
       </div>
+
+      {isManagerPlus && (
+        <div className="mt-6 rounded-lg border border-border p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">
+            {t('diagnostics.linePushOutbox.title', 'LINE Push Outbox (24h)')}
+          </h2>
+          {outbox.isLoading ? (
+            <p className="text-xs text-muted-foreground">{t('common.loading', 'Loading…')}</p>
+          ) : outbox.error ? (
+            <p className="text-xs text-destructive">{String(outbox.error)}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-4 gap-3">
+                {(['pending', 'sent', 'failed', 'skipped'] as const).map((k) => (
+                  <div key={k} className="rounded-md bg-muted/50 p-3 text-center">
+                    <div className="text-lg font-semibold text-foreground">{outbox.data?.[k] ?? 0}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
+                      {t(`diagnostics.linePushOutbox.${k}`, k)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {outbox.data?.lastError && (
+                <div className="mt-3 rounded-md bg-destructive/10 p-2 text-[11px] text-destructive break-all">
+                  <span className="font-semibold">{outbox.data.lastError.template}:</span>{' '}
+                  {outbox.data.lastError.error}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

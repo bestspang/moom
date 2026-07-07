@@ -190,6 +190,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 12. Enqueue LINE push notification (best-effort)
+    if (slip.member_id) {
+      try {
+        await supabase.rpc('enqueue_line_push', {
+          _member_id: slip.member_id,
+          _template: 'slip_approved',
+          _payload: {
+            slip_id: slipId,
+            transaction_id: tx?.transaction_id,
+            package_name: pkg?.name_en || null,
+            amount: amountGross,
+          },
+          _dedupe_key: `slip_approved:${slipId}`,
+        })
+      } catch (pushErr) {
+        console.warn('[approve-slip] enqueue_line_push failed (non-blocking):', pushErr)
+      }
+    }
+
     return new Response(
       JSON.stringify({ data: tx, message: 'Slip approved successfully' }),
       { status: 200, headers: { ...dynamicCors, 'Content-Type': 'application/json' } }

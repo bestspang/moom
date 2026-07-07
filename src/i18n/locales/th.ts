@@ -3446,4 +3446,13 @@ export default {
     linkGoogleFailed: 'ไม่สามารถเชื่อมต่อบัญชี Google',
     setPasswordFailed: 'ไม่สามารถตั้งรหัสผ่านได้',
   },
+  diagnostics: {
+    linePushOutbox: {
+      title: 'คิวแจ้งเตือน LINE (24 ชั่วโมงล่าสุด)',
+      pending: 'รอส่ง',
+      sent: 'ส่งแล้ว',
+      failed: 'ล้มเหลว',
+      skipped: 'ข้าม',
+    },
+  },
 };

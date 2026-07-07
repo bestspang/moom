@@ -1727,6 +1727,62 @@ export type Database = {
           },
         ]
       }
+      line_push_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          last_error: string | null
+          line_user_id: string
+          member_id: string | null
+          payload: Json
+          related_booking_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          last_error?: string | null
+          line_user_id?: string
+          member_id?: string | null
+          payload?: Json
+          related_booking_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          last_error?: string | null
+          line_user_id?: string
+          member_id?: string | null
+          payload?: Json
+          related_booking_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_push_outbox_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       line_users: {
         Row: {
           created_at: string | null
@@ -4571,6 +4627,30 @@ export type Database = {
         Args: { p_member_id: string; p_target_level: number }
         Returns: Json
       }
+      claim_line_push_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          last_error: string | null
+          line_user_id: string
+          member_id: string | null
+          payload: Json
+          related_booking_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "line_push_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_booking_safe: {
         Args: { p_member_id: string; p_schedule_id: string }
         Returns: Json
@@ -4591,6 +4671,17 @@ export type Database = {
       delete_member_cascade: {
         Args: { p_member_id: string }
         Returns: undefined
+      }
+      enqueue_line_push: {
+        Args: {
+          _dedupe_key?: string
+          _member_id: string
+          _payload?: Json
+          _related_booking_id?: string
+          _scheduled_at?: string
+          _template: string
+        }
+        Returns: string
       }
       evaluate_member_tier: { Args: { p_member_id: string }; Returns: Json }
       get_my_member_id: { Args: { _user_id: string }; Returns: string }
@@ -4668,6 +4759,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_line_push_result: {
+        Args: { _err?: string; _id: string; _ok: boolean }
+        Returns: undefined
       }
       member_self_checkin: {
         Args: { p_checkin_method?: string; p_member_id: string }
@@ -4766,6 +4861,10 @@ export type Database = {
           p_transaction_id: string
         }
         Returns: Json
+      }
+      skip_pending_reminders_for_booking: {
+        Args: { _booking_id: string }
+        Returns: number
       }
       smoke_test_payment_flow: { Args: never; Returns: Json }
     }

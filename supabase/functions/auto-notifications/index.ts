@@ -72,6 +72,41 @@ Deno.serve(async (req) => {
       });
     });
 
+    // 1b. Enqueue member-facing LINE push for packages expiring at 7 / 3 / 1 day buckets
+    const bucketDates: Record<number, string> = {
+      7: in7Days,
+      3: in3Days,
+      1: new Date(now.getTime() + 1 * 86400000).toISOString().split('T')[0],
+    };
+    for (const [daysStr, bucketDate] of Object.entries(bucketDates)) {
+      const days = Number(daysStr);
+      const { data: bucketPkgs } = await supabase
+        .from('member_packages')
+        .select('id, member_id, package_name_snapshot, expiry_date')
+        .in('status', ['active', 'ready_to_use'])
+        .eq('expiry_date', bucketDate);
+
+      for (const pkg of bucketPkgs || []) {
+        if (!pkg.member_id) continue;
+        try {
+          await supabase.rpc('enqueue_line_push', {
+            _member_id: pkg.member_id,
+            _template: 'package_expiring',
+            _payload: {
+              member_package_id: pkg.id,
+              package_name: pkg.package_name_snapshot,
+              expiry_date: pkg.expiry_date,
+              days_until_expiry: days,
+              bucket_days: days,
+            },
+            _dedupe_key: `pkgexp:${pkg.id}:${days}:${today}`,
+          });
+        } catch (err) {
+          console.warn('[auto-notifications] enqueue_line_push package_expiring failed', err);
+        }
+      }
+    }
+
     // 2. Leads not contacted in 5+ days
     const { data: staleLeads } = await supabase
       .from('leads')
