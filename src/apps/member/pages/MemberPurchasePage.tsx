@@ -13,6 +13,7 @@ import { fetchAvailablePackages } from '../api/services';
 import { useMemberSession } from '../hooks/useMemberSession';
 import { useTranslation } from 'react-i18next';
 import { useMemberStripeCheckout } from '@/hooks/useMemberStripeCheckout';
+import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
 
 type Step = 'review' | 'payment' | 'success';
