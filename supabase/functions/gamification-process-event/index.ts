@@ -333,33 +333,33 @@ async function processChallenges(
       const challengeIdemKey = `challenge_complete:${challenge.id}:${memberId}`;
 
       if (rewardXp > 0) {
-        await db.from("xp_ledger").insert({
+        await db.from("xp_ledger").upsert({
           member_id: memberId,
           event_type: "challenge_completed",
           delta: rewardXp,
           balance_after: newTotalXp + rewardXp,
           idempotency_key: `xp:${challengeIdemKey}`,
           metadata: { challenge_id: challenge.id },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
       }
 
       if (rewardPoints > 0) {
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id: memberId,
           event_type: "challenge_completed",
           delta: rewardPoints,
           balance_after: newAvailablePoints + rewardPoints,
           idempotency_key: `pts:${challengeIdemKey}`,
           metadata: { challenge_id: challenge.id },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
       }
 
       if (challenge.reward_badge_id) {
-        await db.from("badge_earnings").insert({
+        await db.from("badge_earnings").upsert({
           member_id: memberId,
           badge_id: challenge.reward_badge_id,
           event_ref: challengeIdemKey,
-        }).onConflict("member_id,badge_id").ignoreDuplicates();
+        }, { onConflict: "member_id,badge_id", ignoreDuplicates: true });
       }
     }
 
@@ -715,14 +715,14 @@ Deno.serve(async (req) => {
         const referrerNewAvail = (referrerProfile.available_points || 0) + referrerPoints;
         const referrerNewTotal = (referrerProfile.total_points || 0) + referrerPoints;
 
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id: pendingReferral.referrer_member_id,
           event_type: "referral_reward",
           delta: referrerPoints,
           balance_after: referrerNewAvail,
           idempotency_key: `pts:${refIdemKey}:referrer`,
           metadata: { referral_id: pendingReferral.id, role: "referrer" },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
 
         await db.from("member_gamification_profiles").update({
           total_points: referrerNewTotal,
@@ -733,14 +733,14 @@ Deno.serve(async (req) => {
         const referredNewAvail = newAvailablePoints + referredPoints;
         const referredNewTotal = newTotalPoints + referredPoints;
 
-        await db.from("points_ledger").insert({
+        await db.from("points_ledger").upsert({
           member_id,
           event_type: "referral_reward",
           delta: referredPoints,
           balance_after: referredNewAvail,
           idempotency_key: `pts:${refIdemKey}:referred`,
           metadata: { referral_id: pendingReferral.id, role: "referred" },
-        }).onConflict("idempotency_key").ignoreDuplicates();
+        }, { onConflict: "idempotency_key", ignoreDuplicates: true });
 
         await db.from("member_gamification_profiles").update({
           total_points: referredNewTotal,

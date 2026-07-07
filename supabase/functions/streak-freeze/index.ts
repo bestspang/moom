@@ -87,14 +87,14 @@ Deno.serve(async (req) => {
     const newAvail = (profile.available_points ?? 0) - FREEZE_COST_RP;
     const idemKey = `streak_freeze:${memberId}:${tomorrow}`;
 
-    await db.from("points_ledger").insert({
+    await db.from("points_ledger").upsert({
       member_id: memberId,
       event_type: "streak_freeze",
       delta: -FREEZE_COST_RP,
       balance_after: newAvail,
       idempotency_key: idemKey,
       metadata: { freeze_until: tomorrow },
-    }).onConflict("idempotency_key").ignoreDuplicates();
+    }, { onConflict: "idempotency_key", ignoreDuplicates: true });
 
     await db.from("member_gamification_profiles").update({
       available_points: newAvail,
