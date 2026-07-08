@@ -117,6 +117,8 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   feature_flags: ['feature-flags', 'feature-flag', 'feature-enabled', 'maintenance-mode'],
   // ── Support tickets ──
   support_tickets: ['support-tickets'],
+  support_ticket_events: ['support-tickets'],
+  support_ticket_notes: ['support-tickets'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
