@@ -309,6 +309,56 @@ const SettingsGeneral = () => {
     </div>
   );
 
+  const renderMaintenanceSection = () => {
+    const enabled = maintenanceFlag?.enabled === true;
+    const flagId = maintenanceFlag?.id ?? '';
+    const disabled = maintenanceLoading || !flagId || toggleMaintenance.isPending;
+
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {t('settings.maintenance.description')}
+        </p>
+
+        <div className="p-4 border rounded-lg space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Label className="font-medium">{t('settings.maintenance.cardTitle')}</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant={enabled ? 'destructive' : 'secondary'}>
+                  {enabled
+                    ? t('settings.maintenance.enabled')
+                    : t('settings.maintenance.disabled')}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {t('settings.maintenance.status')}
+                </span>
+              </div>
+            </div>
+            <Switch
+              checked={enabled}
+              disabled={disabled}
+              onCheckedChange={(checked) => {
+                if (!flagId) return;
+                toggleMaintenance.mutate({ id: flagId, enabled: checked });
+              }}
+              aria-label={t('settings.maintenance.toggleLabel')}
+            />
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+            <p>{t('settings.maintenance.warning')}</p>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {t('settings.maintenance.adminHint')}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'payment':
@@ -321,6 +371,8 @@ const SettingsGeneral = () => {
         return renderWorkoutSection();
       case 'gymCheckin':
         return renderGymCheckinSection();
+      case 'maintenance':
+        return renderMaintenanceSection();
       default:
         return null;
     }
