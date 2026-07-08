@@ -121,12 +121,14 @@ Deno.serve(async (req) => {
             metadata: { ticket_no: ticket.ticket_no, category },
           },
         });
-        // gamification-process-event returns {status: ...} on skip, or writes ledger on success.
-        // If status field indicates cooldown/limit/no_rule, we treat as no award.
-        if (!gErr && gData && typeof gData === "object" && !("status" in gData)) {
-          pointsAwarded = { xp: 10, coin: 5 };
-        } else if (!gErr && gData && (gData as { status?: string }).status === undefined) {
-          pointsAwarded = { xp: 10, coin: 5 };
+        // Success response has status="processed" plus xp_granted/points_granted.
+        // Skips ("cooldown_active", "daily_limit_reached", "already_processed", "no_matching_rule") mean no award.
+        if (!gErr && gData && (gData as { status?: string }).status === "processed") {
+          const g = gData as { xp_granted?: number; points_granted?: number };
+          pointsAwarded = {
+            xp: Number(g.xp_granted ?? 0),
+            coin: Number(g.points_granted ?? 0),
+          };
         }
       } catch (gEx) {
         console.warn("[submit-support-ticket] gamification event failed (non-blocking)", gEx);
