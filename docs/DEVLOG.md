@@ -1,5 +1,17 @@
 # Development Log — MOOM Fitness Platform
 
+## 2026-07-08 — Admin-controlled Maintenance / Coming Soon mode
+
+- Seeded new global `feature_flags` row `maintenance_mode` (default OFF). Reuses existing "All can read" + "Managers can manage" policies — no schema changes.
+- New `useMaintenanceMode` / `useToggleMaintenanceMode` hooks in `src/hooks/useMaintenanceMode.ts`; `queryKeys.maintenanceMode()` added and `feature_flags` wired into `TABLE_INVALIDATION_MAP` so toggling propagates live.
+- New `<MaintenanceGate>` wraps all routes in `src/App.tsx`. When the flag is ON, non-staff visitors see the new `src/pages/Maintenance.tsx` page instead of login/app. Staff (any non-`member` role) keep full access.
+- Admin backdoor: visiting `/admin` while unauthenticated always renders the staff `Login` page — regardless of the flag — so owners/managers can sign in. After login the existing protected `/admin` route (Staff management) takes over unchanged.
+- Whitelist for gate: `/liff/*`, `/checkin`, `/checkin-display` always pass through so LINE auth and kiosk flows keep working during maintenance.
+- Admin UI: added a "Maintenance Mode" section to `SettingsGeneral` with a switch, current-status badge and warning card. Toggle logs an `activity_log` entry (`maintenance_mode_toggled`).
+- i18n keys `maintenance.*` and `settings.maintenance.*` added to both `en.ts` and `th.ts`.
+
+
+
 ## 2026-07-07 — Card error states, revenue paid_at warning, realtime coverage
 
 - New `CardQueryError` component (compact + block variants) under `src/apps/shared/components/`. Wired into Dashboard KPIs, `RevenueAreaChart`, and all four Analytics charts so failed queries render an inline error + Retry button instead of blank cards.
