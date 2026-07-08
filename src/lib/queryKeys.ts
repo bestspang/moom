@@ -220,4 +220,8 @@ export const queryKeys = {
 
   // Support tickets
   supportTickets: (filters?: object) => ['support-tickets', filters] as const,
+  supportTicket: (id: string) => ['support-tickets', 'detail', id] as const,
+  supportTicketEvents: (id: string) => ['support-tickets', 'events', id] as const,
+  supportTicketNotes: (id: string) => ['support-tickets', 'notes', id] as const,
+  supportTicketStaff: () => ['support-tickets', 'assignable-staff'] as const,
 };

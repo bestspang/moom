@@ -1,110 +1,109 @@
-## Feature: Public Support / Complaint Form + Admin Inbox
 
-หน้าให้ลูกค้าส่งเรื่องร้องเรียน/ขอความช่วยเหลือได้ที่ `moom.fit/support` (ไม่ต้อง login) พร้อมหน้า admin ใหม่สำหรับดูและจัดการเรื่องร้องเรียน
+## Goal
+Upgrade the admin support-ticket inbox into a full workflow tool: statuses with tracked transitions, assignee, priority, powerful filtering + pagination, and a dedicated detail page with a timeline of updates and threaded internal notes.
 
----
+## 1. Database (new migration)
 
-### 1. Database (new migration)
+Additive changes to `support_tickets`, plus two new tables. No breaking changes to the public submission form.
 
-New table `public.support_tickets`:
-- `id` uuid PK
-- `ticket_no` text unique — auto-generated `SUP-XXXXXX`
-- `name` text nullable (ว่าง = ไม่ประสงค์ออกนาม)
-- `is_anonymous` boolean default false
-- `phone` text nullable
-- `email` text nullable (lowercased/trimmed)
-- `category` text not null — CHECK in (`complaint`, `facility`, `trainer`, `class`, `billing`, `membership`, `cleanliness`, `suggestion`, `other`)
-- `subject` text not null (≤200)
-- `message` text not null (≤2000)
-- `status` text default `'new'` — CHECK in (`new`, `in_progress`, `resolved`, `closed`)
-- `admin_note` text nullable
-- `handled_by` uuid nullable (references staff.user_id path via `auth.uid()`)
-- `handled_at` timestamptz nullable
-- `source` text default `'web_public'`
-- `created_at`, `updated_at` timestamptz + `handle_updated_at` trigger
+**Alter `support_tickets`:**
+- Add `priority text NOT NULL DEFAULT 'normal'` with CHECK (`low`, `normal`, `high`, `urgent`).
+- Add `assigned_to uuid REFERENCES staff(id) ON DELETE SET NULL`.
+- Add `resolved_at timestamptz`, `closed_at timestamptz` (auto-stamped by trigger when status flips).
+- Index: `(status, priority)`, `(assigned_to)`, `(created_at DESC)` (last one already exists — skip).
+- Keep existing `admin_note` column for backward compat (drawer keeps working) but hide it in the new UI in favor of the notes thread.
 
-GRANTs:
-- `GRANT INSERT ON public.support_tickets TO anon, authenticated`
-- `GRANT SELECT, UPDATE ON public.support_tickets TO authenticated`
-- `GRANT ALL ON public.support_tickets TO service_role`
+**New `support_ticket_events` (activity timeline):**
+Columns: `id`, `ticket_id (fk cascade)`, `actor_user_id`, `actor_name` (snapshot), `event_type` (`status_changed | priority_changed | assigned | note_added | reopened | created`), `from_value`, `to_value`, `metadata jsonb`, `created_at`.
+- GRANT `SELECT, INSERT` to authenticated; ALL to service_role.
+- RLS: SELECT/INSERT only for `has_min_access_level(auth.uid(),'level_3_manager')`.
+- Trigger on `support_tickets` AFTER UPDATE auto-inserts `status_changed` / `priority_changed` / `assigned` events using `auth.uid()`.
 
-RLS policies:
-- INSERT — anon+authenticated `WITH CHECK (true)` (public submissions)
-- SELECT — `has_min_access_level(auth.uid(),'level_3_manager')`
-- UPDATE — `has_min_access_level(auth.uid(),'level_3_manager')`
+**New `support_ticket_notes` (threaded internal notes):**
+Columns: `id`, `ticket_id (fk cascade)`, `author_user_id`, `author_name`, `body text NOT NULL`, `created_at`.
+- GRANT `SELECT, INSERT, DELETE` to authenticated; ALL to service_role.
+- RLS: manager-only. DELETE only by author within 15 min (or admin).
+- After-insert trigger writes a `note_added` event into `support_ticket_events`.
 
-Add table to `supabase_realtime` publication for live admin updates.
+Both new tables added to `supabase_realtime` publication.
 
-### 2. Public submission page — `/support`
+## 2. Hooks
 
-New file `src/pages/support/PublicSupportPage.tsx`. Route `/support` added **outside** `MaintenanceGate` and outside auth (public), so it stays reachable even in maintenance mode.
+Edit `src/hooks/useSupportTickets.ts`:
+- Extend `SupportTicketFilters` with `priority`, `assigned_to` (`'me' | 'unassigned' | staff_id | 'all'`), `date_from`, `date_to`, `page`, `pageSize` (default 25).
+- Switch list query to `count: 'exact'` and `range(from, to)` for pagination; return `{ rows, total }`.
+- Add mutations: `useAssignTicket`, `useUpdatePriority`, `useAddInternalNote`, `useReopenTicket`.
+- Add queries: `useSupportTicket(id)`, `useSupportTicketEvents(id)`, `useSupportTicketNotes(id)`.
+- All mutations call `logActivity()` + toast + invalidate `queryKeys.supportTicket(id)` and list.
 
-Form (react-hook-form + Zod):
-- **Anonymous toggle** → hides + clears name
-- Name (optional, ≤100)
-- Phone (optional, TH phone regex)
-- Email (optional, email format, auto lowercase/trim)
-- **Category dropdown (required)** — ร้องเรียนทั่วไป / อุปกรณ์ / เทรนเนอร์ / คลาส / การชำระเงิน & แพ็คเกจ / สมาชิก / ความสะอาด / ข้อเสนอแนะ / อื่นๆ
-- **Subject (required, ≤200)**
-- **Message (required, 10–2000, textarea)**
+Update `src/lib/queryKeys.ts` and `src/hooks/useRealtimeSync.ts` `TABLE_INVALIDATION_MAP` for the two new tables.
 
-Required = category, subject, message. Others optional.
+## 3. Inbox list page (`/support-ticket`)
 
-Submit: direct `supabase.from('support_tickets').insert(...)` with anon key. Show success screen with `ticket_no` for reference. Client throttle "1 submit / 60s" via localStorage (no CAPTCHA in v1).
+Rewrite `src/pages/SupportTickets.tsx` (keep file path, drop the Sheet-based detail):
 
-Design: centered card, brand logo, mobile-first, shadcn primitives, TH default with EN i18n.
+- Header + Status tabs unchanged (New / In Progress / Resolved / Closed / All) — status transitions available inline: Open → In Progress → Resolved → Closed, with a "Reopen" action on resolved/closed rows.
+- Filter bar row: Category, Priority, Assignee (`Me / Unassigned / any staff / All`), Date range (from/to via shadcn Popover + Calendar), Search.
+- Table columns: Date · Ticket# · Priority (colored dot) · Category · Subject · From · Assignee (avatar + name or "—") · Status. Row click → navigate to `/support-ticket/:id`.
+- Pagination footer: page size 25, prev/next, total count. Persist page in URL query (`?page=`, `?status=`, etc.) so links share state.
+- Uses existing `DataTable`-style layout; no changes to shared components.
 
-### 3. Admin inbox — `/support-ticket`
+## 4. Detail page (new)
 
-New file `src/pages/SupportTickets.tsx` under admin `MainLayout` with `minAccessLevel="level_3_manager"`.
+Add route `/support-ticket/:id` → new file `src/pages/SupportTicketDetail.tsx`, guarded by same `minAccessLevel="level_3_manager"`. Added to `App.tsx` and to the sidebar breadcrumb chain.
 
-- List table: date · ticket_no · category badge · subject · name (or "ไม่ประสงค์ออกนาม") · status badge
-- Filter chips: status (all/new/in_progress/resolved/closed) + category
-- Search: ticket_no / subject / email / phone
-- Row click → Sheet with full details, contact info, message, admin_note textarea, status dropdown, "Assign to me" button
-- Save writes `handled_by=auth.uid()`, `handled_at=now()`, `status`, `admin_note` + `logActivity({ event_type: 'support_ticket.updated' })`
+Layout (2-column on md+, stacked on mobile):
 
-New hook `src/hooks/useSupportTickets.ts`:
-- `useSupportTickets(filters)` — TanStack Query
-- `useUpdateSupportTicket()` — mutation with activity log
-- Query key `supportTickets` in `src/lib/queryKeys.ts`
-- `support_tickets` added to `TABLE_INVALIDATION_MAP` in `useRealtimeSync.ts`
+**Left / main:**
+- Header: ticket_no, subject, status badge, priority badge, "Back to inbox" button.
+- Requester card: name (or Anonymous), phone/email with quick tap-to-call/mail.
+- Original message (read-only bubble, first item in timeline).
+- **Timeline feed** (chronological, oldest → newest): merges `support_ticket_events` + `support_ticket_notes`. Each item shows actor avatar + name, action label ("Set status to Resolved", "Assigned to X", "Changed priority: normal → high", "Added a note"), relative time + tooltip absolute, note body when applicable. Uses shared `formatters` + `useDateLocale()`.
+- Internal note composer at bottom: textarea + "Post note" button; posts to `support_ticket_notes`. Notes stay internal (not exposed to submitter — there is no submitter surface).
 
-Admin sidebar: add "Support Tickets" nav entry (will locate correct sidebar file during build; likely near Notifications / Activity Log).
+**Right / sidebar:**
+- Status selector (Select with transitions), Priority selector, Assignee selector (staff dropdown, includes "Unassigned" and "Assign to me"). Each change triggers its own mutation + event.
+- Metadata: submitted at, source, last updated, resolved/closed timestamps.
 
-### 4. i18n
+## 5. i18n
 
-Add keys in both `src/i18n/locales/en.ts` and `th.ts`:
-- `support.public.*` (form labels, category labels, success screen, throttle message)
-- `support.admin.*` (list, filters, statuses, drawer, actions)
+Add keys under `support.admin.*` and `support.timeline.*` in both `en.ts` and `th.ts`: `priority.{low,normal,high,urgent}`, `assignee.{me,unassigned,all}`, filter labels, date range labels, `timeline.event.{status_changed,priority_changed,assigned,note_added,reopened,created}`, `notes.{composerPlaceholder,post,empty}`, `detail.{back,requester,metadata,internalNotes,addNote}`.
 
-### 5. Files touched
+## 6. Sidebar & routing
+
+- `src/App.tsx`: register `/support-ticket/:id` route inside `MainLayout` with `ProtectedRoute minAccessLevel="level_3_manager"`.
+- Sidebar entry unchanged (list page). Detail is deep-linked from rows.
+
+## 7. Files touched
 
 Create:
-- `supabase/migrations/<ts>_support_tickets.sql`
-- `src/pages/support/PublicSupportPage.tsx`
-- `src/pages/SupportTickets.tsx`
-- `src/hooks/useSupportTickets.ts`
+- `supabase/migrations/<new>.sql`
+- `src/pages/SupportTicketDetail.tsx`
+- `src/components/support/TicketTimeline.tsx`
+- `src/components/support/TicketFilters.tsx`
 
 Edit:
-- `src/App.tsx` — add `/support` public route (outside MaintenanceGate) + `/support-ticket` admin route
-- `src/components/auth/MaintenanceGate.tsx` — allowlist `/support`
+- `src/hooks/useSupportTickets.ts`
+- `src/pages/SupportTickets.tsx`
+- `src/App.tsx`
 - `src/lib/queryKeys.ts`
 - `src/hooks/useRealtimeSync.ts`
-- admin sidebar file (nav entry)
-- `src/i18n/locales/en.ts`, `th.ts`
+- `src/i18n/locales/{en,th}.ts`
 - `docs/DEVLOG.md`
 
-### 6. Regression / safety
+No changes to: public `/support` form, `MaintenanceGate`, auth, existing RLS on `support_tickets`.
 
-- Additive only — no changes to auth, RLS helpers, or existing tables
-- Public insert only into new table; other tables unaffected
-- No `service_role` in client
-- `logActivity` on admin updates (audit)
-- `bun run test` + `bun run build` must pass
-- Maintenance mode ON still allows `/support` (support during outage is desirable)
+## 8. Regression checklist
 
-### 7. Notes / defaults chosen
+- Public submission still works (no schema break; new columns nullable/defaulted).
+- Existing tickets render with `priority='normal'`, `assigned_to=null` — visible immediately.
+- `logActivity()` called on every mutation.
+- `bun run build` + `bun run test` pass.
+- Realtime updates flow into both the list and the open detail page.
 
-- **Spam control:** required fields + length limits + localStorage 60s throttle. No CAPTCHA in v1 (say the word and I'll wire hCaptcha).
-- **Notifications:** not sending LINE/email notify on new ticket in v1 — admin sees realtime badge instead. Add later if needed.
+## Technical notes
+
+- Assignee dropdown loads active staff via existing `useStaff()` hook — no new API.
+- Timeline merges two sources client-side, sorted by `created_at`; both queried with a single ticket_id filter.
+- Date range filter uses `getBangkokDayRange()` for correct boundaries.
+- URL-driven filter state via `useSearchParams` — keeps back/forward + shareable links working.
