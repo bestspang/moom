@@ -1,4 +1,9 @@
 export default {
+  maintenance: {
+    title: "We'll be right back",
+    subtitle: 'Site is temporarily under maintenance',
+    body: 'We are making improvements to the app. Please check back soon.',
+  },
   // Common
   common: {
     save: 'Save',
@@ -1619,6 +1624,21 @@ export default {
       featureFlags: 'Feature Flags',
       importExport: 'Import / Export',
       integrations: 'Integrations',
+    },
+    maintenance: {
+      title: 'Maintenance Mode',
+      description: 'When enabled, regular users will see a Coming Soon page instead of the app. Admins can still sign in at /admin.',
+      cardTitle: 'Site Maintenance / Coming Soon',
+      status: 'Current status',
+      enabled: 'ON — visitors see Coming Soon',
+      disabled: 'OFF — site is live',
+      toggleLabel: 'Enable maintenance mode',
+      warning: 'Turning this on immediately hides the site from members, trainers and staff. Only admins signed in via /admin will keep access.',
+      adminHint: 'Admins can always sign in at /admin even while maintenance mode is on.',
+      enabledToast: 'Maintenance mode enabled',
+      disabledToast: 'Maintenance mode disabled',
+      toggleFailed: 'Failed to update maintenance mode',
+      menu: 'Maintenance Mode',
     },
     branding: {
       identityMenu: 'Brand identity',

@@ -11,6 +11,7 @@ import { SurfaceProvider } from "@/apps/shared/SurfaceContext";
 import { detectSurface } from "@/apps/shared/hostname";
 import SurfaceGuard from "@/apps/shared/SurfaceGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import MaintenanceGate from "@/components/auth/MaintenanceGate";
 import { MainLayout } from "@/components/layout";
 import "@/i18n";
 
@@ -159,6 +160,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <SurfaceGuard>
+              <MaintenanceGate>
               <Routes>
                 {/* ===== Public routes ===== */}
                 <Route path="/login" element={<Login />} />
@@ -323,6 +325,7 @@ const App = () => (
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </MaintenanceGate>
               </SurfaceGuard>
             </BrowserRouter>
           </TooltipProvider>

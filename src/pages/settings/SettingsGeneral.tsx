@@ -7,8 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useSettings, useUpdateSetting, getSettingValue } from '@/hooks/useSettings';
 import { useLocations } from '@/hooks/useLocations';
+import { useMaintenanceMode, useToggleMaintenanceMode } from '@/hooks/useMaintenanceMode';
 import { cn } from '@/lib/utils';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { SettingsLayout } from '@/components/settings';
 import { Link } from 'react-router-dom';
 import {
@@ -18,7 +19,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-type Section = 'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin';
+type Section = 'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin' | 'maintenance';
 
 const themeColors = [
   { id: 'purple', main: '#9b87f5', accents: ['#6E59A5', '#8B5CF6', '#C4B5FD'], label: 'Purple', labelTh: 'ม่วง' },
@@ -40,6 +41,8 @@ const SettingsGeneral = () => {
   const { data: settings, isLoading } = useSettings('general');
   const updateSetting = useUpdateSetting();
   const { data: locations, isLoading: isLocationsLoading } = useLocations();
+  const { data: maintenanceFlag, isLoading: maintenanceLoading } = useMaintenanceMode();
+  const toggleMaintenance = useToggleMaintenanceMode();
   const [activeSection, setActiveSection] = useState<Section>('payment');
 
   const handleToggle = (key: string, value: boolean) => {
@@ -72,6 +75,7 @@ const SettingsGeneral = () => {
     { id: 'timezone', label: t('settings.general.timezoneMenu') },
     { id: 'workout', label: t('settings.general.workoutMenu') },
     { id: 'gymCheckin', label: t('settings.general.gymCheckinMenu') },
+    { id: 'maintenance', label: t('settings.maintenance.menu') },
   ];
 
   const hasLocations = locations && locations.length > 0;
@@ -305,6 +309,56 @@ const SettingsGeneral = () => {
     </div>
   );
 
+  const renderMaintenanceSection = () => {
+    const enabled = maintenanceFlag?.enabled === true;
+    const flagId = maintenanceFlag?.id ?? '';
+    const disabled = maintenanceLoading || !flagId || toggleMaintenance.isPending;
+
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {t('settings.maintenance.description')}
+        </p>
+
+        <div className="p-4 border rounded-lg space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Label className="font-medium">{t('settings.maintenance.cardTitle')}</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant={enabled ? 'destructive' : 'secondary'}>
+                  {enabled
+                    ? t('settings.maintenance.enabled')
+                    : t('settings.maintenance.disabled')}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {t('settings.maintenance.status')}
+                </span>
+              </div>
+            </div>
+            <Switch
+              checked={enabled}
+              disabled={disabled}
+              onCheckedChange={(checked) => {
+                if (!flagId) return;
+                toggleMaintenance.mutate({ id: flagId, enabled: checked });
+              }}
+              aria-label={t('settings.maintenance.toggleLabel')}
+            />
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+            <p>{t('settings.maintenance.warning')}</p>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {t('settings.maintenance.adminHint')}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'payment':
@@ -317,6 +371,8 @@ const SettingsGeneral = () => {
         return renderWorkoutSection();
       case 'gymCheckin':
         return renderGymCheckinSection();
+      case 'maintenance':
+        return renderMaintenanceSection();
       default:
         return null;
     }
