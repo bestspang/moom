@@ -258,11 +258,13 @@ const PublicSupportPage: React.FC = () => {
                   <Label htmlFor="phone">{t('support.public.phone')}</Label>
                   <Input id="phone" inputMode="tel" placeholder="08x-xxx-xxxx" {...form.register('phone')} />
                   {form.formState.errors.phone && (
-                    <p className="text-xs text-destructive">{t('support.public.invalidPhone')}</p>
+                    <p className="text-xs text-destructive">{t('support.public.invalidPhoneTH')}</p>
                   )}
-                  <p className="text-xs text-primary/80 leading-relaxed">
-                    {t('support.public.phoneRewardHint', { xp: 10, coin: 5 })}
-                  </p>
+                  {REWARD_CATEGORIES.has(category) && (
+                    <p className="text-xs text-primary/80 leading-relaxed">
+                      {t('support.public.phoneRewardHint', { xp: 10, coin: 5 })}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email">{t('support.public.email')}</Label>
