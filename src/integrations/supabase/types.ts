@@ -4049,10 +4049,91 @@ export type Database = {
           },
         ]
       }
+      support_ticket_events: {
+        Row: {
+          actor_name: string | null
+          actor_user_id: string | null
+          created_at: string
+          event_type: string
+          from_value: string | null
+          id: string
+          metadata: Json
+          ticket_id: string
+          to_value: string | null
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type: string
+          from_value?: string | null
+          id?: string
+          metadata?: Json
+          ticket_id: string
+          to_value?: string | null
+        }
+        Update: {
+          actor_name?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_value?: string | null
+          id?: string
+          metadata?: Json
+          ticket_id?: string
+          to_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_notes: {
+        Row: {
+          author_name: string | null
+          author_user_id: string | null
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_name?: string | null
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           admin_note: string | null
+          assigned_to: string | null
           category: string
+          closed_at: string | null
           created_at: string
           email: string | null
           handled_at: string | null
@@ -4062,6 +4143,8 @@ export type Database = {
           message: string
           name: string | null
           phone: string | null
+          priority: string
+          resolved_at: string | null
           source: string
           status: string
           subject: string
@@ -4070,7 +4153,9 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          assigned_to?: string | null
           category: string
+          closed_at?: string | null
           created_at?: string
           email?: string | null
           handled_at?: string | null
@@ -4080,6 +4165,8 @@ export type Database = {
           message: string
           name?: string | null
           phone?: string | null
+          priority?: string
+          resolved_at?: string | null
           source?: string
           status?: string
           subject: string
@@ -4088,7 +4175,9 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          assigned_to?: string | null
           category?: string
+          closed_at?: string | null
           created_at?: string
           email?: string | null
           handled_at?: string | null
@@ -4098,13 +4187,23 @@ export type Database = {
           message?: string
           name?: string | null
           phone?: string | null
+          priority?: string
+          resolved_at?: string | null
           source?: string
           status?: string
           subject?: string
           ticket_no?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trainer_action_rewards: {
         Row: {
