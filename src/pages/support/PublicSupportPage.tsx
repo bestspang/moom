@@ -131,11 +131,23 @@ const PublicSupportPage: React.FC = () => {
               </div>
               <div className="mt-1 font-mono text-lg font-semibold">{submittedTicketNo}</div>
             </div>
+            {pointsAwarded && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  {t('support.public.pointsAwardedTitle')}
+                </div>
+                <div className="mt-1 text-sm text-foreground">
+                  {t('support.public.pointsAwardedDesc', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
+                </div>
+              </div>
+            )}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
+                setPointsAwarded(null);
                 form.reset();
               }}
             >
