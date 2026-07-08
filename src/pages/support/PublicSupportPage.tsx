@@ -35,6 +35,19 @@ const CATEGORIES = [
   'other',
 ] as const;
 
+// TH phone: allow digits, spaces, dashes, parens, leading +. Normalizes to 10-digit '0xxxxxxxxx'.
+// Server re-validates; this catches obvious typos before submit.
+const TH_PHONE_RE = /^[\d+\-\s()]{9,20}$/;
+function normalizeTHPhone(raw: string): string | null {
+  let d = raw.replace(/\D+/g, '');
+  if (!d) return null;
+  if (d.startsWith('66')) d = '0' + d.slice(2);
+  if (d.length === 9 && !d.startsWith('0')) d = '0' + d;
+  return (d.length === 9 || d.length === 10) && d.startsWith('0') ? d : null;
+}
+
+const REWARD_CATEGORIES = new Set(['suggestion', 'complaint']);
+
 const schema = z
   .object({
     is_anonymous: z.boolean().default(false),
@@ -43,9 +56,11 @@ const schema = z
       .string()
       .trim()
       .max(20)
-      .regex(/^$|^[0-9+\-\s()]{6,20}$/, 'Invalid phone')
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .refine((v) => !v || (TH_PHONE_RE.test(v) && normalizeTHPhone(v) !== null), {
+        message: 'invalidPhoneTH',
+      }),
     email: z.string().trim().max(255).email('Invalid email').optional().or(z.literal('')),
     category: z.enum(CATEGORIES, { required_error: 'Required' }),
     subject: z.string().trim().min(1).max(200),
