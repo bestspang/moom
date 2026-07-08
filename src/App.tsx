@@ -44,6 +44,8 @@ import ActivityLog from "./pages/ActivityLog";
 import Announcements from "./pages/Announcements";
 import WorkoutList from "./pages/WorkoutList";
 import TransferSlips from "./pages/TransferSlips";
+import SupportTickets from "./pages/SupportTickets";
+import PublicSupportPage from "./pages/support/PublicSupportPage";
 import Finance from "./pages/Finance";
 import Insights from "./pages/Insights";
 import MembersAtRisk from "./pages/reports/MembersAtRisk";
@@ -171,6 +173,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkin" element={<CheckinRedeem />} />
                 <Route path="/checkin-display" element={<CheckinDisplay />} />
+                <Route path="/support" element={<PublicSupportPage />} />
 
                 {/* LIFF public routes */}
                 <Route path="/liff/member" element={<LiffRedirect target="member" />} />
@@ -270,6 +273,7 @@ const App = () => (
                   <Route path="announcement" element={<Announcements />} />
                   <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
                   <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
+                  <Route path="support-ticket" element={<ProtectedRoute minAccessLevel="level_3_manager"><SupportTickets /></ProtectedRoute>} />
                   <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
                   <Route path="insights" element={<ProtectedRoute minAccessLevel="level_2_operator"><Insights /></ProtectedRoute>} />
                   <Route path="analytics" element={<Navigate to="/insights" replace />} />

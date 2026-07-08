@@ -36,6 +36,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const isAdminEntry = pathname === '/admin';
   const isLiff = pathname.startsWith('/liff');
   const isKiosk = pathname === '/checkin' || pathname === '/checkin-display';
+  const isSupport = pathname === '/support';
   // Anyone with a non-member role is considered staff for gate purposes.
   const isStaffUser = !!user && !!role && role !== 'member';
 
@@ -49,7 +50,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   if (!enabled) return <>{children}</>;
 
   // Flag ON — only staff, admin entry, LIFF callbacks and kiosk pass through.
-  if (isStaffUser || isAdminEntry || isLiff || isKiosk) {
+  if (isStaffUser || isAdminEntry || isLiff || isKiosk || isSupport) {
     return <>{children}</>;
   }
 

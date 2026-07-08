@@ -221,6 +221,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       icon: Megaphone,
       items: [
         { label: t('nav.announcements'), path: '/announcement', icon: Megaphone, resource: 'announcements' },
+        { label: t('nav.supportTickets'), path: '/support-ticket', icon: LifeBuoy, minLevel: 'level_3_manager' },
       ],
     },
     {
