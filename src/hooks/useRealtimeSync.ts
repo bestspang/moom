@@ -58,7 +58,9 @@ type TableName =
   // ── Feature flags (maintenance mode etc.) ──
   | 'feature_flags'
   // ── Public support form inbox ──
-  | 'support_tickets';
+  | 'support_tickets'
+  | 'support_ticket_events'
+  | 'support_ticket_notes';
 
 export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
