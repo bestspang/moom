@@ -100,6 +100,7 @@ export default {
     locations: 'Locations',
     activityLog: 'Activity log',
     announcements: 'Announcements',
+    supportTickets: 'Support tickets',
     workoutList: 'Workout list',
     finance: 'Finance',
     transferSlips: 'Transfer slips',
