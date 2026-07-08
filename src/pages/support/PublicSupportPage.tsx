@@ -35,6 +35,19 @@ const CATEGORIES = [
   'other',
 ] as const;
 
+// TH phone: allow digits, spaces, dashes, parens, leading +. Normalizes to 10-digit '0xxxxxxxxx'.
+// Server re-validates; this catches obvious typos before submit.
+const TH_PHONE_RE = /^[\d+\-\s()]{9,20}$/;
+function normalizeTHPhone(raw: string): string | null {
+  let d = raw.replace(/\D+/g, '');
+  if (!d) return null;
+  if (d.startsWith('66')) d = '0' + d.slice(2);
+  if (d.length === 9 && !d.startsWith('0')) d = '0' + d;
+  return (d.length === 9 || d.length === 10) && d.startsWith('0') ? d : null;
+}
+
+const REWARD_CATEGORIES = new Set(['suggestion', 'complaint']);
+
 const schema = z
   .object({
     is_anonymous: z.boolean().default(false),
@@ -43,9 +56,11 @@ const schema = z
       .string()
       .trim()
       .max(20)
-      .regex(/^$|^[0-9+\-\s()]{6,20}$/, 'Invalid phone')
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .refine((v) => !v || (TH_PHONE_RE.test(v) && normalizeTHPhone(v) !== null), {
+        message: 'invalidPhoneTH',
+      }),
     email: z.string().trim().max(255).email('Invalid email').optional().or(z.literal('')),
     category: z.enum(CATEGORIES, { required_error: 'Required' }),
     subject: z.string().trim().min(1).max(200),
@@ -59,6 +74,7 @@ const PublicSupportPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submittedTicketNo, setSubmittedTicketNo] = useState<string | null>(null);
   const [pointsAwarded, setPointsAwarded] = useState<{ xp: number; coin: number } | null>(null);
+  const [noMemberMatch, setNoMemberMatch] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -98,13 +114,31 @@ const PublicSupportPage: React.FC = () => {
         body: payload,
       });
       if (error) throw error;
-      const envelope = data as { data?: { ticket_no: string; points_awarded: { xp: number; coin: number } | null }; error?: { message: string } | null };
+      const envelope = data as {
+        data?: {
+          ticket_no: string;
+          points_awarded: { xp: number; coin: number } | null;
+          member_matched?: boolean;
+          phone_provided?: boolean;
+          reward_eligible_category?: boolean;
+        };
+        error?: { message: string } | null;
+      };
       if (envelope?.error || !envelope?.data?.ticket_no) {
         throw new Error(envelope?.error?.message || 'submit failed');
       }
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
       setSubmittedTicketNo(envelope.data.ticket_no);
       setPointsAwarded(envelope.data.points_awarded);
+      // Show "no member match" notice only when reward was actually pursuable:
+      // user gave a phone AND picked a reward-eligible category, but member lookup missed.
+      setNoMemberMatch(
+        Boolean(
+          envelope.data.phone_provided &&
+            envelope.data.reward_eligible_category &&
+            !envelope.data.member_matched,
+        ),
+      );
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
@@ -142,12 +176,18 @@ const PublicSupportPage: React.FC = () => {
                 </div>
               </div>
             )}
+            {!pointsAwarded && noMemberMatch && (
+              <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                {t('support.public.noMemberMatch')}
+              </div>
+            )}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
                 setPointsAwarded(null);
+                setNoMemberMatch(false);
                 form.reset();
               }}
             >
@@ -218,11 +258,13 @@ const PublicSupportPage: React.FC = () => {
                   <Label htmlFor="phone">{t('support.public.phone')}</Label>
                   <Input id="phone" inputMode="tel" placeholder="08x-xxx-xxxx" {...form.register('phone')} />
                   {form.formState.errors.phone && (
-                    <p className="text-xs text-destructive">{t('support.public.invalidPhone')}</p>
+                    <p className="text-xs text-destructive">{t('support.public.invalidPhoneTH')}</p>
                   )}
-                  <p className="text-xs text-primary/80 leading-relaxed">
-                    {t('support.public.phoneRewardHint', { xp: 10, coin: 5 })}
-                  </p>
+                  {REWARD_CATEGORIES.has(category) && (
+                    <p className="text-xs text-primary/80 leading-relaxed">
+                      {t('support.public.phoneRewardHint', { xp: 10, coin: 5 })}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email">{t('support.public.email')}</Label>

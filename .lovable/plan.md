@@ -1,63 +1,61 @@
-## เพิ่มระบบให้คะแนนสมาชิกที่ส่ง Support Ticket
+## Scope
 
-### สิ่งที่จะทำ
+Three refinements to `/support` public form + reward logic:
 
-**1. หน้า Public Support (`/support`)**
-- เพิ่มตัวสลับภาษา (TH/EN) ที่มุมขวาบน — default เป็นภาษาไทย (ตาม LanguageContext ที่มีอยู่แล้ว)
-- เพิ่มข้อความ hint ใต้ช่อง "เบอร์โทร":  
-  *"📱 ใส่เบอร์ที่ใช้สมัครสมาชิก รับ +10 XP และ +5 Coin (สูงสุด 1 ครั้ง / 2 สัปดาห์)"*
-- หลัง submit สำเร็จ ถ้าได้รับคะแนน แสดงข้อความยืนยันในหน้า success (เช่น "ได้รับ +10 XP, +5 Coin แล้ว!")
+1. Reward (+10 XP / +5 Coin) awarded **only** when `category ∈ {suggestion, complaint}` — other categories create the ticket normally but skip gamification.
+2. Stronger phone validation + normalization; when the user submits a phone but **no member matches**, show a clear inline/toast error (still allow submit? see decision below).
+3. Persist TH/EN language toggle on `/support` across reloads.
 
-**2. Backend — จับคู่เบอร์กับสมาชิก + ให้คะแนน**
-- แก้ trigger/logic หลัง insert `support_tickets`: ถ้า `phone` ตรงกับ `members.phone` (normalize เบอร์) → ผูก `member_id` เข้ากับ ticket และ fire gamification event
-- สร้าง gamification rule ใหม่: `action_key = 'support_ticket_submit'`, XP=10, Coin=5, cap 1 ครั้ง / 14 วัน (ผ่าน `cooldown_minutes = 20160`)
-- Idempotency key: `support:{ticket_id}` — cap 14 วันบังคับด้วย cooldown ใน `gamification_rules` (edge function เช็คอยู่แล้ว)
+## Decisions / Assumptions
 
-**3. Response ให้ frontend ทราบว่าได้คะแนนหรือไม่**
-- หลัง insert ticket, frontend query `members` เพื่อดูว่าเบอร์นี้ match member ไหม (ถ้า match ก็ยิง edge function `gamification-process-event` จากฝั่ง client ผ่าน RPC สาธารณะ หรือ)
-- **ทางที่ปลอดภัยกว่า:** สร้าง edge function ใหม่ `submit-support-ticket` ที่:
-  1. รับ payload, insert ticket
-  2. ถ้าเบอร์ match member → set `member_id`, ยิง gamification event
-  3. return `{ ticket_no, points_awarded: {xp, coin} | null }`
-- Frontend เรียก edge function นี้แทน `supabase.from('support_tickets').insert()`
+- **Reward-eligible categories:** `suggestion` (แนะนำ) and `complaint` (ร้องเรียน). Confirmed both already exist in `CATEGORIES`.
+- **Phone normalization rules (TH-centric):**
+  - Strip spaces, dashes, parentheses.
+  - Accept `+66xxxxxxxxx` → convert to `0xxxxxxxxx` (Thai local form, 10 digits starting with 0).
+  - Accept 9-digit form missing leading 0 → prepend `0`.
+  - Final canonical form: 10 digits starting with `0`. Reject anything else with clear error.
+- **No-match behavior:** Ticket is **still submitted** (feedback must never be lost), but the success screen shows a soft notice: "เบอร์นี้ไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน" so the user understands why no reward appeared. Reward hint text stays informative, not blocking.
+- **Language persistence:** `LanguageContext` already persists to `localStorage['moom-language']` and defaults to `'th'`. `/support` uses `useLanguage()`, so persistence already works globally. **No new storage needed** — will verify by reading the page and note this in the plan, not add duplicate logic.
 
-### รายละเอียดทางเทคนิค
+## Changes
 
-**Migration:**
-```sql
-INSERT INTO gamification_rules (action_key, xp_amount, coin_amount, sp_amount, 
-  cooldown_minutes, daily_cap, is_active, description)
-VALUES ('support_ticket_submit', 10, 5, 0, 20160, 1, true, 
-  'Feedback/complaint from verified member (max 1 per 2 weeks)');
-```
+### 1. Edge function `submit-support-ticket/index.ts`
+- Add helper `normalizeThaiPhone(raw)` returning `{ canonical: string | null, reason: 'empty'|'invalid'|'ok' }`.
+- Return `phone_valid: boolean` and `member_matched: boolean` in the response envelope so UI can message precisely.
+- Gate gamification call: only invoke `gamification-process-event` when `matchedMemberId && (category === 'suggestion' || category === 'complaint')`.
+- Update member lookup to use the canonical 10-digit form (exact match + last-9-digit fallback).
 
-**Edge function `submit-support-ticket`:**
-- CORS: admin.moom.fit, member.moom.fit, moom.lovable.app
-- ใช้ service role เพื่อ (a) insert ticket, (b) lookup member by phone (normalize: strip non-digits), (c) invoke gamification-process-event
-- Response envelope: `{ data: { ticket_no, points_awarded }, error: null }`
+### 2. Migration
+- Update `gamification_rules` row for `action_key='support_ticket_submit'`:
+  - No schema change. Add a `metadata`/`conditions` note or simply enforce category gating in the edge function (simpler, no rule engine change needed). **Choice: enforce in edge function only** — the rule stays generic; the emitter decides eligibility. No migration required.
 
-**Frontend `PublicSupportPage.tsx`:**
-- แทนที่ `supabase.from('support_tickets').insert()` ด้วย `supabase.functions.invoke('submit-support-ticket')`
-- เพิ่ม language toggle button (ปุ่มเล็กมุมขวาบน) เรียก `setLanguage('en' | 'th')`
-- แสดง `points_awarded` ใน success screen ถ้ามี
+### 3. UI `src/pages/support/PublicSupportPage.tsx`
+- Update Zod `phone` schema to run through `normalizeThaiPhone` via `.superRefine`; show error `support.public.invalidPhoneTH` when a value is entered but invalid.
+- Change reward hint text to be conditional on selected category:
+  - When `suggestion` or `complaint` selected → show reward hint under phone.
+  - Otherwise → hide reward hint (avoid misleading users).
+- Success screen: if user provided a phone but `member_matched === false`, show a muted notice line ("เบอร์ที่กรอกไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน / Phone did not match a member, no points awarded").
+- Language toggle: no code change — already persisted via `LanguageContext`. Add a brief code comment noting this.
 
-**i18n keys ใหม่ (EN + TH):**
-- `support.public.phoneRewardHint`
-- `support.public.pointsAwarded` (with `{xp}`, `{coin}` interpolation)
-- `support.public.langToggle`
+### 4. i18n `src/i18n/locales/{en,th}.ts`
+Add keys:
+- `support.public.invalidPhoneTH` — "กรอกเบอร์ 10 หลักขึ้นต้นด้วย 0" / "Enter a 10-digit phone starting with 0"
+- `support.public.phoneRewardHint` — update to clarify eligibility: "แนะนำ/ร้องเรียน + เบอร์สมาชิก = +10 XP / +5 Coin (สูงสุด 1 ครั้ง / 2 สัปดาห์)"
+- `support.public.noMemberMatch` — "เบอร์ที่กรอกไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน" / "Phone did not match any member, no points were awarded"
+- `support.public.rewardOnlyForFeedback` — helper text explaining reward is only for แนะนำ/ร้องเรียน categories
 
-### สิ่งที่ต้องรักษาไว้
-- LanguageContext default = 'th' อยู่แล้ว ✓
-- ไม่แตะ RLS ของ `support_tickets`
-- ไม่เปลี่ยน schema ของ `support_tickets` (member_id column มีอยู่แล้วหรือไม่ — ต้องเช็คใน exploration ก่อน implement)
-- ระบบ throttle 60 วินาที ฝั่ง client ยังคงอยู่
+## Technical Notes
 
-### Regression checklist
-- ผู้ใช้ไม่ใช่สมาชิก / ไม่ใส่เบอร์ → ส่ง ticket ได้ตามปกติ ไม่มีคะแนน
-- สมาชิกส่ง ticket ครั้งที่ 2 ภายใน 14 วัน → ได้ ticket แต่ไม่ได้คะแนน (cooldown จับ)
-- Anonymous submit → ไม่ผูก member_id ไม่ได้คะแนน
-- Admin inbox / detail page แสดง ticket ปกติ (ถ้ามี member_id ควรแสดงชื่อสมาชิกด้วย — optional enhancement)
+- Reward gating happens **server-side** in the edge function — client cannot spoof by picking category then re-editing. Safe.
+- Existing 60s client-side throttle unchanged.
+- `gamification-process-event` cooldown (14 days) still enforced globally, so switching category won't bypass the 2-week cap.
+- No DB schema changes → no new migration file.
 
-### คำถามก่อน implement
-1. คอลัมน์ `member_id` ใน `support_tickets` มีอยู่แล้วหรือไม่? (ต้องเช็คตอน build mode) ถ้าไม่มีจะเพิ่มใน migration เดียวกัน
-2. ต้องการให้ admin inbox แสดงป้าย "Member" เมื่อ ticket ผูกกับสมาชิกไหม? (แนะนำให้แสดง แต่ optional)
+## Regression Checklist
+
+- Anonymous submits with reward-eligible category + no phone → ticket created, no reward. ✓
+- Member submits with `billing` category + valid phone → ticket created, no reward (category gate). ✓
+- Member submits with `complaint` + valid matched phone, first time → +10 XP / +5 Coin. ✓
+- Same member, `complaint` again within 14 days → ticket created, no reward. ✓
+- Invalid phone format (e.g. `12345`) → form blocks submit with clear error. ✓
+- Language toggle → persists across reloads (already handled by `LanguageContext`). ✓
