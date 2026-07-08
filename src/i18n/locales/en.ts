@@ -3683,6 +3683,10 @@ export default {
       successDesc: "Thanks — we've received your message and will follow up soon.",
       ticketNo: 'Reference number',
       submitAnother: 'Submit another',
+      phoneRewardHint: '📱 Enter the phone you signed up with to earn +{{xp}} XP and +{{coin}} Coin (max 1 per 2 weeks)',
+      pointsAwardedTitle: '🎉 You earned rewards!',
+      pointsAwardedDesc: '+{{xp}} XP and +{{coin}} Coin added to your member account.',
+      langToggle: 'ไทย',
     },
     category: {
       complaint: 'General complaint',

@@ -3508,6 +3508,10 @@ export default {
       successDesc: 'ขอบคุณสำหรับข้อความ ทีมงานจะติดต่อกลับโดยเร็ว',
       ticketNo: 'หมายเลขอ้างอิง',
       submitAnother: 'ส่งเรื่องใหม่',
+      phoneRewardHint: '📱 ใส่เบอร์ที่ใช้สมัครสมาชิก รับ +{{xp}} XP และ +{{coin}} Coin (สูงสุด 1 ครั้ง / 2 สัปดาห์)',
+      pointsAwardedTitle: '🎉 คุณได้รับคะแนน!',
+      pointsAwardedDesc: '+{{xp}} XP และ +{{coin}} Coin เข้าบัญชีสมาชิกแล้ว',
+      langToggle: 'EN',
     },
     category: {
       complaint: 'ร้องเรียนทั่วไป',

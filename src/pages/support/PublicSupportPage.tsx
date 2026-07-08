@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, LifeBuoy } from 'lucide-react';
+import { CheckCircle2, LifeBuoy, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const THROTTLE_KEY = 'moom-support-last-submit';
@@ -55,9 +55,10 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 const PublicSupportPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [submittedTicketNo, setSubmittedTicketNo] = useState<string | null>(null);
+  const [pointsAwarded, setPointsAwarded] = useState<{ xp: number; coin: number } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -93,14 +94,17 @@ const PublicSupportPage: React.FC = () => {
         subject: values.subject.trim(),
         message: values.message.trim(),
       };
-      const { data, error } = await supabase
-        .from('support_tickets' as any)
-        .insert(payload as any)
-        .select('ticket_no')
-        .single();
+      const { data, error } = await supabase.functions.invoke('submit-support-ticket', {
+        body: payload,
+      });
       if (error) throw error;
+      const envelope = data as { data?: { ticket_no: string; points_awarded: { xp: number; coin: number } | null }; error?: { message: string } | null };
+      if (envelope?.error || !envelope?.data?.ticket_no) {
+        throw new Error(envelope?.error?.message || 'submit failed');
+      }
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
-      setSubmittedTicketNo((data as any).ticket_no);
+      setSubmittedTicketNo(envelope.data.ticket_no);
+      setPointsAwarded(envelope.data.points_awarded);
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
@@ -127,11 +131,23 @@ const PublicSupportPage: React.FC = () => {
               </div>
               <div className="mt-1 font-mono text-lg font-semibold">{submittedTicketNo}</div>
             </div>
+            {pointsAwarded && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  {t('support.public.pointsAwardedTitle')}
+                </div>
+                <div className="mt-1 text-sm text-foreground">
+                  {t('support.public.pointsAwardedDesc', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
+                </div>
+              </div>
+            )}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
+                setPointsAwarded(null);
                 form.reset();
               }}
             >
@@ -146,16 +162,26 @@ const PublicSupportPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background px-4 py-8 md:py-12">
       <div className="mx-auto max-w-xl">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <LifeBuoy className="h-6 w-6 text-primary" />
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <LifeBuoy className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {t('support.public.title')}
+              </h1>
+              <p className="text-sm text-muted-foreground">{t('support.public.subtitle')}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {t('support.public.title')}
-            </h1>
-            <p className="text-sm text-muted-foreground">{t('support.public.subtitle')}</p>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLanguage(language === 'th' ? 'en' : 'th')}
+            aria-label="Toggle language"
+          >
+            {t('support.public.langToggle')}
+          </Button>
         </div>
 
         <Card>
@@ -194,6 +220,9 @@ const PublicSupportPage: React.FC = () => {
                   {form.formState.errors.phone && (
                     <p className="text-xs text-destructive">{t('support.public.invalidPhone')}</p>
                   )}
+                  <p className="text-xs text-primary/80 leading-relaxed">
+                    {t('support.public.phoneRewardHint', { xp: 10, coin: 5 })}
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email">{t('support.public.email')}</Label>

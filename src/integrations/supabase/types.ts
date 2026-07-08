@@ -4140,6 +4140,7 @@ export type Database = {
           handled_by: string | null
           id: string
           is_anonymous: boolean
+          member_id: string | null
           message: string
           name: string | null
           phone: string | null
@@ -4162,6 +4163,7 @@ export type Database = {
           handled_by?: string | null
           id?: string
           is_anonymous?: boolean
+          member_id?: string | null
           message: string
           name?: string | null
           phone?: string | null
@@ -4184,6 +4186,7 @@ export type Database = {
           handled_by?: string | null
           id?: string
           is_anonymous?: boolean
+          member_id?: string | null
           message?: string
           name?: string | null
           phone?: string | null
@@ -4201,6 +4204,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
