@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, LifeBuoy } from 'lucide-react';
+import { CheckCircle2, LifeBuoy, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const THROTTLE_KEY = 'moom-support-last-submit';
