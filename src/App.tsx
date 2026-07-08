@@ -45,6 +45,7 @@ import Announcements from "./pages/Announcements";
 import WorkoutList from "./pages/WorkoutList";
 import TransferSlips from "./pages/TransferSlips";
 import SupportTickets from "./pages/SupportTickets";
+import SupportTicketDetail from "./pages/SupportTicketDetail";
 import PublicSupportPage from "./pages/support/PublicSupportPage";
 import Finance from "./pages/Finance";
 import Insights from "./pages/Insights";
