@@ -275,6 +275,7 @@ const App = () => (
                   <Route path="workout-list" element={<ProtectedRoute minAccessLevel="level_2_operator"><WorkoutList /></ProtectedRoute>} />
                   <Route path="transfer-slip" element={<ProtectedRoute minAccessLevel="level_3_manager"><TransferSlips /></ProtectedRoute>} />
                   <Route path="support-ticket" element={<ProtectedRoute minAccessLevel="level_3_manager"><SupportTickets /></ProtectedRoute>} />
+                  <Route path="support-ticket/:id" element={<ProtectedRoute minAccessLevel="level_3_manager"><SupportTicketDetail /></ProtectedRoute>} />
                   <Route path="finance" element={<ProtectedRoute minAccessLevel="level_3_manager"><Finance /></ProtectedRoute>} />
                   <Route path="insights" element={<ProtectedRoute minAccessLevel="level_2_operator"><Insights /></ProtectedRoute>} />
                   <Route path="analytics" element={<Navigate to="/insights" replace />} />
