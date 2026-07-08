@@ -7,8 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useSettings, useUpdateSetting, getSettingValue } from '@/hooks/useSettings';
 import { useLocations } from '@/hooks/useLocations';
+import { useMaintenanceMode, useToggleMaintenanceMode } from '@/hooks/useMaintenanceMode';
 import { cn } from '@/lib/utils';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { SettingsLayout } from '@/components/settings';
 import { Link } from 'react-router-dom';
 import {
@@ -18,7 +19,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-type Section = 'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin';
+type Section = 'payment' | 'theme' | 'timezone' | 'workout' | 'gymCheckin' | 'maintenance';
 
 const themeColors = [
   { id: 'purple', main: '#9b87f5', accents: ['#6E59A5', '#8B5CF6', '#C4B5FD'], label: 'Purple', labelTh: 'ม่วง' },
@@ -40,6 +41,8 @@ const SettingsGeneral = () => {
   const { data: settings, isLoading } = useSettings('general');
   const updateSetting = useUpdateSetting();
   const { data: locations, isLoading: isLocationsLoading } = useLocations();
+  const { data: maintenanceFlag, isLoading: maintenanceLoading } = useMaintenanceMode();
+  const toggleMaintenance = useToggleMaintenanceMode();
   const [activeSection, setActiveSection] = useState<Section>('payment');
 
   const handleToggle = (key: string, value: boolean) => {
@@ -72,6 +75,7 @@ const SettingsGeneral = () => {
     { id: 'timezone', label: t('settings.general.timezoneMenu') },
     { id: 'workout', label: t('settings.general.workoutMenu') },
     { id: 'gymCheckin', label: t('settings.general.gymCheckinMenu') },
+    { id: 'maintenance', label: t('settings.maintenance.menu') },
   ];
 
   const hasLocations = locations && locations.length > 0;
