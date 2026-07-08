@@ -58,3 +58,7 @@ verify_jwt = false
 # Cron-invoked; does its own auth in-code (CRON_SECRET or service-role key).
 [functions.line-push-worker]
 verify_jwt = false
+
+# Public support form submission — anonymous callers, validates input in-code.
+[functions.submit-support-ticket]
+verify_jwt = false
