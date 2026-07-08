@@ -54,7 +54,9 @@ type TableName =
   | 'member_status_tiers'
   | 'sp_ledger'
   // ── LINE push outbox ──
-  | 'line_push_outbox';
+  | 'line_push_outbox'
+  // ── Feature flags (maintenance mode etc.) ──
+  | 'feature_flags';
 
 export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -107,6 +109,8 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   sp_ledger: ['member-status-tier', 'sp-history'],
   // ── LINE push outbox ──
   line_push_outbox: ['line-push-outbox-stats'],
+  // ── Feature flags ──
+  feature_flags: ['feature-flags', 'feature-flag', 'feature-enabled', 'maintenance-mode'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
