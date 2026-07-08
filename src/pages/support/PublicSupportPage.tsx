@@ -55,9 +55,10 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 const PublicSupportPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [submittedTicketNo, setSubmittedTicketNo] = useState<string | null>(null);
+  const [pointsAwarded, setPointsAwarded] = useState<{ xp: number; coin: number } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
