@@ -1,4 +1,9 @@
 export default {
+  maintenance: {
+    title: "We'll be right back",
+    subtitle: 'Site is temporarily under maintenance',
+    body: 'We are making improvements to the app. Please check back soon.',
+  },
   // Common
   common: {
     save: 'Save',
