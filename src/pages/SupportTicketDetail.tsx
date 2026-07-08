@@ -181,15 +181,15 @@ const SupportTicketDetail: React.FC = () => {
       </div>
 
       <PageHeader
-        title={
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-base text-muted-foreground">{ticket.ticket_no}</span>
-            <Badge variant="outline" className={statusColor[ticket.status]}>{t(`support.status.${ticket.status}`)}</Badge>
-            <Badge variant="outline" className={priorityColor[ticket.priority]}>{t(`support.priority.${ticket.priority}`)}</Badge>
-          </div>
-        }
+        title={ticket.ticket_no}
         subtitle={ticket.subject}
       />
+
+      <div className="flex flex-wrap items-center gap-2 -mt-2">
+        <Badge variant="outline" className={statusColor[ticket.status]}>{t(`support.status.${ticket.status}`)}</Badge>
+        <Badge variant="outline" className={priorityColor[ticket.priority]}>{t(`support.priority.${ticket.priority}`)}</Badge>
+        <Badge variant="outline">{t(`support.category.${ticket.category}`)}</Badge>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Main column */}
