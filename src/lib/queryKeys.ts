@@ -217,4 +217,7 @@ export const queryKeys = {
 
   // LINE Push Outbox
   linePushOutboxStats: () => ['line-push-outbox-stats'] as const,
+
+  // Support tickets
+  supportTickets: (filters?: object) => ['support-tickets', filters] as const,
 };

@@ -56,7 +56,9 @@ type TableName =
   // ── LINE push outbox ──
   | 'line_push_outbox'
   // ── Feature flags (maintenance mode etc.) ──
-  | 'feature_flags';
+  | 'feature_flags'
+  // ── Public support form inbox ──
+  | 'support_tickets';
 
 export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   schedule: ['schedule', 'schedule-stats', 'dashboard-stats'],
@@ -111,6 +113,8 @@ export const TABLE_INVALIDATION_MAP: Record<TableName, string[]> = {
   line_push_outbox: ['line-push-outbox-stats'],
   // ── Feature flags ──
   feature_flags: ['feature-flags', 'feature-flag', 'feature-enabled', 'maintenance-mode'],
+  // ── Support tickets ──
+  support_tickets: ['support-tickets'],
 };
 
 const SUBSCRIBED_TABLES: TableName[] = Object.keys(TABLE_INVALIDATION_MAP) as TableName[];
