@@ -94,14 +94,17 @@ const PublicSupportPage: React.FC = () => {
         subject: values.subject.trim(),
         message: values.message.trim(),
       };
-      const { data, error } = await supabase
-        .from('support_tickets' as any)
-        .insert(payload as any)
-        .select('ticket_no')
-        .single();
+      const { data, error } = await supabase.functions.invoke('submit-support-ticket', {
+        body: payload,
+      });
       if (error) throw error;
+      const envelope = data as { data?: { ticket_no: string; points_awarded: { xp: number; coin: number } | null }; error?: { message: string } | null };
+      if (envelope?.error || !envelope?.data?.ticket_no) {
+        throw new Error(envelope?.error?.message || 'submit failed');
+      }
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
-      setSubmittedTicketNo((data as any).ticket_no);
+      setSubmittedTicketNo(envelope.data.ticket_no);
+      setPointsAwarded(envelope.data.points_awarded);
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
