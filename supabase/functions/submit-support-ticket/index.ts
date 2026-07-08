@@ -61,18 +61,19 @@ Deno.serve(async (req) => {
     const phoneNorm = normalizePhone(typeof phone === "string" ? phone : null);
     const emailStr = typeof email === "string" && email.trim() ? email.trim().toLowerCase() : null;
 
-    // Match member: try normalized phone (digits) or exact email
+    // Match member: try normalized phone (digits only) or exact email
     let matchedMemberId: string | null = null;
     if (phoneNorm) {
+      const last9 = phoneNorm.slice(-9);
       const { data } = await db
         .from("members")
         .select("id, phone")
-        .not("phone", "is", null)
-        .limit(50);
-      if (data) {
+        .or(`phone.eq.${phoneNorm},phone.ilike.%${last9}`)
+        .limit(5);
+      if (data && data.length > 0) {
         const hit = data.find((m: { phone: string | null }) => {
           const mp = (m.phone ?? "").replace(/\D+/g, "");
-          return mp && (mp === phoneNorm || mp.endsWith(phoneNorm) || phoneNorm.endsWith(mp));
+          return mp && (mp === phoneNorm || mp.endsWith(last9) || phoneNorm.endsWith(mp.slice(-9)));
         });
         if (hit) matchedMemberId = (hit as { id: string }).id;
       }
