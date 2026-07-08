@@ -24,11 +24,24 @@ const CATEGORIES = new Set([
   "billing", "membership", "cleanliness", "suggestion", "other",
 ]);
 
-function normalizePhone(raw: string | null | undefined): string | null {
+// Normalize a Thai phone number to canonical 10-digit form starting with '0'.
+// Accepts: '081-234-5678', '08 1234 5678', '+66812345678', '66812345678', '812345678'.
+// Returns null if the value cannot be reduced to a valid TH mobile/landline number.
+function normalizeThaiPhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const digits = raw.replace(/\D+/g, "");
-  return digits.length >= 6 ? digits : null;
+  let digits = raw.replace(/\D+/g, "");
+  if (!digits) return null;
+  // Strip country code 66
+  if (digits.startsWith("66")) digits = "0" + digits.slice(2);
+  // Prepend 0 if 9 digits (missing leading zero)
+  if (digits.length === 9 && !digits.startsWith("0")) digits = "0" + digits;
+  // Valid TH numbers are 9-10 digits; require leading 0 and length 9 or 10
+  if ((digits.length === 9 || digits.length === 10) && digits.startsWith("0")) return digits;
+  return null;
 }
+
+// Categories eligible for gamification rewards (feedback that helps improve service).
+const REWARDABLE_CATEGORIES = new Set(["suggestion", "complaint"]);
 
 Deno.serve(async (req) => {
   const cors = corsHeadersFor(req);
