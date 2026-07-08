@@ -1,99 +1,110 @@
-## Goal
-เพิ่ม "โหมดปิดปรับปรุง / Coming Soon" ที่ admin เปิด-ปิดได้จาก Settings เมื่อเปิดใช้งาน ผู้ใช้ทั่วไป (member/trainer/staff และผู้เยี่ยมชม) จะเห็นหน้า "ปิดปรับปรุง" แทนหน้า login ปกติ ส่วน owner/manager ยังสามารถเข้าระบบได้ผ่าน URL ลับ `/admin`
+## Feature: Public Support / Complaint Form + Admin Inbox
 
-## Affected modules & status
-- `feature_flags` table (WORKING) — reuse, ไม่แก้ schema
-- `src/App.tsx` routing (WORKING) — เพิ่ม gate wrapper และ route `/admin`
-- `src/pages/Auth/Login.tsx` (WORKING) — reuse, ไม่แตะ
-- `src/pages/settings/SettingsGeneral.tsx` (WORKING) — เพิ่ม card toggle
-- `src/hooks/useFeatureFlags.ts` (WORKING) — reuse `useIsFeatureEnabled`
+หน้าให้ลูกค้าส่งเรื่องร้องเรียน/ขอความช่วยเหลือได้ที่ `moom.fit/support` (ไม่ต้อง login) พร้อมหน้า admin ใหม่สำหรับดูและจัดการเรื่องร้องเรียน
 
-## What to preserve
-- RLS/policies บน `feature_flags` (มี "Managers can manage" อยู่แล้ว)
-- Auth flow, ProtectedRoute, SurfaceGuard, LIFF callbacks
-- หน้า `/coming-soon` (roadmap) เดิม — ไม่ทับ ใช้หน้าใหม่ชื่อ `Maintenance`
+---
 
-## Design
+### 1. Database (new migration)
 
-### 1. DB (single migration, additive)
-Seed 1 row ใน `feature_flags`:
-```
-key='maintenance_mode', name='Maintenance Mode',
-description='When enabled, non-admin visitors see a Coming Soon page instead of login',
-scope='global', enabled=false
-```
-ใช้ `INSERT ... ON CONFLICT (key) DO NOTHING` เพื่อ idempotent
+New table `public.support_tickets`:
+- `id` uuid PK
+- `ticket_no` text unique — auto-generated `SUP-XXXXXX`
+- `name` text nullable (ว่าง = ไม่ประสงค์ออกนาม)
+- `is_anonymous` boolean default false
+- `phone` text nullable
+- `email` text nullable (lowercased/trimmed)
+- `category` text not null — CHECK in (`complaint`, `facility`, `trainer`, `class`, `billing`, `membership`, `cleanliness`, `suggestion`, `other`)
+- `subject` text not null (≤200)
+- `message` text not null (≤2000)
+- `status` text default `'new'` — CHECK in (`new`, `in_progress`, `resolved`, `closed`)
+- `admin_note` text nullable
+- `handled_by` uuid nullable (references staff.user_id path via `auth.uid()`)
+- `handled_at` timestamptz nullable
+- `source` text default `'web_public'`
+- `created_at`, `updated_at` timestamptz + `handle_updated_at` trigger
 
-### 2. Public read hook
-เพิ่ม `useMaintenanceMode()` ใน `src/hooks/useMaintenanceMode.ts`
-- Query `feature_flags` where `key='maintenance_mode'` (policy "All can read" อนุญาต anon อยู่แล้ว)
-- Realtime: เพิ่ม `feature_flags` ใน `TABLE_INVALIDATION_MAP` (ถ้ายังไม่มี) เพื่อสลับสถานะสด
-- staleTime สั้น (30s), refetchOnWindowFocus true
+GRANTs:
+- `GRANT INSERT ON public.support_tickets TO anon, authenticated`
+- `GRANT SELECT, UPDATE ON public.support_tickets TO authenticated`
+- `GRANT ALL ON public.support_tickets TO service_role`
 
-### 3. Gate component
-`src/components/auth/MaintenanceGate.tsx`:
-- อ่าน `useMaintenanceMode()` + `useAuth()`
-- ถ้า `enabled === false` → render children
-- ถ้า `enabled === true`:
-  - ผ่าน (render children) เมื่อ path เริ่มด้วย `/admin` **หรือ** user ที่ login แล้วมี `access_level >= level_1_minimum` (staff/trainer/manager/owner) **หรือ** path เป็น `/liff/*` (LINE callback ต้องทำงาน)
-  - อื่นๆ → render `<Maintenance />` page
-- ระหว่างรอโหลด flag/auth: render null (กัน flash)
+RLS policies:
+- INSERT — anon+authenticated `WITH CHECK (true)` (public submissions)
+- SELECT — `has_min_access_level(auth.uid(),'level_3_manager')`
+- UPDATE — `has_min_access_level(auth.uid(),'level_3_manager')`
 
-### 4. หน้า Maintenance
-`src/pages/Maintenance.tsx` — หน้าใหม่ minimal:
-- Brand logo, ข้อความ "ระบบกำลังปิดปรับปรุง" (TH default) / "We'll be right back" (EN)
-- ไม่มีลิงก์ไป login สาธารณะ (admin เข้า `/admin` เอง)
-- ใช้ design tokens ตาม index.css, ไม่ hardcode สี
+Add table to `supabase_realtime` publication for live admin updates.
 
-### 5. Route `/admin` (admin backdoor login)
-ใน `src/App.tsx`:
-- เพิ่ม `<Route path="/admin" element={<Login />} />` (นอก MaintenanceGate หรือ gate ให้ผ่าน path นี้)
-- หลัง login สำเร็จ Login เดิม redirect เข้า `/` ตามปกติ — ไม่ต้องแก้
-- Wrap `<Routes>` ทั้งก้อนด้วย `<MaintenanceGate>` — logic ภายใน gate จะปล่อยผ่าน `/admin`, `/liff/*` และ user ที่เป็นทีมงาน
+### 2. Public submission page — `/support`
 
-### 6. Admin UI toggle
-`src/pages/settings/SettingsGeneral.tsx`: เพิ่ม Card "Maintenance Mode"
-- Switch ผูกกับ flag `maintenance_mode` ผ่าน `useToggleFeatureFlag` (มีอยู่แล้ว)
-- คำเตือนสีส้ม: "เมื่อเปิด ผู้ใช้ทั่วไปทั้งหมดจะเห็นหน้า Coming Soon ยกเว้น admin ที่เข้าผ่าน /admin"
-- แสดง badge สถานะปัจจุบัน
-- ปุ่ม toggle ต้องเรียก `logActivity({event_type:'maintenance_mode_toggled', ...})` ตาม convention
-- Permission: hide เมื่อ `!can('settings','update')` — RLS เป็น boundary จริง
+New file `src/pages/support/PublicSupportPage.tsx`. Route `/support` added **outside** `MaintenanceGate` and outside auth (public), so it stays reachable even in maintenance mode.
 
-### 7. i18n
-เพิ่ม key ทั้ง `en.ts` และ `th.ts`:
-- `maintenance.title`, `maintenance.subtitle`, `maintenance.body`
-- `settings.maintenance.card_title`, `.description`, `.enabled`, `.disabled`, `.warning`, `.admin_hint`
+Form (react-hook-form + Zod):
+- **Anonymous toggle** → hides + clears name
+- Name (optional, ≤100)
+- Phone (optional, TH phone regex)
+- Email (optional, email format, auto lowercase/trim)
+- **Category dropdown (required)** — ร้องเรียนทั่วไป / อุปกรณ์ / เทรนเนอร์ / คลาส / การชำระเงิน & แพ็คเกจ / สมาชิก / ความสะอาด / ข้อเสนอแนะ / อื่นๆ
+- **Subject (required, ≤200)**
+- **Message (required, 10–2000, textarea)**
 
-## What is actually broken
-ยังไม่มีกลไก maintenance — ต้องสร้างใหม่ตามด้านบน
+Required = category, subject, message. Others optional.
 
-## Minimal-diff file list
-สร้างใหม่:
-- `supabase/migrations/<timestamp>_seed_maintenance_flag.sql`
-- `src/hooks/useMaintenanceMode.ts`
-- `src/components/auth/MaintenanceGate.tsx`
-- `src/pages/Maintenance.tsx`
+Submit: direct `supabase.from('support_tickets').insert(...)` with anon key. Show success screen with `ticket_no` for reference. Client throttle "1 submit / 60s" via localStorage (no CAPTCHA in v1).
 
-แก้:
-- `src/App.tsx` — wrap routes ด้วย MaintenanceGate, เพิ่ม route `/admin`
-- `src/pages/settings/SettingsGeneral.tsx` — เพิ่ม Maintenance card
-- `src/hooks/useRealtimeSync.ts` — เพิ่ม `feature_flags` → invalidate `queryKeys.featureFlags`
-- `src/lib/queryKeys.ts` — เพิ่ม key `maintenanceMode()` ถ้ายังไม่มี
-- `src/i18n/locales/en.ts`, `src/i18n/locales/th.ts`
-- `docs/DEVLOG.md` — บันทึกการเปลี่ยนแปลง
+Design: centered card, brand logo, mobile-first, shadcn primitives, TH default with EN i18n.
 
-ไม่แตะ: `AuthContext`, `SurfaceGuard`, RLS policies, `Login.tsx`, LIFF, edge functions
+### 3. Admin inbox — `/support-ticket`
 
-## Regression checklist
-1. Flag OFF → ทุก surface ทำงานเหมือนเดิม (member/trainer/staff/admin, LIFF, checkin)
-2. Flag ON, anon เข้า `/`, `/login`, `/member/*` → เห็นหน้า Maintenance
-3. Flag ON, anon เข้า `/admin` → เห็นหน้า Login staff → login สำเร็จ → เข้า Dashboard ได้
-4. Flag ON, member ที่ login อยู่แล้ว refresh หน้า `/member/*` → เห็น Maintenance (ไม่ leak ข้อมูล)
-5. Flag ON, staff ที่ login อยู่แล้ว → ใช้งาน admin ได้ปกติ
-6. Flag ON → toggle OFF จาก Settings → member refresh → กลับเข้าแอปได้ (realtime invalidate)
-7. LIFF callback `/liff/callback?...` ยังทำงานได้ตอน flag ON
-8. `bun run test` + `bun run build` ผ่านทั้งหมด
-9. `activity_log` มี entry เมื่อ toggle
+New file `src/pages/SupportTickets.tsx` under admin `MainLayout` with `minAccessLevel="level_3_manager"`.
 
-## Cron / infra
-ไม่มี cron ใหม่ ใช้ realtime + short staleTime
+- List table: date · ticket_no · category badge · subject · name (or "ไม่ประสงค์ออกนาม") · status badge
+- Filter chips: status (all/new/in_progress/resolved/closed) + category
+- Search: ticket_no / subject / email / phone
+- Row click → Sheet with full details, contact info, message, admin_note textarea, status dropdown, "Assign to me" button
+- Save writes `handled_by=auth.uid()`, `handled_at=now()`, `status`, `admin_note` + `logActivity({ event_type: 'support_ticket.updated' })`
+
+New hook `src/hooks/useSupportTickets.ts`:
+- `useSupportTickets(filters)` — TanStack Query
+- `useUpdateSupportTicket()` — mutation with activity log
+- Query key `supportTickets` in `src/lib/queryKeys.ts`
+- `support_tickets` added to `TABLE_INVALIDATION_MAP` in `useRealtimeSync.ts`
+
+Admin sidebar: add "Support Tickets" nav entry (will locate correct sidebar file during build; likely near Notifications / Activity Log).
+
+### 4. i18n
+
+Add keys in both `src/i18n/locales/en.ts` and `th.ts`:
+- `support.public.*` (form labels, category labels, success screen, throttle message)
+- `support.admin.*` (list, filters, statuses, drawer, actions)
+
+### 5. Files touched
+
+Create:
+- `supabase/migrations/<ts>_support_tickets.sql`
+- `src/pages/support/PublicSupportPage.tsx`
+- `src/pages/SupportTickets.tsx`
+- `src/hooks/useSupportTickets.ts`
+
+Edit:
+- `src/App.tsx` — add `/support` public route (outside MaintenanceGate) + `/support-ticket` admin route
+- `src/components/auth/MaintenanceGate.tsx` — allowlist `/support`
+- `src/lib/queryKeys.ts`
+- `src/hooks/useRealtimeSync.ts`
+- admin sidebar file (nav entry)
+- `src/i18n/locales/en.ts`, `th.ts`
+- `docs/DEVLOG.md`
+
+### 6. Regression / safety
+
+- Additive only — no changes to auth, RLS helpers, or existing tables
+- Public insert only into new table; other tables unaffected
+- No `service_role` in client
+- `logActivity` on admin updates (audit)
+- `bun run test` + `bun run build` must pass
+- Maintenance mode ON still allows `/support` (support during outage is desirable)
+
+### 7. Notes / defaults chosen
+
+- **Spam control:** required fields + length limits + localStorage 60s throttle. No CAPTCHA in v1 (say the word and I'll wire hCaptcha).
+- **Notifications:** not sending LINE/email notify on new ticket in v1 — admin sees realtime badge instead. Add later if needed.
