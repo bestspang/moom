@@ -5,7 +5,7 @@ import {
   Users, Star, Tag, Gift, UserCheck, Shield, MapPin,
   FileText, Megaphone, Dumbbell, DollarSign, TrendingUp,
   Settings, ChevronDown, ChevronRight, Briefcase, Wallet,
-  Trophy, PanelLeftClose, PanelLeftOpen,
+  Trophy, PanelLeftClose, PanelLeftOpen, LifeBuoy,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
