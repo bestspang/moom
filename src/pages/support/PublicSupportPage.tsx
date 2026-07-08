@@ -114,13 +114,31 @@ const PublicSupportPage: React.FC = () => {
         body: payload,
       });
       if (error) throw error;
-      const envelope = data as { data?: { ticket_no: string; points_awarded: { xp: number; coin: number } | null }; error?: { message: string } | null };
+      const envelope = data as {
+        data?: {
+          ticket_no: string;
+          points_awarded: { xp: number; coin: number } | null;
+          member_matched?: boolean;
+          phone_provided?: boolean;
+          reward_eligible_category?: boolean;
+        };
+        error?: { message: string } | null;
+      };
       if (envelope?.error || !envelope?.data?.ticket_no) {
         throw new Error(envelope?.error?.message || 'submit failed');
       }
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
       setSubmittedTicketNo(envelope.data.ticket_no);
       setPointsAwarded(envelope.data.points_awarded);
+      // Show "no member match" notice only when reward was actually pursuable:
+      // user gave a phone AND picked a reward-eligible category, but member lookup missed.
+      setNoMemberMatch(
+        Boolean(
+          envelope.data.phone_provided &&
+            envelope.data.reward_eligible_category &&
+            !envelope.data.member_matched,
+        ),
+      );
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
