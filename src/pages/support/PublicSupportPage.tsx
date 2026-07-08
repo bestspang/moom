@@ -176,12 +176,18 @@ const PublicSupportPage: React.FC = () => {
                 </div>
               </div>
             )}
+            {!pointsAwarded && noMemberMatch && (
+              <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                {t('support.public.noMemberMatch')}
+              </div>
+            )}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
                 setPointsAwarded(null);
+                setNoMemberMatch(false);
                 form.reset();
               }}
             >
