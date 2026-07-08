@@ -107,12 +107,11 @@ const SupportTickets: React.FC = () => {
     <div className="space-y-4">
       <PageHeader
         title={t('support.admin.title')}
-        description={t('support.admin.description')}
-        icon={LifeBuoy}
+        subtitle={t('support.admin.description')}
       />
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <StatusTabs tabs={tabs} activeKey={activeStatus} onChange={setActiveStatus} />
+        <StatusTabs tabs={tabs} activeTab={activeStatus} onChange={setActiveStatus} />
         <div className="flex items-center gap-2">
           <Select value={category} onValueChange={(v) => setCategory(v as any)}>
             <SelectTrigger className="w-[180px]">
@@ -140,8 +139,8 @@ const SupportTickets: React.FC = () => {
           </div>
         ) : !tickets || tickets.length === 0 ? (
           <EmptyState
-            icon={LifeBuoy}
-            title={t('support.admin.emptyTitle')}
+            icon={<LifeBuoy className="h-12 w-12" />}
+            message={t('support.admin.emptyTitle')}
             description={t('support.admin.emptyDesc')}
           />
         ) : (
