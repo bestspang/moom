@@ -135,7 +135,7 @@ export function getDefaultRoute(surface: AppSurface): string {
 export type RouteAffinity = 'admin' | 'member' | 'shared';
 
 const MEMBER_HOST_PREFIXES = ['/member', '/trainer', '/staff'];
-const SHARED_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/checkin', '/liff', '/diagnostics/surface', '/diagnostics/auth'];
+const SHARED_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/checkin', '/liff', '/support', '/diagnostics/surface', '/diagnostics/auth'];
 
 export function getRouteHostAffinity(pathname: string): RouteAffinity {
   if (MEMBER_HOST_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
