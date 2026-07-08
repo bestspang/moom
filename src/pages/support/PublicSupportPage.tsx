@@ -74,6 +74,7 @@ const PublicSupportPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submittedTicketNo, setSubmittedTicketNo] = useState<string | null>(null);
   const [pointsAwarded, setPointsAwarded] = useState<{ xp: number; coin: number } | null>(null);
+  const [noMemberMatch, setNoMemberMatch] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
