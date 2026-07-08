@@ -4049,6 +4049,63 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          admin_note: string | null
+          category: string
+          created_at: string
+          email: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          is_anonymous: boolean
+          message: string
+          name: string | null
+          phone: string | null
+          source: string
+          status: string
+          subject: string
+          ticket_no: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          category: string
+          created_at?: string
+          email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          is_anonymous?: boolean
+          message: string
+          name?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          subject: string
+          ticket_no?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          category?: string
+          created_at?: string
+          email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          is_anonymous?: boolean
+          message?: string
+          name?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          subject?: string
+          ticket_no?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trainer_action_rewards: {
         Row: {
           action_code: string
