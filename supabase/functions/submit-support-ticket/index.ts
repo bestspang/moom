@@ -71,10 +71,12 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
-    const phoneNorm = normalizePhone(typeof phone === "string" ? phone : null);
+    const phoneRaw = typeof phone === "string" && phone.trim() ? phone.trim() : null;
+    const phoneNorm = normalizeThaiPhone(phoneRaw); // canonical 10-digit '0xxxxxxxxx' or null
+    const phoneValid = phoneRaw ? phoneNorm !== null : true; // empty phone is valid (optional field)
     const emailStr = typeof email === "string" && email.trim() ? email.trim().toLowerCase() : null;
 
-    // Match member: try normalized phone (digits only) or exact email
+    // Match member: by canonical phone (exact or last-9 fuzzy) or exact email
     let matchedMemberId: string | null = null;
     if (phoneNorm) {
       const last9 = phoneNorm.slice(-9);
@@ -86,7 +88,9 @@ Deno.serve(async (req) => {
       if (data && data.length > 0) {
         const hit = data.find((m: { phone: string | null }) => {
           const mp = (m.phone ?? "").replace(/\D+/g, "");
-          return mp && (mp === phoneNorm || mp.endsWith(last9) || phoneNorm.endsWith(mp.slice(-9)));
+          if (!mp) return false;
+          const mpNorm = normalizeThaiPhone(mp);
+          return mpNorm === phoneNorm || mp.endsWith(last9);
         });
         if (hit) matchedMemberId = (hit as { id: string }).id;
       }
@@ -103,7 +107,7 @@ Deno.serve(async (req) => {
     const insertPayload = {
       is_anonymous: Boolean(is_anonymous),
       name: is_anonymous ? null : (typeof name === "string" && name.trim() ? name.trim() : null),
-      phone: typeof phone === "string" && phone.trim() ? phone.trim() : null,
+      phone: phoneRaw,
       email: emailStr,
       category,
       subject: (subject as string).trim(),
@@ -122,10 +126,13 @@ Deno.serve(async (req) => {
       return json({ data: null, error: { code: "INTERNAL", message: "Failed to create ticket" } }, 500, cors);
     }
 
-    // Fire gamification event only if member matched.
+    // Fire gamification event ONLY when:
+    //  (a) submitter matched a member, AND
+    //  (b) category is 'suggestion' or 'complaint' (feedback categories).
     // Cooldown (2 weeks) is enforced by gamification_rules.cooldown_minutes.
     let pointsAwarded: { xp: number; coin: number } | null = null;
-    if (matchedMemberId) {
+    const rewardEligible = matchedMemberId && REWARDABLE_CATEGORIES.has(category);
+    if (rewardEligible) {
       try {
         const { data: gData, error: gErr } = await db.functions.invoke("gamification-process-event", {
           body: {
@@ -135,8 +142,6 @@ Deno.serve(async (req) => {
             metadata: { ticket_no: ticket.ticket_no, category },
           },
         });
-        // Success response has status="processed" plus xp_granted/points_granted.
-        // Skips ("cooldown_active", "daily_limit_reached", "already_processed", "no_matching_rule") mean no award.
         if (!gErr && gData && (gData as { status?: string }).status === "processed") {
           const g = gData as { xp_granted?: number; points_granted?: number };
           pointsAwarded = {
@@ -153,6 +158,9 @@ Deno.serve(async (req) => {
       data: {
         ticket_no: ticket.ticket_no,
         member_matched: Boolean(matchedMemberId),
+        phone_valid: phoneValid,
+        phone_provided: Boolean(phoneRaw),
+        reward_eligible_category: REWARDABLE_CATEGORIES.has(category),
         points_awarded: pointsAwarded,
       },
       error: null,
