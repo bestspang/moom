@@ -129,6 +129,13 @@ const PublicSupportPage: React.FC = () => {
           member_matched?: boolean;
           phone_provided?: boolean;
           reward_eligible_category?: boolean;
+          reward_status?:
+            | 'granted'
+            | 'skipped_ineligible_category'
+            | 'skipped_no_phone'
+            | 'skipped_no_member'
+            | 'skipped_cooldown'
+            | 'skipped_error';
         };
         error?: { message: string } | null;
       };
@@ -138,15 +145,7 @@ const PublicSupportPage: React.FC = () => {
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
       setSubmittedTicketNo(envelope.data.ticket_no);
       setPointsAwarded(envelope.data.points_awarded);
-      // Show "no member match" notice only when reward was actually pursuable:
-      // user gave a phone AND picked a reward-eligible category, but member lookup missed.
-      setNoMemberMatch(
-        Boolean(
-          envelope.data.phone_provided &&
-            envelope.data.reward_eligible_category &&
-            !envelope.data.member_matched,
-        ),
-      );
+      setRewardStatus(envelope.data.reward_status ?? null);
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
