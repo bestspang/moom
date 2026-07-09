@@ -3688,6 +3688,16 @@ export default {
       pointsAwardedTitle: '🎉 You earned rewards!',
       pointsAwardedDesc: '+{{xp}} XP and +{{coin}} Coin added to your member account.',
       noMemberMatch: 'The phone did not match any member account, so no points were awarded.',
+      reward: {
+        granted: '+{{xp}} XP and +{{coin}} Coin added to your member account 🎉',
+        cooldown: "You already claimed a feedback reward in the last 14 days. Your next reward unlocks soon.",
+        noMember: "This phone isn't linked to a member account, so no reward this time — try your registered number next time.",
+        noPhone: 'Add the phone you signed up with to earn +{{xp}} XP and +{{coin}} Coin every 14 days.',
+        ineligibleCategory: "Rewards apply only to 'Suggestion' and 'Complaint' categories — thanks for your message.",
+        tryLater: "Reward system hiccup — our team will look into it.",
+        titleGranted: '🎉 Reward earned',
+        titleSkipped: 'Reward status',
+      },
       langToggle: 'ไทย',
     },
     category: {
