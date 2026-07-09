@@ -131,8 +131,21 @@ Deno.serve(async (req) => {
     //  (b) category is 'suggestion' or 'complaint' (feedback categories).
     // Cooldown (2 weeks) is enforced by gamification_rules.cooldown_minutes.
     let pointsAwarded: { xp: number; coin: number } | null = null;
-    const rewardEligible = matchedMemberId && REWARDABLE_CATEGORIES.has(category);
-    if (rewardEligible) {
+    let rewardStatus:
+      | "granted"
+      | "skipped_ineligible_category"
+      | "skipped_no_phone"
+      | "skipped_no_member"
+      | "skipped_cooldown"
+      | "skipped_error" = "skipped_ineligible_category";
+
+    if (!REWARDABLE_CATEGORIES.has(category)) {
+      rewardStatus = "skipped_ineligible_category";
+    } else if (!phoneRaw) {
+      rewardStatus = "skipped_no_phone";
+    } else if (!matchedMemberId) {
+      rewardStatus = "skipped_no_member";
+    } else {
       try {
         const { data: gData, error: gErr } = await db.functions.invoke("gamification-process-event", {
           body: {
@@ -142,15 +155,22 @@ Deno.serve(async (req) => {
             metadata: { ticket_no: ticket.ticket_no, category },
           },
         });
-        if (!gErr && gData && (gData as { status?: string }).status === "processed") {
+        if (gErr) {
+          rewardStatus = "skipped_error";
+        } else if (gData && (gData as { status?: string }).status === "processed") {
           const g = gData as { xp_granted?: number; points_granted?: number };
           pointsAwarded = {
             xp: Number(g.xp_granted ?? 0),
             coin: Number(g.points_granted ?? 0),
           };
+          rewardStatus = "granted";
+        } else {
+          // status was 'skipped' / 'cooldown' / cap reached
+          rewardStatus = "skipped_cooldown";
         }
       } catch (gEx) {
         console.warn("[submit-support-ticket] gamification event failed (non-blocking)", gEx);
+        rewardStatus = "skipped_error";
       }
     }
 
