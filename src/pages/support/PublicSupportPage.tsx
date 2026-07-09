@@ -172,29 +172,48 @@ const PublicSupportPage: React.FC = () => {
               </div>
               <div className="mt-1 font-mono text-lg font-semibold">{submittedTicketNo}</div>
             </div>
-            {pointsAwarded && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
-                <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
-                  <Sparkles className="h-4 w-4" />
-                  {t('support.public.pointsAwardedTitle')}
+            {(() => {
+              if (rewardStatus === 'granted' && pointsAwarded) {
+                return (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      {t('support.public.reward.titleGranted')}
+                    </div>
+                    <div className="mt-1 text-sm text-foreground">
+                      {t('support.public.reward.granted', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
+                    </div>
+                  </div>
+                );
+              }
+              if (!rewardStatus) return null;
+              const Icon = rewardStatus === 'skipped_cooldown' ? Clock : Info;
+              const messageKey = ({
+                skipped_cooldown: 'support.public.reward.cooldown',
+                skipped_no_member: 'support.public.reward.noMember',
+                skipped_no_phone: 'support.public.reward.noPhone',
+                skipped_ineligible_category: 'support.public.reward.ineligibleCategory',
+                skipped_error: 'support.public.reward.tryLater',
+              } as const)[rewardStatus as Exclude<typeof rewardStatus, 'granted'>];
+              return (
+                <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" />
+                    {t('support.public.reward.titleSkipped')}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    {t(messageKey, { xp: 10, coin: 5 })}
+                  </div>
                 </div>
-                <div className="mt-1 text-sm text-foreground">
-                  {t('support.public.pointsAwardedDesc', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
-                </div>
-              </div>
-            )}
-            {!pointsAwarded && noMemberMatch && (
-              <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
-                {t('support.public.noMemberMatch')}
-              </div>
-            )}
+              );
+            })()}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
                 setPointsAwarded(null);
-                setNoMemberMatch(false);
+                setRewardStatus(null);
                 form.reset();
               }}
             >
