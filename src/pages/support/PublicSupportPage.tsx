@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, LifeBuoy, Sparkles } from 'lucide-react';
+import { CheckCircle2, LifeBuoy, Sparkles, Info, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const THROTTLE_KEY = 'moom-support-last-submit';
@@ -74,7 +74,15 @@ const PublicSupportPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submittedTicketNo, setSubmittedTicketNo] = useState<string | null>(null);
   const [pointsAwarded, setPointsAwarded] = useState<{ xp: number; coin: number } | null>(null);
-  const [noMemberMatch, setNoMemberMatch] = useState(false);
+  const [rewardStatus, setRewardStatus] = useState<
+    | 'granted'
+    | 'skipped_ineligible_category'
+    | 'skipped_no_phone'
+    | 'skipped_no_member'
+    | 'skipped_cooldown'
+    | 'skipped_error'
+    | null
+  >(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -121,6 +129,13 @@ const PublicSupportPage: React.FC = () => {
           member_matched?: boolean;
           phone_provided?: boolean;
           reward_eligible_category?: boolean;
+          reward_status?:
+            | 'granted'
+            | 'skipped_ineligible_category'
+            | 'skipped_no_phone'
+            | 'skipped_no_member'
+            | 'skipped_cooldown'
+            | 'skipped_error';
         };
         error?: { message: string } | null;
       };
@@ -130,15 +145,7 @@ const PublicSupportPage: React.FC = () => {
       localStorage.setItem(THROTTLE_KEY, String(Date.now()));
       setSubmittedTicketNo(envelope.data.ticket_no);
       setPointsAwarded(envelope.data.points_awarded);
-      // Show "no member match" notice only when reward was actually pursuable:
-      // user gave a phone AND picked a reward-eligible category, but member lookup missed.
-      setNoMemberMatch(
-        Boolean(
-          envelope.data.phone_provided &&
-            envelope.data.reward_eligible_category &&
-            !envelope.data.member_matched,
-        ),
-      );
+      setRewardStatus(envelope.data.reward_status ?? null);
     } catch (err) {
       console.error('[PublicSupportPage] submit failed', err);
       toast.error(t('support.public.submitFailed'));
@@ -165,29 +172,48 @@ const PublicSupportPage: React.FC = () => {
               </div>
               <div className="mt-1 font-mono text-lg font-semibold">{submittedTicketNo}</div>
             </div>
-            {pointsAwarded && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
-                <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
-                  <Sparkles className="h-4 w-4" />
-                  {t('support.public.pointsAwardedTitle')}
+            {(() => {
+              if (rewardStatus === 'granted' && pointsAwarded) {
+                return (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      {t('support.public.reward.titleGranted')}
+                    </div>
+                    <div className="mt-1 text-sm text-foreground">
+                      {t('support.public.reward.granted', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
+                    </div>
+                  </div>
+                );
+              }
+              if (!rewardStatus) return null;
+              const Icon = rewardStatus === 'skipped_cooldown' ? Clock : Info;
+              const messageKey = ({
+                skipped_cooldown: 'support.public.reward.cooldown',
+                skipped_no_member: 'support.public.reward.noMember',
+                skipped_no_phone: 'support.public.reward.noPhone',
+                skipped_ineligible_category: 'support.public.reward.ineligibleCategory',
+                skipped_error: 'support.public.reward.tryLater',
+              } as const)[rewardStatus as Exclude<typeof rewardStatus, 'granted'>];
+              return (
+                <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" />
+                    {t('support.public.reward.titleSkipped')}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    {t(messageKey, { xp: 10, coin: 5 })}
+                  </div>
                 </div>
-                <div className="mt-1 text-sm text-foreground">
-                  {t('support.public.pointsAwardedDesc', { xp: pointsAwarded.xp, coin: pointsAwarded.coin })}
-                </div>
-              </div>
-            )}
-            {!pointsAwarded && noMemberMatch && (
-              <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
-                {t('support.public.noMemberMatch')}
-              </div>
-            )}
+              );
+            })()}
             <Button
               className="w-full"
               variant="outline"
               onClick={() => {
                 setSubmittedTicketNo(null);
                 setPointsAwarded(null);
-                setNoMemberMatch(false);
+                setRewardStatus(null);
                 form.reset();
               }}
             >
