@@ -182,6 +182,7 @@ Deno.serve(async (req) => {
         phone_provided: Boolean(phoneRaw),
         reward_eligible_category: REWARDABLE_CATEGORIES.has(category),
         points_awarded: pointsAwarded,
+        reward_status: rewardStatus,
       },
       error: null,
     }, 200, cors);
