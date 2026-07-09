@@ -1,61 +1,70 @@
-## Scope
+## Goal
+On the `/support` success screen, always tell the user clearly what happened with rewards — granted, or skipped with a specific reason (no member match, cooldown active, ineligible category, or no phone provided).
 
-Three refinements to `/support` public form + reward logic:
+## Current gap
+The success screen only shows two states:
+- Rewards granted (green box with XP/Coin)
+- "No member match" muted notice (only when phone provided + eligible category + no match)
 
-1. Reward (+10 XP / +5 Coin) awarded **only** when `category ∈ {suggestion, complaint}` — other categories create the ticket normally but skip gamification.
-2. Stronger phone validation + normalization; when the user submits a phone but **no member matches**, show a clear inline/toast error (still allow submit? see decision below).
-3. Persist TH/EN language toggle on `/support` across reloads.
+Cases silently unexplained:
+- Category not eligible (e.g. `billing`, `facility`) → no message at all
+- No phone provided → no message at all
+- Cooldown active (member submitted feedback in last 14 days) → looks identical to "no member match"
+- Gamification call errored → silent
 
-## Decisions / Assumptions
+## Plan
 
-- **Reward-eligible categories:** `suggestion` (แนะนำ) and `complaint` (ร้องเรียน). Confirmed both already exist in `CATEGORIES`.
-- **Phone normalization rules (TH-centric):**
-  - Strip spaces, dashes, parentheses.
-  - Accept `+66xxxxxxxxx` → convert to `0xxxxxxxxx` (Thai local form, 10 digits starting with 0).
-  - Accept 9-digit form missing leading 0 → prepend `0`.
-  - Final canonical form: 10 digits starting with `0`. Reject anything else with clear error.
-- **No-match behavior:** Ticket is **still submitted** (feedback must never be lost), but the success screen shows a soft notice: "เบอร์นี้ไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน" so the user understands why no reward appeared. Reward hint text stays informative, not blocking.
-- **Language persistence:** `LanguageContext` already persists to `localStorage['moom-language']` and defaults to `'th'`. `/support` uses `useLanguage()`, so persistence already works globally. **No new storage needed** — will verify by reading the page and note this in the plan, not add duplicate logic.
+### 1. Edge function — return an explicit `reward_status`
+File: `supabase/functions/submit-support-ticket/index.ts`
 
-## Changes
+Add a single string field `reward_status` in the response `data`, one of:
+- `granted` — points awarded (also populates `points_awarded`)
+- `skipped_ineligible_category` — category is not `suggestion`/`complaint`
+- `skipped_no_phone` — eligible category, but no phone provided
+- `skipped_no_member` — phone provided + eligible category, but no member matched
+- `skipped_cooldown` — member matched + eligible, but gamification returned non-`processed` (cooldown/cap)
+- `skipped_error` — gamification invocation threw
 
-### 1. Edge function `submit-support-ticket/index.ts`
-- Add helper `normalizeThaiPhone(raw)` returning `{ canonical: string | null, reason: 'empty'|'invalid'|'ok' }`.
-- Return `phone_valid: boolean` and `member_matched: boolean` in the response envelope so UI can message precisely.
-- Gate gamification call: only invoke `gamification-process-event` when `matchedMemberId && (category === 'suggestion' || category === 'complaint')`.
-- Update member lookup to use the canonical 10-digit form (exact match + last-9-digit fallback).
+Keep existing fields (`member_matched`, `phone_provided`, `reward_eligible_category`, `points_awarded`) for backward compatibility. Determine `reward_status` from the same branches already in the function — no new business logic.
 
-### 2. Migration
-- Update `gamification_rules` row for `action_key='support_ticket_submit'`:
-  - No schema change. Add a `metadata`/`conditions` note or simply enforce category gating in the edge function (simpler, no rule engine change needed). **Choice: enforce in edge function only** — the rule stays generic; the emitter decides eligibility. No migration required.
+### 2. UI — one clear reward banner per state
+File: `src/pages/support/PublicSupportPage.tsx`
 
-### 3. UI `src/pages/support/PublicSupportPage.tsx`
-- Update Zod `phone` schema to run through `normalizeThaiPhone` via `.superRefine`; show error `support.public.invalidPhoneTH` when a value is entered but invalid.
-- Change reward hint text to be conditional on selected category:
-  - When `suggestion` or `complaint` selected → show reward hint under phone.
-  - Otherwise → hide reward hint (avoid misleading users).
-- Success screen: if user provided a phone but `member_matched === false`, show a muted notice line ("เบอร์ที่กรอกไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน / Phone did not match a member, no points awarded").
-- Language toggle: no code change — already persisted via `LanguageContext`. Add a brief code comment noting this.
+Replace the current two-block conditional (green "granted" box + muted "no match" notice) with a single **reward status banner** that always renders on the success screen and picks its variant + copy from `reward_status`:
 
-### 4. i18n `src/i18n/locales/{en,th}.ts`
-Add keys:
-- `support.public.invalidPhoneTH` — "กรอกเบอร์ 10 หลักขึ้นต้นด้วย 0" / "Enter a 10-digit phone starting with 0"
-- `support.public.phoneRewardHint` — update to clarify eligibility: "แนะนำ/ร้องเรียน + เบอร์สมาชิก = +10 XP / +5 Coin (สูงสุด 1 ครั้ง / 2 สัปดาห์)"
-- `support.public.noMemberMatch` — "เบอร์ที่กรอกไม่ตรงกับสมาชิก จึงไม่ได้รับคะแนน" / "Phone did not match any member, no points were awarded"
-- `support.public.rewardOnlyForFeedback` — helper text explaining reward is only for แนะนำ/ร้องเรียน categories
+| status | visual | copy key |
+|---|---|---|
+| `granted` | primary tint + Sparkles icon | `support.public.reward.granted` (existing `pointsAwardedDesc`) |
+| `skipped_cooldown` | muted + Clock icon | `support.public.reward.cooldown` |
+| `skipped_no_member` | muted + Info icon | `support.public.reward.noMember` |
+| `skipped_no_phone` | muted + Info icon | `support.public.reward.noPhone` |
+| `skipped_ineligible_category` | muted + Info icon | `support.public.reward.ineligibleCategory` |
+| `skipped_error` | muted + Info icon | `support.public.reward.tryLater` |
 
-## Technical Notes
+Remove the standalone `noMemberMatch` state — the new banner replaces it.
 
-- Reward gating happens **server-side** in the edge function — client cannot spoof by picking category then re-editing. Safe.
-- Existing 60s client-side throttle unchanged.
-- `gamification-process-event` cooldown (14 days) still enforced globally, so switching category won't bypass the 2-week cap.
-- No DB schema changes → no new migration file.
+### 3. i18n — add friendly TH/EN copy
+Files: `src/i18n/locales/th.ts`, `src/i18n/locales/en.ts`
 
-## Regression Checklist
+Add under `support.public.reward.*`:
+- `granted` — "ได้รับ {{xp}} XP และ {{coin}} Coin แล้ว 🎉" / "You earned {{xp}} XP and {{coin}} Coin 🎉"
+- `cooldown` — "คุณเพิ่งได้รับรางวัลจากการส่งความคิดเห็นไปแล้วในช่วง 14 วันที่ผ่านมา รางวัลถัดไปจะพร้อมให้รับเร็ว ๆ นี้" / "You already claimed a feedback reward in the last 14 days. Next reward unlocks soon."
+- `noMember` — "ไม่พบเบอร์นี้ในระบบสมาชิก จึงยังไม่ได้รับรางวัล — ลองใช้เบอร์ที่ลงทะเบียนไว้ครั้งหน้า" / "This phone isn't linked to a member account, so no reward this time — try your registered number next time."
+- `noPhone` — "หากใส่เบอร์ที่ใช้สมัครสมาชิก จะได้รับ +10 XP และ +5 Coin ทุก 14 วัน" / "Add your registered phone number to earn +10 XP and +5 Coin every 14 days."
+- `ineligibleCategory` — "รางวัลมีเฉพาะหมวด 'แนะนำ' และ 'ร้องเรียน' — ขอบคุณสำหรับข้อความ" / "Rewards apply only to 'Suggestion' and 'Complaint' categories — thanks for your message."
+- `tryLater` — "ระบบรางวัลขัดข้องชั่วคราว ทีมงานจะตรวจสอบให้" / "Reward system hiccup — our team will look into it."
 
-- Anonymous submits with reward-eligible category + no phone → ticket created, no reward. ✓
-- Member submits with `billing` category + valid phone → ticket created, no reward (category gate). ✓
-- Member submits with `complaint` + valid matched phone, first time → +10 XP / +5 Coin. ✓
-- Same member, `complaint` again within 14 days → ticket created, no reward. ✓
-- Invalid phone format (e.g. `12345`) → form blocks submit with clear error. ✓
-- Language toggle → persists across reloads (already handled by `LanguageContext`). ✓
+Keep existing `pointsAwardedTitle`, `pointsAwardedDesc`, `noMemberMatch` keys (still referenced elsewhere or safe to remove after grep — will confirm during build).
+
+## Regression checklist
+- Ticket creation flow unchanged; only response envelope gains one field.
+- Existing consumers reading `points_awarded` / `member_matched` continue to work.
+- Gamification cooldown behavior unchanged (still enforced server-side by `gamification_rules`).
+- No DB schema change, no migration needed.
+- Client 60s throttle unchanged.
+
+## Files touched
+- `supabase/functions/submit-support-ticket/index.ts`
+- `src/pages/support/PublicSupportPage.tsx`
+- `src/i18n/locales/th.ts`
+- `src/i18n/locales/en.ts`
